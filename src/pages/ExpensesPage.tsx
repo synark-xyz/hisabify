@@ -8,6 +8,8 @@ import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { TransactionItem } from '@/components/TransactionItem';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
+import { EditTransactionModal } from '@/components/EditTransactionModal';
+import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, Budget, CategorySpending } from '@/types';
@@ -20,6 +22,8 @@ export function ExpensesPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -194,7 +198,11 @@ export function ExpensesPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <TransactionItem transaction={tx} />
+                        <TransactionItem 
+                          transaction={tx} 
+                          onEdit={setEditingTransaction}
+                          onDelete={setDeletingTransaction}
+                        />
                       </motion.div>
                     ))
                   ) : (
@@ -232,6 +240,20 @@ export function ExpensesPage() {
       <AddTransactionModal
         open={showAddTransaction}
         onOpenChange={setShowAddTransaction}
+        onSuccess={fetchTransactions}
+      />
+
+      <EditTransactionModal
+        open={!!editingTransaction}
+        onOpenChange={(open) => !open && setEditingTransaction(null)}
+        transaction={editingTransaction}
+        onSuccess={fetchTransactions}
+      />
+
+      <DeleteTransactionDialog
+        open={!!deletingTransaction}
+        onOpenChange={(open) => !open && setDeletingTransaction(null)}
+        transaction={deletingTransaction}
         onSuccess={fetchTransactions}
       />
     </div>

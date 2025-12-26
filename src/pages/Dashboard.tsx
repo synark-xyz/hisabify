@@ -11,6 +11,8 @@ import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddCardModal } from '@/components/AddCardModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
+import { EditTransactionModal } from '@/components/EditTransactionModal';
+import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +25,8 @@ export function Dashboard() {
   const [monthlyData, setMonthlyData] = useState<MonthlySpending[]>([]);
   const [showAddCard, setShowAddCard] = useState(false);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -250,7 +254,13 @@ export function Dashboard() {
               <AnimatePresence mode="popLayout">
                 {transactions.length > 0 ? (
                   transactions.map((tx, index) => (
-                    <TransactionItem key={tx.id} transaction={tx} index={index} />
+                    <TransactionItem 
+                      key={tx.id} 
+                      transaction={tx} 
+                      index={index}
+                      onEdit={setEditingTransaction}
+                      onDelete={setDeletingTransaction}
+                    />
                   ))
                 ) : (
                   <motion.div

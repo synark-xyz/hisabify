@@ -7,7 +7,7 @@ interface ExpenseDonutChartProps {
   data: CategorySpending[];
 }
 
-const COLORS = ['#5B4B8A', '#F97316', '#3B4B6B', '#7B6BA8'];
+const COLORS = ['#5B4B8A', '#F97316', '#3B4B6B', '#7B6BA8', '#10B981', '#F59E0B'];
 
 const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
@@ -22,6 +22,7 @@ const renderActiveShape = (props: any) => {
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
+        cornerRadius={8}
         style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }}
       />
       <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={22} fontWeight="bold">
@@ -31,30 +32,6 @@ const renderActiveShape = (props: any) => {
         {payload.category}
       </text>
     </g>
-  );
-};
-
-const renderLabelOnPie = (props: any) => {
-  const { cx, cy, midAngle, innerRadius, outerRadius, percent, index } = props;
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  if (percent < 0.08) return null; // Don't show label for small segments
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="white"
-      textAnchor="middle"
-      dominantBaseline="central"
-      fontSize={14}
-      fontWeight="bold"
-    >
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
   );
 };
 
@@ -92,8 +69,8 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
               dataKey="amount"
               nameKey="category"
               onMouseEnter={onPieEnter}
-              labelLine={false}
-              label={renderLabelOnPie}
+              paddingAngle={2}
+              cornerRadius={8}
               animationBegin={0}
               animationDuration={800}
             >
@@ -110,24 +87,24 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mt-4">
+      {/* Legend - Grid layout for better alignment */}
+      <div className="grid grid-cols-2 gap-3 mt-4">
         {chartData.map((item, index) => (
           <motion.div
             key={index}
-            className="flex items-center gap-2 cursor-pointer"
+            className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-muted transition-colors"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 * index }}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.02 }}
             onClick={() => setActiveIndex(index)}
           >
             <div 
-              className="w-3 h-3 rounded-full" 
+              className="w-3 h-3 rounded-full flex-shrink-0" 
               style={{ backgroundColor: item.color }}
             />
-            <div>
-              <p className="text-sm font-semibold text-foreground">{item.category}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground truncate">{item.category}</p>
               <p className="text-xs text-muted-foreground">${item.amount.toLocaleString()}</p>
             </div>
           </motion.div>

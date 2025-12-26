@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface WeekCalendarProps {
   currentDate: Date;
-  selectedDate: Date;
+  selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
   hasTransactions?: (date: Date) => boolean;
 }
@@ -24,7 +24,7 @@ export function WeekCalendar({ currentDate, selectedDate, onDateSelect, hasTrans
       </div>
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, index) => {
-          const isSelected = isSameDay(day, selectedDate);
+          const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
           const hasTx = hasTransactions?.(day);
 
           return (

@@ -19,6 +19,7 @@ export function ExpensesPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>(undefined);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
   const { user } = useAuth();
 
@@ -227,12 +228,19 @@ export function ExpensesPage() {
         </motion.main>
       </div>
 
-      <BottomNavigation onAddClick={() => setShowAddTransaction(true)} />
+      <BottomNavigation onAddClick={(type) => {
+        setTransactionType(type);
+        setShowAddTransaction(true);
+      }} />
 
       <AddTransactionModal
         open={showAddTransaction}
-        onOpenChange={setShowAddTransaction}
+        onOpenChange={(open) => {
+          setShowAddTransaction(open);
+          if (!open) setTransactionType(undefined);
+        }}
         onSuccess={fetchTransactions}
+        initialType={transactionType}
       />
     </div>
   );

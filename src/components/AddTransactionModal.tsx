@@ -14,6 +14,7 @@ interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  initialType?: 'expense' | 'income';
 }
 
 // Income sources
@@ -29,7 +30,7 @@ const incomeSources = [
 
 type Step = 'type' | 'card-method' | 'card-scan' | 'form';
 
-export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransactionModalProps) {
+export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType }: AddTransactionModalProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
@@ -48,10 +49,28 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
     if (open) {
       fetchCategories();
       fetchCards();
-      setStep('type');
       resetForm();
+      // If initialType is provided, skip type selection and go to appropriate step
+      if (initialType) {
+        setType(initialType);
+        if (initialType === 'expense') {
+          // Check if we have cards to offer card selection
+          supabase.from('cards').select('*').eq('user_id', user?.id || '').then(({ data }) => {
+            if (data && data.length > 0) {
+              setCards(data as unknown as Card[]);
+              setStep('card-method');
+            } else {
+              setStep('form');
+            }
+          });
+        } else {
+          setStep('form');
+        }
+      } else {
+        setStep('type');
+      }
     }
-  }, [open]);
+  }, [open, initialType]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*');

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, Pencil, Trash2, ArrowRightLeft } from 'lucide-react';
+import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, Pencil, Trash2 } from 'lucide-react';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
-import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useExchangeRateQuery } from '@/hooks/useExchangeRate';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -27,10 +27,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export function TransactionItem({ transaction, index = 0, onEdit, onDelete, revealedId, onReveal }: TransactionItemProps) {
-  const { currency, formatAmount, currencyVersion } = useCurrency();
-  const { convertAmount } = useExchangeRate();
-  const [displayAmount, setDisplayAmount] = useState(transaction.amount);
-  const [isConverting, setIsConverting] = useState(false);
+  const { currency, formatAmount } = useCurrency();
   
   // Use external control if provided, otherwise use internal state
   const isRevealed = revealedId !== undefined ? revealedId === transaction.id : false;
@@ -44,43 +41,28 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
   const isIncome = transaction.type === 'income';
   const formattedDate = format(new Date(transaction.date), 'EEE, dd MMM yyyy');
 
-  // Get original currency info - show conversion only when currencies differ
-  const originalCurrency = transaction.currency_original;
-  const originalAmount = transaction.amount_original;
+  // Get currency info
   const storedBaseCurrency = transaction.currency_base || 'USD';
-  const originalSymbol = originalCurrency ? (currencyData[originalCurrency]?.symbol || originalCurrency) : '';
+  const originalCurrency = transaction.currency_original || storedBaseCurrency;
+  const originalAmount = transaction.amount_original || transaction.amount;
+  const originalSymbol = currencyData[originalCurrency]?.symbol || originalCurrency;
 
-  // Reconvert amount when user's base currency differs from stored base currency
-  useEffect(() => {
-    const reconvert = async () => {
-      // If current currency matches stored base, use stored amount
-      if (currency === storedBaseCurrency) {
-        setDisplayAmount(transaction.amount);
-        return;
-      }
-      
-      // Need to convert from stored base currency to user's current currency
-      setIsConverting(true);
-      try {
-        const result = await convertAmount(transaction.amount, storedBaseCurrency, currency);
-        if (result) {
-          setDisplayAmount(result.convertedAmount);
-        } else {
-          // Fallback: use original amount if conversion fails
-          setDisplayAmount(transaction.amount);
-        }
-      } catch {
-        setDisplayAmount(transaction.amount);
-      } finally {
-        setIsConverting(false);
-      }
-    };
-    
-    reconvert();
-  }, [currency, currencyVersion, storedBaseCurrency, transaction.amount, convertAmount]);
+  // Use React Query for exchange rate with proper caching
+  const { data: rateData } = useExchangeRateQuery(storedBaseCurrency, currency);
 
-  // Show original if user spent in different currency than what they're viewing now
-  const showOriginal = originalCurrency && originalCurrency !== currency && originalAmount;
+  // Calculate display amount (converted to user's base currency)
+  const displayAmount = useMemo(() => {
+    if (currency === storedBaseCurrency) {
+      return transaction.amount;
+    }
+    if (rateData?.rate) {
+      return transaction.amount * rateData.rate;
+    }
+    return transaction.amount;
+  }, [currency, storedBaseCurrency, transaction.amount, rateData?.rate]);
+
+  // Show original amount if user transacted in a different currency than their current base
+  const showOriginal = originalCurrency !== currency;
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -80) {
@@ -172,21 +154,15 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
           <p className="text-sm text-muted-foreground">{transaction.category?.name || 'Uncategorized'}</p>
         </div>
         <div className="text-right">
-          <motion.p
-            className={`font-bold text-lg ${isIncome ? 'text-emerald-500' : 'text-accent'}`}
-            initial={{ scale: 1 }}
-            whileHover={{ scale: 1.05 }}
-          >
+          {/* Main amount in user's base currency */}
+          <p className={`font-bold text-lg ${isIncome ? 'text-emerald-500' : 'text-accent'}`}>
             {isIncome ? '+' : '-'}{formatAmount(Math.abs(displayAmount))}
-          </motion.p>
-          {/* Show original amount spent in different currency */}
+          </p>
+          {/* Show original spent amount if different currency */}
           {showOriginal && (
-            <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
-              <ArrowRightLeft className="w-3 h-3" />
-              <span>
-                Spent: {originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {originalCurrency}
-              </span>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              (~{originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+            </p>
           )}
           <p className="text-xs text-muted-foreground">{formattedDate}</p>
         </div>

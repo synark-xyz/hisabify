@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useCurrency } from './useCurrency';
-import { useExchangeRate } from './useExchangeRate';
+import { useExchangeRateQuery } from './useExchangeRate';
 
 interface ConversionResult {
   convertedAmount: number;
@@ -9,99 +9,85 @@ interface ConversionResult {
 
 /**
  * Hook to convert an amount from a stored base currency to the user's current currency
- * @param amount - The amount to convert
- * @param storedCurrency - The currency the amount was stored in
- * @returns The converted amount and loading state
+ * Uses React Query for caching to prevent flickering
  */
 export function useConvertedAmount(
   amount: number,
   storedCurrency: string | null | undefined
 ): ConversionResult {
-  const { currency, currencyVersion } = useCurrency();
-  const { convertAmount } = useExchangeRate();
-  const [convertedAmount, setConvertedAmount] = useState(amount);
-  const [isConverting, setIsConverting] = useState(false);
+  const { currency } = useCurrency();
+  const fromCurrency = storedCurrency || 'USD';
+  
+  const { data: rateData, isLoading } = useExchangeRateQuery(fromCurrency, currency);
 
-  useEffect(() => {
-    const convert = async () => {
-      const fromCurrency = storedCurrency || 'USD';
-      
-      // If same currency, no conversion needed
-      if (currency === fromCurrency) {
-        setConvertedAmount(amount);
-        return;
-      }
+  const convertedAmount = useMemo(() => {
+    if (currency === fromCurrency) {
+      return amount;
+    }
+    if (rateData?.rate) {
+      return amount * rateData.rate;
+    }
+    return amount;
+  }, [amount, currency, fromCurrency, rateData?.rate]);
 
-      setIsConverting(true);
-      try {
-        const result = await convertAmount(amount, fromCurrency, currency);
-        if (result) {
-          setConvertedAmount(result.convertedAmount);
-        } else {
-          setConvertedAmount(amount);
-        }
-      } catch {
-        setConvertedAmount(amount);
-      } finally {
-        setIsConverting(false);
-      }
-    };
-
-    convert();
-  }, [amount, storedCurrency, currency, currencyVersion, convertAmount]);
-
-  return { convertedAmount, isConverting };
+  return { 
+    convertedAmount, 
+    isConverting: isLoading && currency !== fromCurrency 
+  };
 }
 
 /**
- * Hook to convert multiple amounts from a stored base currency to the user's current currency
+ * Hook to convert multiple amounts from stored currencies to the user's current currency
  * Returns total of all converted amounts
  */
 export function useConvertedTotal(
   items: Array<{ amount: number; currency_base?: string | null }>
 ): ConversionResult {
-  const { currency, currencyVersion } = useCurrency();
-  const { convertAmount } = useExchangeRate();
-  const [convertedTotal, setConvertedTotal] = useState(0);
-  const [isConverting, setIsConverting] = useState(false);
+  const { currency } = useCurrency();
+  
+  // Group items by their currency for efficient rate fetching
+  const currencyGroups = useMemo(() => {
+    const groups = new Map<string, number>();
+    for (const item of items) {
+      const curr = item.currency_base || 'USD';
+      groups.set(curr, (groups.get(curr) || 0) + item.amount);
+    }
+    return groups;
+  }, [items]);
 
-  useEffect(() => {
-    const convertAll = async () => {
-      if (items.length === 0) {
-        setConvertedTotal(0);
-        return;
-      }
+  // Get unique currencies that need conversion
+  const uniqueCurrencies = useMemo(() => 
+    Array.from(currencyGroups.keys()).filter(c => c !== currency),
+    [currencyGroups, currency]
+  );
 
-      setIsConverting(true);
-      try {
-        let total = 0;
-        
-        for (const item of items) {
-          const fromCurrency = item.currency_base || 'USD';
-          
-          if (currency === fromCurrency) {
-            total += item.amount;
-          } else {
-            const result = await convertAmount(item.amount, fromCurrency, currency);
-            if (result) {
-              total += result.convertedAmount;
-            } else {
-              total += item.amount;
-            }
-          }
+  // Fetch rates for all needed currencies (React Query handles caching)
+  const rateQueries = uniqueCurrencies.map(curr => 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useExchangeRateQuery(curr, currency)
+  );
+
+  const isConverting = rateQueries.some(q => q.isLoading);
+
+  const convertedTotal = useMemo(() => {
+    let total = 0;
+    
+    for (const [curr, amount] of currencyGroups.entries()) {
+      if (curr === currency) {
+        total += amount;
+      } else {
+        const queryIndex = uniqueCurrencies.indexOf(curr);
+        const rate = rateQueries[queryIndex]?.data?.rate;
+        if (rate) {
+          total += amount * rate;
+        } else {
+          total += amount; // Fallback to original
         }
-        
-        setConvertedTotal(total);
-      } catch {
-        // Fallback to sum of original amounts
-        setConvertedTotal(items.reduce((sum, i) => sum + i.amount, 0));
-      } finally {
-        setIsConverting(false);
       }
-    };
-
-    convertAll();
-  }, [items, currency, currencyVersion, convertAmount]);
+    }
+    
+    return total;
+  }, [currencyGroups, currency, uniqueCurrencies, rateQueries]);
 
   return { convertedAmount: convertedTotal, isConverting };
 }

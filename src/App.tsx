@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { CurrencyProvider } from "@/hooks/useCurrency";
+import { ProfileProvider } from "@/hooks/useProfile";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
@@ -116,9 +117,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <CurrencyProvider>
-              <AppRoutes />
-            </CurrencyProvider>
+            <ProfileProvider>
+              <CurrencyProvider>
+                <AppRoutes />
+              </CurrencyProvider>
+            </ProfileProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

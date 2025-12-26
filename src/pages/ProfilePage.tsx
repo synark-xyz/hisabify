@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   User, Settings, Shield, HelpCircle, ChevronRight, 
-  Camera, Save, LogOut, Moon, Sun, Check, ChevronLeft
+  Camera, Save, LogOut, Moon, Sun
 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -17,52 +17,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Profile {
-  display_name: string | null;
-  phone: string | null;
-  avatar_url: string | null;
-}
 
 export function ProfilePage() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { currency, setCurrency } = useCurrency();
+  const { profile, setProfile, updateAvatar, refreshProfile } = useProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [activeTab, setActiveTab] = useState('personal');
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<Profile>({
-    display_name: '',
-    phone: '',
-    avatar_url: null,
-  });
   const [isEditing, setIsEditing] = useState(false);
+  const [localProfile, setLocalProfile] = useState({
+    display_name: profile.display_name || '',
+    phone: profile.phone || '',
+  });
 
+  // Sync localProfile when profile changes
   useEffect(() => {
-    if (user) fetchProfile();
-  }, [user]);
-
-  const fetchProfile = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (data) {
-      setProfile({
-        display_name: data.display_name,
-        phone: data.phone,
-        avatar_url: data.avatar_url,
-      });
-    }
-  };
+    setLocalProfile({
+      display_name: profile.display_name || '',
+      phone: profile.phone || '',
+    });
+  }, [profile.display_name, profile.phone]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -72,8 +54,8 @@ export function ProfilePage() {
       .from('profiles')
       .upsert({
         user_id: user.id,
-        display_name: profile.display_name,
-        phone: profile.phone,
+        display_name: localProfile.display_name,
+        phone: localProfile.phone,
         avatar_url: profile.avatar_url,
       }, { onConflict: 'user_id' });
 
@@ -81,6 +63,11 @@ export function ProfilePage() {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Profile updated successfully' });
+      setProfile({
+        ...profile,
+        display_name: localProfile.display_name,
+        phone: localProfile.phone,
+      });
       setIsEditing(false);
     }
     setLoading(false);
@@ -108,12 +95,7 @@ export function ProfilePage() {
       .from('avatars')
       .getPublicUrl(filePath);
 
-    setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
-    
-    await supabase
-      .from('profiles')
-      .upsert({ user_id: user.id, avatar_url: publicUrl }, { onConflict: 'user_id' });
-
+    await updateAvatar(publicUrl);
     toast({ title: 'Avatar updated' });
     setLoading(false);
   };
@@ -214,8 +196,8 @@ export function ProfilePage() {
                     <Label htmlFor="displayName">Display Name</Label>
                     <Input
                       id="displayName"
-                      value={profile.display_name || ''}
-                      onChange={(e) => setProfile(prev => ({ ...prev, display_name: e.target.value }))}
+                      value={localProfile.display_name}
+                      onChange={(e) => setLocalProfile(prev => ({ ...prev, display_name: e.target.value }))}
                       disabled={!isEditing}
                       className="mt-1"
                       placeholder="Enter your name"
@@ -237,8 +219,8 @@ export function ProfilePage() {
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
                       id="phone"
-                      value={profile.phone || ''}
-                      onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                      value={localProfile.phone}
+                      onChange={(e) => setLocalProfile(prev => ({ ...prev, phone: e.target.value }))}
                       disabled={!isEditing}
                       className="mt-1"
                       placeholder="+1 234 567 8900"

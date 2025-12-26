@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 interface HeaderProps {
   title: string;
@@ -13,8 +14,10 @@ interface HeaderProps {
 export function Header({ title }: HeaderProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile } = useProfile();
 
-  const userInitial = user?.email?.charAt(0).toUpperCase() || 'U';
+  const userInitial = profile.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
+  const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`;
 
   return (
     <motion.header
@@ -30,7 +33,7 @@ export function Header({ title }: HeaderProps) {
         whileTap={{ scale: 0.95 }}
       >
         <Avatar className="w-12 h-12 border-2 border-accent/30">
-          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} />
+          <AvatarImage src={avatarUrl} />
           <AvatarFallback className="bg-gradient-to-br from-accent/20 to-primary/20 text-foreground font-semibold">
             {userInitial}
           </AvatarFallback>

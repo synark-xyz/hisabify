@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,13 +7,14 @@ import { CardStack } from '@/components/CardStack';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
 import { ExpenseOverview } from '@/components/ExpenseOverview';
+import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddCardModal } from '@/components/AddCardModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, Transaction, MonthlySpending } from '@/types';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, addDays, isBefore, isAfter, isToday } from 'date-fns';
 
 export function Dashboard() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -106,6 +107,20 @@ export function Dashboard() {
 
   const totalBalance = cards.reduce((sum, card) => sum + Number(card.balance), 0);
 
+  // Generate payment reminders from transactions
+  const paymentReminders = useMemo(() => {
+    const now = new Date();
+    const reminders = [
+      { id: '1', title: 'Electricity Bill', amount: 125, dueDate: format(addDays(now, 3), 'MMM dd'), status: 'upcoming' as const },
+      { id: '2', title: 'Internet Bill', amount: 79, dueDate: format(addDays(now, -2), 'MMM dd'), status: 'paid' as const },
+      { id: '3', title: 'Phone Bill', amount: 55, dueDate: format(addDays(now, -5), 'MMM dd'), status: 'missed' as const },
+      { id: '4', title: 'Netflix', amount: 15, dueDate: format(addDays(now, 7), 'MMM dd'), status: 'upcoming' as const },
+      { id: '5', title: 'Gym Membership', amount: 45, dueDate: format(addDays(now, 1), 'MMM dd'), status: 'upcoming' as const },
+      { id: '6', title: 'Water Bill', amount: 38, dueDate: format(addDays(now, -1), 'MMM dd'), status: 'paid' as const },
+    ];
+    return reminders;
+  }, []);
+
   const handleAddClick = () => {
     if (cards.length === 0) {
       setShowAddCard(true);
@@ -157,6 +172,14 @@ export function Dashboard() {
                 <p className="text-muted-foreground font-medium">Add your first card</p>
               </motion.button>
             )}
+          </motion.section>
+
+          {/* Payment Reminders Carousel */}
+          <motion.section variants={itemVariants}>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-semibold text-foreground">Payment Reminders</h2>
+            </div>
+            <PaymentReminderCarousel reminders={paymentReminders} />
           </motion.section>
 
           {/* Analytics Section */}

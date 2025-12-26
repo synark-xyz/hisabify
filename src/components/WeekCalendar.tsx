@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -13,40 +14,52 @@ export function WeekCalendar({ currentDate, selectedDate, onDateSelect, hasTrans
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   return (
-    <div className="grid grid-cols-7 gap-2">
-      {days.map((day, index) => {
-        const isSelected = isSameDay(day, selectedDate);
-        const hasTx = hasTransactions?.(day);
+    <div className="bg-card rounded-2xl p-4 shadow-card">
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+          <div key={i} className="text-center text-xs font-medium text-muted-foreground">
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, index) => {
+          const isSelected = isSameDay(day, selectedDate);
+          const hasTx = hasTransactions?.(day);
 
-        return (
-          <button
-            key={index}
-            onClick={() => onDateSelect(day)}
-            className={cn(
-              'flex flex-col items-center py-2 px-1 rounded-xl transition-all',
-              isSelected
-                ? 'bg-accent text-accent-foreground'
-                : 'hover:bg-muted'
-            )}
-          >
-            <span className="text-xs font-medium mb-1">
-              {format(day, 'EEE').charAt(0)}
-            </span>
-            <span className={cn(
-              'text-sm font-semibold',
-              !isSelected && 'text-foreground'
-            )}>
-              {format(day, 'd')}
-            </span>
-            {hasTx && (
+          return (
+            <motion.button
+              key={index}
+              onClick={() => onDateSelect(day)}
+              className={cn(
+                'relative flex flex-col items-center py-3 rounded-xl transition-all',
+                isSelected
+                  ? 'bg-accent text-white'
+                  : 'hover:bg-muted'
+              )}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <span className={cn(
-                'w-1.5 h-1.5 rounded-full mt-1',
-                isSelected ? 'bg-accent-foreground' : 'bg-accent'
-              )} />
-            )}
-          </button>
-        );
-      })}
+                'text-base font-semibold',
+                !isSelected && 'text-foreground'
+              )}>
+                {format(day, 'd')}
+              </span>
+              {hasTx && (
+                <motion.span
+                  className={cn(
+                    'absolute bottom-1.5 w-1.5 h-1.5 rounded-full',
+                    isSelected ? 'bg-white' : 'bg-accent'
+                  )}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                />
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -9,26 +9,32 @@ import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, CategorySpending } from '@/types';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, addYears, subYears, setMonth } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+interface ConvertedTransaction extends Transaction {
+  convertedAmount: number;
+}
+
 export function AnalyticsPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const { user } = useAuth();
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currency, currencyVersion } = useCurrency();
+  const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
       fetchTransactions();
     }
-  }, [user, currentDate]);
+  }, [user, currentDate, currency, currencyVersion]);
 
   const fetchTransactions = async () => {
     if (!user) return;
@@ -44,14 +50,30 @@ export function AnalyticsPage() {
       .gte('date', start)
       .lte('date', end);
 
-    if (data) setTransactions(data as unknown as Transaction[]);
+    if (data) {
+      // Convert amounts to current currency
+      const convertedData = await Promise.all(
+        (data as unknown as Transaction[]).map(async (tx) => {
+          const storedCurrency = tx.currency_base || 'USD';
+          if (storedCurrency === currency) {
+            return { ...tx, convertedAmount: Number(tx.amount) };
+          }
+          const result = await convertAmount(Number(tx.amount), storedCurrency, currency);
+          return { 
+            ...tx, 
+            convertedAmount: result ? result.convertedAmount : Number(tx.amount) 
+          };
+        })
+      );
+      setTransactions(convertedData);
+    }
   };
 
   const hasTransactions = (date: Date) => {
     return transactions.some(tx => isSameDay(new Date(tx.date), date));
   };
 
-  const totalExpense = transactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+  const totalExpense = transactions.reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
   const categoryData: CategorySpending[] = Object.values(
     transactions.reduce((acc, tx) => {
@@ -61,7 +83,7 @@ export function AnalyticsPage() {
       if (!acc[catName]) {
         acc[catName] = { category: catName, amount: 0, color: catColor, percentage: 0 };
       }
-      acc[catName].amount += Number(tx.amount);
+      acc[catName].amount += tx.convertedAmount;
       return acc;
     }, {} as Record<string, CategorySpending>)
   ).map(cat => ({

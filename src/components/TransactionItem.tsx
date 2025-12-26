@@ -4,6 +4,7 @@ import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, Circ
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -26,7 +27,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export function TransactionItem({ transaction, index = 0, onEdit, onDelete, revealedId, onReveal }: TransactionItemProps) {
-  const { currency, formatAmount } = useCurrency();
+  const { currency, formatAmount, currencyVersion } = useCurrency();
+  const { convertAmount } = useExchangeRate();
+  const [displayAmount, setDisplayAmount] = useState(transaction.amount);
+  const [isConverting, setIsConverting] = useState(false);
   
   // Use external control if provided, otherwise use internal state
   const isRevealed = revealedId !== undefined ? revealedId === transaction.id : false;
@@ -43,12 +47,40 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
   // Get original currency info - show conversion only when currencies differ
   const originalCurrency = transaction.currency_original;
   const originalAmount = transaction.amount_original;
-  const baseCurrency = transaction.currency_base || currency;
-  const showOriginal = originalCurrency && originalCurrency !== baseCurrency && originalAmount;
+  const storedBaseCurrency = transaction.currency_base || 'USD';
   const originalSymbol = originalCurrency ? (currencyData[originalCurrency]?.symbol || originalCurrency) : '';
 
-  // Use converted amount (amount field contains the base currency value)
-  const displayAmount = transaction.amount;
+  // Reconvert amount when user's base currency differs from stored base currency
+  useEffect(() => {
+    const reconvert = async () => {
+      // If current currency matches stored base, use stored amount
+      if (currency === storedBaseCurrency) {
+        setDisplayAmount(transaction.amount);
+        return;
+      }
+      
+      // Need to convert from stored base currency to user's current currency
+      setIsConverting(true);
+      try {
+        const result = await convertAmount(transaction.amount, storedBaseCurrency, currency);
+        if (result) {
+          setDisplayAmount(result.convertedAmount);
+        } else {
+          // Fallback: use original amount if conversion fails
+          setDisplayAmount(transaction.amount);
+        }
+      } catch {
+        setDisplayAmount(transaction.amount);
+      } finally {
+        setIsConverting(false);
+      }
+    };
+    
+    reconvert();
+  }, [currency, currencyVersion, storedBaseCurrency, transaction.amount, convertAmount]);
+
+  // Show original if user spent in different currency than what they're viewing now
+  const showOriginal = originalCurrency && originalCurrency !== currency && originalAmount;
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -80) {
@@ -147,12 +179,12 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
           >
             {isIncome ? '+' : '-'}{formatAmount(Math.abs(displayAmount))}
           </motion.p>
-          {/* Show original amount in different currency with conversion indicator */}
+          {/* Show original amount spent in different currency */}
           {showOriginal && (
             <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
               <ArrowRightLeft className="w-3 h-3" />
               <span>
-                {originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {originalCurrency}
+                Spent: {originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {originalCurrency}
               </span>
             </div>
           )}

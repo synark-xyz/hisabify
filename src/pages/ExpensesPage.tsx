@@ -11,14 +11,20 @@ import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, Budget, CategorySpending } from '@/types';
 import { format, startOfMonth, endOfMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 
+interface ConvertedTransaction extends Transaction {
+  convertedAmount: number;
+}
+
 export function ExpensesPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
@@ -26,13 +32,15 @@ export function ExpensesPage() {
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const { user } = useAuth();
+  const { currency, currencyVersion } = useCurrency();
+  const { convertAmount } = useExchangeRate();
 
   useEffect(() => {
     if (user) {
       fetchTransactions();
       fetchBudgets();
     }
-  }, [user, currentDate]);
+  }, [user, currentDate, currency, currencyVersion]);
 
   const fetchTransactions = async () => {
     if (!user) return;
@@ -48,7 +56,23 @@ export function ExpensesPage() {
       .lte('date', end)
       .order('date', { ascending: false });
 
-    if (data) setTransactions(data as unknown as Transaction[]);
+    if (data) {
+      // Convert amounts to current currency
+      const convertedData = await Promise.all(
+        (data as unknown as Transaction[]).map(async (tx) => {
+          const storedCurrency = tx.currency_base || 'USD';
+          if (storedCurrency === currency) {
+            return { ...tx, convertedAmount: Number(tx.amount) };
+          }
+          const result = await convertAmount(Number(tx.amount), storedCurrency, currency);
+          return { 
+            ...tx, 
+            convertedAmount: result ? result.convertedAmount : Number(tx.amount) 
+          };
+        })
+      );
+      setTransactions(convertedData);
+    }
   };
 
   const fetchBudgets = async () => {
@@ -75,13 +99,13 @@ export function ExpensesPage() {
 
   const totalIncome = filteredTransactions
     .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+    .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
   const totalExpense = filteredTransactions
     .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+    .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
-  // Prepare data for donut chart - based on filtered transactions
+  // Prepare data for donut chart - based on filtered transactions with converted amounts
   const categoryData: CategorySpending[] = Object.values(
     filteredTransactions
       .filter(tx => tx.type === 'expense')
@@ -92,7 +116,7 @@ export function ExpensesPage() {
         if (!acc[catName]) {
           acc[catName] = { category: catName, amount: 0, color: catColor, percentage: 0 };
         }
-        acc[catName].amount += Number(tx.amount);
+        acc[catName].amount += tx.convertedAmount;
         return acc;
       }, {} as Record<string, CategorySpending>)
   ).map(cat => ({

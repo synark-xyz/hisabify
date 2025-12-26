@@ -17,7 +17,73 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, Transaction, MonthlySpending } from '@/types';
-import { format, subMonths, startOfMonth, endOfMonth, addDays, isBefore, isAfter, isToday } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, addDays, subYears } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+// Sample analytics data for demonstration
+const sampleAnalyticsData: Record<number, MonthlySpending[]> = {
+  2023: [
+    { month: 'Jan', amount: 2850 },
+    { month: 'Feb', amount: 3200 },
+    { month: 'Mar', amount: 2950 },
+    { month: 'Apr', amount: 3400 },
+    { month: 'May', amount: 3100 },
+    { month: 'Jun', amount: 2800 },
+    { month: 'Jul', amount: 3600 },
+    { month: 'Aug', amount: 3300 },
+    { month: 'Sep', amount: 2900 },
+    { month: 'Oct', amount: 3500 },
+    { month: 'Nov', amount: 4200 },
+    { month: 'Dec', amount: 4800 },
+  ],
+  2024: [
+    { month: 'Jan', amount: 3100 },
+    { month: 'Feb', amount: 2950 },
+    { month: 'Mar', amount: 3400 },
+    { month: 'Apr', amount: 3200 },
+    { month: 'May', amount: 3600 },
+    { month: 'Jun', amount: 3100 },
+    { month: 'Jul', amount: 3800 },
+    { month: 'Aug', amount: 3500 },
+    { month: 'Sep', amount: 3200 },
+    { month: 'Oct', amount: 3700 },
+    { month: 'Nov', amount: 4100 },
+    { month: 'Dec', amount: 4500 },
+  ],
+  2025: [
+    { month: 'Jan', amount: 3300 },
+    { month: 'Feb', amount: 3100 },
+    { month: 'Mar', amount: 3500 },
+    { month: 'Apr', amount: 3400 },
+    { month: 'May', amount: 3700 },
+    { month: 'Jun', amount: 3200 },
+    { month: 'Jul', amount: 3900 },
+    { month: 'Aug', amount: 3600 },
+    { month: 'Sep', amount: 3300 },
+    { month: 'Oct', amount: 3800 },
+    { month: 'Nov', amount: 4300 },
+    { month: 'Dec', amount: 4700 },
+  ],
+  2026: [
+    { month: 'Jan', amount: 3500 },
+    { month: 'Feb', amount: 3300 },
+    { month: 'Mar', amount: 3700 },
+    { month: 'Apr', amount: 3600 },
+    { month: 'May', amount: 3900 },
+    { month: 'Jun', amount: 3400 },
+    { month: 'Jul', amount: 4100 },
+    { month: 'Aug', amount: 3800 },
+    { month: 'Sep', amount: 3500 },
+    { month: 'Oct', amount: 4000 },
+    { month: 'Nov', amount: 4500 },
+    { month: 'Dec', amount: 4900 },
+  ],
+};
 
 export function Dashboard() {
   const [cards, setCards] = useState<Card[]>([]);
@@ -33,8 +99,10 @@ export function Dashboard() {
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const { user } = useAuth();
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currencyVersion } = useCurrency();
   const navigate = useNavigate();
+
+  const availableYears = [2023, 2024, 2025, 2026];
 
   useEffect(() => {
     if (user) {
@@ -42,13 +110,11 @@ export function Dashboard() {
       fetchTransactions();
       fetchMonthlySummary();
     }
-  }, [user]);
+  }, [user, currencyVersion]);
 
   useEffect(() => {
-    if (transactions.length > 0) {
-      generateMonthlyData();
-    }
-  }, [transactions]);
+    generateMonthlyData();
+  }, [transactions, selectedYear]);
 
   const fetchCards = async () => {
     if (!user) return;
@@ -95,21 +161,49 @@ export function Dashboard() {
   };
 
   const generateMonthlyData = () => {
-    const months = Array.from({ length: 7 }, (_, i) => {
-      const date = subMonths(new Date(), 6 - i);
-      const monthName = format(date, 'MMM');
-      // Filter transactions for this month
-      const monthTransactions = transactions.filter(t => {
-        const txDate = new Date(t.date);
-        return format(txDate, 'MMM') === monthName && t.type === 'expense';
+    // Use sample data for the selected year
+    const yearData = sampleAnalyticsData[selectedYear];
+    if (yearData) {
+      // Get current month index for years in the past, or show relevant months
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonthIndex = currentDate.getMonth();
+      
+      // Show last 7 months of data
+      let dataToShow: MonthlySpending[];
+      if (selectedYear === currentYear) {
+        // For current year, show months up to current month
+        const startIndex = Math.max(0, currentMonthIndex - 6);
+        dataToShow = yearData.slice(startIndex, currentMonthIndex + 1);
+      } else if (selectedYear < currentYear) {
+        // For past years, show last 7 months of the year
+        dataToShow = yearData.slice(5, 12);
+      } else {
+        // For future years, show first 7 months
+        dataToShow = yearData.slice(0, 7);
+      }
+      
+      // Merge with actual transaction data if available
+      const mergedData = dataToShow.map(sample => {
+        const monthTransactions = transactions.filter(t => {
+          const txDate = new Date(t.date);
+          return format(txDate, 'MMM') === sample.month && 
+                 txDate.getFullYear() === selectedYear &&
+                 t.type === 'expense';
+        });
+        const actualAmount = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+        return {
+          month: sample.month,
+          amount: actualAmount > 0 ? actualAmount : sample.amount,
+        };
       });
-      const amount = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-      return {
-        month: monthName,
-        amount: amount > 0 ? amount : Math.floor(Math.random() * 3000) + 1000,
-      };
-    });
-    setMonthlyData(months);
+      
+      setMonthlyData(mergedData);
+    }
+  };
+
+  const handleMonthSelect = (month: string) => {
+    setSelectedMonth(month);
   };
 
   const totalBalance = cards.reduce((sum, card) => sum + Number(card.balance), 0);
@@ -193,16 +287,35 @@ export function Dashboard() {
           <motion.section variants={itemVariants}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-foreground">Analytics</h2>
-              <motion.button
-                className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-full text-sm font-semibold shadow-fab"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Year - {selectedYear}
-                <ChevronDown className="w-4 h-4" />
-              </motion.button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <motion.button
+                    className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-full text-sm font-semibold shadow-fab"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Year - {selectedYear}
+                    <ChevronDown className="w-4 h-4" />
+                  </motion.button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {availableYears.map((year) => (
+                    <DropdownMenuItem
+                      key={year}
+                      onClick={() => setSelectedYear(year)}
+                      className={selectedYear === year ? 'bg-accent/10' : ''}
+                    >
+                      {year}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <EnhancedAnalyticsChart data={monthlyData} selectedMonth={selectedMonth} />
+            <EnhancedAnalyticsChart 
+              data={monthlyData} 
+              selectedMonth={selectedMonth}
+              onMonthSelect={handleMonthSelect}
+            />
           </motion.section>
 
           {/* Quick Stats */}

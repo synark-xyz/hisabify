@@ -1,27 +1,36 @@
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip, LabelList } from 'recharts';
 import { motion } from 'framer-motion';
 import { MonthlySpending } from '@/types';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface EnhancedAnalyticsChartProps {
   data: MonthlySpending[];
   selectedMonth?: string;
+  onMonthSelect?: (month: string) => void;
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg">
-        <p className="text-sm font-semibold text-foreground">
-          ${payload[0].value.toLocaleString()}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
-
-export function EnhancedAnalyticsChart({ data, selectedMonth }: EnhancedAnalyticsChartProps) {
+export function EnhancedAnalyticsChart({ data, selectedMonth, onMonthSelect }: EnhancedAnalyticsChartProps) {
+  const { formatAmount } = useCurrency();
   const maxAmount = Math.max(...data.map(d => d.amount));
+
+  const handleBarClick = (data: any) => {
+    if (onMonthSelect && data?.month) {
+      onMonthSelect(data.month);
+    }
+  };
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg">
+          <p className="text-sm font-semibold text-foreground">
+            {formatAmount(payload[0].value)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <motion.div
@@ -47,6 +56,8 @@ export function EnhancedAnalyticsChart({ data, selectedMonth }: EnhancedAnalytic
             maxBarSize={45}
             animationBegin={0}
             animationDuration={800}
+            onClick={handleBarClick}
+            style={{ cursor: onMonthSelect ? 'pointer' : 'default' }}
           >
             <LabelList
               dataKey="amount"
@@ -63,7 +74,7 @@ export function EnhancedAnalyticsChart({ data, selectedMonth }: EnhancedAnalytic
                     fontWeight={600}
                     textAnchor="middle"
                   >
-                    ${(value as number).toLocaleString()}
+                    {formatAmount(value as number)}
                   </text>
                 );
               }}
@@ -80,6 +91,7 @@ export function EnhancedAnalyticsChart({ data, selectedMonth }: EnhancedAnalytic
                   filter: entry.month === selectedMonth 
                     ? 'drop-shadow(0 4px 8px hsl(var(--primary) / 0.3))' 
                     : 'none',
+                  cursor: onMonthSelect ? 'pointer' : 'default',
                 }}
               />
             ))}

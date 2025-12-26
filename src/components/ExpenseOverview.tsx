@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { CreditCard } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface ExpenseOverviewProps {
   totalSalary: number;
@@ -8,6 +9,8 @@ interface ExpenseOverviewProps {
 }
 
 export function ExpenseOverview({ totalSalary, totalExpense, cardLast4 = '1965' }: ExpenseOverviewProps) {
+  const { formatAmount } = useCurrency();
+  
   return (
     <div className="grid grid-cols-2 gap-4">
       {/* Salary Card */}
@@ -38,7 +41,7 @@ export function ExpenseOverview({ totalSalary, totalExpense, cardLast4 = '1965' 
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
           >
-            ${totalSalary.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {formatAmount(totalSalary)}
           </motion.p>
           
           <div className="flex items-center gap-2 mt-3">
@@ -79,7 +82,7 @@ export function ExpenseOverview({ totalSalary, totalExpense, cardLast4 = '1965' 
             animate={{ opacity: 1 }}
             transition={{ delay: 0.25 }}
           >
-            ${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {formatAmount(totalExpense)}
           </motion.p>
           
           <div className="flex items-center gap-2 mt-3">

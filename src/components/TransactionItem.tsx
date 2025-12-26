@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot } from 'lucide-react';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
+import { useCurrency, currencyData } from '@/hooks/useCurrency';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -20,12 +21,23 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export function TransactionItem({ transaction, index = 0 }: TransactionItemProps) {
+  const { currency, formatAmount } = useCurrency();
+  
   const Icon = transaction.category?.icon 
     ? iconMap[transaction.category.icon] || CircleDot
     : CircleDot;
 
   const isIncome = transaction.type === 'income';
   const formattedDate = format(new Date(transaction.date), 'EEE, dd MMM yyyy');
+
+  // Get original currency info
+  const originalCurrency = transaction.currency_original;
+  const originalAmount = transaction.amount_original;
+  const showOriginal = originalCurrency && originalCurrency !== currency && originalAmount;
+  const originalSymbol = originalCurrency ? (currencyData[originalCurrency]?.symbol || originalCurrency) : '';
+
+  // Use converted amount for display (falls back to amount for backward compatibility)
+  const displayAmount = transaction.amount_converted ?? transaction.amount;
 
   return (
     <motion.div
@@ -56,8 +68,14 @@ export function TransactionItem({ transaction, index = 0 }: TransactionItemProps
           initial={{ scale: 1 }}
           whileHover={{ scale: 1.05 }}
         >
-          {isIncome ? '+' : '-'}${Math.abs(transaction.amount).toLocaleString()}
+          {isIncome ? '+' : '-'}{formatAmount(Math.abs(displayAmount))}
         </motion.p>
+        {/* Show original amount in different currency */}
+        {showOriginal && (
+          <p className="text-xs text-muted-foreground">
+            {originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">{formattedDate}</p>
       </div>
     </motion.div>

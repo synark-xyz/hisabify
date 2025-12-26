@@ -12,6 +12,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddCardModal } from '@/components/AddCardModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, Transaction, MonthlySpending } from '@/types';
 import { format, subMonths, startOfMonth, endOfMonth, addDays, isBefore, isAfter, isToday } from 'date-fns';
@@ -27,6 +28,7 @@ export function Dashboard() {
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const { user } = useAuth();
+  const { formatAmount } = useCurrency();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -211,7 +213,7 @@ export function Dashboard() {
                 <span className="text-sm text-muted-foreground">Income</span>
               </div>
               <p className="text-xl font-bold text-foreground">
-                ${totalIncome.toLocaleString()}
+                {formatAmount(totalIncome)}
               </p>
             </motion.div>
             
@@ -226,7 +228,7 @@ export function Dashboard() {
                 <span className="text-sm text-muted-foreground">Expenses</span>
               </div>
               <p className="text-xl font-bold text-foreground">
-                ${totalExpenses.toLocaleString()}
+                {formatAmount(totalExpenses)}
               </p>
             </motion.div>
           </motion.section>

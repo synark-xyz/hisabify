@@ -9,15 +9,11 @@ interface CreditCardProps {
 }
 
 export function CreditCard({ card, showBalance = true, onClick }: CreditCardProps) {
-  const formatCardNumber = (number: string) => {
-    const last4 = number.slice(-4);
-    return `•••• •••• •••• ${last4}`;
-  };
-
-  const maskCardNumbers = (number: string) => {
-    const cleaned = number.replace(/\s/g, '');
-    const groups = cleaned.match(/.{1,4}/g) || [];
-    return groups.map((group, i) => (i === groups.length - 1 ? group : '••••')).slice(-4);
+  // Display masked card number - handles both full masked (****1234) and legacy formats
+  const getDisplayNumbers = (number: string): string[] => {
+    const cleaned = number.replace(/[\s*]/g, '');
+    const last4 = cleaned.slice(-4);
+    return ['••••', '••••', '••••', last4];
   };
 
   const cardColors = {
@@ -64,7 +60,7 @@ export function CreditCard({ card, showBalance = true, onClick }: CreditCardProp
       <div className="absolute bottom-5 left-5 right-5">
         <div className="flex justify-between items-end">
           <div className="flex gap-3 text-primary-foreground/90 text-sm font-medium">
-            {maskCardNumbers(card.card_number).map((group, i) => (
+            {getDisplayNumbers(card.card_number).map((group, i) => (
               <span key={i}>{group}</span>
             ))}
           </div>

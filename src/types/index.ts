@@ -32,6 +32,14 @@ export interface Transaction {
   created_at: string;
   category?: Category;
   card?: Card;
+  // Multi-currency fields
+  amount_original?: number;
+  currency_original?: string;
+  amount_converted?: number;
+  currency_base?: string;
+  exchange_rate?: number;
+  rate_timestamp?: string;
+  exchange_source?: string;
 }
 
 export interface Budget {
@@ -55,4 +63,13 @@ export interface CategorySpending {
   amount: number;
   color: string;
   percentage: number;
+}
+
+export interface ExchangeRate {
+  id: string;
+  base_currency: string;
+  target_currency: string;
+  rate: number;
+  fetched_at: string;
+  created_at: string;
 }

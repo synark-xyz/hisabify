@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { Category, Card } from '@/types';
 
 interface AddTransactionModalProps {
@@ -45,9 +46,11 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
   const [useCard, setUseCard] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState('');
   const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [convertedPreview, setConvertedPreview] = useState<{ amount: number; rate: number } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const { currency } = useCurrency();
+  const { convertAmount, loading: rateLoading } = useExchangeRate();
 
   useEffect(() => {
     if (open) {
@@ -58,6 +61,27 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
       setSelectedCurrency(currency);
     }
   }, [open, currency]);
+
+  // Preview conversion when amount or currency changes
+  useEffect(() => {
+    const previewConversion = async () => {
+      if (!amount || selectedCurrency === currency) {
+        setConvertedPreview(null);
+        return;
+      }
+
+      const result = await convertAmount(parseFloat(amount), selectedCurrency, currency);
+      if (result) {
+        setConvertedPreview({
+          amount: result.convertedAmount,
+          rate: result.rate
+        });
+      }
+    };
+
+    const debounce = setTimeout(previewConversion, 500);
+    return () => clearTimeout(debounce);
+  }, [amount, selectedCurrency, currency]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*');
@@ -77,10 +101,42 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
 
     setLoading(true);
     try {
+      const originalAmount = parseFloat(amount);
+      let convertedAmount = originalAmount;
+      let exchangeRate = 1;
+      let exchangeSource = 'same_currency';
+      let rateTimestamp = new Date().toISOString();
+
+      // Convert if different currency
+      if (selectedCurrency !== currency) {
+        const conversionResult = await convertAmount(originalAmount, selectedCurrency, currency);
+        
+        if (conversionResult) {
+          convertedAmount = conversionResult.convertedAmount;
+          exchangeRate = conversionResult.rate;
+          exchangeSource = conversionResult.source;
+          rateTimestamp = conversionResult.timestamp;
+        } else {
+          // Fallback: store without conversion, can be converted later
+          toast({
+            title: 'Warning',
+            description: 'Could not fetch exchange rate. Transaction saved with original amount.',
+            variant: 'destructive'
+          });
+        }
+      }
+
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
         merchant,
-        amount: parseFloat(amount),
+        amount: convertedAmount, // Base currency amount for backward compatibility
+        amount_original: originalAmount,
+        currency_original: selectedCurrency,
+        amount_converted: convertedAmount,
+        currency_base: currency,
+        exchange_rate: exchangeRate,
+        rate_timestamp: rateTimestamp,
+        exchange_source: exchangeSource,
         category_id: type === 'expense' ? categoryId : null,
         card_id: cardId || null,
         type,
@@ -94,8 +150,9 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
       onSuccess();
       resetForm();
       onOpenChange(false);
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -109,6 +166,7 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
     setCardId('');
     setType('expense');
     setUseCard(false);
+    setConvertedPreview(null);
   };
 
   const handleTypeSelect = (selectedType: 'expense' | 'income') => {
@@ -146,6 +204,7 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
   };
 
   const currencySymbol = currencyData[selectedCurrency]?.symbol || '$';
+  const baseCurrencySymbol = currencyData[currency]?.symbol || '$';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -299,6 +358,23 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
                   className="flex-1"
                 />
               </div>
+              
+              {/* Conversion Preview */}
+              {selectedCurrency !== currency && amount && (
+                <div className="mt-2 text-sm">
+                  {rateLoading ? (
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Converting...
+                    </span>
+                  ) : convertedPreview ? (
+                    <span className="text-muted-foreground">
+                      ≈ {baseCurrencySymbol}{convertedPreview.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                      <span className="text-xs ml-1">(1 {selectedCurrency} = {convertedPreview.rate.toFixed(4)} {currency})</span>
+                    </span>
+                  ) : null}
+                </div>
+              )}
             </div>
 
             {/* Category for Expense */}

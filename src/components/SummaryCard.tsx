@@ -1,5 +1,6 @@
 import { CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface SummaryCardProps {
   title: string;
@@ -9,6 +10,8 @@ interface SummaryCardProps {
 }
 
 export function SummaryCard({ title, amount, cardNumber, variant }: SummaryCardProps) {
+  const { formatAmount } = useCurrency();
+  
   return (
     <div className={cn(
       'rounded-xl p-4 text-primary-foreground relative overflow-hidden',
@@ -21,7 +24,7 @@ export function SummaryCard({ title, amount, cardNumber, variant }: SummaryCardP
         </button>
       </div>
       <p className="text-2xl font-bold mb-4">
-        ${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        {formatAmount(amount)}
       </p>
       {cardNumber && (
         <div className="flex items-center gap-2 text-sm opacity-80">

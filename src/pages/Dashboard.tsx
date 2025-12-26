@@ -298,6 +298,26 @@ export function Dashboard() {
           fetchMonthlySummary();
         }}
       />
+
+      <EditTransactionModal
+        open={!!editingTransaction}
+        onOpenChange={(open) => !open && setEditingTransaction(null)}
+        transaction={editingTransaction}
+        onSuccess={() => {
+          fetchTransactions();
+          fetchMonthlySummary();
+        }}
+      />
+
+      <DeleteTransactionDialog
+        open={!!deletingTransaction}
+        onOpenChange={(open) => !open && setDeletingTransaction(null)}
+        transaction={deletingTransaction}
+        onSuccess={() => {
+          fetchTransactions();
+          fetchMonthlySummary();
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useCurrency } from './useCurrency';
-import { useExchangeRateQuery } from './useExchangeRate';
+import { useExchangeRateQuery, useExchangeRate } from './useExchangeRate';
 
 interface ConversionResult {
   convertedAmount: number;
@@ -39,11 +39,15 @@ export function useConvertedAmount(
 /**
  * Hook to convert multiple amounts from stored currencies to the user's current currency
  * Returns total of all converted amounts
+ * Uses async fetching instead of dynamic hook calls to comply with React rules
  */
 export function useConvertedTotal(
   items: Array<{ amount: number; currency_base?: string | null }>
 ): ConversionResult {
   const { currency } = useCurrency();
+  const { getExchangeRate, getCachedRate } = useExchangeRate();
+  const [rates, setRates] = useState<Map<string, number>>(new Map());
+  const [isConverting, setIsConverting] = useState(false);
   
   // Group items by their currency for efficient rate fetching
   const currencyGroups = useMemo(() => {
@@ -61,13 +65,55 @@ export function useConvertedTotal(
     [currencyGroups, currency]
   );
 
-  // Fetch rates for all needed currencies (React Query handles caching)
-  const rateQueries = uniqueCurrencies.map(curr => 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useExchangeRateQuery(curr, currency)
-  );
+  // Fetch rates asynchronously
+  useEffect(() => {
+    if (uniqueCurrencies.length === 0) {
+      setIsConverting(false);
+      return;
+    }
 
-  const isConverting = rateQueries.some(q => q.isLoading);
+    // First try to use cached rates
+    const cachedRates = new Map<string, number>();
+    let allCached = true;
+    
+    for (const curr of uniqueCurrencies) {
+      const cached = getCachedRate(curr, currency);
+      if (cached !== null) {
+        cachedRates.set(curr, cached);
+      } else {
+        allCached = false;
+      }
+    }
+
+    if (allCached) {
+      setRates(cachedRates);
+      setIsConverting(false);
+      return;
+    }
+
+    // Fetch missing rates
+    setIsConverting(true);
+    
+    const fetchRates = async () => {
+      const newRates = new Map<string, number>(cachedRates);
+      
+      await Promise.all(
+        uniqueCurrencies
+          .filter(curr => !cachedRates.has(curr))
+          .map(async (curr) => {
+            const result = await getExchangeRate(curr, currency);
+            if (result?.rate) {
+              newRates.set(curr, result.rate);
+            }
+          })
+      );
+      
+      setRates(newRates);
+      setIsConverting(false);
+    };
+
+    fetchRates();
+  }, [uniqueCurrencies, currency, getExchangeRate, getCachedRate]);
 
   const convertedTotal = useMemo(() => {
     let total = 0;
@@ -76,8 +122,7 @@ export function useConvertedTotal(
       if (curr === currency) {
         total += amount;
       } else {
-        const queryIndex = uniqueCurrencies.indexOf(curr);
-        const rate = rateQueries[queryIndex]?.data?.rate;
+        const rate = rates.get(curr);
         if (rate) {
           total += amount * rate;
         } else {
@@ -87,7 +132,7 @@ export function useConvertedTotal(
     }
     
     return total;
-  }, [currencyGroups, currency, uniqueCurrencies, rateQueries]);
+  }, [currencyGroups, currency, rates]);
 
   return { convertedAmount: convertedTotal, isConverting };
 }

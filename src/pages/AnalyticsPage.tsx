@@ -17,6 +17,7 @@ export function AnalyticsPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>(undefined);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -221,12 +222,19 @@ export function AnalyticsPage() {
         </motion.main>
       </div>
 
-      <BottomNavigation onAddClick={() => setShowAddTransaction(true)} />
+      <BottomNavigation onAddClick={(type) => {
+        setTransactionType(type);
+        setShowAddTransaction(true);
+      }} />
 
       <AddTransactionModal
         open={showAddTransaction}
-        onOpenChange={setShowAddTransaction}
+        onOpenChange={(open) => {
+          setShowAddTransaction(open);
+          if (!open) setTransactionType(undefined);
+        }}
         onSuccess={fetchTransactions}
+        initialType={transactionType}
       />
     </div>
   );

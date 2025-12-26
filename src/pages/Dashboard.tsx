@@ -22,6 +22,7 @@ export function Dashboard() {
   const [monthlyData, setMonthlyData] = useState<MonthlySpending[]>([]);
   const [showAddCard, setShowAddCard] = useState(false);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -121,10 +122,11 @@ export function Dashboard() {
     return reminders;
   }, []);
 
-  const handleAddClick = () => {
-    if (cards.length === 0) {
+  const handleAddClick = (type?: 'expense' | 'income') => {
+    if (cards.length === 0 && type === 'expense') {
       setShowAddCard(true);
     } else {
+      setTransactionType(type);
       setShowAddTransaction(true);
     }
   };
@@ -280,11 +282,15 @@ export function Dashboard() {
 
       <AddTransactionModal
         open={showAddTransaction}
-        onOpenChange={setShowAddTransaction}
+        onOpenChange={(open) => {
+          setShowAddTransaction(open);
+          if (!open) setTransactionType(undefined);
+        }}
         onSuccess={() => {
           fetchTransactions();
           fetchMonthlySummary();
         }}
+        initialType={transactionType}
       />
     </div>
   );

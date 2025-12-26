@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 interface BottomNavigationProps {
-  onAddClick: () => void;
+  onAddClick: (type?: 'expense' | 'income') => void;
 }
 
 export function BottomNavigation({ onAddClick }: BottomNavigationProps) {
@@ -17,9 +17,9 @@ export function BottomNavigation({ onAddClick }: BottomNavigationProps) {
     setShowAddMenu(true);
   };
 
-  const handleActionClick = (action: 'expense' | 'income' | 'transfer') => {
+  const handleActionClick = (action: 'expense' | 'income') => {
     setShowAddMenu(false);
-    onAddClick();
+    onAddClick(action);
   };
 
   return (
@@ -43,13 +43,12 @@ export function BottomNavigation({ onAddClick }: BottomNavigationProps) {
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             >
               {[
-                { label: 'Add Expense', color: 'bg-accent', delay: 0 },
-                { label: 'Add Income', color: 'bg-emerald-500', delay: 0.05 },
-                { label: 'Add Transfer', color: 'bg-primary', delay: 0.1 },
-              ].map((item, index) => (
+                { label: 'Add Expense', type: 'expense' as const, color: 'bg-accent', delay: 0 },
+                { label: 'Add Income', type: 'income' as const, color: 'bg-emerald-500', delay: 0.05 },
+              ].map((item) => (
                 <motion.button
                   key={item.label}
-                  onClick={() => handleActionClick('expense')}
+                  onClick={() => handleActionClick(item.type)}
                   className={cn(
                     'px-6 py-3 rounded-full text-white font-medium shadow-lg',
                     item.color

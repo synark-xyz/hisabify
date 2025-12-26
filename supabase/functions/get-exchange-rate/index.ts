@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CACHE_DURATION_HOURS = 24;
+const CACHE_DURATION_HOURS = 6;
 
 serve(async (req) => {
   // Handle CORS preflight requests

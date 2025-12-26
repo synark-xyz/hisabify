@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WeekCalendar } from '@/components/WeekCalendar';
 import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
@@ -10,14 +10,15 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, CategorySpending } from '@/types';
-import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, addYears, subYears, setMonth } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export function AnalyticsPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
-  const [transactionType, setTransactionType] = useState<'expense' | 'income' | undefined>(undefined);
+  const [showYearPicker, setShowYearPicker] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -105,7 +106,7 @@ export function AnalyticsPage() {
           initial="hidden"
           animate="visible"
         >
-          {/* Month Selector */}
+          {/* Month & Year Selector */}
           <motion.div variants={itemVariants} className="flex items-center justify-between">
             <motion.button
               onClick={() => setCurrentDate(subMonths(currentDate, 1))}
@@ -115,14 +116,69 @@ export function AnalyticsPage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </motion.button>
-            <motion.h3
-              className="text-lg font-bold text-foreground"
-              key={format(currentDate, 'MMMM yyyy')}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              {format(currentDate, 'MMMM yyyy')}
-            </motion.h3>
+            
+            <Popover open={showYearPicker} onOpenChange={setShowYearPicker}>
+              <PopoverTrigger asChild>
+                <motion.button
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-muted transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <motion.span
+                    className="text-lg font-bold text-foreground"
+                    key={format(currentDate, 'MMMM yyyy')}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    {format(currentDate, 'MMMM yyyy')}
+                  </motion.span>
+                </motion.button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3" align="center">
+                {/* Year Navigation */}
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    onClick={() => setCurrentDate(subYears(currentDate, 1))}
+                    className="p-1.5 hover:bg-muted rounded-full transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="font-bold text-foreground">{format(currentDate, 'yyyy')}</span>
+                  <button
+                    onClick={() => setCurrentDate(addYears(currentDate, 1))}
+                    className="p-1.5 hover:bg-muted rounded-full transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                {/* Month Grid */}
+                <div className="grid grid-cols-3 gap-2">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const monthDate = setMonth(currentDate, i);
+                    const isSelected = format(currentDate, 'M') === String(i + 1);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setCurrentDate(setMonth(currentDate, i));
+                          setShowYearPicker(false);
+                        }}
+                        className={`p-2 rounded-lg text-sm font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-accent text-white'
+                            : 'hover:bg-muted text-foreground'
+                        }`}
+                      >
+                        {format(monthDate, 'MMM')}
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+            
             <motion.button
               onClick={() => setCurrentDate(addMonths(currentDate, 1))}
               className="p-2.5 hover:bg-muted rounded-full transition-colors"
@@ -222,19 +278,12 @@ export function AnalyticsPage() {
         </motion.main>
       </div>
 
-      <BottomNavigation onAddClick={(type) => {
-        setTransactionType(type);
-        setShowAddTransaction(true);
-      }} />
+      <BottomNavigation onAddClick={() => setShowAddTransaction(true)} />
 
       <AddTransactionModal
         open={showAddTransaction}
-        onOpenChange={(open) => {
-          setShowAddTransaction(open);
-          if (!open) setTransactionType(undefined);
-        }}
+        onOpenChange={setShowAddTransaction}
         onSuccess={fetchTransactions}
-        initialType={transactionType}
       />
     </div>
   );

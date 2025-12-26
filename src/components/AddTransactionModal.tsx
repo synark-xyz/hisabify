@@ -1,20 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Camera, Edit3, CreditCard } from 'lucide-react';
+import { Loader2, Camera, Edit3, CreditCard, ChevronDown } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { Category, Card } from '@/types';
 
 interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  initialType?: 'expense' | 'income';
 }
 
 // Income sources
@@ -30,7 +31,7 @@ const incomeSources = [
 
 type Step = 'type' | 'card-method' | 'card-scan' | 'form';
 
-export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType }: AddTransactionModalProps) {
+export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransactionModalProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
@@ -42,35 +43,21 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [step, setStep] = useState<Step>('type');
   const [useCard, setUseCard] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState('');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { currency } = useCurrency();
 
   useEffect(() => {
     if (open) {
       fetchCategories();
       fetchCards();
       resetForm();
-      // If initialType is provided, skip type selection and go to appropriate step
-      if (initialType) {
-        setType(initialType);
-        if (initialType === 'expense') {
-          // Check if we have cards to offer card selection
-          supabase.from('cards').select('*').eq('user_id', user?.id || '').then(({ data }) => {
-            if (data && data.length > 0) {
-              setCards(data as unknown as Card[]);
-              setStep('card-method');
-            } else {
-              setStep('form');
-            }
-          });
-        } else {
-          setStep('form');
-        }
-      } else {
-        setStep('type');
-      }
+      setStep('type');
+      setSelectedCurrency(currency);
     }
-  }, [open, initialType]);
+  }, [open, currency]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*');
@@ -157,6 +144,8 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
     setUseCard(true);
     setStep('form');
   };
+
+  const currencySymbol = currencyData[selectedCurrency]?.symbol || '$';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -270,14 +259,46 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
 
             <div>
               <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="mt-1"
-              />
+              <div className="flex gap-2 mt-1">
+                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-20 flex items-center justify-between px-3"
+                    >
+                      <span>{currencySymbol}</span>
+                      <ChevronDown className="w-3 h-3 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-1" align="start">
+                    <div className="max-h-60 overflow-y-auto">
+                      {Object.entries(currencyData).map(([code, { symbol, name }]) => (
+                        <button
+                          key={code}
+                          onClick={() => {
+                            setSelectedCurrency(code);
+                            setCurrencyOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors ${
+                            selectedCurrency === code ? 'bg-muted' : ''
+                          }`}
+                        >
+                          <span className="w-6 text-center font-medium">{symbol}</span>
+                          <span className="text-muted-foreground">{code}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
             </div>
 
             {/* Category for Expense */}

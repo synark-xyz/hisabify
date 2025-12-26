@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
   const [cardHolder, setCardHolder] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cardColor, setCardColor] = useState<CardColor>('purple');
+  const [saveCard, setSaveCard] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -48,6 +50,13 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
     return cleaned;
   };
 
+  // Only store last 4 digits for security
+  const getMaskedCardNumber = (number: string): string => {
+    const cleaned = number.replace(/\s/g, '');
+    if (cleaned.length < 4) return cleaned;
+    return `****${cleaned.slice(-4)}`;
+  };
+
   const handleSubmit = async () => {
     if (!user) return;
 
@@ -57,11 +66,22 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
       return;
     }
 
+    // If user doesn't want to save, just close and trigger success
+    if (!saveCard) {
+      toast({ title: 'Card verified successfully!' });
+      onSuccess();
+      resetForm();
+      return;
+    }
+
     setLoading(true);
     try {
+      // SECURITY: Only store masked card number (last 4 digits)
+      const maskedNumber = getMaskedCardNumber(cleaned);
+      
       const { error } = await supabase.from('cards').insert({
         user_id: user.id,
-        card_number: cleaned,
+        card_number: maskedNumber, // Only last 4 digits stored
         card_holder: cardHolder,
         expiry_date: expiryDate,
         card_type: detectCardType(cleaned),
@@ -71,11 +91,11 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
 
       if (error) throw error;
 
-      toast({ title: 'Card added successfully!' });
+      toast({ title: 'Card saved successfully!' });
       onSuccess();
       resetForm();
     } catch (error: any) {
-      toast({ title: 'Error adding card', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error saving card', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -87,6 +107,7 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
     setCardHolder('');
     setExpiryDate('');
     setCardColor('purple');
+    setSaveCard(false);
   };
 
   const handleScan = async () => {
@@ -223,6 +244,26 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
                   </div>
                 </div>
               </div>
+
+              {/* Save card checkbox */}
+              <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50">
+                <Checkbox
+                  id="saveCard"
+                  checked={saveCard}
+                  onCheckedChange={(checked) => setSaveCard(checked === true)}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="saveCard"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    Save this card for future use
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Only the last 4 digits will be stored securely
+                  </p>
+                </div>
+              </div>
             </div>
 
             <Button
@@ -231,7 +272,7 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
               className="w-full bg-accent hover:bg-accent/90"
             >
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Add Card
+              {saveCard ? 'Save Card' : 'Continue'}
             </Button>
           </div>
         )}

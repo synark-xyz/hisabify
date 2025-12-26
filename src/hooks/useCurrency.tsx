@@ -15,6 +15,7 @@ const currencyData: Record<string, { symbol: string; name: string }> = {
   GBP: { symbol: '£', name: 'British Pound' },
   JPY: { symbol: '¥', name: 'Japanese Yen' },
   INR: { symbol: '₹', name: 'Indian Rupee' },
+  BDT: { symbol: '৳', name: 'Bangladeshi Taka' },
   CAD: { symbol: 'C$', name: 'Canadian Dollar' },
   AUD: { symbol: 'A$', name: 'Australian Dollar' },
   CNY: { symbol: '¥', name: 'Chinese Yuan' },

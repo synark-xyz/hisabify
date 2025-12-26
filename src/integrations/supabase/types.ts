@@ -14,7 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      budgets: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          id: string
+          month: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          month: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          month?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cards: {
+        Row: {
+          balance: number
+          card_holder: string
+          card_number: string
+          card_type: string
+          color: string
+          created_at: string
+          expiry_date: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          card_holder: string
+          card_number: string
+          card_type?: string
+          color?: string
+          created_at?: string
+          expiry_date: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          card_holder?: string
+          card_number?: string
+          card_type?: string
+          color?: string
+          created_at?: string
+          expiry_date?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          card_id: string | null
+          category_id: string | null
+          created_at: string
+          date: string
+          id: string
+          merchant: string
+          note: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          card_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          merchant: string
+          note?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          card_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          merchant?: string
+          note?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

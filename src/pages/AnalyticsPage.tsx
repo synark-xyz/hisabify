@@ -8,6 +8,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, CategorySpending } from '@/types';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, addYears, subYears, setMonth } from 'date-fns';
@@ -20,6 +21,7 @@ export function AnalyticsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const { user } = useAuth();
+  const { formatAmount } = useCurrency();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -213,7 +215,7 @@ export function AnalyticsPage() {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                 >
-                  ${totalExpense.toLocaleString()}
+                  {formatAmount(totalExpense)}
                 </motion.p>
                 <p className="text-muted-foreground text-sm mt-1">this month.</p>
               </div>

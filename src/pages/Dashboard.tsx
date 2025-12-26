@@ -15,6 +15,7 @@ import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, Transaction, MonthlySpending } from '@/types';
 import { format, subMonths, startOfMonth, endOfMonth, addDays, subYears } from 'date-fns';
@@ -99,7 +100,8 @@ export function Dashboard() {
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const { user } = useAuth();
-  const { formatAmount, currencyVersion } = useCurrency();
+  const { formatAmount, currencyVersion, currency } = useCurrency();
+  const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
 
   const availableYears = [2023, 2024, 2025, 2026];
@@ -147,14 +149,30 @@ export function Dashboard() {
 
     const { data } = await supabase
       .from('transactions')
-      .select('amount, type')
+      .select('amount, type, currency_base')
       .eq('user_id', user.id)
       .gte('date', start)
       .lte('date', end);
 
     if (data) {
-      const income = data.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
-      const expenses = data.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+      // Convert amounts from stored currency to current currency
+      const convertedData = await Promise.all(
+        data.map(async (t) => {
+          const storedCurrency = t.currency_base || 'USD';
+          if (storedCurrency === currency) {
+            return { ...t, convertedAmount: Number(t.amount) };
+          }
+          // Convert to current currency
+          const result = await convertAmount(Number(t.amount), storedCurrency, currency);
+          return { 
+            ...t, 
+            convertedAmount: result ? result.convertedAmount : Number(t.amount) 
+          };
+        })
+      );
+      
+      const income = convertedData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.convertedAmount, 0);
+      const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
       setTotalIncome(income);
       setTotalExpenses(expenses);
     }

@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { WeekCalendar } from '@/components/WeekCalendar';
 import { ExpenseOverview } from '@/components/ExpenseOverview';
-import { BudgetCard } from '@/components/BudgetCard';
+import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
+import { TransactionItem } from '@/components/TransactionItem';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Transaction, Budget, Category } from '@/types';
+import { Transaction, Budget, CategorySpending } from '@/types';
 import { format, startOfMonth, endOfMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 
 export function ExpensesPage() {
@@ -19,8 +19,8 @@ export function ExpensesPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [showAllExpenses, setShowAllExpenses] = useState(false);
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -71,22 +71,27 @@ export function ExpensesPage() {
     .filter(tx => tx.type === 'expense')
     .reduce((sum, tx) => sum + Number(tx.amount), 0);
 
-  // Group transactions by category for display
-  const categoryGroups = transactions
-    .filter(tx => tx.type === 'expense')
-    .reduce((acc, tx) => {
-      const catId = tx.category_id || 'other';
-      if (!acc[catId]) {
-        acc[catId] = {
-          category: tx.category,
-          transactions: [],
-          total: 0,
-        };
-      }
-      acc[catId].transactions.push(tx);
-      acc[catId].total += Number(tx.amount);
-      return acc;
-    }, {} as Record<string, { category?: Category; transactions: Transaction[]; total: number }>);
+  // Prepare data for donut chart
+  const categoryData: CategorySpending[] = Object.values(
+    transactions
+      .filter(tx => tx.type === 'expense')
+      .reduce((acc, tx) => {
+        const catName = tx.category?.name || 'Other';
+        const catColor = tx.category?.color || '#6B7280';
+        
+        if (!acc[catName]) {
+          acc[catName] = { category: catName, amount: 0, color: catColor, percentage: 0 };
+        }
+        acc[catName].amount += Number(tx.amount);
+        return acc;
+      }, {} as Record<string, CategorySpending>)
+  ).map(cat => ({
+    ...cat,
+    percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
+  }));
+
+  // Get expense transactions only
+  const expenseTransactions = transactions.filter(tx => tx.type === 'expense');
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -154,62 +159,70 @@ export function ExpensesPage() {
           <motion.div variants={itemVariants}>
             <ExpenseOverview
               totalSalary={totalIncome || 7000}
-              totalExpense={totalExpense || 4543.98}
+              totalExpense={totalExpense || 0}
               cardLast4="1965"
             />
           </motion.div>
 
-          {/* Expenses by Category */}
+          {/* Expense Analytics with Pie Chart */}
           <motion.section variants={itemVariants}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">Expenses</h2>
+              <h2 className="text-lg font-bold text-foreground">Expense Analytics</h2>
               <motion.button
-                onClick={() => navigate('/analytics')}
+                onClick={() => setShowAllExpenses(!showAllExpenses)}
                 className="text-sm text-muted-foreground hover:text-accent transition-colors"
                 whileHover={{ x: 4 }}
               >
-                View All
+                {showAllExpenses ? 'Show Chart' : 'View All'}
               </motion.button>
             </div>
 
-            <div className="space-y-4">
-              <AnimatePresence mode="popLayout">
-                {Object.keys(categoryGroups).length > 0 ? (
-                  Object.entries(categoryGroups).map(([catId, group], index) => (
-                    <motion.div
-                      key={catId}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <BudgetCard
-                        budget={{
-                          id: catId,
-                          user_id: user?.id || '',
-                          category_id: catId,
-                          amount: budgets.find(b => b.category_id === catId)?.amount || 3000,
-                          month: currentDate.getMonth() + 1,
-                          year: currentDate.getFullYear(),
-                          created_at: '',
-                          category: group.category,
-                        }}
-                        spent={group.total}
-                      />
-                    </motion.div>
-                  ))
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="bg-card rounded-2xl p-8 text-center shadow-card"
-                  >
-                    <span className="text-5xl">💸</span>
-                    <p className="text-muted-foreground mt-3">No expenses this month</p>
-                    <p className="text-sm text-muted-foreground/70 mt-1">Start tracking your spending</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <AnimatePresence mode="wait">
+              {showAllExpenses ? (
+                <motion.div
+                  key="expense-list"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-3"
+                >
+                  {expenseTransactions.length > 0 ? (
+                    expenseTransactions.map((tx, index) => (
+                      <motion.div
+                        key={tx.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <TransactionItem transaction={tx} />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="bg-card rounded-2xl p-8 text-center shadow-card">
+                      <span className="text-5xl">💸</span>
+                      <p className="text-muted-foreground mt-3">No expenses this month</p>
+                    </div>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="pie-chart"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                >
+                  {categoryData.length > 0 ? (
+                    <ExpenseDonutChart data={categoryData} />
+                  ) : (
+                    <div className="bg-card rounded-2xl p-8 text-center shadow-card">
+                      <span className="text-5xl">📊</span>
+                      <p className="text-muted-foreground mt-3">No expense data yet</p>
+                      <p className="text-sm text-muted-foreground/70 mt-1">Add transactions to see analytics</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.section>
         </motion.main>
       </div>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card } from '@/types';
 import { cn } from '@/lib/utils';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface CardStackProps {
   cards: Card[];
@@ -13,6 +14,7 @@ interface CardStackProps {
 export function CardStack({ cards, totalBalance, onCardClick }: CardStackProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const { formatAmount } = useCurrency();
 
   const activeCard = cards[activeIndex] || null;
 
@@ -141,7 +143,7 @@ export function CardStack({ cards, totalBalance, onCardClick }: CardStackProps) 
                     animate={{ opacity: 1, y: 0 }}
                     key={totalBalance}
                   >
-                    ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    {formatAmount(totalBalance)}
                   </motion.p>
                 </div>
                 <button className="text-white/60 hover:text-white transition-colors p-1">

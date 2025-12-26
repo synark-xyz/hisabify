@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface PaymentReminder {
   id: string;
@@ -39,6 +40,8 @@ const statusConfig = {
 };
 
 export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselProps) {
+  const { formatAmount } = useCurrency();
+  
   if (reminders.length === 0) return null;
 
   // Duplicate reminders for seamless loop
@@ -81,7 +84,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
                 <p className="text-xs text-muted-foreground">{reminder.dueDate}</p>
               </div>
               <div className="text-right min-w-max">
-                <p className="text-sm font-bold text-foreground">${reminder.amount.toLocaleString()}</p>
+                <p className="text-sm font-bold text-foreground">{formatAmount(reminder.amount)}</p>
                 <span className={cn('text-xs font-medium', config.textColor)}>{config.label}</span>
               </div>
             </motion.div>

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { CategorySpending } from '@/types';
 import { useState } from 'react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface ExpenseDonutChartProps {
   data: CategorySpending[];
@@ -37,6 +38,7 @@ const renderActiveShape = (props: any) => {
 
 export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const { formatAmount } = useCurrency();
 
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);
@@ -105,7 +107,7 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
             />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground truncate">{item.category}</p>
-              <p className="text-xs text-muted-foreground">${item.amount.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">{formatAmount(item.amount)}</p>
             </div>
           </motion.div>
         ))}

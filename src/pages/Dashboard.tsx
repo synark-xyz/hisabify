@@ -27,6 +27,7 @@ export function Dashboard() {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -260,6 +261,8 @@ export function Dashboard() {
                       index={index}
                       onEdit={setEditingTransaction}
                       onDelete={setDeletingTransaction}
+                      revealedId={revealedTransactionId}
+                      onReveal={setRevealedTransactionId}
                     />
                   ))
                 ) : (

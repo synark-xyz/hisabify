@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, Pencil, Trash2, ArrowRightLeft } from 'lucide-react';
 import { Transaction } from '@/types';
@@ -10,6 +10,8 @@ interface TransactionItemProps {
   index?: number;
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
+  revealedId?: string | null;
+  onReveal?: (id: string | null) => void;
 }
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -23,9 +25,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'circle-dot': CircleDot,
 };
 
-export function TransactionItem({ transaction, index = 0, onEdit, onDelete }: TransactionItemProps) {
+export function TransactionItem({ transaction, index = 0, onEdit, onDelete, revealedId, onReveal }: TransactionItemProps) {
   const { currency, formatAmount } = useCurrency();
-  const [isRevealed, setIsRevealed] = useState(false);
+  
+  // Use external control if provided, otherwise use internal state
+  const isRevealed = revealedId !== undefined ? revealedId === transaction.id : false;
+  const [internalRevealed, setInternalRevealed] = useState(false);
+  const actualRevealed = revealedId !== undefined ? isRevealed : internalRevealed;
   
   const Icon = transaction.category?.icon 
     ? iconMap[transaction.category.icon] || CircleDot
@@ -34,30 +40,41 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete }: Tr
   const isIncome = transaction.type === 'income';
   const formattedDate = format(new Date(transaction.date), 'EEE, dd MMM yyyy');
 
-  // Get original currency info
+  // Get original currency info - show conversion only when currencies differ
   const originalCurrency = transaction.currency_original;
   const originalAmount = transaction.amount_original;
-  const showOriginal = originalCurrency && originalCurrency !== currency && originalAmount;
+  const baseCurrency = transaction.currency_base || currency;
+  const showOriginal = originalCurrency && originalCurrency !== baseCurrency && originalAmount;
   const originalSymbol = originalCurrency ? (currencyData[originalCurrency]?.symbol || originalCurrency) : '';
 
-  // Use converted amount for display (falls back to amount for backward compatibility)
-  const displayAmount = transaction.amount_converted ?? transaction.amount;
+  // Use converted amount (amount field contains the base currency value)
+  const displayAmount = transaction.amount;
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -80) {
-      setIsRevealed(true);
+      if (onReveal) {
+        onReveal(transaction.id);
+      } else {
+        setInternalRevealed(true);
+      }
     } else if (info.offset.x > 40) {
-      setIsRevealed(false);
+      if (onReveal) {
+        onReveal(null);
+      } else {
+        setInternalRevealed(false);
+      }
     }
   };
 
   const handleEdit = () => {
-    setIsRevealed(false);
+    if (onReveal) onReveal(null);
+    else setInternalRevealed(false);
     onEdit?.(transaction);
   };
 
   const handleDelete = () => {
-    setIsRevealed(false);
+    if (onReveal) onReveal(null);
+    else setInternalRevealed(false);
     onDelete?.(transaction);
   };
 
@@ -65,7 +82,7 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete }: Tr
     <div className="relative overflow-hidden rounded-2xl">
       {/* Action buttons revealed on swipe */}
       <AnimatePresence>
-        {isRevealed && (
+        {actualRevealed && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -99,14 +116,14 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete }: Tr
         animate={{ 
           opacity: 1, 
           y: 0,
-          x: isRevealed ? -120 : 0
+          x: actualRevealed ? -120 : 0
         }}
         transition={{ delay: index * 0.05, duration: 0.3 }}
         drag="x"
         dragConstraints={{ left: -120, right: 0 }}
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
-        onClick={() => isRevealed && setIsRevealed(false)}
+        onClick={() => actualRevealed && (onReveal ? onReveal(null) : setInternalRevealed(false))}
       >
         <motion.div
           className="w-12 h-12 rounded-xl flex items-center justify-center"

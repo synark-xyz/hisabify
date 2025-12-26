@@ -17,13 +17,14 @@ import { format, startOfMonth, endOfMonth, isSameDay, addMonths, subMonths } fro
 
 export function ExpensesPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -67,17 +68,22 @@ export function ExpensesPage() {
     return transactions.some(tx => isSameDay(new Date(tx.date), date));
   };
 
-  const totalIncome = transactions
+  // Filter transactions based on selected date (if selected, filter by that date; otherwise show all month)
+  const filteredTransactions = selectedDate
+    ? transactions.filter(tx => isSameDay(new Date(tx.date), selectedDate))
+    : transactions;
+
+  const totalIncome = filteredTransactions
     .filter(tx => tx.type === 'income')
     .reduce((sum, tx) => sum + Number(tx.amount), 0);
 
-  const totalExpense = transactions
+  const totalExpense = filteredTransactions
     .filter(tx => tx.type === 'expense')
     .reduce((sum, tx) => sum + Number(tx.amount), 0);
 
-  // Prepare data for donut chart
+  // Prepare data for donut chart - based on filtered transactions
   const categoryData: CategorySpending[] = Object.values(
-    transactions
+    filteredTransactions
       .filter(tx => tx.type === 'expense')
       .reduce((acc, tx) => {
         const catName = tx.category?.name || 'Other';
@@ -94,8 +100,17 @@ export function ExpensesPage() {
     percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
   }));
 
-  // Get expense transactions only
-  const expenseTransactions = transactions.filter(tx => tx.type === 'expense');
+  // Get expense transactions only - based on filtered transactions
+  const expenseTransactions = filteredTransactions.filter(tx => tx.type === 'expense');
+
+  // Handle date selection - toggle selection
+  const handleDateSelect = (date: Date) => {
+    if (selectedDate && isSameDay(date, selectedDate)) {
+      setSelectedDate(null); // Deselect if clicking same date
+    } else {
+      setSelectedDate(date);
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -154,9 +169,14 @@ export function ExpensesPage() {
             <WeekCalendar
               currentDate={currentDate}
               selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
+              onDateSelect={handleDateSelect}
               hasTransactions={hasTransactions}
             />
+            {selectedDate && (
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Showing expenses for {format(selectedDate, 'MMM dd, yyyy')} • Tap again to see full month
+              </p>
+            )}
           </motion.div>
 
           {/* Summary Cards */}
@@ -198,11 +218,13 @@ export function ExpensesPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <TransactionItem 
-                          transaction={tx} 
-                          onEdit={setEditingTransaction}
-                          onDelete={setDeletingTransaction}
-                        />
+                      <TransactionItem 
+                        transaction={tx} 
+                        onEdit={setEditingTransaction}
+                        onDelete={setDeletingTransaction}
+                        revealedId={revealedTransactionId}
+                        onReveal={setRevealedTransactionId}
+                      />
                       </motion.div>
                     ))
                   ) : (

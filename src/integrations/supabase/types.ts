@@ -115,6 +115,33 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates: {
+        Row: {
+          base_currency: string
+          created_at: string
+          fetched_at: string
+          id: string
+          rate: number
+          target_currency: string
+        }
+        Insert: {
+          base_currency: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          rate: number
+          target_currency: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          rate?: number
+          target_currency?: string
+        }
+        Relationships: []
+      }
       payment_reminders: {
         Row: {
           amount: number
@@ -207,37 +234,58 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          amount_converted: number | null
+          amount_original: number | null
           card_id: string | null
           category_id: string | null
           created_at: string
+          currency_base: string | null
+          currency_original: string | null
           date: string
+          exchange_rate: number | null
+          exchange_source: string | null
           id: string
           merchant: string
           note: string | null
+          rate_timestamp: string | null
           type: string
           user_id: string
         }
         Insert: {
           amount: number
+          amount_converted?: number | null
+          amount_original?: number | null
           card_id?: string | null
           category_id?: string | null
           created_at?: string
+          currency_base?: string | null
+          currency_original?: string | null
           date?: string
+          exchange_rate?: number | null
+          exchange_source?: string | null
           id?: string
           merchant: string
           note?: string | null
+          rate_timestamp?: string | null
           type?: string
           user_id: string
         }
         Update: {
           amount?: number
+          amount_converted?: number | null
+          amount_original?: number | null
           card_id?: string | null
           category_id?: string | null
           created_at?: string
+          currency_base?: string | null
+          currency_original?: string | null
           date?: string
+          exchange_rate?: number | null
+          exchange_source?: string | null
           id?: string
           merchant?: string
           note?: string | null
+          rate_timestamp?: string | null
           type?: string
           user_id?: string
         }

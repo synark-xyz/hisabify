@@ -37,6 +37,7 @@ export function ProfilePage() {
     display_name: profile.display_name || '',
     phone: profile.phone || '',
   });
+  const [phoneError, setPhoneError] = useState('');
 
   // Sync localProfile when profile changes
   useEffect(() => {
@@ -46,16 +47,41 @@ export function ProfilePage() {
     });
   }, [profile.display_name, profile.phone]);
 
+  // Validate phone number format (allows international formats)
+  const validatePhone = (phone: string): boolean => {
+    if (!phone) return true; // Phone is optional
+    // Allow digits, spaces, dashes, parentheses, and plus sign
+    const phoneRegex = /^[+]?[\d\s\-()]{0,20}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const sanitizePhone = (phone: string): string => {
+    // Remove any characters that aren't digits, spaces, dashes, parentheses, or plus
+    return phone.replace(/[^\d\s\-()+]/g, '').slice(0, 20);
+  };
+
   const handleSaveProfile = async () => {
     if (!user) return;
+    
+    // Validate phone before saving
+    if (!validatePhone(localProfile.phone)) {
+      setPhoneError('Please enter a valid phone number');
+      return;
+    }
+    setPhoneError('');
+    
     setLoading(true);
+    
+    // Sanitize and trim inputs before saving
+    const sanitizedDisplayName = localProfile.display_name.trim().slice(0, 100);
+    const sanitizedPhone = sanitizePhone(localProfile.phone);
     
     const { error } = await supabase
       .from('profiles')
       .upsert({
         user_id: user.id,
-        display_name: localProfile.display_name,
-        phone: localProfile.phone,
+        display_name: sanitizedDisplayName || null,
+        phone: sanitizedPhone || null,
         avatar_url: profile.avatar_url,
       }, { onConflict: 'user_id' });
 
@@ -65,8 +91,8 @@ export function ProfilePage() {
       toast({ title: 'Profile updated successfully' });
       setProfile({
         ...profile,
-        display_name: localProfile.display_name,
-        phone: localProfile.phone,
+        display_name: sanitizedDisplayName,
+        phone: sanitizedPhone,
       });
       setIsEditing(false);
     }
@@ -197,10 +223,14 @@ export function ProfilePage() {
                     <Input
                       id="displayName"
                       value={localProfile.display_name}
-                      onChange={(e) => setLocalProfile(prev => ({ ...prev, display_name: e.target.value }))}
+                      onChange={(e) => setLocalProfile(prev => ({ 
+                        ...prev, 
+                        display_name: e.target.value.slice(0, 100) 
+                      }))}
                       disabled={!isEditing}
                       className="mt-1"
                       placeholder="Enter your name"
+                      maxLength={100}
                     />
                   </div>
 
@@ -220,11 +250,19 @@ export function ProfilePage() {
                     <Input
                       id="phone"
                       value={localProfile.phone}
-                      onChange={(e) => setLocalProfile(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) => {
+                        const sanitized = sanitizePhone(e.target.value);
+                        setLocalProfile(prev => ({ ...prev, phone: sanitized }));
+                        if (phoneError) setPhoneError('');
+                      }}
                       disabled={!isEditing}
-                      className="mt-1"
+                      className={`mt-1 ${phoneError ? 'border-destructive' : ''}`}
                       placeholder="+1 234 567 8900"
+                      maxLength={20}
                     />
+                    {phoneError && (
+                      <p className="text-xs text-destructive mt-1">{phoneError}</p>
+                    )}
                   </div>
                 </div>
               </TabsContent>

@@ -47,6 +47,37 @@ export function ProfilePage() {
     });
   }, [profile.display_name, profile.phone]);
 
+  /**
+   * SECURITY NOTE: Phone Number Storage
+   * 
+   * Phone numbers are stored in the 'profiles' table with the following protections:
+   * 
+   * 1. RLS Policies: Users can only view/update their own profile (auth.uid() = user_id)
+   * 2. Input Validation: Phone format is validated before saving
+   * 3. Input Sanitization: Invalid characters are stripped, length limited to 20 chars
+   * 
+   * EDGE CASE CONSIDERATION:
+   * If RLS policies were to fail or be bypassed (e.g., misconfiguration, SQL injection),
+   * phone numbers could be exposed. Current mitigations:
+   * - RLS is enabled and properly configured
+   * - No public SELECT policy exists on profiles table
+   * - Authentication is required for all profile operations
+   * 
+   * FUTURE ENHANCEMENTS (if higher security is needed):
+   * 1. Encrypt phone numbers at rest using pgcrypto:
+   *    ALTER TABLE profiles ADD COLUMN phone_encrypted bytea;
+   *    UPDATE profiles SET phone_encrypted = pgp_sym_encrypt(phone, 'secret_key');
+   * 
+   * 2. Store phone in separate secured table with stricter access controls
+   * 
+   * 3. Implement phone masking for display (show only last 4 digits)
+   * 
+   * To regenerate validation if needed:
+   * - Regex pattern: /^[+]?[\d\s\-()]{0,20}$/
+   * - Max length: 20 characters
+   * - Allowed chars: digits, spaces, dashes, parentheses, plus sign
+   */
+  
   // Validate phone number format (allows international formats)
   const validatePhone = (phone: string): boolean => {
     if (!phone) return true; // Phone is optional
@@ -55,6 +86,7 @@ export function ProfilePage() {
     return phoneRegex.test(phone);
   };
 
+  // Sanitize phone input - removes invalid characters and limits length
   const sanitizePhone = (phone: string): string => {
     // Remove any characters that aren't digits, spaces, dashes, parentheses, or plus
     return phone.replace(/[^\d\s\-()+]/g, '').slice(0, 20);

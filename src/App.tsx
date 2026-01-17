@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import { ProfileProvider } from "@/hooks/useProfile";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
@@ -16,7 +17,14 @@ import { AuthPage } from "@/pages/AuthPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import NotFound from "@/pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -115,23 +123,25 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <ProfileProvider>
-              <CurrencyProvider>
-                <AppRoutes />
-              </CurrencyProvider>
-            </ProfileProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <ProfileProvider>
+                <CurrencyProvider>
+                  <AppRoutes />
+                </CurrencyProvider>
+              </ProfileProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

@@ -1,0 +1,256 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
+import { useEffect } from "react";
+
+const goalSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  target_amount: z.coerce.number().positive("Target must be positive"),
+  current_amount: z.coerce.number().min(0, "Cannot be negative").default(0),
+  deadline: z.date().optional(),
+  color: z.string().default("#10B981"),
+});
+
+type GoalFormValues = z.infer<typeof goalSchema>;
+
+const colorOptions = [
+  "#10B981", // Green
+  "#3B82F6", // Blue
+  "#8B5CF6", // Purple
+  "#F59E0B", // Amber
+  "#EF4444", // Red
+  "#EC4899", // Pink
+  "#06B6D4", // Cyan
+  "#84CC16", // Lime
+];
+
+interface AddSavingsGoalModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: GoalFormValues) => void;
+  editingGoal?: SavingsGoalWithProgress | null;
+}
+
+export function AddSavingsGoalModal({
+  open,
+  onOpenChange,
+  onSubmit,
+  editingGoal,
+}: AddSavingsGoalModalProps) {
+  const form = useForm<GoalFormValues>({
+    resolver: zodResolver(goalSchema),
+    defaultValues: {
+      name: "",
+      target_amount: 0,
+      current_amount: 0,
+      color: "#10B981",
+    },
+  });
+
+  useEffect(() => {
+    if (editingGoal) {
+      form.reset({
+        name: editingGoal.name,
+        target_amount: editingGoal.target_amount,
+        current_amount: editingGoal.current_amount,
+        deadline: editingGoal.deadline
+          ? new Date(editingGoal.deadline)
+          : undefined,
+        color: editingGoal.color,
+      });
+    } else {
+      form.reset({
+        name: "",
+        target_amount: 0,
+        current_amount: 0,
+        color: "#10B981",
+      });
+    }
+  }, [editingGoal, form]);
+
+  const handleSubmit = (data: GoalFormValues) => {
+    onSubmit(data);
+    onOpenChange(false);
+    form.reset();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>
+            {editingGoal ? "Edit Savings Goal" : "Create Savings Goal"}
+          </DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Goal Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Emergency Fund" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="target_amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Amount</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="10000"
+                      {...field}
+                      min="0"
+                      step="0.01"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="current_amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Starting Amount</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      {...field}
+                      min="0"
+                      step="0.01"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="deadline"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Target Date (Optional)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Color</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2 flex-wrap">
+                      {colorOptions.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={cn(
+                            "w-8 h-8 rounded-full transition-all",
+                            field.value === color
+                              ? "ring-2 ring-offset-2 ring-primary"
+                              : "hover:scale-110"
+                          )}
+                          style={{ backgroundColor: color }}
+                          onClick={() => field.onChange(color)}
+                        />
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                {editingGoal ? "Update Goal" : "Create Goal"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

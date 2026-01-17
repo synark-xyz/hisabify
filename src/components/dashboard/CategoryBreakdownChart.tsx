@@ -1,0 +1,121 @@
+import { motion } from 'framer-motion';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } from 'recharts';
+import { useState } from 'react';
+import { useCurrency } from '@/hooks/useCurrency';
+import { CategorySpending } from '@/types';
+
+interface CategoryBreakdownChartProps {
+  data: CategorySpending[];
+  title?: string;
+}
+
+const COLORS = ['#5B4B8A', '#F97316', '#3B4B6B', '#7B6BA8', '#10B981', '#F59E0B', '#EC4899', '#06B6D4'];
+
+const renderActiveShape = (props: any) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
+
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 10}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        cornerRadius={8}
+        style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }}
+      />
+      <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={20} fontWeight="bold">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+      <text x={cx} y={cy + 14} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={12}>
+        {payload.category}
+      </text>
+    </g>
+  );
+};
+
+export function CategoryBreakdownChart({ data, title = "Category Breakdown" }: CategoryBreakdownChartProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const { formatAmount } = useCurrency();
+
+  const onPieEnter = (_: any, index: number) => {
+    setActiveIndex(index);
+  };
+
+  const chartData = data.map((item, index) => ({
+    ...item,
+    color: item.color || COLORS[index % COLORS.length],
+  }));
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg">
+          <p className="text-sm font-semibold text-foreground">{data.category}</p>
+          <p className="text-sm text-muted-foreground">{formatAmount(data.amount)}</p>
+          <p className="text-xs text-muted-foreground">{data.percentage.toFixed(1)}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <motion.div
+      className="bg-card rounded-2xl p-6 shadow-card"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <h3 className="text-lg font-bold text-foreground mb-4">{title}</h3>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              activeIndex={activeIndex}
+              activeShape={renderActiveShape}
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={80}
+              paddingAngle={2}
+              dataKey="amount"
+              nameKey="category"
+              onMouseEnter={onPieEnter}
+            >
+              {chartData.map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={entry.color}
+                  style={{ cursor: 'pointer' }}
+                />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      {/* Legend */}
+      <div className="grid grid-cols-2 gap-2 mt-4">
+        {chartData.slice(0, 6).map((item, index) => (
+          <motion.div
+            key={item.category}
+            className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
+            onClick={() => setActiveIndex(index)}
+            whileHover={{ scale: 1.02 }}
+          >
+            <div
+              className="w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-foreground truncate">{item.category}</span>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}

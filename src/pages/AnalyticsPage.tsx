@@ -1,97 +1,48 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowRight, Calendar } from 'lucide-react';
+import { ChevronLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { WeekCalendar } from '@/components/WeekCalendar';
-import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useCurrency } from '@/hooks/useCurrency';
-import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { supabase } from '@/integrations/supabase/client';
-import { Transaction, CategorySpending } from '@/types';
-import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, addYears, subYears, setMonth } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
-interface ConvertedTransaction extends Transaction {
-  convertedAmount: number;
-}
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { SummaryCards } from '@/components/dashboard/SummaryCards';
+import { CategoryBreakdownChart } from '@/components/dashboard/CategoryBreakdownChart';
+import { MonthlyTrendChart } from '@/components/dashboard/MonthlyTrendChart';
+import { TopExpensesTable } from '@/components/dashboard/TopExpensesTable';
+import { BudgetVsActualChart } from '@/components/dashboard/BudgetVsActualChart';
+import { SpendingByCategoryChart } from '@/components/dashboard/SpendingByCategoryChart';
+import { DateRangeSelector } from '@/components/dashboard/DateRangeSelector';
+import { exportToCSV } from '@/lib/exportUtils';
+import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function AnalyticsPage() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
-  const [showYearPicker, setShowYearPicker] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    from: startOfMonth(subMonths(new Date(), 5)),
+    to: endOfMonth(new Date()),
+  });
   const { user } = useAuth();
-  const { formatAmount, currency, currencyVersion } = useCurrency();
-  const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      fetchTransactions();
-    }
-  }, [user, currentDate, currency, currencyVersion]);
+  const {
+    transactions,
+    totalExpenses,
+    totalIncome,
+    netBalance,
+    budgetRemaining,
+    categoryData,
+    monthlyTrendData,
+    budgetVsActualData,
+    loading,
+    refetch,
+  } = useDashboardData(dateRange);
 
-  const fetchTransactions = async () => {
-    if (!user) return;
-    
-    const start = startOfMonth(currentDate).toISOString();
-    const end = endOfMonth(currentDate).toISOString();
-    
-    const { data } = await supabase
-      .from('transactions')
-      .select('*, category:categories(*)')
-      .eq('user_id', user.id)
-      .eq('type', 'expense')
-      .gte('date', start)
-      .lte('date', end);
-
-    if (data) {
-      // Convert amounts to current currency
-      const convertedData = await Promise.all(
-        (data as unknown as Transaction[]).map(async (tx) => {
-          const storedCurrency = tx.currency_base || 'USD';
-          if (storedCurrency === currency) {
-            return { ...tx, convertedAmount: Number(tx.amount) };
-          }
-          const result = await convertAmount(Number(tx.amount), storedCurrency, currency);
-          return { 
-            ...tx, 
-            convertedAmount: result ? result.convertedAmount : Number(tx.amount) 
-          };
-        })
-      );
-      setTransactions(convertedData);
-    }
+  const handleExportCSV = () => {
+    exportToCSV({ transactions, dateRange });
   };
-
-  const hasTransactions = (date: Date) => {
-    return transactions.some(tx => isSameDay(new Date(tx.date), date));
-  };
-
-  const totalExpense = transactions.reduce((sum, tx) => sum + tx.convertedAmount, 0);
-
-  const categoryData: CategorySpending[] = Object.values(
-    transactions.reduce((acc, tx) => {
-      const catName = tx.category?.name || 'Other';
-      const catColor = tx.category?.color || '#6B7280';
-      
-      if (!acc[catName]) {
-        acc[catName] = { category: catName, amount: 0, color: catColor, percentage: 0 };
-      }
-      acc[catName].amount += tx.convertedAmount;
-      return acc;
-    }, {} as Record<string, CategorySpending>)
-  ).map(cat => ({
-    ...cat,
-    percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
-  }));
-
-  const salaryPercentage = totalExpense > 0 ? Math.min((totalExpense / 7000) * 100, 100) : 0;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -108,20 +59,31 @@ export function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.header
-          className="flex items-center justify-between px-4 py-4"
+          className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ChevronLeft className="w-5 h-5" />
+          <div className="flex items-center gap-2">
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+            </motion.div>
+            <h1 className="text-xl font-bold text-foreground">Analytics Dashboard</h1>
+          </div>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={refetch}
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </motion.div>
-          <h1 className="text-xl font-bold text-foreground">Total Expense</h1>
-          <div className="w-10" />
         </motion.header>
 
         <motion.main
@@ -130,174 +92,91 @@ export function AnalyticsPage() {
           initial="hidden"
           animate="visible"
         >
-          {/* Month & Year Selector */}
-          <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <motion.button
-              onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-              className="p-2.5 hover:bg-muted rounded-full transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </motion.button>
-            
-            <Popover open={showYearPicker} onOpenChange={setShowYearPicker}>
-              <PopoverTrigger asChild>
-                <motion.button
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-muted transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <motion.span
-                    className="text-lg font-bold text-foreground"
-                    key={format(currentDate, 'MMMM yyyy')}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    {format(currentDate, 'MMMM yyyy')}
-                  </motion.span>
-                </motion.button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-3" align="center">
-                {/* Year Navigation */}
-                <div className="flex items-center justify-between mb-3">
-                  <button
-                    onClick={() => setCurrentDate(subYears(currentDate, 1))}
-                    className="p-1.5 hover:bg-muted rounded-full transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <span className="font-bold text-foreground">{format(currentDate, 'yyyy')}</span>
-                  <button
-                    onClick={() => setCurrentDate(addYears(currentDate, 1))}
-                    className="p-1.5 hover:bg-muted rounded-full transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                {/* Month Grid */}
-                <div className="grid grid-cols-3 gap-2">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const monthDate = setMonth(currentDate, i);
-                    const isSelected = format(currentDate, 'M') === String(i + 1);
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setCurrentDate(setMonth(currentDate, i));
-                          setShowYearPicker(false);
-                        }}
-                        className={`p-2 rounded-lg text-sm font-medium transition-colors ${
-                          isSelected
-                            ? 'bg-accent text-white'
-                            : 'hover:bg-muted text-foreground'
-                        }`}
-                      >
-                        {format(monthDate, 'MMM')}
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            <motion.button
-              onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-              className="p-2.5 hover:bg-muted rounded-full transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </motion.button>
-          </motion.div>
-
-          {/* Week Calendar */}
-          <motion.div variants={itemVariants}>
-            <WeekCalendar
-              currentDate={currentDate}
-              selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
-              hasTransactions={hasTransactions}
-            />
-          </motion.div>
-
-          {/* Spending Summary */}
-          <motion.div
-            variants={itemVariants}
-            className="bg-card rounded-2xl p-5 shadow-card"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="text-muted-foreground text-sm">You have Spend</p>
-                <motion.p
-                  className="text-accent font-bold text-3xl mt-1"
-                  key={totalExpense}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                >
-                  {formatAmount(totalExpense)}
-                </motion.p>
-                <p className="text-muted-foreground text-sm mt-1">this month.</p>
-              </div>
-              <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                {format(currentDate, 'MMMM, yyyy')}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <motion.span
-                className="text-primary font-bold text-sm min-w-[60px]"
-                key={salaryPercentage}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {salaryPercentage.toFixed(2)}%
-              </motion.span>
-              <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${salaryPercentage}%` }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                />
-              </div>
-              <span className="text-muted-foreground text-sm min-w-[60px] text-right">
-                {(100 - salaryPercentage).toFixed(2)}%
-              </span>
-            </div>
-          </motion.div>
-
-          {/* Analytics Chart */}
+          {/* Date Range Selector */}
           <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">Analytics</h2>
-              <motion.button
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-accent transition-colors"
-                whileHover={{ x: 4 }}
-              >
-                View All
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </div>
+            <DateRangeSelector
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              onExportCSV={handleExportCSV}
+            />
+          </motion.section>
 
-            <AnimatePresence mode="wait">
-              {categoryData.length > 0 ? (
-                <ExpenseDonutChart data={categoryData} />
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="bg-card rounded-2xl p-12 text-center shadow-card"
-                >
-                  <span className="text-5xl">📊</span>
-                  <p className="text-muted-foreground mt-4">No expense data for this month</p>
-                  <p className="text-sm text-muted-foreground/70 mt-1">Add some transactions to see analytics</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          {/* Summary Cards */}
+          <motion.section variants={itemVariants}>
+            {loading ? (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-24 rounded-2xl" />
+                ))}
+              </div>
+            ) : (
+              <SummaryCards
+                totalExpenses={totalExpenses}
+                totalIncome={totalIncome}
+                netBalance={netBalance}
+                budgetRemaining={budgetRemaining}
+              />
+            )}
+          </motion.section>
+
+          {/* Charts Row 1 - Category Breakdown & Monthly Trend */}
+          <motion.section variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {loading ? (
+              <>
+                <Skeleton className="h-80 rounded-2xl" />
+                <Skeleton className="h-80 rounded-2xl" />
+              </>
+            ) : (
+              <>
+                <CategoryBreakdownChart data={categoryData} />
+                <MonthlyTrendChart data={monthlyTrendData} />
+              </>
+            )}
+          </motion.section>
+
+          {/* Charts Row 2 - Budget vs Actual & Spending by Category */}
+          <motion.section variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {loading ? (
+              <>
+                <Skeleton className="h-80 rounded-2xl" />
+                <Skeleton className="h-80 rounded-2xl" />
+              </>
+            ) : (
+              <>
+                {budgetVsActualData.length > 0 ? (
+                  <BudgetVsActualChart data={budgetVsActualData} />
+                ) : (
+                  <motion.div
+                    className="bg-card rounded-2xl p-6 shadow-card flex flex-col items-center justify-center h-80"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <span className="text-5xl mb-3">💰</span>
+                    <p className="text-foreground font-semibold">No Budgets Set</p>
+                    <p className="text-muted-foreground text-sm text-center mt-1">
+                      Create budgets to see how you're tracking
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => navigate('/budget')}
+                    >
+                      Create Budget
+                    </Button>
+                  </motion.div>
+                )}
+                <SpendingByCategoryChart data={categoryData} />
+              </>
+            )}
+          </motion.section>
+
+          {/* Top Expenses Table */}
+          <motion.section variants={itemVariants}>
+            {loading ? (
+              <Skeleton className="h-64 rounded-2xl" />
+            ) : (
+              <TopExpensesTable transactions={transactions} />
+            )}
           </motion.section>
         </motion.main>
       </div>
@@ -307,7 +186,7 @@ export function AnalyticsPage() {
       <AddTransactionModal
         open={showAddTransaction}
         onOpenChange={setShowAddTransaction}
-        onSuccess={fetchTransactions}
+        onSuccess={refetch}
       />
     </div>
   );

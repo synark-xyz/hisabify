@@ -491,12 +491,12 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
               {/* Income Source */}
               {type === 'income' && (
                 <FormField
-                  control={form.control}
+                  control={incomeForm.control}
                   name="incomeSource"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Income Source</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select value={field.value as string} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select source" />

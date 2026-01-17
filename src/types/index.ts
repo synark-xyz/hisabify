@@ -40,6 +40,8 @@ export interface Transaction {
   exchange_rate?: number;
   rate_timestamp?: string;
   exchange_source?: string;
+  // Receipt field
+  receipt_url?: string | null;
 }
 
 export interface Budget {

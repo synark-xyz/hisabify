@@ -317,6 +317,7 @@ export type Database = {
           merchant: string
           note: string | null
           rate_timestamp: string | null
+          receipt_url: string | null
           type: string
           user_id: string
         }
@@ -336,6 +337,7 @@ export type Database = {
           merchant: string
           note?: string | null
           rate_timestamp?: string | null
+          receipt_url?: string | null
           type?: string
           user_id: string
         }
@@ -355,6 +357,7 @@ export type Database = {
           merchant?: string
           note?: string | null
           rate_timestamp?: string | null
+          receipt_url?: string | null
           type?: string
           user_id?: string
         }

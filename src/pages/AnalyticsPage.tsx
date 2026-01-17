@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { ChevronLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { CategoryBreakdownChart } from '@/components/dashboard/CategoryBreakdownChart';
 import { MonthlyTrendChart } from '@/components/dashboard/MonthlyTrendChart';
@@ -14,6 +16,14 @@ import { TopExpensesTable } from '@/components/dashboard/TopExpensesTable';
 import { BudgetVsActualChart } from '@/components/dashboard/BudgetVsActualChart';
 import { SpendingByCategoryChart } from '@/components/dashboard/SpendingByCategoryChart';
 import { DateRangeSelector } from '@/components/dashboard/DateRangeSelector';
+import {
+  InsightsCards,
+  SpendingPatternsCard,
+  ComparisonCharts,
+  TrendPredictionChart,
+  SpendingHeatMap,
+  DayOfWeekChart,
+} from '@/components/analytics';
 import { exportToCSV } from '@/lib/exportUtils';
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +31,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function AnalyticsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [dateRange, setDateRange] = useState({
-    from: startOfMonth(subMonths(new Date(), 5)),
+    from: startOfMonth(subMonths(new Date(), 11)), // Extended to 12 months for better analysis
     to: endOfMonth(new Date()),
   });
   const { user } = useAuth();
@@ -39,6 +49,17 @@ export function AnalyticsPage() {
     loading,
     refetch,
   } = useDashboardData(dateRange);
+
+  // Advanced analytics hook
+  const {
+    spendingPatterns,
+    insights,
+    monthComparison,
+    yearComparison,
+    trendPrediction,
+    heatMapData,
+    dayOfWeekAnalysis,
+  } = useAdvancedAnalytics(transactions);
 
   const handleExportCSV = () => {
     exportToCSV({ transactions, dateRange });
@@ -119,64 +140,121 @@ export function AnalyticsPage() {
             )}
           </motion.section>
 
-          {/* Charts Row 1 - Category Breakdown & Monthly Trend */}
-          <motion.section variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {loading ? (
-              <>
-                <Skeleton className="h-80 rounded-2xl" />
-                <Skeleton className="h-80 rounded-2xl" />
-              </>
-            ) : (
-              <>
-                <CategoryBreakdownChart data={categoryData} />
-                <MonthlyTrendChart data={monthlyTrendData} />
-              </>
-            )}
-          </motion.section>
-
-          {/* Charts Row 2 - Budget vs Actual & Spending by Category */}
-          <motion.section variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {loading ? (
-              <>
-                <Skeleton className="h-80 rounded-2xl" />
-                <Skeleton className="h-80 rounded-2xl" />
-              </>
-            ) : (
-              <>
-                {budgetVsActualData.length > 0 ? (
-                  <BudgetVsActualChart data={budgetVsActualData} />
-                ) : (
-                  <motion.div
-                    className="bg-card rounded-2xl p-6 shadow-card flex flex-col items-center justify-center h-80"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <span className="text-5xl mb-3">💰</span>
-                    <p className="text-foreground font-semibold">No Budgets Set</p>
-                    <p className="text-muted-foreground text-sm text-center mt-1">
-                      Create budgets to see how you're tracking
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => navigate('/budget')}
-                    >
-                      Create Budget
-                    </Button>
-                  </motion.div>
-                )}
-                <SpendingByCategoryChart data={categoryData} />
-              </>
-            )}
-          </motion.section>
-
-          {/* Top Expenses Table */}
+          {/* Tabs for Overview vs Advanced */}
           <motion.section variants={itemVariants}>
-            {loading ? (
-              <Skeleton className="h-64 rounded-2xl" />
-            ) : (
-              <TopExpensesTable transactions={transactions} />
-            )}
+            <Tabs defaultValue="insights" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="insights">Insights</TabsTrigger>
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              </TabsList>
+
+              {/* Insights Tab */}
+              <TabsContent value="insights" className="space-y-6">
+                {loading ? (
+                  <>
+                    <Skeleton className="h-40 rounded-2xl" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {[...Array(3)].map((_, i) => (
+                        <Skeleton key={i} className="h-32 rounded-2xl" />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Insights Cards */}
+                    <InsightsCards insights={insights} />
+
+                    {/* Spending Patterns & Predictions */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <SpendingPatternsCard patterns={spendingPatterns} />
+                      <TrendPredictionChart prediction={trendPrediction} />
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6">
+                {loading ? (
+                  <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Skeleton className="h-80 rounded-2xl" />
+                      <Skeleton className="h-80 rounded-2xl" />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Skeleton className="h-80 rounded-2xl" />
+                      <Skeleton className="h-80 rounded-2xl" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Charts Row 1 - Category Breakdown & Monthly Trend */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <CategoryBreakdownChart data={categoryData} />
+                      <MonthlyTrendChart data={monthlyTrendData} />
+                    </div>
+
+                    {/* Charts Row 2 - Budget vs Actual & Spending by Category */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {budgetVsActualData.length > 0 ? (
+                        <BudgetVsActualChart data={budgetVsActualData} />
+                      ) : (
+                        <motion.div
+                          className="bg-card rounded-2xl p-6 shadow-card flex flex-col items-center justify-center h-80"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          <span className="text-5xl mb-3">💰</span>
+                          <p className="text-foreground font-semibold">No Budgets Set</p>
+                          <p className="text-muted-foreground text-sm text-center mt-1">
+                            Create budgets to see how you're tracking
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            className="mt-4"
+                            onClick={() => navigate('/budget')}
+                          >
+                            Create Budget
+                          </Button>
+                        </motion.div>
+                      )}
+                      <SpendingByCategoryChart data={categoryData} />
+                    </div>
+
+                    {/* Top Expenses Table */}
+                    <TopExpensesTable transactions={transactions} />
+                  </>
+                )}
+              </TabsContent>
+
+              {/* Advanced Tab */}
+              <TabsContent value="advanced" className="space-y-6">
+                {loading ? (
+                  <>
+                    <Skeleton className="h-80 rounded-2xl" />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Skeleton className="h-80 rounded-2xl" />
+                      <Skeleton className="h-80 rounded-2xl" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Comparison Charts */}
+                    <ComparisonCharts 
+                      monthComparison={monthComparison} 
+                      yearComparison={yearComparison} 
+                    />
+
+                    {/* Heat Map & Day of Week Analysis */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <SpendingHeatMap data={heatMapData} />
+                      <DayOfWeekChart data={dayOfWeekAnalysis} />
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
           </motion.section>
         </motion.main>
       </div>

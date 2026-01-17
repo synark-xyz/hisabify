@@ -231,6 +231,75 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_expenses: {
+        Row: {
+          amount: number
+          card_id: string | null
+          category_id: string | null
+          created_at: string
+          currency: string
+          frequency: string
+          id: string
+          is_active: boolean
+          last_created_date: string | null
+          next_due_date: string
+          note: string | null
+          start_date: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          card_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          currency?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_created_date?: string | null
+          next_due_date: string
+          note?: string | null
+          start_date?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          card_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          currency?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_created_date?: string | null
+          next_due_date?: string
+          note?: string | null
+          start_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number

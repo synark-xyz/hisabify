@@ -19,8 +19,13 @@ export type Database = {
           amount: number
           category_id: string | null
           created_at: string
+          end_date: string | null
           id: string
           month: number
+          name: string | null
+          period_type: string
+          start_date: string | null
+          updated_at: string
           user_id: string
           year: number
         }
@@ -28,8 +33,13 @@ export type Database = {
           amount: number
           category_id?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
           month: number
+          name?: string | null
+          period_type?: string
+          start_date?: string | null
+          updated_at?: string
           user_id: string
           year: number
         }
@@ -37,8 +47,13 @@ export type Database = {
           amount?: number
           category_id?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
           month?: number
+          name?: string | null
+          period_type?: string
+          start_date?: string | null
+          updated_at?: string
           user_id?: string
           year?: number
         }

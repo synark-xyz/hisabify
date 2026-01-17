@@ -15,6 +15,7 @@ import { CardsPage } from "@/pages/CardsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { AuthPage } from "@/pages/AuthPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
+import { BudgetPage } from "@/pages/BudgetPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -94,6 +95,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CardsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/budget"
+        element={
+          <ProtectedRoute>
+            <BudgetPage />
           </ProtectedRoute>
         }
       />

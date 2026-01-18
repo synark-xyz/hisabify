@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Header } from '@/components/Header';
-import { WeekCalendar } from '@/components/WeekCalendar';
+import { MonthCalendar } from '@/components/MonthCalendar';
 import { ExpenseOverview } from '@/components/ExpenseOverview';
 import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { TransactionItem } from '@/components/TransactionItem';
@@ -194,19 +194,15 @@ export function ExpensesPage() {
             </motion.button>
           </motion.div>
 
-          {/* Week Calendar */}
+          {/* Month Calendar */}
           <motion.div variants={itemVariants}>
-            <WeekCalendar
+            <MonthCalendar
               currentDate={currentDate}
               selectedDate={selectedDate}
               onDateSelect={handleDateSelect}
+              onMonthChange={setCurrentDate}
               hasTransactions={hasTransactions}
             />
-            {selectedDate && (
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Showing expenses for {format(selectedDate, 'MMM dd, yyyy')} • Tap again to see full month
-              </p>
-            )}
           </motion.div>
 
           {/* Summary Cards */}

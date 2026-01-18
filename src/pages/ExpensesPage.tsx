@@ -206,9 +206,8 @@ export function ExpensesPage() {
           {/* Summary Cards */}
           <motion.div variants={itemVariants}>
             <ExpenseOverview
-              totalSalary={totalIncome || 7000}
-              totalExpense={totalExpense || 0}
-              cardLast4="1965"
+              totalSalary={totalIncome}
+              totalExpense={totalExpense}
             />
           </motion.div>
 

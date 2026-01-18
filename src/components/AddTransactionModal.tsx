@@ -253,9 +253,7 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
   const simulateOCR = async () => {
     setScanning(true);
     await new Promise(resolve => setTimeout(resolve, 2000));
-    if (cards.length > 0) {
-      setCardId(cards[0].id);
-    }
+    // Don't auto-select card - let user choose manually
     setScanning(false);
     setUseCard(true);
     setStep('form');

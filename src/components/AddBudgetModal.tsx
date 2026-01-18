@@ -66,7 +66,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
       fetchCategories();
       if (editingBudget) {
         form.reset({
-          categoryId: editingBudget.category_id || '',
+          categoryId: editingBudget.category_id || 'all',
           amount: editingBudget.amount.toString(),
           periodType: editingBudget.period_type as PeriodType,
           startDate: editingBudget.start_date ? new Date(editingBudget.start_date) : startOfMonth(new Date()),
@@ -75,7 +75,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
         });
       } else {
         form.reset({
-          categoryId: '',
+          categoryId: 'all',
           amount: '',
           periodType: 'monthly',
           startDate: startOfMonth(new Date()),
@@ -144,7 +144,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
       if (editingBudget) {
         await updateBudget({
           id: editingBudget.id,
-          category_id: data.categoryId || null,
+          category_id: data.categoryId === 'all' ? null : (data.categoryId || null),
           amount: parseFloat(data.amount),
           period_type: data.periodType,
           start_date: data.startDate,
@@ -153,7 +153,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
         });
       } else {
         await createBudget({
-          category_id: data.categoryId || null,
+          category_id: data.categoryId === 'all' ? null : (data.categoryId || null),
           amount: parseFloat(data.amount),
           period_type: data.periodType,
           start_date: data.startDate,
@@ -208,7 +208,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {cat.name}

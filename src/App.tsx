@@ -18,6 +18,7 @@ import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { BudgetPage } from "@/pages/BudgetPage";
 import SavingsPage from "@/pages/SavingsPage";
 import ReportsPage from "@/pages/ReportsPage";
+import { InstallPage } from "@/pages/InstallPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -143,6 +144,10 @@ function AppRoutes() {
       <Route
         path="/reset-password"
         element={<ResetPasswordPage />}
+      />
+      <Route
+        path="/install"
+        element={<InstallPage />}
       />
       <Route path="*" element={<NotFound />} />
     </Routes>

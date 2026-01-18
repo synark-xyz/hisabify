@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Header } from '@/components/Header';
@@ -10,6 +10,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -42,7 +43,7 @@ export function ExpensesPage() {
     }
   }, [user, currentDate, currency, currencyVersion]);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (!user) return;
     
     const start = startOfMonth(currentDate).toISOString();
@@ -73,9 +74,9 @@ export function ExpensesPage() {
       );
       setTransactions(convertedData);
     }
-  };
+  }, [user, currentDate, currency, convertAmount]);
 
-  const fetchBudgets = async () => {
+  const fetchBudgets = useCallback(async () => {
     if (!user) return;
     
     const { data } = await supabase
@@ -86,7 +87,12 @@ export function ExpensesPage() {
       .eq('year', currentDate.getFullYear());
 
     if (data) setBudgets(data as unknown as Budget[]);
-  };
+  }, [user, currentDate]);
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([fetchTransactions(), fetchBudgets()]);
+  }, [fetchTransactions, fetchBudgets]);
 
   const hasTransactions = (date: Date) => {
     return transactions.some(tx => isSameDay(new Date(tx.date), date));
@@ -150,7 +156,7 @@ export function ExpensesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <PullToRefresh onRefresh={handleRefresh} className="min-h-screen bg-background pb-28">
       <div className="max-w-md mx-auto">
         <Header title="Expenses" />
 
@@ -301,6 +307,6 @@ export function ExpensesPage() {
         transaction={deletingTransaction}
         onSuccess={fetchTransactions}
       />
-    </div>
+    </PullToRefresh>
   );
 }

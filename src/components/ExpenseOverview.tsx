@@ -5,10 +5,9 @@ import { useCurrency } from '@/hooks/useCurrency';
 interface ExpenseOverviewProps {
   totalSalary: number;
   totalExpense: number;
-  cardLast4?: string;
 }
 
-export function ExpenseOverview({ totalSalary, totalExpense, cardLast4 = '1965' }: ExpenseOverviewProps) {
+export function ExpenseOverview({ totalSalary, totalExpense }: ExpenseOverviewProps) {
   const { formatAmount } = useCurrency();
   
   return (
@@ -44,13 +43,9 @@ export function ExpenseOverview({ totalSalary, totalExpense, cardLast4 = '1965' 
             {formatAmount(totalSalary)}
           </motion.p>
           
-          <div className="flex items-center gap-2 mt-3">
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-white/20 rounded-lg">
-              <CreditCard className="w-3 h-3 text-white/70" />
-              <span className="text-white/70 text-xs">Bank Account</span>
-            </div>
-          </div>
-          <p className="text-white/50 text-xs mt-1">•••• •••• {cardLast4}</p>
+          {totalSalary === 0 && (
+            <p className="text-white/60 text-xs mt-2">Add income transactions to track</p>
+          )}
         </div>
       </motion.div>
 
@@ -85,13 +80,9 @@ export function ExpenseOverview({ totalSalary, totalExpense, cardLast4 = '1965' 
             {formatAmount(totalExpense)}
           </motion.p>
           
-          <div className="flex items-center gap-2 mt-3">
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-white/20 rounded-lg">
-              <CreditCard className="w-3 h-3 text-white/70" />
-              <span className="text-white/70 text-xs">Bank Account</span>
-            </div>
-          </div>
-          <p className="text-white/50 text-xs mt-1">•••• •••• {cardLast4}</p>
+          {totalExpense === 0 && (
+            <p className="text-white/60 text-xs mt-2">No expenses this period</p>
+          )}
         </div>
       </motion.div>
     </div>

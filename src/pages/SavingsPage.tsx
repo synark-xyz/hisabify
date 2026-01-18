@@ -18,9 +18,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BottomNavigation } from "@/components/BottomNavigation";
+import { AddTransactionModal } from "@/components/AddTransactionModal";
 import { format } from "date-fns";
 
 export default function SavingsPage() {
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -178,6 +181,14 @@ export default function SavingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BottomNavigation onAddClick={() => setShowAddTransaction(true)} />
+      
+      <AddTransactionModal
+        open={showAddTransaction}
+        onOpenChange={setShowAddTransaction}
+        onSuccess={() => {}}
+      />
     </div>
   );
 }

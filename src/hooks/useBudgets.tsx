@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -55,6 +55,16 @@ export function useBudgets() {
   const { user } = useAuth();
   const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
+  
+  // Refs to prevent infinite loops and duplicate fetches
+  const isFetchingRef = useRef(false);
+  const lastFetchRef = useRef<number>(0);
+  const convertAmountRef = useRef(convertAmount);
+  
+  // Keep convertAmount ref up to date
+  useEffect(() => {
+    convertAmountRef.current = convertAmount;
+  }, [convertAmount]);
 
   const getPeriodDates = (periodType: PeriodType, startDate?: Date): { start: Date; end: Date } => {
     const now = startDate || new Date();
@@ -72,7 +82,15 @@ export function useBudgets() {
 
   const fetchBudgets = useCallback(async () => {
     if (!user) return;
-
+    
+    // Prevent duplicate fetches within 500ms
+    const now = Date.now();
+    if (isFetchingRef.current || (now - lastFetchRef.current) < 500) {
+      return;
+    }
+    
+    isFetchingRef.current = true;
+    lastFetchRef.current = now;
     setLoading(true);
     setError(null);
 
@@ -128,7 +146,7 @@ export function useBudgets() {
               if (storedCurrency === currency) {
                 spent += Number(t.amount);
               } else {
-                const result = await convertAmount(Number(t.amount), storedCurrency, currency);
+                const result = await convertAmountRef.current(Number(t.amount), storedCurrency, currency);
                 spent += result ? result.convertedAmount : Number(t.amount);
               }
             }
@@ -179,8 +197,9 @@ export function useBudgets() {
       setError('Failed to load budgets');
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [user, currency, convertAmount]);
+  }, [user, currency]);
 
   const createBudget = async (input: CreateBudgetInput): Promise<boolean> => {
     if (!user) return false;
@@ -321,7 +340,7 @@ export function useBudgets() {
             if (storedCurrency === currency) {
               spent += Number(t.amount);
             } else {
-              const result = await convertAmount(Number(t.amount), storedCurrency, currency);
+              const result = await convertAmountRef.current(Number(t.amount), storedCurrency, currency);
               spent += result ? result.convertedAmount : Number(t.amount);
             }
           }
@@ -381,9 +400,18 @@ export function useBudgets() {
     fetchBudgets();
   }, [fetchBudgets]);
 
-  // Subscribe to realtime updates
+  // Subscribe to realtime updates with debounce
   useEffect(() => {
     if (!user) return;
+
+    let debounceTimer: NodeJS.Timeout | null = null;
+    
+    const debouncedFetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchBudgets();
+      }, 1000);
+    };
 
     const channel = supabase
       .channel('budgets-changes')
@@ -395,9 +423,7 @@ export function useBudgets() {
           table: 'budgets',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
-          fetchBudgets();
-        }
+        debouncedFetch
       )
       .on(
         'postgres_changes',
@@ -407,13 +433,12 @@ export function useBudgets() {
           table: 'transactions',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
-          fetchBudgets();
-        }
+        debouncedFetch
       )
       .subscribe();
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [user, fetchBudgets]);

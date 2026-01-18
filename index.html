@@ -2,11 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Expense Tracker</title>
-    <meta name="description" content="Track your expenses and income with ease" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Hisabify - Expense Tracker</title>
+    <meta name="description" content="Track your expenses and income with ease using Hisabify" />
     <meta name="author" content="Lovable" />
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
     <!-- Permissions Policy for Camera and Location -->
     <meta http-equiv="Permissions-Policy" content="camera=*, geolocation=*" />
 
@@ -15,9 +18,24 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Hisabify" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/pwa-192x192.png" />
+    
+    <!-- Splash screens for iOS -->
+    <meta name="apple-mobile-web-app-title" content="Hisabify">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/pwa-192x192.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/pwa-192x192.png" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="Expense Tracker" />
+    <meta property="og:title" content="Hisabify - Expense Tracker" />
     <meta property="og:description" content="Track your expenses and income with ease" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
@@ -25,6 +43,20 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@Lovable" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Prevent text selection and callouts on iOS -->
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        -webkit-touch-callout: none;
+        overscroll-behavior-y: contain;
+      }
+      /* Safe area padding for notched devices */
+      .safe-top { padding-top: env(safe-area-inset-top); }
+      .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
   </head>
 
   <body>

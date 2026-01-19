@@ -11,7 +11,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem('theme') as Theme;
     return stored || 'dark';
   });
@@ -23,8 +23,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+  };
+
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setThemeState(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
   return (

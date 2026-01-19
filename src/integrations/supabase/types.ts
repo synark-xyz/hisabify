@@ -216,33 +216,51 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          budget_alerts_enabled: boolean
           created_at: string
           currency: string
+          date_format: string
           display_name: string | null
+          email_notifications_enabled: boolean
           id: string
           phone: string | null
+          push_notifications_enabled: boolean
+          theme: string
           updated_at: string
           user_id: string
+          week_start_day: string
         }
         Insert: {
           avatar_url?: string | null
+          budget_alerts_enabled?: boolean
           created_at?: string
           currency?: string
+          date_format?: string
           display_name?: string | null
+          email_notifications_enabled?: boolean
           id?: string
           phone?: string | null
+          push_notifications_enabled?: boolean
+          theme?: string
           updated_at?: string
           user_id: string
+          week_start_day?: string
         }
         Update: {
           avatar_url?: string | null
+          budget_alerts_enabled?: boolean
           created_at?: string
           currency?: string
+          date_format?: string
           display_name?: string | null
+          email_notifications_enabled?: boolean
           id?: string
           phone?: string | null
+          push_notifications_enabled?: boolean
+          theme?: string
           updated_at?: string
           user_id?: string
+          week_start_day?: string
         }
         Relationships: []
       }

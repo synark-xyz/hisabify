@@ -52,7 +52,7 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
   const [dateOpen, setDateOpen] = useState(false);
   const [convertedPreview, setConvertedPreview] = useState<{ amount: number; rate: number } | null>(null);
   const [scanning, setScanning] = useState(false);
-  
+
   const { user } = useAuth();
   const { toast } = useToast();
   const { currency } = useCurrency();
@@ -86,11 +86,11 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
   // Use the appropriate form based on type
   const form = type === 'expense' ? expenseForm : incomeForm;
   const currentForm = type === 'expense' ? expenseForm : incomeForm;
-  const watchedAmount = type === 'expense' 
-    ? expenseForm.watch('amount') 
+  const watchedAmount = type === 'expense'
+    ? expenseForm.watch('amount')
     : incomeForm.watch('amount');
-  const watchedCurrency = type === 'expense' 
-    ? expenseForm.watch('currency') 
+  const watchedCurrency = type === 'expense'
+    ? expenseForm.watch('currency')
     : incomeForm.watch('currency');
 
   useEffect(() => {
@@ -145,7 +145,7 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
 
       if (data.currency !== currency) {
         const conversionResult = await convertAmount(originalAmount, data.currency, currency);
-        
+
         if (conversionResult) {
           convertedAmount = conversionResult.convertedAmount;
           exchangeRate = conversionResult.rate;
@@ -177,18 +177,18 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
         receipt_url: receiptUrl,
       };
 
-      const transactionData = type === 'expense' 
+      const transactionData = type === 'expense'
         ? {
-            ...baseData,
-            category_id: (data as ExpenseFormData).categoryId,
-            card_id: cardId || null,
-          }
+          ...baseData,
+          category_id: (data as ExpenseFormData).categoryId,
+          card_id: cardId || null,
+        }
         : {
-            ...baseData,
-            category_id: null,
-            card_id: null,
-            note: (data as IncomeFormData).incomeSource,
-          };
+          ...baseData,
+          category_id: null,
+          card_id: null,
+          note: (data as IncomeFormData).incomeSource,
+        };
 
       const { error } = await supabase.from('transactions').insert(transactionData);
 
@@ -252,10 +252,26 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
 
   const simulateOCR = async () => {
     setScanning(true);
+    // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 2000));
-    // Don't auto-select card - let user choose manually
+
     setScanning(false);
     setUseCard(true);
+
+    // Auto-select first card if available to simulate detection
+    if (cards.length > 0) {
+      setCardId(cards[0].id);
+      toast({
+        title: "Card Detected",
+        description: `Recognized Visa ending in ${cards[0].card_number.slice(-4)}`,
+      });
+    } else {
+      toast({
+        title: "Card Detected",
+        description: "Please confirm your card details",
+      });
+    }
+
     setStep('form');
   };
 
@@ -437,7 +453,7 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
                         />
                       </FormControl>
                     </div>
-                    
+
                     {watchedCurrency !== currency && watchedAmount && (
                       <div className="mt-2 text-sm">
                         {rateLoading ? (

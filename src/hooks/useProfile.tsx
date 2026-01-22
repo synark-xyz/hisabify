@@ -7,6 +7,7 @@ interface Profile {
   phone: string | null;
   avatar_url: string | null;
   currency: string;
+  is_premium: boolean;
 }
 
 interface ProfileContextType {
@@ -27,6 +28,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     phone: null,
     avatar_url: null,
     currency: 'USD',
+    is_premium: false,
   });
 
   const refreshProfile = async () => {
@@ -36,6 +38,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         phone: null,
         avatar_url: null,
         currency: 'USD',
+        is_premium: false,
       });
       setLoading(false);
       return;
@@ -54,6 +57,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         phone: data.phone,
         avatar_url: data.avatar_url,
         currency: data.currency || 'USD',
+        is_premium: data.is_premium || false,
       });
     }
     setLoading(false);

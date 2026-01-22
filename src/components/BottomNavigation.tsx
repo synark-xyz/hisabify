@@ -1,11 +1,19 @@
 import { motion } from 'framer-motion';
-import { Home, List, Plus, PiggyBank, Wallet } from 'lucide-react';
+import { Home, List, Plus, HandCoins, Target } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface BottomNavigationProps {
   onAddClick: () => void;
 }
+
+const navItems = [
+  { path: '/', icon: Home, label: 'Home' },
+  { path: '/budget', icon: Target, label: 'Planner' },
+  null, // Placeholder for the center FAB
+  { path: '/savings', icon: HandCoins, label: 'Savings' },
+  { path: '/expenses', icon: List, label: 'Expenses' },
+];
 
 export function BottomNavigation({ onAddClick }: BottomNavigationProps) {
   const location = useLocation();
@@ -21,92 +29,48 @@ export function BottomNavigation({ onAddClick }: BottomNavigationProps) {
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
-      <div className="max-w-md mx-auto flex items-center justify-around pt-3 pb-2 px-4">
-        {/* Home */}
-        <motion.button
-          onClick={() => navigate('/')}
-          className={cn(
-            'relative flex flex-col items-center gap-1 p-2 rounded-xl transition-colors',
-            location.pathname === '/' ? 'text-accent' : 'text-muted-foreground'
-          )}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <Home className={cn('w-5 h-5', location.pathname === '/' && 'fill-accent')} />
-          {location.pathname === '/' && (
-            <motion.div
-              className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-accent"
-              layoutId="activeIndicator"
-            />
-          )}
-        </motion.button>
+      <div className="max-w-2xl mx-auto flex items-center justify-around pt-3 pb-2 px-4">
+        {navItems.map((item, index) => {
+          if (item === null) {
+            // Center FAB Button
+            return (
+              <motion.button
+                key="add-button"
+                onClick={onAddClick}
+                className="relative -mt-8 w-14 h-14 rounded-full shadow-fab bg-accent flex items-center justify-center"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Plus className="w-6 h-6 text-white" />
+              </motion.button>
+            );
+          }
 
-        {/* Budget */}
-        <motion.button
-          onClick={() => navigate('/budget')}
-          className={cn(
-            'relative flex flex-col items-center gap-1 p-2 rounded-xl transition-colors',
-            location.pathname === '/budget' ? 'text-accent' : 'text-muted-foreground'
-          )}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <Wallet className="w-5 h-5" />
-          {location.pathname === '/budget' && (
-            <motion.div
-              className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-accent"
-              layoutId="activeIndicator"
-            />
-          )}
-        </motion.button>
+          const isActive = location.pathname === item.path;
+          const Icon = item.icon;
 
-        {/* Add Button */}
-        <motion.button
-          onClick={onAddClick}
-          className="relative -mt-8 w-14 h-14 rounded-full shadow-fab bg-accent flex items-center justify-center"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Plus className="w-6 h-6 text-white" />
-        </motion.button>
-
-        {/* Savings */}
-        <motion.button
-          onClick={() => navigate('/savings')}
-          className={cn(
-            'relative flex flex-col items-center gap-1 p-2 rounded-xl transition-colors',
-            location.pathname === '/savings' ? 'text-accent' : 'text-muted-foreground'
-          )}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <PiggyBank className="w-5 h-5" />
-          {location.pathname === '/savings' && (
-            <motion.div
-              className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-accent"
-              layoutId="activeIndicator"
-            />
-          )}
-        </motion.button>
-
-        {/* Transactions */}
-        <motion.button
-          onClick={() => navigate('/expenses')}
-          className={cn(
-            'relative flex flex-col items-center gap-1 p-2 rounded-xl transition-colors',
-            location.pathname === '/expenses' ? 'text-accent' : 'text-muted-foreground'
-          )}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <List className="w-5 h-5" />
-          {location.pathname === '/expenses' && (
-            <motion.div
-              className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-accent"
-              layoutId="activeIndicator"
-            />
-          )}
-        </motion.button>
+          return (
+            <motion.button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className={cn(
+                'relative flex flex-col items-center gap-1 p-2 rounded-xl transition-colors min-w-[48px]',
+                isActive ? 'text-accent' : 'text-muted-foreground'
+              )}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Icon className={cn('w-5 h-5', isActive && item.path === '/' && 'fill-accent')} />
+              {isActive && (
+                <motion.div
+                  className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-accent"
+                  layoutId={`nav-indicator-${item.path}`}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+            </motion.button>
+          );
+        })}
       </div>
     </motion.nav>
   );

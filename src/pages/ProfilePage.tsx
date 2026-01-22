@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  User, Settings, Shield, HelpCircle, ChevronRight, 
+import {
+  User, Settings, Shield, HelpCircle, ChevronRight,
   Camera, Save, LogOut, Moon, Sun, Bell, Database,
   Download, Trash2, AlertTriangle, Monitor
 } from 'lucide-react';
@@ -15,9 +15,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -26,6 +26,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { PremiumGuard } from '@/components/PremiumGuard';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
@@ -37,7 +38,7 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [activeTab, setActiveTab] = useState('personal');
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -46,12 +47,12 @@ export function ProfilePage() {
     phone: profile.phone || '',
   });
   const [phoneError, setPhoneError] = useState('');
-  
+
   // Password change state
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
   const [passwordLoading, setPasswordLoading] = useState(false);
-  
+
   // Preferences state
   const [preferences, setPreferences] = useState({
     dateFormat: 'DD/MM/YYYY',
@@ -61,7 +62,7 @@ export function ProfilePage() {
     emailNotifications: true,
     pushNotifications: false,
   });
-  
+
   // Delete account state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -79,13 +80,13 @@ export function ProfilePage() {
   useEffect(() => {
     const loadPreferences = async () => {
       if (!user) return;
-      
+
       const { data } = await supabase
         .from('profiles')
         .select('date_format, week_start_day, theme, budget_alerts_enabled, email_notifications_enabled, push_notifications_enabled')
         .eq('user_id', user.id)
         .single();
-      
+
       if (data) {
         setPreferences({
           dateFormat: data.date_format || 'DD/MM/YYYY',
@@ -95,17 +96,17 @@ export function ProfilePage() {
           emailNotifications: data.email_notifications_enabled ?? true,
           pushNotifications: data.push_notifications_enabled ?? false,
         });
-        
+
         // Apply saved theme
         if (data.theme && data.theme !== 'system') {
           setTheme(data.theme as 'light' | 'dark');
         }
       }
     };
-    
+
     loadPreferences();
   }, [user, setTheme]);
-  
+
   // Validate phone number format
   const validatePhone = (phone: string): boolean => {
     if (!phone) return true;
@@ -120,18 +121,18 @@ export function ProfilePage() {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    
+
     if (!validatePhone(localProfile.phone)) {
       setPhoneError('Please enter a valid phone number');
       return;
     }
     setPhoneError('');
-    
+
     setLoading(true);
-    
+
     const sanitizedDisplayName = localProfile.display_name.trim().slice(0, 100);
     const sanitizedPhone = sanitizePhone(localProfile.phone);
-    
+
     const { error } = await supabase
       .from('profiles')
       .upsert({
@@ -187,18 +188,18 @@ export function ProfilePage() {
       toast({ title: 'Error', description: 'New passwords do not match', variant: 'destructive' });
       return;
     }
-    
+
     if (passwords.new.length < 6) {
       toast({ title: 'Error', description: 'Password must be at least 6 characters', variant: 'destructive' });
       return;
     }
-    
+
     setPasswordLoading(true);
-    
+
     const { error } = await supabase.auth.updateUser({
       password: passwords.new,
     });
-    
+
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -206,16 +207,16 @@ export function ProfilePage() {
       setShowPasswordChange(false);
       setPasswords({ current: '', new: '', confirm: '' });
     }
-    
+
     setPasswordLoading(false);
   };
 
   const handleSavePreferences = async (updatedPreferences: Partial<typeof preferences>) => {
     if (!user) return;
-    
+
     const newPreferences = { ...preferences, ...updatedPreferences };
     setPreferences(newPreferences);
-    
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -227,7 +228,7 @@ export function ProfilePage() {
         push_notifications_enabled: newPreferences.pushNotifications,
       })
       .eq('user_id', user.id);
-    
+
     if (error) {
       toast({ title: 'Error saving preferences', description: error.message, variant: 'destructive' });
     }
@@ -245,9 +246,9 @@ export function ProfilePage() {
 
   const handleExportAllData = async () => {
     if (!user) return;
-    
+
     setLoading(true);
-    
+
     try {
       // Fetch all user data
       const [transactionsRes, budgetsRes, cardsRes, savingsRes, remindersRes] = await Promise.all([
@@ -257,7 +258,7 @@ export function ProfilePage() {
         supabase.from('savings_goals').select('*').eq('user_id', user.id),
         supabase.from('payment_reminders').select('*').eq('user_id', user.id),
       ]);
-      
+
       const exportData = {
         exportDate: new Date().toISOString(),
         profile: { ...profile, email: user.email },
@@ -267,7 +268,7 @@ export function ProfilePage() {
         savingsGoals: savingsRes.data || [],
         paymentReminders: remindersRes.data || [],
       };
-      
+
       const jsonContent = JSON.stringify(exportData, null, 2);
       const blob = new Blob([jsonContent], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -279,20 +280,20 @@ export function ProfilePage() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
+
       toast({ title: 'Data exported successfully' });
     } catch (error) {
       toast({ title: 'Export failed', description: 'Could not export data', variant: 'destructive' });
     }
-    
+
     setLoading(false);
   };
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') return;
-    
+
     setDeleteLoading(true);
-    
+
     try {
       // Delete all user data
       await Promise.all([
@@ -304,7 +305,7 @@ export function ProfilePage() {
         supabase.from('recurring_expenses').delete().eq('user_id', user!.id),
         supabase.from('report_templates').delete().eq('user_id', user!.id),
       ]);
-      
+
       // Sign out (full account deletion would require admin action)
       await signOut();
       toast({ title: 'Account data deleted', description: 'Your data has been removed. Contact support to fully delete your account.' });
@@ -312,7 +313,7 @@ export function ProfilePage() {
     } catch (error) {
       toast({ title: 'Error', description: 'Could not delete account data', variant: 'destructive' });
     }
-    
+
     setDeleteLoading(false);
     setShowDeleteDialog(false);
   };
@@ -322,7 +323,7 @@ export function ProfilePage() {
       toast({ title: 'Not supported', description: 'Push notifications are not supported in this browser', variant: 'destructive' });
       return;
     }
-    
+
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       handleSavePreferences({ pushNotifications: true });
@@ -352,7 +353,7 @@ export function ProfilePage() {
 
         <main className="px-4 space-y-6">
           {/* Profile Card */}
-          <motion.div 
+          <motion.div
             className="bg-card rounded-2xl p-6 shadow-card text-center relative"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -385,7 +386,7 @@ export function ProfilePage() {
           </motion.div>
 
           {/* Tab Navigation */}
-          <motion.div 
+          <motion.div
             className="bg-card rounded-2xl shadow-card overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -429,9 +430,9 @@ export function ProfilePage() {
                     <Input
                       id="displayName"
                       value={localProfile.display_name}
-                      onChange={(e) => setLocalProfile(prev => ({ 
-                        ...prev, 
-                        display_name: e.target.value.slice(0, 100) 
+                      onChange={(e) => setLocalProfile(prev => ({
+                        ...prev,
+                        display_name: e.target.value.slice(0, 100)
                       }))}
                       disabled={!isEditing}
                       className="mt-1"
@@ -476,7 +477,7 @@ export function ProfilePage() {
 
                 {/* Change Password Section */}
                 <div className="pt-4 border-t border-border">
-                  <button 
+                  <button
                     onClick={() => setShowPasswordChange(!showPasswordChange)}
                     className="w-full flex items-center justify-between p-4 bg-muted rounded-xl hover:bg-muted/80 transition-colors"
                   >
@@ -489,9 +490,9 @@ export function ProfilePage() {
                     </div>
                     <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showPasswordChange ? 'rotate-90' : ''}`} />
                   </button>
-                  
+
                   {showPasswordChange && (
-                    <motion.div 
+                    <motion.div
                       className="mt-4 space-y-4"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
@@ -520,7 +521,7 @@ export function ProfilePage() {
                           minLength={6}
                         />
                       </div>
-                      <Button 
+                      <Button
                         onClick={handleChangePassword}
                         disabled={passwordLoading || !passwords.new || !passwords.confirm}
                         className="w-full"
@@ -585,21 +586,23 @@ export function ProfilePage() {
                       <p className="text-sm text-muted-foreground">Select your preferred currency</p>
                     </div>
                   </div>
-                  <Select value={currency} onValueChange={setCurrency}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(currencyData).map(([code, { symbol, name }]) => (
-                        <SelectItem key={code} value={code}>
-                          <span className="flex items-center gap-2">
-                            <span className="font-mono">{symbol}</span>
-                            <span>{name}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <PremiumGuard featureName="Multi-Currency">
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(currencyData).map(([code, { symbol, name }]) => (
+                          <SelectItem key={code} value={code}>
+                            <span className="flex items-center gap-2">
+                              <span className="font-mono">{symbol}</span>
+                              <span>{name}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </PremiumGuard>
                 </div>
 
                 {/* Date Format */}
@@ -610,8 +613,8 @@ export function ProfilePage() {
                       <p className="text-sm text-muted-foreground">How dates are displayed</p>
                     </div>
                   </div>
-                  <Select 
-                    value={preferences.dateFormat} 
+                  <Select
+                    value={preferences.dateFormat}
                     onValueChange={(v) => handleSavePreferences({ dateFormat: v })}
                   >
                     <SelectTrigger>
@@ -633,8 +636,8 @@ export function ProfilePage() {
                       <p className="text-sm text-muted-foreground">First day of the week</p>
                     </div>
                   </div>
-                  <Select 
-                    value={preferences.weekStartDay} 
+                  <Select
+                    value={preferences.weekStartDay}
                     onValueChange={(v) => handleSavePreferences({ weekStartDay: v })}
                   >
                     <SelectTrigger>
@@ -664,8 +667,8 @@ export function ProfilePage() {
                       <p className="text-sm text-muted-foreground">Notify when approaching budget limit</p>
                     </div>
                   </div>
-                  <Switch 
-                    checked={preferences.budgetAlerts} 
+                  <Switch
+                    checked={preferences.budgetAlerts}
                     onCheckedChange={(checked) => handleSavePreferences({ budgetAlerts: checked })}
                   />
                 </div>
@@ -681,8 +684,8 @@ export function ProfilePage() {
                       <p className="text-sm text-muted-foreground">Receive updates via email</p>
                     </div>
                   </div>
-                  <Switch 
-                    checked={preferences.emailNotifications} 
+                  <Switch
+                    checked={preferences.emailNotifications}
                     onCheckedChange={(checked) => handleSavePreferences({ emailNotifications: checked })}
                   />
                 </div>
@@ -698,8 +701,8 @@ export function ProfilePage() {
                       <p className="text-sm text-muted-foreground">Browser push notifications</p>
                     </div>
                   </div>
-                  <Switch 
-                    checked={preferences.pushNotifications} 
+                  <Switch
+                    checked={preferences.pushNotifications}
                     onCheckedChange={(checked) => {
                       if (checked) {
                         requestPushPermission();
@@ -716,7 +719,7 @@ export function ProfilePage() {
                 <h3 className="font-semibold text-foreground mb-4">Data Management</h3>
 
                 {/* Export Data */}
-                <button 
+                <button
                   onClick={handleExportAllData}
                   disabled={loading}
                   className="w-full flex items-center justify-between p-4 bg-muted rounded-xl hover:bg-muted/80 transition-colors"
@@ -748,7 +751,7 @@ export function ProfilePage() {
                 </button>
 
                 {/* Delete Account */}
-                <button 
+                <button
                   onClick={() => setShowDeleteDialog(true)}
                   className="w-full flex items-center justify-between p-4 bg-destructive/10 rounded-xl hover:bg-destructive/20 transition-colors"
                 >

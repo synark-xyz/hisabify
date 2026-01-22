@@ -213,7 +213,7 @@ export function ExpensesPage() {
   return (
     <div className="min-h-screen bg-background">
       <PullToRefresh onRefresh={handleRefresh} className="min-h-screen pb-28">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
           <Header title="Expenses" />
 
           <motion.main

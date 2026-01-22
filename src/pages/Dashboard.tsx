@@ -164,13 +164,13 @@ export function Dashboard() {
           }
           // Convert to current currency
           const result = await convertAmount(Number(t.amount), storedCurrency, currency);
-          return { 
-            ...t, 
-            convertedAmount: result ? result.convertedAmount : Number(t.amount) 
+          return {
+            ...t,
+            convertedAmount: result ? result.convertedAmount : Number(t.amount)
           };
         })
       );
-      
+
       const income = convertedData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.convertedAmount, 0);
       const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
       setTotalIncome(income);
@@ -186,7 +186,7 @@ export function Dashboard() {
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
       const currentMonthIndex = currentDate.getMonth();
-      
+
       // Show last 7 months of data
       let dataToShow: MonthlySpending[];
       if (selectedYear === currentYear) {
@@ -200,14 +200,14 @@ export function Dashboard() {
         // For future years, show first 7 months
         dataToShow = yearData.slice(0, 7);
       }
-      
+
       // Merge with actual transaction data if available
       const mergedData = dataToShow.map(sample => {
         const monthTransactions = transactions.filter(t => {
           const txDate = new Date(t.date);
-          return format(txDate, 'MMM') === sample.month && 
-                 txDate.getFullYear() === selectedYear &&
-                 t.type === 'expense';
+          return format(txDate, 'MMM') === sample.month &&
+            txDate.getFullYear() === selectedYear &&
+            t.type === 'expense';
         });
         const actualAmount = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
         return {
@@ -215,7 +215,7 @@ export function Dashboard() {
           amount: actualAmount > 0 ? actualAmount : sample.amount,
         };
       });
-      
+
       setMonthlyData(mergedData);
     }
   };
@@ -263,7 +263,7 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
         <Header title="Home" />
 
         <motion.main
@@ -329,8 +329,8 @@ export function Dashboard() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <EnhancedAnalyticsChart 
-              data={monthlyData} 
+            <EnhancedAnalyticsChart
+              data={monthlyData}
               selectedMonth={selectedMonth}
               onMonthSelect={handleMonthSelect}
             />
@@ -352,7 +352,7 @@ export function Dashboard() {
                 {formatAmount(totalIncome)}
               </p>
             </motion.div>
-            
+
             <motion.div
               className="p-4 bg-card rounded-2xl shadow-card"
               whileHover={{ scale: 1.02 }}
@@ -386,9 +386,9 @@ export function Dashboard() {
               <AnimatePresence mode="popLayout">
                 {transactions.length > 0 ? (
                   transactions.map((tx, index) => (
-                    <TransactionItem 
-                      key={tx.id} 
-                      transaction={tx} 
+                    <TransactionItem
+                      key={tx.id}
+                      transaction={tx}
                       index={index}
                       onEdit={setEditingTransaction}
                       onDelete={setDeletingTransaction}

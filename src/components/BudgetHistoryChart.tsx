@@ -19,7 +19,7 @@ export function BudgetHistoryChart() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [categories, setCategories] = useState<Category[]>([]);
-  
+
   const { getHistoricalBudgets } = useBudgets();
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
@@ -79,8 +79,7 @@ export function BudgetHistoryChart() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle className="text-lg font-semibold">Budget vs Spending History</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-end space-y-0 pb-2">
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select category" />
@@ -100,30 +99,30 @@ export function BudgetHistoryChart() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis 
-                dataKey="month" 
+              <XAxis
+                dataKey="month"
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
-              <YAxis 
+              <YAxis
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
-                tickFormatter={(value) => `${currencySymbol}${value >= 1000 ? `${(value/1000).toFixed(0)}k` : value}`}
+                tickFormatter={(value) => `${currencySymbol}${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend 
+              <Legend
                 wrapperStyle={{ paddingTop: '20px' }}
                 formatter={(value) => <span className="text-foreground">{value === 'budget' ? 'Budget' : 'Spent'}</span>}
               />
-              <Bar 
-                dataKey="budget" 
-                fill="hsl(var(--muted-foreground))" 
+              <Bar
+                dataKey="budget"
+                fill="hsl(var(--muted-foreground))"
                 radius={[4, 4, 0, 0]}
                 name="budget"
               />
-              <Bar 
-                dataKey="spent" 
-                fill="hsl(var(--primary))" 
+              <Bar
+                dataKey="spent"
+                fill="hsl(var(--primary))"
                 radius={[4, 4, 0, 0]}
                 name="spent"
               />

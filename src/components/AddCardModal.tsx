@@ -78,7 +78,7 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
     try {
       // SECURITY: Only store masked card number (last 4 digits)
       const maskedNumber = getMaskedCardNumber(cleaned);
-      
+
       const { error } = await supabase.from('cards').insert({
         user_id: user.id,
         card_number: maskedNumber, // Only last 4 digits stored
@@ -113,15 +113,22 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
   const handleScan = async () => {
     setStep('scan');
     setLoading(true);
-    
+
     // Simulate OCR processing
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     // Mock detected values
     setCardNumber('4532 1234 5678 9012');
     setCardHolder('JOHN DOE');
     setExpiryDate('12/26');
+    setSaveCard(true); // Default to saving
     setLoading(false);
+
+    toast({
+      title: "Card Scanned Successfully",
+      description: "Details have been filled automatically.",
+    });
+
     setStep('manual');
   };
 
@@ -236,9 +243,8 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
                       <button
                         key={color}
                         onClick={() => setCardColor(color)}
-                        className={`w-8 h-8 rounded-full card-gradient-${color} ring-2 ring-offset-2 transition-all ${
-                          cardColor === color ? 'ring-foreground' : 'ring-transparent'
-                        }`}
+                        className={`w-8 h-8 rounded-full card-gradient-${color} ring-2 ring-offset-2 transition-all ${cardColor === color ? 'ring-foreground' : 'ring-transparent'
+                          }`}
                       />
                     ))}
                   </div>

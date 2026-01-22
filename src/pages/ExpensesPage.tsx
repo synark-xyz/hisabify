@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Header } from '@/components/Header';
 import { MonthCalendar } from '@/components/MonthCalendar';
+import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
 import { ExpenseOverview } from '@/components/ExpenseOverview';
 import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { TransactionItem } from '@/components/TransactionItem';
@@ -16,7 +18,16 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, Budget, CategorySpending } from '@/types';
-import { format, startOfMonth, endOfMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  format, startOfMonth, endOfMonth, isSameDay, isSameMonth, addMonths, subMonths,
+  startOfWeek, endOfWeek, addWeeks, subWeeks, setYear, setMonth
+} from 'date-fns';
 
 interface ConvertedTransaction extends Transaction {
   convertedAmount: number;
@@ -25,6 +36,7 @@ interface ConvertedTransaction extends Transaction {
 export function ExpensesPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -41,20 +53,31 @@ export function ExpensesPage() {
       fetchTransactions();
       fetchBudgets();
     }
-  }, [user, currentDate, currency, currencyVersion]);
+  }, [user, currentDate, viewMode, currency, currencyVersion]);
 
   const fetchTransactions = useCallback(async () => {
     if (!user) return;
-    
-    const start = startOfMonth(currentDate).toISOString();
-    const end = endOfMonth(currentDate).toISOString();
-    
+
+    // Determine fetch range based on view mode (add buffer)
+    let start, end;
+    if (viewMode === 'week') {
+      start = startOfWeek(currentDate, { weekStartsOn: 1 }).toISOString();
+      end = endOfWeek(currentDate, { weekStartsOn: 1 }).toISOString();
+    } else {
+      start = startOfMonth(currentDate).toISOString();
+      end = endOfMonth(currentDate).toISOString();
+    }
+
+    // Safe buffer to handle edge cases
+    const bufferStart = viewMode === 'week' ? subWeeks(new Date(start), 1).toISOString() : start;
+    const bufferEnd = viewMode === 'week' ? addWeeks(new Date(end), 1).toISOString() : end;
+
     const { data } = await supabase
       .from('transactions')
       .select('*, category:categories(*)')
       .eq('user_id', user.id)
-      .gte('date', start)
-      .lte('date', end)
+      .gte('date', bufferStart)
+      .lte('date', bufferEnd)
       .order('date', { ascending: false });
 
     if (data) {
@@ -66,19 +89,19 @@ export function ExpensesPage() {
             return { ...tx, convertedAmount: Number(tx.amount) };
           }
           const result = await convertAmount(Number(tx.amount), storedCurrency, currency);
-          return { 
-            ...tx, 
-            convertedAmount: result ? result.convertedAmount : Number(tx.amount) 
+          return {
+            ...tx,
+            convertedAmount: result ? result.convertedAmount : Number(tx.amount)
           };
         })
       );
       setTransactions(convertedData);
     }
-  }, [user, currentDate, currency, convertAmount]);
+  }, [user, currentDate, viewMode, currency, convertAmount]);
 
   const fetchBudgets = useCallback(async () => {
     if (!user) return;
-    
+
     const { data } = await supabase
       .from('budgets')
       .select('*, category:categories(*)')
@@ -89,7 +112,6 @@ export function ExpensesPage() {
     if (data) setBudgets(data as unknown as Budget[]);
   }, [user, currentDate]);
 
-  // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
     await Promise.all([fetchTransactions(), fetchBudgets()]);
   }, [fetchTransactions, fetchBudgets]);
@@ -98,27 +120,42 @@ export function ExpensesPage() {
     return transactions.some(tx => isSameDay(new Date(tx.date), date));
   };
 
-  // Filter transactions based on selected date (if selected, filter by that date; otherwise show all month)
-  const filteredTransactions = selectedDate
-    ? transactions.filter(tx => isSameDay(new Date(tx.date), selectedDate))
-    : transactions;
+  // Determine the date range for the current view
+  const viewStart = viewMode === 'week'
+    ? startOfWeek(currentDate, { weekStartsOn: 1 })
+    : startOfMonth(currentDate);
 
-  const totalIncome = filteredTransactions
+  const viewEnd = viewMode === 'week'
+    ? endOfWeek(currentDate, { weekStartsOn: 1 })
+    : endOfMonth(currentDate);
+
+  // Filter transactions for the current VIEW range (for stats)
+  const rangeTransactions = transactions.filter(tx => {
+    const txDate = new Date(tx.date);
+    return txDate >= viewStart && txDate <= viewEnd;
+  });
+
+  // Filter transactions for the LIST (specific date if selected, otherwise whole range)
+  const listTransactions = selectedDate
+    ? transactions.filter(tx => isSameDay(new Date(tx.date), selectedDate))
+    : rangeTransactions;
+
+  const totalIncome = rangeTransactions
     .filter(tx => tx.type === 'income')
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
-  const totalExpense = filteredTransactions
+  const totalExpense = rangeTransactions
     .filter(tx => tx.type === 'expense')
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
-  // Prepare data for donut chart - based on filtered transactions with converted amounts
+  // Category data for charts (based on range)
   const categoryData: CategorySpending[] = Object.values(
-    filteredTransactions
+    rangeTransactions
       .filter(tx => tx.type === 'expense')
       .reduce((acc, tx) => {
         const catName = tx.category?.name || 'Other';
         const catColor = tx.category?.color || '#6B7280';
-        
+
         if (!acc[catName]) {
           acc[catName] = { category: catName, amount: 0, color: catColor, percentage: 0 };
         }
@@ -130,15 +167,33 @@ export function ExpensesPage() {
     percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
   }));
 
-  // Get expense transactions only - based on filtered transactions
-  const expenseTransactions = filteredTransactions.filter(tx => tx.type === 'expense');
+  const expenseTransactions = listTransactions.filter(tx => tx.type === 'expense');
 
-  // Handle date selection - toggle selection
   const handleDateSelect = (date: Date) => {
     if (selectedDate && isSameDay(date, selectedDate)) {
-      setSelectedDate(null); // Deselect if clicking same date
+      setSelectedDate(null);
     } else {
       setSelectedDate(date);
+      // Sync the view (month/year) if the selected date is in a different month
+      if (!isSameMonth(date, currentDate)) {
+        setCurrentDate(date);
+      }
+    }
+  };
+
+  const handleWeekChange = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentDate(prev => subWeeks(prev, 1));
+    } else {
+      setCurrentDate(prev => addWeeks(prev, 1));
+    }
+  };
+
+  const handleMonthChange = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentDate(prev => subMonths(prev, 1));
+    } else {
+      setCurrentDate(prev => addMonths(prev, 1));
     }
   };
 
@@ -156,131 +211,256 @@ export function ExpensesPage() {
   };
 
   return (
-    <PullToRefresh onRefresh={handleRefresh} className="min-h-screen bg-background pb-28">
-      <div className="max-w-md mx-auto">
-        <Header title="Expenses" />
+    <div className="min-h-screen bg-background">
+      <PullToRefresh onRefresh={handleRefresh} className="min-h-screen pb-28">
+        <div className="max-w-md mx-auto">
+          <Header title="Expenses" />
 
-        <motion.main
-          className="px-4 space-y-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Month Selector */}
-          <motion.div variants={itemVariants} className="flex items-center justify-between">
-            <motion.button
-              onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-              className="p-2.5 hover:bg-muted rounded-full transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </motion.button>
-            <motion.h3
-              className="text-lg font-bold text-foreground"
-              key={format(currentDate, 'MMMM yyyy')}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              {format(currentDate, 'MMMM yyyy')}
-            </motion.h3>
-            <motion.button
-              onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-              className="p-2.5 hover:bg-muted rounded-full transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </motion.button>
-          </motion.div>
-
-          {/* Month Calendar */}
-          <motion.div variants={itemVariants}>
-            <MonthCalendar
-              currentDate={currentDate}
-              selectedDate={selectedDate}
-              onDateSelect={handleDateSelect}
-              onMonthChange={setCurrentDate}
-              hasTransactions={hasTransactions}
-            />
-          </motion.div>
-
-          {/* Summary Cards */}
-          <motion.div variants={itemVariants}>
-            <ExpenseOverview
-              totalSalary={totalIncome}
-              totalExpense={totalExpense}
-            />
-          </motion.div>
-
-          {/* Expense Analytics with Pie Chart */}
-          <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">Expense Analytics</h2>
-              <motion.button
-                onClick={() => setShowAllExpenses(!showAllExpenses)}
-                className="text-sm text-muted-foreground hover:text-accent transition-colors"
-                whileHover={{ x: 4 }}
-              >
-                {showAllExpenses ? 'Show Chart' : 'View All'}
-              </motion.button>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {showAllExpenses ? (
-                <motion.div
-                  key="expense-list"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-3"
+          <motion.main
+            className="px-4 space-y-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Calendar Controls */}
+            <motion.div variants={itemVariants} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <motion.button
+                  onClick={() => handleMonthChange('prev')}
+                  className="p-2.5 hover:bg-muted rounded-full transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                 >
-                  {expenseTransactions.length > 0 ? (
-                    expenseTransactions.map((tx, index) => (
-                      <motion.div
-                        key={tx.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                      <TransactionItem 
-                        transaction={tx} 
-                        onEdit={setEditingTransaction}
-                        onDelete={setDeletingTransaction}
-                        revealedId={revealedTransactionId}
-                        onReveal={setRevealedTransactionId}
-                      />
-                      </motion.div>
-                    ))
-                  ) : (
-                    <div className="bg-card rounded-2xl p-8 text-center shadow-card">
-                      <span className="text-5xl">💸</span>
-                      <p className="text-muted-foreground mt-3">No expenses this month</p>
-                    </div>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="pie-chart"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
+                  <ChevronLeft className="w-5 h-5" />
+                </motion.button>
+
+                <div className="flex flex-col items-center gap-3">
+                  {/* Date Selectors */}
+                  <div className="flex flex-col items-center -space-y-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <motion.button
+                          className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-accent/10 transition-colors"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <span className="text-sm font-semibold text-muted-foreground">
+                            {format(currentDate, 'yyyy')}
+                          </span>
+                          <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                        </motion.button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="center">
+                        {[2023, 2024, 2025, 2026].map((year) => (
+                          <DropdownMenuItem
+                            key={year}
+                            onClick={() => setCurrentDate(setYear(currentDate, year))}
+                            className={currentDate.getFullYear() === year ? 'bg-accent/10' : ''}
+                          >
+                            {year}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <motion.button
+                          className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-accent/10 transition-colors"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <span className="text-xl font-bold text-foreground">
+                            {format(currentDate, 'MMMM')}
+                          </span>
+                          <ChevronDown className="w-4 h-4 text-foreground" />
+                        </motion.button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="center" className="max-h-[300px] overflow-y-auto">
+                        {Array.from({ length: 12 }, (_, i) => i).map((monthIndex) => {
+                          const date = setMonth(new Date(), monthIndex);
+                          return (
+                            <DropdownMenuItem
+                              key={monthIndex}
+                              onClick={() => setCurrentDate(setMonth(currentDate, monthIndex))}
+                              className={currentDate.getMonth() === monthIndex ? 'bg-accent/10' : ''}
+                            >
+                              {format(date, 'MMMM')}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* View Toggle */}
+                  <div className="flex p-1 bg-muted rounded-full">
+                    <button
+                      onClick={() => setViewMode('week')}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        viewMode === 'week'
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Weekly
+                    </button>
+                    <button
+                      onClick={() => setViewMode('month')}
+                      className={cn(
+                        "px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        viewMode === 'month'
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Monthly
+                    </button>
+                  </div>
+                </div>
+
+                <motion.button
+                  onClick={() => handleMonthChange('next')}
+                  className="p-2.5 hover:bg-muted rounded-full transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                 >
-                  {categoryData.length > 0 ? (
-                    <ExpenseDonutChart data={categoryData} />
-                  ) : (
-                    <div className="bg-card rounded-2xl p-8 text-center shadow-card">
-                      <span className="text-5xl">📊</span>
-                      <p className="text-muted-foreground mt-3">No expense data yet</p>
-                      <p className="text-sm text-muted-foreground/70 mt-1">Add transactions to see analytics</p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.section>
-        </motion.main>
-      </div>
+                  <ChevronRight className="w-5 h-5" />
+                </motion.button>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {viewMode === 'week' ? (
+                  <motion.div
+                    key="week-calendar"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    <SwipeableWeekCalendar
+                      currentDate={currentDate}
+                      selectedDate={selectedDate}
+                      onDateSelect={handleDateSelect}
+                      onWeekChange={handleWeekChange}
+                      hasTransactions={hasTransactions}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="month-calendar"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                  >
+                    <MonthCalendar
+                      currentDate={currentDate}
+                      selectedDate={selectedDate}
+                      onDateSelect={handleDateSelect}
+                      onMonthChange={setCurrentDate}
+                      hasTransactions={hasTransactions}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Summary Cards */}
+            <motion.div variants={itemVariants}>
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {selectedDate
+                    ? 'Daily Overview'
+                    : viewMode === 'week' ? 'Weekly Overview' : 'Monthly Overview'}
+                </span>
+                {selectedDate && (
+                  <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full">
+                    {format(selectedDate, 'MMM d')}
+                  </span>
+                )}
+              </div>
+              <ExpenseOverview
+                totalSalary={totalIncome}
+                totalExpense={totalExpense}
+              />
+            </motion.div>
+
+            {/* Expense Analytics with Pie Chart */}
+            <motion.section variants={itemVariants}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-foreground">
+                  {selectedDate
+                    ? 'Daily Analytics'
+                    : viewMode === 'week' ? 'Weekly Analytics' : 'Monthly Analytics'}
+                </h2>
+                <motion.button
+                  onClick={() => setShowAllExpenses(!showAllExpenses)}
+                  className="text-sm text-muted-foreground hover:text-accent transition-colors"
+                  whileHover={{ x: 4 }}
+                >
+                  {showAllExpenses ? 'Show Chart' : 'View All'}
+                </motion.button>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {showAllExpenses ? (
+                  <motion.div
+                    key="expense-list"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-3"
+                  >
+                    {expenseTransactions.length > 0 ? (
+                      expenseTransactions.map((tx, index) => (
+                        <motion.div
+                          key={tx.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <TransactionItem
+                            transaction={tx}
+                            onEdit={setEditingTransaction}
+                            onDelete={setDeletingTransaction}
+                            revealedId={revealedTransactionId}
+                            onReveal={setRevealedTransactionId}
+                          />
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="bg-card rounded-2xl p-8 text-center shadow-card">
+                        <span className="text-5xl">💸</span>
+                        <p className="text-muted-foreground mt-3">No expenses found</p>
+                        <p className="text-sm text-muted-foreground/70 mt-1">
+                          {selectedDate ? 'Try selecting a different date' : 'No expenses in this period'}
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="pie-chart"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                  >
+                    {categoryData.length > 0 ? (
+                      <ExpenseDonutChart data={categoryData} />
+                    ) : (
+                      <div className="bg-card rounded-2xl p-8 text-center shadow-card">
+                        <span className="text-5xl">📊</span>
+                        <p className="text-muted-foreground mt-3">No data to visualize</p>
+                        <p className="text-sm text-muted-foreground/70 mt-1">Add transactions to see analytics</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.section>
+          </motion.main>
+        </div>
+      </PullToRefresh>
 
       <BottomNavigation onAddClick={() => setShowAddTransaction(true)} />
 
@@ -303,6 +483,6 @@ export function ExpensesPage() {
         transaction={deletingTransaction}
         onSuccess={fetchTransactions}
       />
-    </PullToRefresh>
+    </div >
   );
 }

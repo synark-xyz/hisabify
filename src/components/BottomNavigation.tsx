@@ -15,7 +15,7 @@ export function BottomNavigation({ onAddClick }: BottomNavigationProps) {
     <motion.nav
       className="fixed bottom-0 left-0 right-0 z-50 glass bg-card/95 backdrop-blur-xl border-t border-border/50"
       style={{
-        paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
       initial={{ y: 100 }}
       animate={{ y: 0 }}

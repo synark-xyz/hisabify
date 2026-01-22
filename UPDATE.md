@@ -1,5 +1,27 @@
 # UPDATE.md
 
+## Recent Changes (January 23, 2026)
+
+### 1. **Expenses Page Overhaul**
+**Status:** ✅ Complete  
+**Location:** `src/pages/ExpensesPage.tsx`
+
+#### What Was Added:
+- **Dual View Calendar System**: Seamlessly switch between a compact week strip and a full month calendar.
+- **Segmented View Control**: New "Weekly / Monthly" toggle tab for clear view management.
+- **Smart Date Navigation**: Interactive Year and Month dropdowns replaced static headers.
+- **Context-Aware Analytics**: Stats headers dynamically update to "Daily", "Weekly", or "Monthly" based on user selection.
+- **Swipeable Week View**: New `SwipeableWeekCalendar` component allows gesture-based week navigation.
+
+#### Features:
+- **Auto-Synchronization**: Selecting a date in a different month automatically switches the view context.
+- **Improved UX**: 
+  - Fixed bottom navigation "floating" bug.
+  - Decoupled navigation/modals from scroll container for better stability.
+  - "Daily Overview" mode triggers automatically when a specific date is selected.
+
+---
+
 ## Recent Changes (January 22, 2026)
 
 This document tracks the latest updates to the Hisabify application and outlines the roadmap for future enhancements.

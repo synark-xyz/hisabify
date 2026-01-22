@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { loginRateLimiter, isValidEmail, validatePasswordStrength, addAuthDelay } from '@/lib/security';
+import { logger } from '@/lib/logger';
 
 interface AuthContextType {
   user: User | null;
@@ -35,22 +37,89 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: redirectUrl }
-    });
-    return { error };
+    try {
+      // Validate email format
+      if (!isValidEmail(email)) {
+        return { error: new Error('Invalid email format') };
+      }
+
+      // Validate password strength
+      const passwordError = validatePasswordStrength(password);
+      if (passwordError) {
+        return { error: new Error(passwordError) };
+      }
+
+      // Check rate limit
+      if (!loginRateLimiter.isAllowed(`signup:${email}`)) {
+        const resetTime = loginRateLimiter.getResetTime(`signup:${email}`);
+        logger.warn('Sign up rate limit exceeded', { email });
+        return { 
+          error: new Error(`Too many sign up attempts. Please try again in ${resetTime} seconds.`) 
+        };
+      }
+
+      const redirectUrl = `${window.location.origin}/`;
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: redirectUrl }
+      });
+
+      if (error) {
+        logger.error(error, { action: 'signUp', email });
+      } else {
+        logger.info('User signed up successfully', { email });
+        loginRateLimiter.reset(`signup:${email}`);
+      }
+
+      await addAuthDelay();
+      return { error };
+    } catch (error) {
+      logger.error(error, { action: 'signUp' });
+      return { error: error as Error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      // Validate email format
+      if (!isValidEmail(email)) {
+        return { error: new Error('Invalid email format') };
+      }
+
+      // Check rate limit
+      if (!loginRateLimiter.isAllowed(`signin:${email}`)) {
+        const resetTime = loginRateLimiter.getResetTime(`signin:${email}`);
+        logger.warn('Sign in rate limit exceeded', { email });
+        return { 
+          error: new Error(`Too many login attempts. Please try again in ${resetTime} seconds.`) 
+        };
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        logger.error(error, { action: 'signIn', email });
+      } else {
+        logger.info('User signed in successfully', { email });
+        loginRateLimiter.reset(`signin:${email}`);
+      }
+
+      await addAuthDelay();
+      return { error };
+    } catch (error) {
+      logger.error(error, { action: 'signIn' });
+      return { error: error as Error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+      logger.info('User signed out successfully');
+    } catch (error) {
+      logger.error(error, { action: 'signOut' });
+    }
   };
 
   return (

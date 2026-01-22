@@ -13,12 +13,15 @@ export function BottomNavigation({ onAddClick }: BottomNavigationProps) {
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50 glass bg-card/80 border-t border-border/50 safe-bottom"
+      className="fixed bottom-0 left-0 right-0 z-50 glass bg-card/95 backdrop-blur-xl border-t border-border/50"
+      style={{
+        paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)',
+      }}
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
-      <div className="max-w-md mx-auto flex items-center justify-around h-20 px-4">
+      <div className="max-w-md mx-auto flex items-center justify-around pt-3 pb-2 px-4">
         {/* Home */}
         <motion.button
           onClick={() => navigate('/')}

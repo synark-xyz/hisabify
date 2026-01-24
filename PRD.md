@@ -40,6 +40,7 @@
 	- Add / edit / delete card or account
 	- Card metadata (nickname, type, last4)
 	- Card grouping/tagging
+	- Add more than one card (premium) **[PREMIUM]**
 	- Import cards via CSV (premium) **[PREMIUM]**
 
 - **Transactions**
@@ -53,7 +54,16 @@
 - **Budgets & Goals**
 	- Create monthly budgets per category
 	- Track progress vs budget
+	- Create monthly budgets per category
+	- Track progress vs budget
+	- Create savings goals (single goal free)
+	- More than one savings goal (premium) **[PREMIUM]**
 	- Alerts when nearing or exceeding budget (push/email) **[PREMIUM]**
+
+
+ - **Planner**
+	- Create a financial plan (one active plan free)
+	- Create more than one plan (premium) **[PREMIUM]**
 
 - **Payment Reminders & Bills**
 	- Create recurring reminders (daily/weekly/monthly)

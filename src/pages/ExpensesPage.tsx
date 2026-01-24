@@ -157,7 +157,7 @@ export function ExpensesPage() {
         const catColor = tx.category?.color || '#6B7280';
 
         if (!acc[catName]) {
-          acc[catName] = { category: catName, amount: 0, color: catColor, percentage: 0 };
+          acc[catName] = { name: catName, amount: 0, color: catColor, percentage: 0 };
         }
         acc[catName].amount += tx.convertedAmount;
         return acc;
@@ -212,7 +212,7 @@ export function ExpensesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PullToRefresh onRefresh={handleRefresh} className="min-h-screen pb-28">
+      <PullToRefresh onRefresh={handleRefresh} className="min-h-screen pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
           <Header title="Expenses" />
 
@@ -462,7 +462,10 @@ export function ExpensesPage() {
         </div>
       </PullToRefresh>
 
-      <BottomNavigation onAddClick={() => setShowAddTransaction(true)} />
+      <BottomNavigation
+        onAddTransaction={() => setShowAddTransaction(true)}
+        onAddReminder={() => { }} // Could navigate or open reminder modal if needed
+      />
 
       <AddTransactionModal
         open={showAddTransaction}

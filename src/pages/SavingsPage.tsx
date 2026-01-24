@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Plus, HandCoins, Sparkles } from "lucide-react";
+import { Plus, HandCoins, Sparkles, ChevronRight } from "lucide-react";
 import { useSavingsGoals, SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradeModal } from "@/components/UpgradeModal";
 import {
   SavingsGoalCard,
   AddSavingsGoalModal,
@@ -21,14 +23,20 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { AddTransactionModal } from "@/components/AddTransactionModal";
+import { AddPaymentReminderModal } from "@/components/AddPaymentReminderModal";
 import { format } from "date-fns";
 import { Header } from "@/components/Header";
 
 export default function SavingsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [showAddReminder, setShowAddReminder] = useState(false);
+  const [transactionType, setTransactionType] = useState<'expense' | 'income' | 'lend' | 'owe' | undefined>(undefined);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const { isPremium } = useSubscription();
 
   const {
     goals,
@@ -41,6 +49,14 @@ export default function SavingsPage() {
     totalTarget,
     completedGoals,
   } = useSavingsGoals();
+
+  const handleAddGoal = () => {
+    if (!isPremium && goals.length >= 1) {
+      setShowUpgradeModal(true);
+    } else {
+      setShowAddModal(true);
+    }
+  };
 
   const handleSubmit = (data: {
     name: string;
@@ -122,7 +138,7 @@ export default function SavingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="pb-28">
+      <div className="pb-page-content fade-bottom-overlay">
         <Header title="Savings" />
 
         <motion.main
@@ -166,9 +182,28 @@ export default function SavingsPage() {
             />
           </motion.div>
 
+          {!isPremium && (
+            <motion.div
+              variants={itemVariants}
+              onClick={() => setShowUpgradeModal(true)}
+              className="bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-purple-500/20 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-purple-600/5 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Unlimited Savings Goals</p>
+                  <p className="text-xs text-muted-foreground">Upgrade to Pro to create more than one goal</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </motion.div>
+          )}
+
           <motion.div variants={itemVariants} className="flex items-center justify-between pt-2">
             <h2 className="text-lg font-semibold">My Goals</h2>
-            <Button onClick={() => setShowAddModal(true)} size="sm">
+            <Button onClick={handleAddGoal} size="sm">
               <Plus className="mr-2 h-4 w-4" />
               New Goal
             </Button>
@@ -183,7 +218,7 @@ export default function SavingsPage() {
               <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
                 Start building your future by creating your first savings goal today.
               </p>
-              <Button onClick={() => setShowAddModal(true)} className="rounded-full px-6">
+              <Button onClick={handleAddGoal} className="rounded-full px-6">
                 <Plus className="mr-2 h-4 w-4" />
                 Create Your First Goal
               </Button>
@@ -235,11 +270,25 @@ export default function SavingsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <BottomNavigation onAddClick={() => setShowAddTransaction(true)} />
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+
+      <BottomNavigation
+        onAddTransaction={() => setShowAddTransaction(true)}
+      />
 
       <AddTransactionModal
         open={showAddTransaction}
-        onOpenChange={setShowAddTransaction}
+        onOpenChange={(open) => {
+          setShowAddTransaction(open);
+          if (!open) setTransactionType(undefined);
+        }}
+        onSuccess={() => { }}
+        initialType={transactionType}
+      />
+
+      <AddPaymentReminderModal
+        open={showAddReminder}
+        onOpenChange={setShowAddReminder}
         onSuccess={() => { }}
       />
     </div>

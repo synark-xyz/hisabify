@@ -1,48 +1,65 @@
-import { useState } from 'react';
-import { Lock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState, ReactNode } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from './UpgradeModal';
+import { Lock, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 
 interface PremiumGuardProps {
-    children: React.ReactNode;
+    children: ReactNode;
     featureName?: string;
-    className?: string;
+    className?: string; // Optional wrapper class
 }
 
 export function PremiumGuard({ children, featureName = "Premium Feature", className }: PremiumGuardProps) {
     const { isPremium, loading } = useSubscription();
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showUpgrade, setShowUpgrade] = useState(false);
 
-    // If loading, render children (optimistic) or a skeleton. 
-    // Rendering children might reveal data for a split second, so let's render a simple skeleton or null.
-    // Actually, let's render children transparently or nothing to avoid flashes.
-    if (loading) return <div className={cn("animate-pulse bg-muted rounded-lg w-full h-full min-h-[100px]", className)} />;
+    if (loading) {
+        // Optionally return a skeleton or just render children invisibly, but usually waiting is fine.
+        // For specific UI parts, rendering children might be cleaner to avoid layout shift, but let's just wait.
+        return null;
+    }
 
     if (isPremium) {
         return <>{children}</>;
     }
 
     return (
-        <div className={cn("relative group overflow-hidden rounded-xl", className)}>
-            <div className="blur-[4px] pointer-events-none select-none opacity-50 transition-all duration-300">
-                {children}
-            </div>
+        <>
+            <div
+                className={cn("relative group cursor-pointer overflow-hidden rounded-xl", className)}
+                onClick={() => setShowUpgrade(true)}
+            >
+                <div className="blur-sm select-none pointer-events-none opacity-50 transition-all duration-300 group-hover:blur-md group-hover:opacity-40">
+                    {children}
+                </div>
 
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-gradient-to-b from-transparent to-background/20">
-                <div className="text-center p-4">
-                    <Button
-                        onClick={() => setShowUpgradeModal(true)}
-                        className="rounded-full shadow-lg gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 hover:scale-105 transition-all duration-300"
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/20 backdrop-blur-[1px] group-hover:bg-background/30 transition-colors">
+                    <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                     >
-                        <Lock className="w-4 h-4" />
+                        <Button
+                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 transition-opacity font-bold rounded-full shadow-xl shadow-purple-500/20"
+                            onClick={() => setShowUpgrade(true)}
+                        >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Be a Pro
+                        </Button>
+                    </motion.div>
+                    <span className="mt-2 text-xs font-bold text-foreground/80 bg-background/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/10 uppercase tracking-widest">
                         Unlock {featureName}
-                    </Button>
+                    </span>
                 </div>
             </div>
 
-            <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
-        </div>
+            <UpgradeModal
+                open={showUpgrade}
+                onOpenChange={setShowUpgrade}
+                source={`guard_${featureName}`}
+            />
+        </>
     );
 }

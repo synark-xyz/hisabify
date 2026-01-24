@@ -172,7 +172,7 @@ export function BudgetDashboard() {
         <h2 className="text-lg font-semibold text-foreground">Active Budgets</h2>
         <Button
           onClick={() => {
-            if (!isPremium && budgets.length >= 3) {
+            if (!isPremium && budgets.length >= 1) {
               setShowUpgradeModal(true);
             } else {
               setShowAddBudget(true);
@@ -216,8 +216,8 @@ export function BudgetDashboard() {
 
       {/* Historical Chart */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">Budget vs Spending History</h2>
-        <PremiumGuard featureName="Budget History">
+        <h2 className="text-lg font-semibold text-foreground">Financial Momentum</h2>
+        <PremiumGuard featureName="Advanced Analytics">
           <BudgetHistoryChart />
         </PremiumGuard>
       </div>

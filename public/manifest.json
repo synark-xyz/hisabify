@@ -34,22 +34,35 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["finance", "productivity"],
+  "categories": [
+    "finance",
+    "productivity"
+  ],
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Add Expense",
+      "name": "Add Transaction",
       "short_name": "Add",
       "description": "Add a new expense",
       "url": "/?action=add",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/pwa-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "View Budget",
       "short_name": "Budget",
       "description": "View your budget",
       "url": "/budget",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/pwa-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

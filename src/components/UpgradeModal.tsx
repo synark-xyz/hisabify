@@ -1,95 +1,76 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap, Infinity, Globe, PieChart } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState } from 'react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Check, Sparkles, Crown, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface UpgradeModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    source?: string;
 }
 
-export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
-    const features = [
-        {
-            icon: Infinity,
-            title: "Unlimited Budgets",
-            description: "Create as many categories as you need"
-        },
-        {
-            icon: Zap,
-            title: "Smart Automation",
-            description: "Auto-renewal & recurring transactions"
-        },
-        {
-            icon: Globe,
-            title: "Multi-Currency",
-            description: "Live exchange rates & conversions"
-        },
-        {
-            icon: PieChart,
-            title: "Deep Analytics",
-            description: "Unlimited history & export capabilities"
-        }
-    ];
+const benefits = [
+    "Unlimited Budgets (Planner)",
+    "Unlimited Savings Goals",
+    "Budget vs. Spending History Charts",
+    "Multi-currency Support",
+    "Data Exports (CSV/PDF)",
+    "Advanced Analytics"
+];
+
+export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) {
+    // Just a visual mockup for now as per "Phase 1: Logic & UI Gating"
+    const handleUpgrade = () => {
+        // In future this would redirect to Stripe
+        alert("Payment integration coming soon! This is a demo of the gating.");
+        onOpenChange(false);
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md overflow-hidden p-0 border-0 bg-background/80 backdrop-blur-xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-fuchsia-500/10" />
+            <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-background/80 backdrop-blur-xl">
+                <div className="relative">
+                    {/* Header Gradient */}
+                    <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500" />
 
-                <div className="relative p-6 space-y-6">
-                    <DialogHeader className="space-y-4 text-center">
-                        <motion.div
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 mx-auto flex items-center justify-center shadow-lg shadow-purple-500/20"
-                        >
-                            <Sparkles className="w-8 h-8 text-white" />
-                        </motion.div>
-
-                        <div className="space-y-2">
-                            <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-fuchsia-500">
-                                Unlock Hisabify Pro
-                            </DialogTitle>
-                            <DialogDescription className="text-base">
-                                Supercharge your financial journey with premium tools.
-                            </DialogDescription>
+                    <div className="relative pt-12 px-6 pb-6 text-center">
+                        <div className="mx-auto w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mb-4 transform -rotate-6">
+                            <Crown className="w-10 h-10 text-purple-600 fill-purple-600" />
                         </div>
-                    </DialogHeader>
 
-                    <div className="grid grid-cols-1 gap-4">
-                        {features.map((feature, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ x: -20, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="flex items-center gap-4 p-3 rounded-xl bg-secondary/50 border border-border/50"
-                            >
-                                <div className="p-2 rounded-lg bg-background shadow-sm">
-                                    <feature.icon className="w-5 h-5 text-violet-500" />
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold text-sm">{feature.title}</h4>
-                                    <p className="text-xs text-muted-foreground">{feature.description}</p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    <div className="space-y-4 pt-2">
-                        <Button
-                            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 shadow-lg shadow-purple-500/25 transition-all hover:scale-[1.02]"
-                            onClick={() => {
-                                // In a real app, this would trigger Stripe checkout
-                                window.location.href = "mailto:support@hisabify.com?subject=Upgrade%20Request";
-                            }}
-                        >
-                            Get Pro for $4.99/mo
-                        </Button>
-                        <p className="text-center text-xs text-muted-foreground">
-                            Secure payment via Stripe. Cancel anytime.
+                        <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
+                        <p className="text-muted-foreground text-sm mb-6">
+                            Unlock the full power of Hisabify and take control of your financial future.
                         </p>
+
+                        <div className="bg-card/50 rounded-2xl p-6 text-left space-y-3 mb-6 border border-white/10">
+                            {benefits.map((benefit, index) => (
+                                <div key={index} className="flex items-center gap-3">
+                                    <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                                        <Check className="w-3 h-3 text-green-500" />
+                                    </div>
+                                    <span className="text-sm font-medium">{benefit}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="space-y-3">
+                            <Button
+                                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 transition-opacity h-12 text-lg font-bold shadow-lg shadow-purple-500/25"
+                                onClick={handleUpgrade}
+                            >
+                                <Sparkles className="w-4 h-4 mr-2 fill-white" />
+                                Go Pro for $4.99/mo
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                className="w-full text-muted-foreground"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Maybe Later
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </DialogContent>

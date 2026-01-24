@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Bell, X, CheckCircle, Clock, WarningCircle } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -58,12 +58,12 @@ export function Header({ title }: HeaderProps) {
   const getStatusInfo = (status: string, dueDate: string) => {
     const date = new Date(dueDate);
     const daysUntil = differenceInDays(date, new Date());
-    
+
     if (status === 'paid') {
       return { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Paid' };
     }
     if (status === 'missed' || (status === 'upcoming' && isPast(date) && !isToday(date))) {
-      return { icon: AlertCircle, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Overdue' };
+      return { icon: WarningCircle, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Overdue' };
     }
     if (daysUntil <= 3) {
       return { icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: `Due in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}` };
@@ -75,7 +75,7 @@ export function Header({ title }: HeaderProps) {
     const date = new Date(r.due_date);
     return r.status === 'upcoming' && !isPast(date);
   }).length;
-  
+
   const overdueCount = reminders.filter(r => {
     const date = new Date(r.due_date);
     return r.status === 'upcoming' && isPast(date) && !isToday(date);
@@ -129,7 +129,7 @@ export function Header({ title }: HeaderProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Bell className="w-5 h-5 text-accent" />
+            <Bell className="w-5 h-5 text-accent" weight="duotone" />
             {notificationCount > 0 && (
               <span className="absolute top-1 right-1 min-w-5 h-5 px-1 bg-accent rounded-full border-2 border-card flex items-center justify-center">
                 <span className="text-[10px] font-bold text-white">{notificationCount}</span>
@@ -140,7 +140,7 @@ export function Header({ title }: HeaderProps) {
         <SheetContent side="right" className="w-full sm:max-w-md">
           <SheetHeader className="pb-4">
             <SheetTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
+              <Bell className="w-5 h-5" weight="duotone" />
               Notifications
             </SheetTitle>
           </SheetHeader>
@@ -148,7 +148,7 @@ export function Header({ title }: HeaderProps) {
           <ScrollArea className="h-[calc(100vh-120px)]">
             {reminders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Bell className="w-12 h-12 text-muted-foreground/50 mb-4" />
+                <Bell className="w-12 h-12 text-muted-foreground/50 mb-4" weight="duotone" />
                 <p className="text-muted-foreground">No notifications</p>
                 <p className="text-sm text-muted-foreground/70">Payment reminders will appear here</p>
               </div>
@@ -171,7 +171,7 @@ export function Header({ title }: HeaderProps) {
                           >
                             <div className="flex items-start gap-3">
                               <div className={`p-2 rounded-lg ${statusInfo.bg}`}>
-                                <Icon className={`w-4 h-4 ${statusInfo.color}`} />
+                                <Icon className={`w-4 h-4 ${statusInfo.color}`} weight="duotone" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-foreground truncate">{reminder.title}</p>
@@ -186,7 +186,7 @@ export function Header({ title }: HeaderProps) {
                                 onClick={() => handleMarkAsPaid(reminder.id)}
                                 className="shrink-0"
                               >
-                                <CheckCircle className="w-4 h-4 mr-1" />
+                                <CheckCircle className="w-4 h-4 mr-1" weight="duotone" />
                                 Paid
                               </Button>
                             </div>
@@ -211,7 +211,7 @@ export function Header({ title }: HeaderProps) {
                       >
                         <div className="flex items-start gap-3">
                           <div className={`p-2 rounded-lg ${statusInfo.bg}`}>
-                            <Icon className={`w-4 h-4 ${statusInfo.color}`} />
+                            <Icon className={`w-4 h-4 ${statusInfo.color}`} weight="duotone" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-foreground truncate">{reminder.title}</p>
@@ -230,7 +230,7 @@ export function Header({ title }: HeaderProps) {
                               onClick={() => handleMarkAsPaid(reminder.id)}
                               className="shrink-0"
                             >
-                              <CheckCircle className="w-4 h-4" />
+                              <CheckCircle className="w-4 h-4" weight="duotone" />
                             </Button>
                           )}
                         </div>

@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { schedulePaymentReminder, requestNotificationPermission } from '@/lib/notifications';
 
 interface AddPaymentReminderModalProps {
   open: boolean;
@@ -85,6 +86,19 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
           .insert(data);
         if (error) throw error;
         toast({ title: 'Reminder created successfully' });
+      }
+
+      // Try to schedule local notification if enabled
+      if (Notification.permission === 'default') {
+        await requestNotificationPermission();
+      }
+
+      if (Notification.permission === 'granted') {
+        schedulePaymentReminder({
+          title: data.title,
+          amount: data.amount,
+          due_date: data.due_date
+        });
       }
 
       onSuccess();

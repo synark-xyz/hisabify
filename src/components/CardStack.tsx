@@ -28,7 +28,14 @@ export function CardStack({ cards, totalBalance, onCardClick }: CardStackProps) 
     setActiveIndex((prev) => (prev - 1 + cards.length) % cards.length);
   };
 
-  const formatCardNumber = (number: string) => {
+  const formatCardNumber = (card: Card | null) => {
+    if (card?.last_four) {
+      return ['••••', '••••', '••••', card.last_four];
+    }
+    const number = card?.card_number || '0000000000000000';
+    if (number.startsWith('-----BEGIN PGP MESSAGE-----')) {
+      return ['••••', '••••', '••••', '****'];
+    }
     const cleaned = number.replace(/\s/g, '');
     const groups = cleaned.match(/.{1,4}/g) || [];
     return groups.map((group, i) => (i < groups.length - 1 ? '••••' : group)).slice(-4);
@@ -77,26 +84,26 @@ export function CardStack({ cards, totalBalance, onCardClick }: CardStackProps) 
   return (
     <div className="relative w-full" style={{ perspective: '1200px' }}>
       {/* 3D Card Container */}
-      <div className="relative h-[140px]" style={{ transformStyle: 'preserve-3d' }}>
+      <div className="relative h-[120px]" style={{ transformStyle: 'preserve-3d' }}>
         {/* Background stacked cards */}
         {cards.length > 1 && (
           <>
             <div
               className={cn(
-                'absolute inset-x-4 top-3 h-full rounded-xl opacity-30 bg-gradient-to-br',
+                'absolute inset-x-4 top-2 h-full rounded-xl opacity-30 bg-gradient-to-br',
                 cardColors[cards[(activeIndex + 2) % cards.length]?.color || 'purple']
               )}
-              style={{ 
+              style={{
                 transform: 'translateZ(-40px) scale(0.92)',
                 transformStyle: 'preserve-3d',
               }}
             />
             <div
               className={cn(
-                'absolute inset-x-2 top-1.5 h-full rounded-xl opacity-50 bg-gradient-to-br',
+                'absolute inset-x-2 top-1 h-full rounded-xl opacity-50 bg-gradient-to-br',
                 cardColors[cards[(activeIndex + 1) % cards.length]?.color || 'purple']
               )}
-              style={{ 
+              style={{
                 transform: 'translateZ(-20px) scale(0.96)',
                 transformStyle: 'preserve-3d',
               }}
@@ -114,16 +121,16 @@ export function CardStack({ cards, totalBalance, onCardClick }: CardStackProps) 
             animate="center"
             exit="exit"
             className={cn(
-              'absolute inset-0 w-full h-full rounded-xl p-4 bg-gradient-to-br shadow-xl overflow-hidden cursor-pointer',
+              'absolute inset-0 w-full h-full rounded-xl p-3.5 bg-gradient-to-br shadow-xl overflow-hidden cursor-pointer',
               cardColors[activeCard?.color || 'purple']
             )}
-            style={{ 
+            style={{
               transformStyle: 'preserve-3d',
               backfaceVisibility: 'hidden',
             }}
-            whileHover={{ 
-              rotateX: 5, 
-              rotateY: -5, 
+            whileHover={{
+              rotateX: 5,
+              rotateY: -5,
               scale: 1.02,
               transition: { duration: 0.3 }
             }}
@@ -131,14 +138,14 @@ export function CardStack({ cards, totalBalance, onCardClick }: CardStackProps) 
           >
             {/* Inner highlight */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-transparent pointer-events-none" />
-            
+
             {/* Card content */}
             <div className="relative z-10 h-full flex flex-col justify-between">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-white/70 text-xs font-medium">Total Balance</p>
+                  <p className="text-white/70 text-[10px] font-medium uppercase tracking-wider">Total Balance</p>
                   <motion.p
-                    className="text-white text-2xl font-bold mt-0.5"
+                    className="text-white text-xl font-black mt-0.5"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     key={totalBalance}
@@ -153,11 +160,11 @@ export function CardStack({ cards, totalBalance, onCardClick }: CardStackProps) 
 
               <div className="flex justify-between items-end">
                 <div className="flex gap-3 text-white/90 text-xs font-medium tracking-wider">
-                  {formatCardNumber(activeCard?.card_number || '0000000000000000').map((group, i) => (
+                  {formatCardNumber(activeCard).map((group, i) => (
                     <span key={i}>{group}</span>
                   ))}
                 </div>
-                
+
                 {/* Mastercard logo */}
                 <div className="flex -space-x-2">
                   <div className="w-6 h-6 rounded-full bg-red-500/90" />
@@ -184,10 +191,10 @@ export function CardStack({ cards, totalBalance, onCardClick }: CardStackProps) 
             {cards.map((_, index) => (
               <motion.button
                 key={index}
-                onClick={(e) => { 
-                  e.stopPropagation(); 
+                onClick={(e) => {
+                  e.stopPropagation();
                   setDirection(index > activeIndex ? 1 : -1);
-                  setActiveIndex(index); 
+                  setActiveIndex(index);
                 }}
                 className={cn(
                   'h-2 rounded-full transition-all',

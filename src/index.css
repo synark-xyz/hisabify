@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -62,7 +62,7 @@
     --shadow-card-hover: 0 8px 30px -8px hsl(0 0% 0% / 0.15);
     --shadow-fab: 0 8px 24px -4px hsl(24 95% 53% / 0.4);
 
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Exo 2', system-ui, -apple-system, sans-serif;
   }
 
   .dark {
@@ -147,23 +147,44 @@
   }
 
   .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 16px);
   }
 
   .safe-top {
     padding-top: env(safe-area-inset-top, 0px);
   }
 
-  .safe-area-inset {
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-right: env(safe-area-inset-right, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    padding-left: env(safe-area-inset-left, 0px);
+  /* Utility for page content to clear the navigation bar */
+  .pb-page-content {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 16px));
   }
 
-  /* Ensure content doesn't hide behind bottom navigation */
-  .pb-safe-nav {
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  /* Utility for the navigation bar itself to handle safe areas */
+  .pb-nav-safe {
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+  }
+
+  .mask-fade-edges {
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
+  .fade-bottom-overlay {
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 10px;
   }
 }
 
@@ -177,6 +198,7 @@
       opacity: 0;
       transform: translateY(10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -192,6 +214,7 @@
       opacity: 0;
       transform: scale(0.95);
     }
+
     to {
       opacity: 1;
       transform: scale(1);

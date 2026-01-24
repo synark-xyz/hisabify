@@ -2,17 +2,18 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-interface Profile {
+interface User {
   display_name: string | null;
   phone: string | null;
   avatar_url: string | null;
   currency: string;
-  is_premium: boolean;
+  subscription_type: 'base' | 'pro';
+  subscription_status: string;
 }
 
 interface ProfileContextType {
-  profile: Profile;
-  setProfile: (profile: Profile) => void;
+  profile: User;
+  setProfile: (profile: User) => void;
   updateAvatar: (url: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   loading: boolean;
@@ -23,12 +24,13 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<Profile>({
+  const [profile, setProfile] = useState<User>({
     display_name: null,
     phone: null,
     avatar_url: null,
     currency: 'USD',
-    is_premium: false,
+    subscription_type: 'base',
+    subscription_status: 'inactive',
   });
 
   const refreshProfile = async () => {
@@ -38,7 +40,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         phone: null,
         avatar_url: null,
         currency: 'USD',
-        is_premium: false,
+        subscription_type: 'base',
+        subscription_status: 'inactive',
       });
       setLoading(false);
       return;
@@ -46,7 +49,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
     const { data } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('user_id', user.id)
       .single();
@@ -57,7 +60,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         phone: data.phone,
         avatar_url: data.avatar_url,
         currency: data.currency || 'USD',
-        is_premium: data.is_premium || false,
+        subscription_type: data.subscription_type || 'base',
+        subscription_status: data.subscription_status || 'inactive',
       });
     }
     setLoading(false);
@@ -67,7 +71,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     await supabase
-      .from('profiles')
+      .from('users')
       .upsert({ user_id: user.id, avatar_url: url }, { onConflict: 'user_id' });
 
     setProfile(prev => ({ ...prev, avatar_url: url }));

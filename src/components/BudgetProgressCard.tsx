@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Copy } from 'lucide-react';
+import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Copy, Lock } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
@@ -55,7 +56,8 @@ const getStatusBgColor = (status: 'safe' | 'warning' | 'exceeded'): string => {
 export function BudgetProgressCard({ budget, onEdit, onDelete, onCopyToNext }: BudgetProgressCardProps) {
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
-  
+  const { isPremium } = useSubscription();
+
   const Icon = budget.category?.icon
     ? iconMap[budget.category.icon] || CircleDot
     : Wallet;
@@ -105,11 +107,13 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onCopyToNext }: B
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
+
             <DropdownMenuItem onClick={() => onCopyToNext(budget.id)}>
               <Copy className="mr-2 h-4 w-4" />
               Copy to Next Period
+              {!isPremium && <Lock className="ml-2 h-3 w-3 text-amber-500" />}
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={() => onDelete(budget)}
               className="text-destructive focus:text-destructive"
             >
@@ -153,13 +157,13 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onCopyToNext }: B
             transition={{ duration: 0.8, ease: 'easeOut' }}
           />
         </div>
-        
+
         {/* Percentage Label */}
         <div className="flex justify-between items-center mt-2">
           <span className="text-xs text-muted-foreground">
             {budget.percentage > 100 ? 'Over budget!' : `${displayPercentage.toFixed(0)}% used`}
           </span>
-          <span 
+          <span
             className={cn(
               "text-xs font-medium px-2 py-0.5 rounded-full",
               getStatusBgColor(budget.status)

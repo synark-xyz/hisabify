@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Header } from '@/components/Header';
+import { BottomNavigation } from '@/components/BottomNavigation';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradeModal } from '@/components/UpgradeModal';
 import {
   User, Settings, Shield, HelpCircle, ChevronRight,
   Camera, Save, LogOut, Moon, Sun, Bell, Database,
-  Download, Trash2, AlertTriangle, Monitor
+  Download, Trash2, AlertTriangle, Monitor, Crown, Sparkles
 } from 'lucide-react';
-import { Header } from '@/components/Header';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { PremiumGuard } from '@/components/PremiumGuard';
+import { requestNotificationPermission, sendNotification } from '@/lib/notifications';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
@@ -35,9 +38,12 @@ export function ProfilePage() {
   const { theme, setTheme, toggleTheme } = useTheme();
   const { currency, setCurrency } = useCurrency();
   const { profile, setProfile, updateAvatar, refreshProfile } = useProfile();
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [activeTab, setActiveTab] = useState('personal');
   const [loading, setLoading] = useState(false);
@@ -82,7 +88,7 @@ export function ProfilePage() {
       if (!user) return;
 
       const { data } = await supabase
-        .from('profiles')
+        .from('users')
         .select('date_format, week_start_day, theme, budget_alerts_enabled, email_notifications_enabled, push_notifications_enabled')
         .eq('user_id', user.id)
         .single();
@@ -134,7 +140,7 @@ export function ProfilePage() {
     const sanitizedPhone = sanitizePhone(localProfile.phone);
 
     const { error } = await supabase
-      .from('profiles')
+      .from('users')
       .upsert({
         user_id: user.id,
         display_name: sanitizedDisplayName || null,
@@ -218,7 +224,7 @@ export function ProfilePage() {
     setPreferences(newPreferences);
 
     const { error } = await supabase
-      .from('profiles')
+      .from('users')
       .update({
         date_format: newPreferences.dateFormat,
         week_start_day: newPreferences.weekStartDay,
@@ -319,17 +325,22 @@ export function ProfilePage() {
   };
 
   const requestPushPermission = async () => {
-    if (!('Notification' in window)) {
-      toast({ title: 'Not supported', description: 'Push notifications are not supported in this browser', variant: 'destructive' });
-      return;
-    }
-
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
+    const granted = await requestNotificationPermission();
+    if (granted) {
       handleSavePreferences({ pushNotifications: true });
       toast({ title: 'Push notifications enabled' });
+
+      // Test notification
+      sendNotification("Notifications Active!", {
+        body: "You'll now receive alerts for your payments and budgets.",
+        icon: "/pwa-192x192.png"
+      });
     } else {
-      toast({ title: 'Permission denied', description: 'Please enable notifications in your browser settings', variant: 'destructive' });
+      toast({
+        title: 'Permission pending or denied',
+        description: 'Please check your browser notification settings.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -347,7 +358,7 @@ export function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-page-content fade-bottom-overlay">
       <div className="max-w-md mx-auto">
         <Header title="Settings" />
 
@@ -379,11 +390,42 @@ export function ProfilePage() {
                 className="hidden"
               />
             </div>
-            <h2 className="text-xl font-bold text-foreground mt-4">
+            <h2 className="text-xl font-bold text-foreground mt-4 flex items-center justify-center gap-2">
               {profile.display_name || user?.email?.split('@')[0]}
+              {isPremium && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[10px] font-black text-accent uppercase tracking-wider">
+                  PRO
+                </span>
+              )}
             </h2>
             <p className="text-muted-foreground text-sm">{user?.email}</p>
           </motion.div>
+
+          {/* Premium Card Upsell */}
+          {!subscriptionLoading && !isPremium && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              onClick={() => setShowUpgradeModal(true)}
+              className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-5 text-white shadow-xl shadow-purple-500/20 cursor-pointer relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
+              <div className="relative z-10 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Crown className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Support Development</span>
+                  </div>
+                  <h3 className="text-lg font-black">Go Premium</h3>
+                  <p className="text-xs text-white/70 font-medium">Unlock all features & support the project</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <ChevronRight className="w-5 h-5 text-white" />
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Tab Navigation */}
           <motion.div
@@ -586,23 +628,21 @@ export function ProfilePage() {
                       <p className="text-sm text-muted-foreground">Select your preferred currency</p>
                     </div>
                   </div>
-                  <PremiumGuard featureName="Multi-Currency">
-                    <Select value={currency} onValueChange={setCurrency}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(currencyData).map(([code, { symbol, name }]) => (
-                          <SelectItem key={code} value={code}>
-                            <span className="flex items-center gap-2">
-                              <span className="font-mono">{symbol}</span>
-                              <span>{name}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </PremiumGuard>
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(currencyData).map(([code, { symbol, name }]) => (
+                        <SelectItem key={code} value={code}>
+                          <span className="flex items-center gap-2">
+                            <span className="font-mono">{symbol}</span>
+                            <span>{name}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Date Format */}
@@ -826,7 +866,14 @@ export function ProfilePage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <BottomNavigation onAddClick={() => navigate('/expenses')} />
+      <BottomNavigation
+        onAddTransaction={() => navigate('/')}
+      />
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        source="profile_page"
+      />
     </div>
   );
 }

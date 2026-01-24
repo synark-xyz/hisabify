@@ -4,7 +4,7 @@ export function useSubscription() {
     const { profile, loading } = useProfile();
 
     return {
-        isPremium: profile.is_premium,
+        isPremium: profile.subscription_type === 'pro' && profile.subscription_status === 'active',
         loading
     };
 }

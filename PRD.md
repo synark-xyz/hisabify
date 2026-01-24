@@ -13,7 +13,8 @@ The goal of this initiative is to transition Hisabify from a free utility to a s
 ### 🆓 Free Tier (The "Starter" Plan)
 *Core expense tracking for individuals.*
 - **Unlimited Transactions**: Basic logging remains free.
-- **Budgeting**: Up to **3 active budget categories**. (Existing: `useBudgets` logic)
+- **Budgeting**: Up to **1 active budget category** (The "Planner").
+- **Savings Goals**: Up to **1 active savings goal**.
 - **Analytics**: Basic monthly summary only.
 - **Currency**: Single primary currency only.
 - **History**: Last **30 days** of transaction history.
@@ -21,6 +22,7 @@ The goal of this initiative is to transition Hisabify from a free utility to a s
 ### 💎 Pro Tier (The "Pro" Plan - $4.99/mo)
 *Advanced tools for serious financial management.*
 - **Unlimited Budgets**: Remove the cap on budget categories.
+- **Unlimited Savings Goals**: Create as many savings goals as you focus on.
 - **Infinite History**: Access to all-time data and the **Budget vs Spending History Chart** (Existing: `BudgetHistoryChart`).
 - **Automation**: Use of the **"Copy to Next Month"** feature (Existing: `copyBudgetToNextPeriod`).
 - **Multi-Currency**: Access to the **Currency Selector** and live conversions (Existing: `useCurrency`).
@@ -38,12 +40,13 @@ The goal of this initiative is to transition Hisabify from a free utility to a s
 > "Act as a Senior React Developer. Implement a subscription gating system for Hisabify. 
 > 1. Create a `useSubscription` hook in `src/hooks/` that reads an `is_premium` boolean from the Supabase `profiles` table.
 > 2. Create a `PremiumGuard` component that takes `children` and a `featureName`. If the user is not premium, it should show its children with a `blur-sm` filter and overlay a 'Pro' lock icon with an `onClick` that opens an Upgrade Modal.
-> 3. Implement the Upgrade Modal showcasing the benefits: Unlimited Budgets, History Charts, Multi-currency, and Account Exports.
+> 3. Implement the Upgrade Modal showcasing the benefits: Unlimited Budgets, Savings Goals, History Charts, Multi-currency, and Account Exports.
 > 4. Wrap the following existing components in the `PremiumGuard`: 
 >    - `BudgetHistoryChart` in `BudgetDashboard.tsx`
 >    - The 'Copy to Next' button in `BudgetProgressCard.tsx`
 >    - The currency selection dropdown in `Settings.tsx`
-> 5. Add a 3-budget limit check in the `AddBudgetModal` for free users."
+> 5. Add a 1-budget limit check in the `AddBudgetModal` for free users.
+> 6. Add a 1-goal limit check in the `AddSavingsGoalModal` for free users."
 
 ## 6. Roadmap Summary
 - **Phase 1**: Logic & UI Gating (Current)

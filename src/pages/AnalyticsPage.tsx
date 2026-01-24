@@ -9,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradeModal } from '@/components/UpgradeModal';
+import { Lock, Crown, Sparkles } from 'lucide-react';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { CategoryBreakdownChart } from '@/components/dashboard/CategoryBreakdownChart';
 import { MonthlyTrendChart } from '@/components/dashboard/MonthlyTrendChart';
@@ -27,9 +30,11 @@ import {
 import { exportToCSV } from '@/lib/exportUtils';
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PremiumGuard } from '@/components/PremiumGuard';
 
 export function AnalyticsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [dateRange, setDateRange] = useState({
     from: startOfMonth(subMonths(new Date(), 11)), // Extended to 12 months for better analysis
     to: endOfMonth(new Date()),
@@ -49,6 +54,8 @@ export function AnalyticsPage() {
     loading,
     refetch,
   } = useDashboardData(dateRange);
+
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
 
   // Advanced analytics hook
   const {
@@ -79,7 +86,7 @@ export function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-page-content fade-bottom-overlay">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.header
@@ -143,35 +150,40 @@ export function AnalyticsPage() {
           {/* Tabs for Overview vs Advanced */}
           <motion.section variants={itemVariants}>
             <Tabs defaultValue="insights" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="insights">Insights</TabsTrigger>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12">
+                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-accent">Insights</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-primary">Overview</TabsTrigger>
+                <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-purple-500 relative overflow-hidden">
+                  Advanced
+                  {!isPremium && !subscriptionLoading && <Lock className="ml-1.5 w-3 h-3 text-muted-foreground/50" />}
+                </TabsTrigger>
               </TabsList>
 
               {/* Insights Tab */}
               <TabsContent value="insights" className="space-y-6">
-                {loading ? (
-                  <>
-                    <Skeleton className="h-40 rounded-2xl" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {[...Array(3)].map((_, i) => (
-                        <Skeleton key={i} className="h-32 rounded-2xl" />
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Insights Cards */}
-                    <InsightsCards insights={insights} />
+                <PremiumGuard featureName="AI Insights">
+                  {loading ? (
+                    <>
+                      <Skeleton className="h-40 rounded-2xl" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...Array(3)].map((_, i) => (
+                          <Skeleton key={i} className="h-32 rounded-2xl" />
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Insights Cards */}
+                      <InsightsCards insights={insights} />
 
-                    {/* Spending Patterns & Predictions */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <SpendingPatternsCard patterns={spendingPatterns} />
-                      <TrendPredictionChart prediction={trendPrediction} />
-                    </div>
-                  </>
-                )}
+                      {/* Spending Patterns & Predictions */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <SpendingPatternsCard patterns={spendingPatterns} />
+                        <TrendPredictionChart prediction={trendPrediction} />
+                      </div>
+                    </>
+                  )}
+                </PremiumGuard>
               </TabsContent>
 
               {/* Overview Tab */}
@@ -210,8 +222,8 @@ export function AnalyticsPage() {
                           <p className="text-muted-foreground text-sm text-center mt-1">
                             Create budgets to see how you're tracking
                           </p>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="mt-4"
                             onClick={() => navigate('/budget')}
                           >
@@ -230,41 +242,51 @@ export function AnalyticsPage() {
 
               {/* Advanced Tab */}
               <TabsContent value="advanced" className="space-y-6">
-                {loading ? (
-                  <>
-                    <Skeleton className="h-80 rounded-2xl" />
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <PremiumGuard featureName="Advanced Analytics">
+                  {loading ? (
+                    <>
                       <Skeleton className="h-80 rounded-2xl" />
-                      <Skeleton className="h-80 rounded-2xl" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Comparison Charts */}
-                    <ComparisonCharts 
-                      monthComparison={monthComparison} 
-                      yearComparison={yearComparison} 
-                    />
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Skeleton className="h-80 rounded-2xl" />
+                        <Skeleton className="h-80 rounded-2xl" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Comparison Charts */}
+                      <ComparisonCharts
+                        monthComparison={monthComparison}
+                        yearComparison={yearComparison}
+                      />
 
-                    {/* Heat Map & Day of Week Analysis */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <SpendingHeatMap data={heatMapData} />
-                      <DayOfWeekChart data={dayOfWeekAnalysis} />
-                    </div>
-                  </>
-                )}
+                      {/* Heat Map & Day of Week Analysis */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <SpendingHeatMap data={heatMapData} />
+                        <DayOfWeekChart data={dayOfWeekAnalysis} />
+                      </div>
+                    </>
+                  )}
+                </PremiumGuard>
               </TabsContent>
             </Tabs>
           </motion.section>
         </motion.main>
       </div>
 
-      <BottomNavigation onAddClick={() => setShowAddTransaction(true)} />
+      <BottomNavigation
+        onAddTransaction={() => setShowAddTransaction(true)}
+      />
 
       <AddTransactionModal
         open={showAddTransaction}
         onOpenChange={setShowAddTransaction}
         onSuccess={refetch}
+      />
+
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        source="analytics_tab"
       />
     </div>
   );

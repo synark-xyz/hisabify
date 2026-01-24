@@ -10,11 +10,13 @@ export const expenseFormSchema = z.object({
     const num = parseFloat(val);
     return !isNaN(num) && num > 0;
   }, 'Amount must be a positive number'),
-  categoryId: z.string().min(1, 'Category is required'),
+  categoryId: z.string().optional(),
   date: z.date({ required_error: 'Date is required' }),
   note: z.string().max(500, 'Note too long').optional(),
   currency: z.string().min(1, 'Currency is required'),
   cardId: z.string().optional(),
+  paymentType: z.string().optional(),
+  createReminder: z.boolean().default(false),
 });
 
 export const incomeFormSchema = z.object({
@@ -23,10 +25,11 @@ export const incomeFormSchema = z.object({
     const num = parseFloat(val);
     return !isNaN(num) && num > 0;
   }, 'Amount must be a positive number'),
-  incomeSource: z.string().min(1, 'Income source is required'),
+  incomeSource: z.string().optional(),
   date: z.date({ required_error: 'Date is required' }),
   note: z.string().max(500, 'Note too long').optional(),
   currency: z.string().min(1, 'Currency is required'),
+  createReminder: z.boolean().default(false),
 });
 
 export type ExpenseFormData = z.infer<typeof expenseFormSchema>;

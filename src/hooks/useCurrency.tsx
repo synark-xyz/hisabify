@@ -68,7 +68,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   // Detect location and set default currency
   const detectLocationCurrency = useCallback(async () => {
     if (hasDetectedLocation) return;
-    
+
     try {
       // Check if user already has a currency preference
       const storedCurrency = localStorage.getItem('currency');
@@ -83,7 +83,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         const countryCode = data.country_code;
         const detectedCurrency = countryCurrencyMap[countryCode];
-        
+
         if (detectedCurrency && currencyData[detectedCurrency]) {
           setCurrencyState(detectedCurrency);
           localStorage.setItem('currency', detectedCurrency);
@@ -106,7 +106,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     if (user) {
       // Fetch user's currency preference from profile
       supabase
-        .from('profiles')
+        .from('users')
         .select('currency')
         .eq('user_id', user.id)
         .single()
@@ -126,11 +126,11 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const refreshCurrency = async () => {
     if (user) {
       const { data } = await supabase
-        .from('profiles')
+        .from('users')
         .select('currency')
         .eq('user_id', user.id)
         .single();
-      
+
       if (data?.currency) {
         setCurrencyState(data.currency);
         localStorage.setItem('currency', data.currency);
@@ -146,7 +146,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
     if (user) {
       await supabase
-        .from('profiles')
+        .from('users')
         .update({ currency: newCurrency })
         .eq('user_id', user.id);
     }
@@ -165,13 +165,13 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   }, [currency]);
 
   return (
-    <CurrencyContext.Provider value={{ 
-      currency, 
-      setCurrency, 
-      formatAmount, 
-      currencySymbol, 
+    <CurrencyContext.Provider value={{
+      currency,
+      setCurrency,
+      formatAmount,
+      currencySymbol,
       refreshCurrency,
-      currencyVersion 
+      currencyVersion
     }}>
       {children}
     </CurrencyContext.Provider>

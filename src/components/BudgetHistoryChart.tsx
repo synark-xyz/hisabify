@@ -119,12 +119,14 @@ export function BudgetHistoryChart() {
                 fill="hsl(var(--muted-foreground))"
                 radius={[4, 4, 0, 0]}
                 name="budget"
+                isAnimationActive={false}
               />
               <Bar
                 dataKey="spent"
                 fill="hsl(var(--primary))"
                 radius={[4, 4, 0, 0]}
                 name="spent"
+                isAnimationActive={false}
               />
             </BarChart>
           </ResponsiveContainer>

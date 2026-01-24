@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Target, Sparkles } from 'lucide-react';
+import { Target, Sparkles, ChevronRight } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { Header } from '@/components/Header';
 import { BudgetDashboard } from '@/components/BudgetDashboard';
 import { AddBudgetModal } from '@/components/AddBudgetModal';
+import { AddTransactionModal } from '@/components/AddTransactionModal';
+import { AddPaymentReminderModal } from '@/components/AddPaymentReminderModal';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
@@ -12,6 +14,9 @@ import { UpgradeModal } from '@/components/UpgradeModal';
 export function BudgetPage() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [showAddReminder, setShowAddReminder] = useState(false);
+  const [transactionType, setTransactionType] = useState<'expense' | 'income' | 'lend' | 'owe' | undefined>(undefined);
   const { budgets } = useBudgets();
   const { isPremium } = useSubscription();
 
@@ -38,7 +43,7 @@ export function BudgetPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="pb-28">
+      <div className="pb-page-content fade-bottom-overlay">
         <Header title="Planner" />
 
         <motion.main
@@ -73,15 +78,53 @@ export function BudgetPage() {
           </motion.div>
 
           {/* Dashboard Content */}
+          {!isPremium && (
+            <motion.div
+              variants={itemVariants}
+              onClick={() => setShowUpgradeModal(true)}
+              className="bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border border-violet-500/20 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-violet-600/5 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Unlimited Budgets</p>
+                  <p className="text-xs text-muted-foreground">Upgrade to Pro to create more than 3 budgets</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </motion.div>
+          )}
+
           <motion.div variants={itemVariants}>
             <BudgetDashboard />
           </motion.div>
         </motion.main>
       </div>
 
-      <BottomNavigation onAddClick={handleAddClick} />
+      <BottomNavigation
+        onAddTransaction={() => setShowAddTransaction(true)}
+      />
+
       <AddBudgetModal open={showAddBudget} onOpenChange={setShowAddBudget} />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+
+      <AddTransactionModal
+        open={showAddTransaction}
+        onOpenChange={(open) => {
+          setShowAddTransaction(open);
+          if (!open) setTransactionType(undefined);
+        }}
+        onSuccess={() => { }}
+        initialType={transactionType}
+      />
+
+      <AddPaymentReminderModal
+        open={showAddReminder}
+        onOpenChange={setShowAddReminder}
+        onSuccess={() => { }}
+      />
     </div>
   );
 }

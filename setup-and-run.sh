@@ -272,6 +272,13 @@ cmd_setup() {
 cmd_dev() {
     print_header
     check_requirements
+    
+    # Check if node_modules exists, install if missing
+    if [ ! -d "node_modules" ]; then
+        print_warning "node_modules not found. Installing dependencies..."
+        install_dependencies
+    fi
+
     validate_config
     check_port
     

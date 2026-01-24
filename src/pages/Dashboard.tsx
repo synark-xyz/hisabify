@@ -1,24 +1,29 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, CreditCard, Faders, Plus, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { CardStack } from '@/components/CardStack';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
-import { ExpenseOverview } from '@/components/ExpenseOverview';
 import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
+import { ParticlesBackground } from '@/components/ParticlesBackground';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddCardModal } from '@/components/AddCardModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
+import { ManageRemindersModal } from '@/components/ManageRemindersModal';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { usePaymentReminders } from '@/hooks/usePaymentReminders';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradeModal } from '@/components/UpgradeModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, Transaction, MonthlySpending } from '@/types';
-import { format, subMonths, startOfMonth, endOfMonth, addDays, subYears } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,60 +34,60 @@ import {
 // Sample analytics data for demonstration
 const sampleAnalyticsData: Record<number, MonthlySpending[]> = {
   2023: [
-    { month: 'Jan', amount: 2850 },
-    { month: 'Feb', amount: 3200 },
-    { month: 'Mar', amount: 2950 },
-    { month: 'Apr', amount: 3400 },
-    { month: 'May', amount: 3100 },
-    { month: 'Jun', amount: 2800 },
-    { month: 'Jul', amount: 3600 },
-    { month: 'Aug', amount: 3300 },
-    { month: 'Sep', amount: 2900 },
-    { month: 'Oct', amount: 3500 },
-    { month: 'Nov', amount: 4200 },
-    { month: 'Dec', amount: 4800 },
+    { month: 'Jan', amount: 2850, year: 2023 },
+    { month: 'Feb', amount: 3200, year: 2023 },
+    { month: 'Mar', amount: 2950, year: 2023 },
+    { month: 'Apr', amount: 3400, year: 2023 },
+    { month: 'May', amount: 3100, year: 2023 },
+    { month: 'Jun', amount: 2800, year: 2023 },
+    { month: 'Jul', amount: 3600, year: 2023 },
+    { month: 'Aug', amount: 3300, year: 2023 },
+    { month: 'Sep', amount: 2900, year: 2023 },
+    { month: 'Oct', amount: 3500, year: 2023 },
+    { month: 'Nov', amount: 4200, year: 2023 },
+    { month: 'Dec', amount: 4800, year: 2023 },
   ],
   2024: [
-    { month: 'Jan', amount: 3100 },
-    { month: 'Feb', amount: 2950 },
-    { month: 'Mar', amount: 3400 },
-    { month: 'Apr', amount: 3200 },
-    { month: 'May', amount: 3600 },
-    { month: 'Jun', amount: 3100 },
-    { month: 'Jul', amount: 3800 },
-    { month: 'Aug', amount: 3500 },
-    { month: 'Sep', amount: 3200 },
-    { month: 'Oct', amount: 3700 },
-    { month: 'Nov', amount: 4100 },
-    { month: 'Dec', amount: 4500 },
+    { month: 'Jan', amount: 3100, year: 2024 },
+    { month: 'Feb', amount: 2950, year: 2024 },
+    { month: 'Mar', amount: 3400, year: 2024 },
+    { month: 'Apr', amount: 3200, year: 2024 },
+    { month: 'May', amount: 3600, year: 2024 },
+    { month: 'Jun', amount: 3100, year: 2024 },
+    { month: 'Jul', amount: 3800, year: 2024 },
+    { month: 'Aug', amount: 3500, year: 2024 },
+    { month: 'Sep', amount: 3200, year: 2024 },
+    { month: 'Oct', amount: 3700, year: 2024 },
+    { month: 'Nov', amount: 4100, year: 2024 },
+    { month: 'Dec', amount: 4500, year: 2024 },
   ],
   2025: [
-    { month: 'Jan', amount: 3300 },
-    { month: 'Feb', amount: 3100 },
-    { month: 'Mar', amount: 3500 },
-    { month: 'Apr', amount: 3400 },
-    { month: 'May', amount: 3700 },
-    { month: 'Jun', amount: 3200 },
-    { month: 'Jul', amount: 3900 },
-    { month: 'Aug', amount: 3600 },
-    { month: 'Sep', amount: 3300 },
-    { month: 'Oct', amount: 3800 },
-    { month: 'Nov', amount: 4300 },
-    { month: 'Dec', amount: 4700 },
+    { month: 'Jan', amount: 3300, year: 2025 },
+    { month: 'Feb', amount: 3100, year: 2025 },
+    { month: 'Mar', amount: 3500, year: 2025 },
+    { month: 'Apr', amount: 3400, year: 2025 },
+    { month: 'May', amount: 3700, year: 2025 },
+    { month: 'Jun', amount: 3200, year: 2025 },
+    { month: 'Jul', amount: 3900, year: 2025 },
+    { month: 'Aug', amount: 3600, year: 2025 },
+    { month: 'Sep', amount: 3300, year: 2025 },
+    { month: 'Oct', amount: 3800, year: 2025 },
+    { month: 'Nov', amount: 4300, year: 2025 },
+    { month: 'Dec', amount: 4700, year: 2025 },
   ],
   2026: [
-    { month: 'Jan', amount: 3500 },
-    { month: 'Feb', amount: 3300 },
-    { month: 'Mar', amount: 3700 },
-    { month: 'Apr', amount: 3600 },
-    { month: 'May', amount: 3900 },
-    { month: 'Jun', amount: 3400 },
-    { month: 'Jul', amount: 4100 },
-    { month: 'Aug', amount: 3800 },
-    { month: 'Sep', amount: 3500 },
-    { month: 'Oct', amount: 4000 },
-    { month: 'Nov', amount: 4500 },
-    { month: 'Dec', amount: 4900 },
+    { month: 'Jan', amount: 3500, year: 2026 },
+    { month: 'Feb', amount: 3300, year: 2026 },
+    { month: 'Mar', amount: 3700, year: 2026 },
+    { month: 'Apr', amount: 3600, year: 2026 },
+    { month: 'May', amount: 3900, year: 2026 },
+    { month: 'Jun', amount: 3400, year: 2026 },
+    { month: 'Jul', amount: 4100, year: 2026 },
+    { month: 'Aug', amount: 3800, year: 2026 },
+    { month: 'Sep', amount: 3500, year: 2026 },
+    { month: 'Oct', amount: 4000, year: 2026 },
+    { month: 'Nov', amount: 4500, year: 2026 },
+    { month: 'Dec', amount: 4900, year: 2026 },
   ],
 };
 
@@ -95,10 +100,15 @@ export function Dashboard() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
+  const [transactionType, setTransactionType] = useState<'expense' | 'income' | 'lend' | 'owe' | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
+  const [showAddPaymentReminder, setShowAddPaymentReminder] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
   const { user } = useAuth();
   const { formatAmount, currencyVersion, currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
@@ -164,13 +174,13 @@ export function Dashboard() {
           }
           // Convert to current currency
           const result = await convertAmount(Number(t.amount), storedCurrency, currency);
-          return { 
-            ...t, 
-            convertedAmount: result ? result.convertedAmount : Number(t.amount) 
+          return {
+            ...t,
+            convertedAmount: result ? result.convertedAmount : Number(t.amount)
           };
         })
       );
-      
+
       const income = convertedData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.convertedAmount, 0);
       const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
       setTotalIncome(income);
@@ -186,7 +196,7 @@ export function Dashboard() {
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
       const currentMonthIndex = currentDate.getMonth();
-      
+
       // Show last 7 months of data
       let dataToShow: MonthlySpending[];
       if (selectedYear === currentYear) {
@@ -200,22 +210,23 @@ export function Dashboard() {
         // For future years, show first 7 months
         dataToShow = yearData.slice(0, 7);
       }
-      
+
       // Merge with actual transaction data if available
       const mergedData = dataToShow.map(sample => {
         const monthTransactions = transactions.filter(t => {
           const txDate = new Date(t.date);
-          return format(txDate, 'MMM') === sample.month && 
-                 txDate.getFullYear() === selectedYear &&
-                 t.type === 'expense';
+          return format(txDate, 'MMM') === sample.month &&
+            txDate.getFullYear() === selectedYear &&
+            t.type === 'expense';
         });
         const actualAmount = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
         return {
           month: sample.month,
           amount: actualAmount > 0 ? actualAmount : sample.amount,
+          year: selectedYear,
         };
       });
-      
+
       setMonthlyData(mergedData);
     }
   };
@@ -226,54 +237,133 @@ export function Dashboard() {
 
   const totalBalance = cards.reduce((sum, card) => sum + Number(card.balance), 0);
 
-  // Generate payment reminders from transactions
-  const paymentReminders = useMemo(() => {
-    const now = new Date();
-    const reminders = [
-      { id: '1', title: 'Electricity Bill', amount: 125, dueDate: format(addDays(now, 3), 'MMM dd'), status: 'upcoming' as const },
-      { id: '2', title: 'Internet Bill', amount: 79, dueDate: format(addDays(now, -2), 'MMM dd'), status: 'paid' as const },
-      { id: '3', title: 'Phone Bill', amount: 55, dueDate: format(addDays(now, -5), 'MMM dd'), status: 'missed' as const },
-      { id: '4', title: 'Netflix', amount: 15, dueDate: format(addDays(now, 7), 'MMM dd'), status: 'upcoming' as const },
-      { id: '5', title: 'Gym Membership', amount: 45, dueDate: format(addDays(now, 1), 'MMM dd'), status: 'upcoming' as const },
-      { id: '6', title: 'Water Bill', amount: 38, dueDate: format(addDays(now, -1), 'MMM dd'), status: 'paid' as const },
-    ];
-    return reminders;
-  }, []);
-
-  const handleAddClick = () => {
-    if (cards.length === 0) {
-      setShowAddCard(true);
-    } else {
-      setShowAddTransaction(true);
-    }
-  };
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
+      transition: { staggerChildren: 0.08 }
     }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
   };
 
+  const netBalance = totalIncome - totalExpenses;
+
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-transparent">
+      <ParticlesBackground />
+      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
         <Header title="Home" />
 
         <motion.main
-          className="px-4 space-y-6"
+          className="px-4 space-y-6 pb-page-content fade-bottom-overlay"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          {/* Balance Card Stack */}
+          {/* Hero Section - Wallet Overview */}
           <motion.section variants={itemVariants}>
+            <div className="bg-card rounded-3xl p-6 shadow-card border border-white/5 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-accent/20 transition-colors" />
+              <div className="relative z-10 flex justify-between items-start">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Wallet className="w-4 h-4 text-muted-foreground" weight="duotone" />
+                    <span className="text-sm font-medium text-muted-foreground">Main Balance</span>
+                  </div>
+                  <h2 className="text-3xl font-black tracking-tight text-foreground">
+                    {formatAmount(netBalance)}
+                  </h2>
+                </div>
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 rounded-full text-emerald-500 text-xs font-bold ring-1 ring-emerald-500/20">
+                    <TrendUp className="w-3 h-3" weight="duotone" />
+                    Today +$12.50
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendDown className="w-4 h-4 text-rose-500" weight="duotone" />
+                    <span className="text-xs font-medium text-muted-foreground tracking-wider">Expenses</span>
+                  </div>
+                  <p className="text-lg font-bold text-foreground">{formatAmount(totalExpenses)}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendUp className="w-4 h-4 text-emerald-500" weight="duotone" />
+                    <span className="text-xs font-medium text-muted-foreground tracking-wider">Income</span>
+                  </div>
+                  <p className="text-lg font-bold text-foreground">{formatAmount(totalIncome)}</p>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* Upgrade to Pro Banner - Only for non-premium users */}
+          {!subscriptionLoading && !isPremium && (
+            <motion.section variants={itemVariants}>
+              <div
+                onClick={() => setShowUpgradeModal(true)}
+                className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl shadow-purple-500/20 cursor-pointer group hover:scale-[1.02] transition-transform"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-yellow-400 fill-yellow-400" weight="duotone" />
+                      <span className="text-xs font-black text-white/90 tracking-[0.2em]">Premium Feature</span>
+                    </div>
+                    <h3 className="text-xl font-black text-white">Upgrade to Pro</h3>
+                    <p className="text-sm text-white/70 font-medium">Unlock Unlimited Budgets & Advanced Insights</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Sparkle className="w-6 h-6 text-white animate-pulse" weight="duotone" />
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+          )}
+
+          {/* Payment Reminders Section */}
+          <motion.section variants={itemVariants}>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                <Bell className="w-5 h-5 text-accent" weight="duotone" />
+                Reminders
+              </h2>
+              <motion.button
+                onClick={() => setShowAddPaymentReminder(true)}
+                className="p-2 bg-muted/50 rounded-xl hover:bg-muted text-muted-foreground transition-colors border border-border/50"
+                whileHover={{ rotate: 90 }}
+              >
+                <Faders className="w-4 h-4" weight="duotone" />
+              </motion.button>
+            </div>
+            <PaymentReminderCarousel reminders={paymentReminders} />
+          </motion.section>
+
+          {/* Cards Section */}
+          <motion.section variants={itemVariants}>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                <CreditCard className="w-5 h-5 text-primary" weight="duotone" />
+                My Cards
+              </h2>
+              <motion.button
+                onClick={() => navigate('/cards')}
+                className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-accent transition-colors"
+                whileHover={{ x: 4 }}
+              >
+                Manage
+                <ArrowRight className="w-4 h-4" weight="duotone" />
+              </motion.button>
+            </div>
             {cards.length > 0 ? (
               <CardStack
                 cards={cards}
@@ -283,45 +373,43 @@ export function Dashboard() {
             ) : (
               <motion.button
                 onClick={() => setShowAddCard(true)}
-                className="w-full aspect-[1.7] rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-3 hover:border-accent hover:bg-accent/5 transition-all"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="w-full aspect-[2.6] rounded-2xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center gap-1.5 hover:border-accent hover:bg-accent/5 transition-all bg-card/50"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
               >
-                <span className="text-5xl">💳</span>
-                <p className="text-muted-foreground font-medium">Add your first card</p>
+                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-accent" weight="duotone" />
+                </div>
+                <p className="text-sm font-bold text-muted-foreground tracking-tight">Add Your First Card</p>
               </motion.button>
             )}
           </motion.section>
 
-          {/* Payment Reminders Carousel */}
-          <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-foreground">Payment Reminders</h2>
-            </div>
-            <PaymentReminderCarousel reminders={paymentReminders} />
-          </motion.section>
 
           {/* Analytics Section */}
           <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">Analytics</h2>
+            <div className="flex items-center justify-between mb-4 px-1">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                <ChartPie className="w-5 h-5 text-accent" weight="duotone" />
+                Insights
+              </h2>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <motion.button
-                    className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-full text-sm font-semibold shadow-fab"
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-accent text-white rounded-full text-xs font-black shadow-fab tracking-wider"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    Year - {selectedYear}
-                    <ChevronDown className="w-4 h-4" />
+                    Year {selectedYear}
+                    <CaretDown className="w-4 h-4" weight="duotone" />
                   </motion.button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="rounded-2xl border-border/50">
                   {availableYears.map((year) => (
                     <DropdownMenuItem
                       key={year}
                       onClick={() => setSelectedYear(year)}
-                      className={selectedYear === year ? 'bg-accent/10' : ''}
+                      className={cn(selectedYear === year ? 'bg-accent text-white' : '', "rounded-xl m-1")}
                     >
                       {year}
                     </DropdownMenuItem>
@@ -329,91 +417,60 @@ export function Dashboard() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <EnhancedAnalyticsChart 
-              data={monthlyData} 
-              selectedMonth={selectedMonth}
-              onMonthSelect={handleMonthSelect}
-            />
-          </motion.section>
-
-          {/* Quick Stats */}
-          <motion.section variants={itemVariants} className="grid grid-cols-2 gap-4">
-            <motion.div
-              className="p-4 bg-card rounded-2xl shadow-card"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-emerald-500" />
-                </div>
-                <span className="text-sm text-muted-foreground">Income</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">
-                {formatAmount(totalIncome)}
-              </p>
-            </motion.div>
-            
-            <motion.div
-              className="p-4 bg-card rounded-2xl shadow-card"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
-                  <TrendingDown className="w-4 h-4 text-accent" />
-                </div>
-                <span className="text-sm text-muted-foreground">Expenses</span>
-              </div>
-              <p className="text-xl font-bold text-foreground">
-                {formatAmount(totalExpenses)}
-              </p>
-            </motion.div>
+            <div className="bg-card rounded-3xl p-5 shadow-card border border-white/5">
+              <EnhancedAnalyticsChart
+                selectedYear={selectedYear}
+                selectedMonth={selectedMonth}
+                onMonthSelect={handleMonthSelect}
+              />
+            </div>
           </motion.section>
 
           {/* Transactions Section */}
           <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground">Transactions</h2>
+            <div className="flex items-center justify-between mb-4 px-1">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />
+                Recent History
+              </h2>
               <motion.button
                 onClick={() => navigate('/expenses')}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-accent transition-colors"
+                className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-accent transition-colors"
                 whileHover={{ x: 4 }}
               >
                 View All
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4" weight="duotone" />
               </motion.button>
             </div>
             <div className="space-y-3">
-              <AnimatePresence mode="popLayout">
-                {transactions.length > 0 ? (
-                  transactions.map((tx, index) => (
-                    <TransactionItem 
-                      key={tx.id} 
-                      transaction={tx} 
-                      index={index}
-                      onEdit={setEditingTransaction}
-                      onDelete={setDeletingTransaction}
-                      revealedId={revealedTransactionId}
-                      onReveal={setRevealedTransactionId}
-                    />
-                  ))
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-12 bg-card rounded-2xl"
-                  >
-                    <span className="text-5xl">📊</span>
-                    <p className="text-muted-foreground mt-3">No transactions yet</p>
-                    <p className="text-sm text-muted-foreground/70">Add your first expense or income</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {transactions.length > 0 ? (
+                transactions.map((tx, idx) => (
+                  <TransactionItem
+                    key={tx.id}
+                    transaction={tx}
+                    index={idx}
+                    onEdit={setEditingTransaction}
+                    onDelete={setDeletingTransaction}
+                    revealedId={revealedTransactionId}
+                    onReveal={setRevealedTransactionId}
+                  />
+                ))
+              ) : (
+                <div className="bg-card/50 rounded-2xl p-8 text-center border border-dashed border-muted-foreground/20">
+                  <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Sparkle className="w-8 h-8 text-muted-foreground/30" weight="duotone" />
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">No transactions yet. Start adding your expenses!</p>
+                </div>
+              )}
             </div>
           </motion.section>
         </motion.main>
       </div>
 
-      <BottomNavigation onAddClick={handleAddClick} />
+      <BottomNavigation
+        onAddTransaction={() => setShowAddTransaction(true)}
+      />
 
       <AddCardModal
         open={showAddCard}
@@ -426,11 +483,15 @@ export function Dashboard() {
 
       <AddTransactionModal
         open={showAddTransaction}
-        onOpenChange={setShowAddTransaction}
+        onOpenChange={(open) => {
+          setShowAddTransaction(open);
+          if (!open) setTransactionType(undefined);
+        }}
         onSuccess={() => {
           fetchTransactions();
           fetchMonthlySummary();
         }}
+        initialType={transactionType}
       />
 
       <EditTransactionModal
@@ -451,6 +512,19 @@ export function Dashboard() {
           fetchTransactions();
           fetchMonthlySummary();
         }}
+      />
+
+      <ManageRemindersModal
+        open={showAddPaymentReminder}
+        onOpenChange={setShowAddPaymentReminder}
+        reminders={paymentReminders}
+        onRefresh={refetchReminders}
+      />
+
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        source="dashboard_banner"
       />
     </div>
   );

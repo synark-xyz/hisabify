@@ -2,6 +2,7 @@ export interface Card {
   id: string;
   user_id: string;
   card_number: string;
+  last_four?: string | null;
   card_holder: string;
   expiry_date: string;
   card_type: 'visa' | 'mastercard' | 'amex';
@@ -26,7 +27,7 @@ export interface Transaction {
   category_id: string | null;
   merchant: string;
   amount: number;
-  type: 'expense' | 'income';
+  type: 'expense' | 'income' | 'lend' | 'owe';
   date: string;
   note: string | null;
   created_at: string;
@@ -40,6 +41,8 @@ export interface Transaction {
   exchange_rate?: number;
   rate_timestamp?: string;
   exchange_source?: string;
+  // Receipt field
+  receipt_url?: string | null;
 }
 
 export interface Budget {
@@ -53,16 +56,26 @@ export interface Budget {
   category?: Category;
 }
 
+export interface CategorySpending {
+  name: string;
+  amount: number;
+  percentage: number;
+  color: string;
+}
+
 export interface MonthlySpending {
   month: string;
   amount: number;
+  year: number;
+  topCategory?: string;
+  categories?: CategorySpending[];
+  comparisonAmount?: number; // For previous year comparison
 }
 
-export interface CategorySpending {
-  category: string;
-  amount: number;
-  color: string;
-  percentage: number;
+export interface AnalyticsInsight {
+  icon: string;
+  message: string;
+  type: 'info' | 'warning' | 'success';
 }
 
 export interface ExchangeRate {
@@ -71,5 +84,19 @@ export interface ExchangeRate {
   target_currency: string;
   rate: number;
   fetched_at: string;
+  created_at: string;
+}
+
+export interface PaymentReminder {
+  id: string;
+  user_id: string;
+  title: string;
+  amount: number;
+  due_date: string;
+  status: 'upcoming' | 'paid' | 'missed';
+  notify_before_days: number;
+  is_recurring: boolean;
+  recurring_interval: string | null;
+  note: string | null;
   created_at: string;
 }

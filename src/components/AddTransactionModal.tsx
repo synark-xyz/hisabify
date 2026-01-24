@@ -1,25 +1,36 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Camera, Edit3, CreditCard, ChevronDown } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, CreditCard, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Bell, Edit3 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { ReceiptUpload } from '@/components/ReceiptUpload';
+import { expenseFormSchema, incomeFormSchema, ExpenseFormData, IncomeFormData } from '@/lib/transaction-schemas';
 import { Category, Card } from '@/types';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { schedulePaymentReminder, requestNotificationPermission } from '@/lib/notifications';
 
 interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  initialType?: 'expense' | 'income' | 'lend' | 'owe';
 }
 
-// Income sources
 const incomeSources = [
   { id: 'salary', name: 'Salary', icon: '💼' },
   { id: 'freelance', name: 'Freelance', icon: '💻' },
@@ -30,47 +41,79 @@ const incomeSources = [
   { id: 'other', name: 'Other', icon: '📝' },
 ];
 
-type Step = 'type' | 'card-method' | 'card-scan' | 'form';
+const paymentCategories = [
+  { id: 'credit_card', name: 'Credit Card Bill', icon: <CreditCard className="w-4 h-4" /> },
+  { id: 'utility', name: 'Utility Bill', icon: <Landmark className="w-4 h-4" /> },
+  { id: 'lend', name: 'Lend Money', icon: <Handshake className="w-4 h-4" /> },
+  { id: 'owe', name: 'Owe / Debt', icon: <Landmark className="w-4 h-4" /> },
+  { id: 'custom', name: 'Custom Field', icon: <Edit3 className="w-4 h-4" /> },
+];
 
-export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransactionModalProps) {
-  const [loading, setLoading] = useState(false);
+export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType }: AddTransactionModalProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
-  const [merchant, setMerchant] = useState('');
-  const [amount, setAmount] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [incomeSource, setIncomeSource] = useState('');
-  const [cardId, setCardId] = useState('');
-  const [type, setType] = useState<'expense' | 'income'>('expense');
-  const [step, setStep] = useState<Step>('type');
-  const [useCard, setUseCard] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState('');
+  const [type, setType] = useState<'expense' | 'income' | 'lend' | 'owe'>(initialType || 'expense');
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
   const [convertedPreview, setConvertedPreview] = useState<{ amount: number; rate: number } | null>(null);
+
   const { user } = useAuth();
   const { toast } = useToast();
   const { currency } = useCurrency();
-  const { convertAmount, loading: rateLoading } = useExchangeRate();
+  const { convertAmount } = useExchangeRate();
+
+  const expenseForm = useForm<ExpenseFormData>({
+    resolver: zodResolver(expenseFormSchema),
+    defaultValues: {
+      merchant: '',
+      amount: '',
+      categoryId: '',
+      date: new Date(),
+      note: '',
+      currency: currency,
+      cardId: '',
+      paymentType: '',
+      createReminder: false,
+    },
+  });
+
+  const incomeForm = useForm<IncomeFormData>({
+    resolver: zodResolver(incomeFormSchema),
+    defaultValues: {
+      merchant: '',
+      amount: '',
+      incomeSource: '',
+      date: new Date(),
+      note: '',
+      currency: currency,
+      createReminder: false,
+    },
+  });
+
+  const form = (type === 'income') ? incomeForm : expenseForm;
+  const watchedAmount = (type === 'income' ? incomeForm.watch('amount') : expenseForm.watch('amount')) as any as string;
+  const watchedCurrency = (type === 'income' ? incomeForm.watch('currency') : expenseForm.watch('currency')) as any as string;
 
   useEffect(() => {
     if (open) {
       fetchCategories();
       fetchCards();
-      resetForm();
-      setStep('type');
-      setSelectedCurrency(currency);
+      if (initialType) setType(initialType);
     }
-  }, [open, currency]);
+  }, [open, initialType]);
 
-  // Preview conversion when amount or currency changes
   useEffect(() => {
     const previewConversion = async () => {
-      if (!amount || selectedCurrency === currency) {
+      if (!watchedAmount || watchedCurrency === currency) {
         setConvertedPreview(null);
         return;
       }
 
-      const result = await convertAmount(parseFloat(amount), selectedCurrency, currency);
+      const amountNum = parseFloat(watchedAmount);
+      if (isNaN(amountNum)) return;
+
+      const result = await convertAmount(amountNum, watchedCurrency, currency);
       if (result) {
         setConvertedPreview({
           amount: result.convertedAmount,
@@ -81,7 +124,7 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
 
     const debounce = setTimeout(previewConversion, 500);
     return () => clearTimeout(debounce);
-  }, [amount, selectedCurrency, currency]);
+  }, [watchedAmount, watchedCurrency, currency]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*');
@@ -94,30 +137,25 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
     if (data) setCards(data as unknown as Card[]);
   };
 
-  const handleSubmit = async () => {
-    if (!user || !merchant || !amount) return;
-    if (type === 'expense' && !categoryId) return;
-    if (type === 'income' && !incomeSource) return;
+  const handleSubmit = async (data: any) => {
+    if (!user) return;
 
-    setLoading(true);
     try {
-      const originalAmount = parseFloat(amount);
+      const originalAmount = parseFloat(data.amount);
       let convertedAmount = originalAmount;
       let exchangeRate = 1;
       let exchangeSource = 'same_currency';
       let rateTimestamp = new Date().toISOString();
 
-      // Convert if different currency
-      if (selectedCurrency !== currency) {
-        const conversionResult = await convertAmount(originalAmount, selectedCurrency, currency);
-        
+      if (data.currency !== currency) {
+        const conversionResult = await convertAmount(originalAmount, data.currency, currency);
+
         if (conversionResult) {
           convertedAmount = conversionResult.convertedAmount;
           exchangeRate = conversionResult.rate;
           exchangeSource = conversionResult.source;
           rateTimestamp = conversionResult.timestamp;
         } else {
-          // Fallback: store without conversion, can be converted later
           toast({
             title: 'Warning',
             description: 'Could not fetch exchange rate. Transaction saved with original amount.',
@@ -126,339 +164,391 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess }: AddTransa
         }
       }
 
-      const { error } = await supabase.from('transactions').insert({
+      const baseData = {
         user_id: user.id,
-        merchant,
-        amount: convertedAmount, // Base currency amount for backward compatibility
+        merchant: data.merchant,
+        amount: convertedAmount,
         amount_original: originalAmount,
-        currency_original: selectedCurrency,
+        currency_original: data.currency,
         amount_converted: convertedAmount,
         currency_base: currency,
         exchange_rate: exchangeRate,
         rate_timestamp: rateTimestamp,
         exchange_source: exchangeSource,
-        category_id: type === 'expense' ? categoryId : null,
-        card_id: cardId || null,
         type,
-        date: new Date().toISOString(),
-        note: type === 'income' ? incomeSource : null,
-      });
+        date: data.date.toISOString(),
+        note: data.note || null,
+        receipt_url: receiptUrl,
+      };
+
+      const transactionData = (type === 'income')
+        ? {
+          ...baseData,
+          category_id: null,
+          card_id: null,
+          note: data.incomeSource || data.note,
+        }
+        : {
+          ...baseData,
+          category_id: data.categoryId || null,
+          card_id: data.cardId || null,
+          note: data.paymentType ? `[${data.paymentType}] ${data.note || ''}` : data.note,
+        };
+
+      const { error } = await supabase.from('transactions').insert(transactionData);
 
       if (error) throw error;
 
-      toast({ title: `${type === 'expense' ? 'Expense' : 'Income'} added!` });
+      if (data.createReminder) {
+        await supabase.from('payment_reminders').insert({
+          user_id: user.id,
+          title: `${type === 'lend' ? 'Lend Repayment' : type === 'owe' ? 'Debt Payment' : data.merchant}`,
+          amount: originalAmount,
+          due_date: data.date.toISOString(),
+          status: 'upcoming',
+          notify_before_days: 1,
+          is_recurring: false,
+          note: `Auto-generated from ${type} transaction`,
+        });
+
+        const granted = await requestNotificationPermission();
+        if (granted) {
+          schedulePaymentReminder({
+            title: data.merchant,
+            amount: originalAmount,
+            due_date: data.date.toISOString(),
+          });
+        }
+      }
+
+      toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} added!` });
       onSuccess();
       resetForm();
       onOpenChange(false);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       toast({ title: 'Error', description: message, variant: 'destructive' });
-    } finally {
-      setLoading(false);
     }
   };
 
   const resetForm = () => {
-    setMerchant('');
-    setAmount('');
-    setCategoryId('');
-    setIncomeSource('');
-    setCardId('');
+    expenseForm.reset({
+      merchant: '',
+      amount: '',
+      categoryId: '',
+      date: new Date(),
+      note: '',
+      currency: currency,
+      cardId: '',
+      paymentType: '',
+      createReminder: false,
+    });
+    incomeForm.reset({
+      merchant: '',
+      amount: '',
+      incomeSource: '',
+      date: new Date(),
+      note: '',
+      currency: currency,
+      createReminder: false,
+    });
     setType('expense');
-    setUseCard(false);
+    setReceiptUrl(null);
     setConvertedPreview(null);
   };
 
-  const handleTypeSelect = (selectedType: 'expense' | 'income') => {
-    setType(selectedType);
-    if (selectedType === 'expense' && cards.length > 0) {
-      setStep('card-method');
-    } else {
-      setStep('form');
-    }
-  };
-
-  const handleCardMethod = (method: 'scan' | 'manual' | 'skip') => {
-    if (method === 'scan') {
-      setStep('card-scan');
-      simulateOCR();
-    } else if (method === 'manual') {
-      setUseCard(true);
-      setStep('form');
-    } else {
-      setStep('form');
-    }
-  };
-
-  const simulateOCR = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Simulate detected transaction from card
-    if (cards.length > 0) {
-      setCardId(cards[0].id);
-    }
-    setLoading(false);
-    setUseCard(true);
-    setStep('form');
-  };
-
-  const currencySymbol = currencyData[selectedCurrency]?.symbol || '$';
   const baseCurrencySymbol = currencyData[currency]?.symbol || '$';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-auto max-h-[90vh] rounded-t-3xl overflow-y-auto">
+      <SheetContent side="bottom" className="h-auto max-h-[95vh] rounded-t-3xl overflow-y-auto pb-safe-nav">
         <SheetHeader className="pb-4">
-          <SheetTitle className="text-center">
-            {step === 'type' && 'Add Transaction'}
-            {step === 'card-method' && 'Credit Card'}
-            {step === 'card-scan' && 'Scanning...'}
-            {step === 'form' && `Add ${type === 'expense' ? 'Expense' : 'Income'}`}
+          <SheetTitle className="text-center font-bold text-xl">
+            {`Add ${type.charAt(0).toUpperCase() + type.slice(1)}`}
           </SheetTitle>
         </SheetHeader>
 
-        {/* Step 1: Choose Type */}
-        {step === 'type' && (
-          <div className="space-y-3 py-4">
+        <div className="flex gap-2 mb-6">
+          {[
+            { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+            { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+            { id: 'lend', name: 'Lend', icon: Handshake, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+            { id: 'owe', name: 'Owe', icon: Landmark, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+          ].map((opt) => (
             <button
-              onClick={() => handleTypeSelect('expense')}
-              className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
+              key={opt.id}
+              onClick={() => setType(opt.id as any)}
+              className={cn(
+                "flex-1 flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all",
+                type === opt.id
+                  ? "border-accent bg-accent/5 ring-1 ring-accent/20"
+                  : "border-border bg-card hover:bg-muted"
+              )}
             >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <span className="text-2xl">💸</span>
+              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", opt.bg)}>
+                <opt.icon className={cn("w-5 h-5", opt.color)} />
               </div>
-              <div className="text-left">
-                <p className="font-semibold text-foreground">Expense</p>
-                <p className="text-sm text-muted-foreground">Track your spending</p>
-              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider">{opt.name}</span>
             </button>
+          ))}
+        </div>
 
-            <button
-              onClick={() => handleTypeSelect('income')}
-              className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
-            >
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <span className="text-2xl">💰</span>
-              </div>
-              <div className="text-left">
-                <p className="font-semibold text-foreground">Income</p>
-                <p className="text-sm text-muted-foreground">Record your earnings</p>
-              </div>
-            </button>
-          </div>
-        )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
+            <FormField
+              control={form.control}
+              name="merchant"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="What was this for?" className="rounded-xl" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        {/* Step 2: Card Method (for expenses) */}
-        {step === 'card-method' && (
-          <div className="space-y-3 py-4">
-            <button
-              onClick={() => handleCardMethod('scan')}
-              className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
-            >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Camera className="w-6 h-6 text-primary" />
-              </div>
-              <div className="text-left">
-                <p className="font-semibold text-foreground">Scan Card</p>
-                <p className="text-sm text-muted-foreground">Use camera to detect card</p>
-              </div>
-            </button>
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Amount</FormLabel>
+                  <div className="flex gap-2">
+                    <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field: currencyField }) => (
+                        <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                          <PopoverTrigger asChild>
+                            <Button type="button" variant="outline" className="w-20 rounded-xl flex items-center justify-between px-3">
+                              <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
+                              <ChevronDown className="w-3 h-3 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-48 p-1 rounded-2xl shadow-xl" align="start">
+                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                              {Object.entries(currencyData).map(([code, { symbol }]) => (
+                                <button
+                                  key={code}
+                                  type="button"
+                                  onClick={() => {
+                                    currencyField.onChange(code);
+                                    setCurrencyOpen(false);
+                                  }}
+                                  className={cn(
+                                    'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors',
+                                    currencyField.value === code && 'bg-muted font-bold'
+                                  )}
+                                >
+                                  <span className="w-6 text-center">{symbol}</span>
+                                  <span>{code}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    />
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="0.00" className="flex-1 rounded-xl text-lg font-bold" {...field} />
+                    </FormControl>
+                  </div>
+                  {convertedPreview && (
+                    <p className="text-xs text-muted-foreground mt-1 px-1">
+                      ≈ {baseCurrencySymbol}{convertedPreview.amount.toFixed(2)} {currency}
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <button
-              onClick={() => handleCardMethod('manual')}
-              className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:bg-muted transition-colors"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Edit3 className="w-6 h-6 text-accent" />
-              </div>
-              <div className="text-left">
-                <p className="font-semibold text-foreground">Select Card</p>
-                <p className="text-sm text-muted-foreground">Choose from your cards</p>
-              </div>
-            </button>
+            <div className="grid grid-cols-2 gap-4">
+              {type !== 'income' && (
+                <FormField
+                  control={expenseForm.control}
+                  name="paymentType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Type</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-2xl">
+                          {paymentCategories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
+                              <div className="flex items-center gap-2">
+                                {cat.icon}
+                                <span>{cat.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
 
-            <button
-              onClick={() => handleCardMethod('skip')}
-              className="w-full p-3 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Skip, continue without card
-            </button>
-          </div>
-        )}
+              {type === 'expense' && !expenseForm.getValues('paymentType') && (
+                <FormField
+                  control={expenseForm.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Budget Category</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Budget" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-2xl">
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id} className="rounded-xl">{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-        {/* Step 3: Scanning */}
-        {step === 'card-scan' && loading && (
-          <div className="py-12 flex flex-col items-center gap-4">
-            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse">
-              <Camera className="w-10 h-10 text-primary" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <p className="text-muted-foreground">Detecting card...</p>
-            </div>
-          </div>
-        )}
+              {type === 'income' && (
+                <FormField
+                  control={incomeForm.control}
+                  name="incomeSource"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Source</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Source" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-2xl">
+                          {incomeSources.map((source) => (
+                            <SelectItem key={source.id} value={source.id} className="rounded-xl">
+                              {source.icon} {source.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
 
-        {/* Step 4: Form */}
-        {step === 'form' && (
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="merchant">
-                {type === 'expense' ? 'Merchant / Description' : 'Source / Description'}
-              </Label>
-              <Input
-                id="merchant"
-                placeholder={type === 'expense' ? 'e.g., Starbucks' : 'e.g., Monthly Salary'}
-                value={merchant}
-                onChange={(e) => setMerchant(e.target.value)}
-                className="mt-1"
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Date</FormLabel>
+                    <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
+                            <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                            {field.value ? format(field.value, 'MMM dd, yyyy') : 'Pick date'}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 rounded-2xl shadow-2xl" align="end">
+                        <CalendarComponent
+                          mode="single"
+                          selected={field.value}
+                          onSelect={(date) => { field.onChange(date); setDateOpen(false); }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </FormItem>
+                )}
               />
             </div>
 
-            <div>
-              <Label htmlFor="amount">Amount</Label>
-              <div className="flex gap-2 mt-1">
-                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-20 flex items-center justify-between px-3"
-                    >
-                      <span>{currencySymbol}</span>
-                      <ChevronDown className="w-3 h-3 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-48 p-1" align="start">
-                    <div className="max-h-60 overflow-y-auto">
-                      {Object.entries(currencyData).map(([code, { symbol, name }]) => (
-                        <button
-                          key={code}
-                          onClick={() => {
-                            setSelectedCurrency(code);
-                            setCurrencyOpen(false);
-                          }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors ${
-                            selectedCurrency === code ? 'bg-muted' : ''
-                          }`}
-                        >
-                          <span className="w-6 text-center font-medium">{symbol}</span>
-                          <span className="text-muted-foreground">{code}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-              
-              {/* Conversion Preview */}
-              {selectedCurrency !== currency && amount && (
-                <div className="mt-2 text-sm">
-                  {rateLoading ? (
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Converting...
-                    </span>
-                  ) : convertedPreview ? (
-                    <span className="text-muted-foreground">
-                      ≈ {baseCurrencySymbol}{convertedPreview.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
-                      <span className="text-xs ml-1">(1 {selectedCurrency} = {convertedPreview.rate.toFixed(4)} {currency})</span>
-                    </span>
-                  ) : null}
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500/10 rounded-xl">
+                  <Bell className="w-5 h-5 text-amber-500" />
                 </div>
+                <div>
+                  <Label className="text-sm font-bold">Set Reminder</Label>
+                  <p className="text-xs text-muted-foreground">Notify me on the due date</p>
+                </div>
+              </div>
+              <FormField
+                control={form.control}
+                name="createReminder"
+                render={({ field }) => (
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                )}
+              />
+            </div>
+
+            {type !== 'income' && cards.length > 0 && (
+              <FormField
+                control={expenseForm.control}
+                name="cardId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Payment Method</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Select card" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="rounded-2xl">
+                        {cards.map((card) => (
+                          <SelectItem key={card.id} value={card.id} className="rounded-xl">
+                            •••• {card.card_number.slice(-4)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="note"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Note</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Add details..." className="resize-none rounded-xl" rows={2} {...field} />
+                  </FormControl>
+                </FormItem>
               )}
-            </div>
+            />
 
-            {/* Category for Expense */}
-            {type === 'expense' && (
-              <div>
-                <Label>Category</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {(type === 'expense' || type === 'lend') && (
+              <div className="pt-2">
+                <ReceiptUpload value={receiptUrl} onChange={setReceiptUrl} />
               </div>
             )}
 
-            {/* Income Source */}
-            {type === 'income' && (
-              <div>
-                <Label>Income Source</Label>
-                <Select value={incomeSource} onValueChange={setIncomeSource}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {incomeSources.map((source) => (
-                      <SelectItem key={source.id} value={source.id}>
-                        <span className="flex items-center gap-2">
-                          <span>{source.icon}</span>
-                          <span>{source.name}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Card Selection */}
-            {useCard && cards.length > 0 && (
-              <div>
-                <Label>Card</Label>
-                <Select value={cardId} onValueChange={setCardId}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select card" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cards.map((card) => (
-                      <SelectItem key={card.id} value={card.id}>
-                        <span className="flex items-center gap-2">
-                          <CreditCard className="w-4 h-4" />
-                          <span>•••• {card.card_number.slice(-4)}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setStep('type')}
-                className="flex-1"
-              >
-                Back
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={loading || !merchant || !amount || (type === 'expense' && !categoryId) || (type === 'income' && !incomeSource)}
-                className="flex-1 bg-accent hover:bg-accent/90"
-              >
-                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Add {type === 'expense' ? 'Expense' : 'Income'}
+            <div className="flex gap-3 pt-4 sticky bottom-0 bg-background/80 backdrop-blur-sm pb-4">
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="flex-1 text-muted-foreground rounded-2xl">Cancel</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="flex-1 bg-accent hover:bg-accent/90 rounded-2xl shadow-fab font-bold">
+                {form.formState.isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Record'}
               </Button>
             </div>
-          </div>
-        )}
+          </form>
+        </Form>
       </SheetContent>
     </Sheet>
   );

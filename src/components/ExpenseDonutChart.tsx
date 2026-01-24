@@ -30,7 +30,7 @@ const renderActiveShape = (props: any) => {
         {`${(percent * 100).toFixed(0)}%`}
       </text>
       <text x={cx} y={cy + 14} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={13}>
-        {payload.category}
+        {payload.name}
       </text>
     </g>
   );
@@ -69,7 +69,7 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
               innerRadius={65}
               outerRadius={100}
               dataKey="amount"
-              nameKey="category"
+              nameKey="name"
               onMouseEnter={onPieEnter}
               paddingAngle={2}
               cornerRadius={8}
@@ -77,8 +77,8 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
               animationDuration={800}
             >
               {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
+                <Cell
+                  key={`cell-${index}`}
                   fill={entry.color}
                   stroke="transparent"
                   style={{ cursor: 'pointer' }}
@@ -101,12 +101,12 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
             whileHover={{ scale: 1.02 }}
             onClick={() => setActiveIndex(index)}
           >
-            <div 
-              className="w-3 h-3 rounded-full flex-shrink-0" 
+            <div
+              className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: item.color }}
             />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground truncate">{item.category}</p>
+              <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
               <p className="text-xs text-muted-foreground">{formatAmount(item.amount)}</p>
             </div>
           </motion.div>

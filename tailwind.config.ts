@@ -67,7 +67,7 @@ export default {
         "2xl": "calc(var(--radius) + 8px)",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        sans: ['"Exo 2"', "system-ui", "-apple-system", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

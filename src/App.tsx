@@ -7,15 +7,28 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import { ProfileProvider } from "@/hooks/useProfile";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { CardsPage } from "@/pages/CardsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { AuthPage } from "@/pages/AuthPage";
+import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
+import { BudgetPage } from "@/pages/BudgetPage";
+import SavingsPage from "@/pages/SavingsPage";
+import ReportsPage from "@/pages/ReportsPage";
+import { InstallPage } from "@/pages/InstallPage";
 import NotFound from "@/pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -89,6 +102,30 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/budget"
+        element={
+          <ProtectedRoute>
+            <BudgetPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/savings"
+        element={
+          <ProtectedRoute>
+            <SavingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/profile"
         element={
           <ProtectedRoute>
@@ -104,29 +141,39 @@ function AppRoutes() {
           </AuthRoute>
         }
       />
+      <Route
+        path="/reset-password"
+        element={<ResetPasswordPage />}
+      />
+      <Route
+        path="/install"
+        element={<InstallPage />}
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <ProfileProvider>
-              <CurrencyProvider>
-                <AppRoutes />
-              </CurrencyProvider>
-            </ProfileProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <ProfileProvider>
+                <CurrencyProvider>
+                  <AppRoutes />
+                </CurrencyProvider>
+              </ProfileProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

@@ -35,7 +35,7 @@ export function CardsPage() {
 
   const handleDeleteCard = async (cardId: string) => {
     const { error } = await supabase.from('cards').delete().eq('id', cardId);
-    
+
     if (error) {
       toast({ title: 'Error deleting card', variant: 'destructive' });
     } else {
@@ -45,7 +45,7 @@ export function CardsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-page-content fade-bottom-overlay">
       <div className="max-w-md mx-auto">
         <Header title="My Cards" />
 
@@ -87,7 +87,9 @@ export function CardsPage() {
         </main>
       </div>
 
-      <BottomNavigation onAddClick={() => setShowAddCard(true)} />
+      <BottomNavigation
+        onAddTransaction={() => setShowAddCard(true)}
+      />
 
       <AddCardModal
         open={showAddCard}

@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: true, // Listen on all local IPs
     port: 8080,
+    allowedHosts: ["leticia-flavorsome-hooly.ngrok-free.dev"],
   },
   plugins: [
     react(),

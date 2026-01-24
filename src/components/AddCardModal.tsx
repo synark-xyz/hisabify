@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Camera, Edit3, CreditCard, Loader2, ScanLine } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,15 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/hooks/useCurrency';
 import { createWorker } from 'tesseract.js';
-
-interface AddCardModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-}
-
-type Step = 'choose' | 'scan' | 'manual';
-type CardColor = 'purple' | 'green' | 'orange';
+import { number as validateCardNumber } from 'card-validator';
+// ... other imports
 
 export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProps) {
   const [step, setStep] = useState<Step>('choose');
@@ -29,7 +22,10 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
   const [expiryDate, setExpiryDate] = useState('');
   const [cardColor, setCardColor] = useState<CardColor>('purple');
   const [saveCard, setSaveCard] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const { user } = useAuth();
   const { currency } = useCurrency();
   const { toast } = useToast();
@@ -121,95 +117,134 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
     setSaveCard(false);
   };
 
-  const handleScanTrigger = () => {
-    fileInputRef.current?.click();
+  const startCamera = async () => {
+    setStep('scan');
+    setLoading(false); // We are not "loading" in the sense of waiting, we are "active"
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+      toast({ title: "Camera Error", description: "Could not access camera. Please enter details manually.", variant: "destructive" });
+      setStep('choose');
+    }
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
 
-    setStep('scan');
-    setLoading(true);
+  // Stop camera when modal closes or unmounts
+  useEffect(() => {
+    if (!open) {
+      stopCamera();
+      resetForm();
+    }
+    return () => stopCamera();
+  }, [open]);
+
+  const captureAndProcess = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    setLoading(true); // Show processing state
 
     try {
-      const worker = await createWorker('eng');
-      const ret = await worker.recognize(file);
-      const text = ret.data.text;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
 
-      console.log('OCR Result:', text);
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-      // Extract Card Number (Sequence of 13-19 digits, allowing spaces/dashes)
-      const cardNumberMatch = text.match(/(?:\d[ -]*?){13,19}/);
-      const extractedNumber = cardNumberMatch ? cardNumberMatch[0].replace(/[^0-9]/g, '') : '';
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
 
-      // Extract Expiry Date (MM/YY or MM/YYYY)
-      const dateMatch = text.match(/\b(0[1-9]|1[0-2])\/?([0-9]{2,4})\b/);
-      const extractedDate = dateMatch ? `${dateMatch[1]}/${dateMatch[2].slice(-2)}` : '';
+        const worker = await createWorker('eng', 1, {
+          workerPath: '/worker.min.js',
+          corePath: '/tesseract-core.wasm.js',
+        });
+        const ret = await worker.recognize(dataUrl);
+        const text = ret.data.text;
+        await worker.terminate();
 
-      // Attempt to extract name (All uppercase words, 2+ words, avoiding common keywords)
-      // This is basic heuristic and might need refinement
-      const lines = text.split('\n');
-      let extractedName = '';
-      for (const line of lines) {
-        const trimmed = line.trim();
-        // Look for lines that are uppercase, have spaces, and exclude common card words
-        if (/^[A-Z ]+$/.test(trimmed) && trimmed.includes(' ') && trimmed.length > 5) {
-          if (!['VISA', 'MASTERCARD', 'AMERICAN EXPRESS', 'DEBIT', 'CREDIT', 'BANK', 'VALID', 'THRU'].some(kw => trimmed.includes(kw))) {
-            extractedName = trimmed;
+        console.log("OCR Text:", text);
+
+        // Process Text
+        // 1. Card Number
+        const potentialNumbers = text.match(/(?:\d[ -]*?){13,19}/g) || [];
+        let foundNumber = '';
+
+        for (const num of potentialNumbers) {
+          const raw = num.replace(/[^0-9]/g, '');
+          const validation = validateCardNumber(raw);
+          if (validation.isValid) {
+            foundNumber = raw;
             break;
           }
         }
+
+        // 2. Expiry Date
+        const dateMatch = text.match(/\b(0[1-9]|1[0-2])\/?([0-9]{2,4})\b/);
+        const foundDate = dateMatch ? `${dateMatch[1]}/${dateMatch[2].slice(-2)}` : '';
+
+        // 3. Name (Heuristic)
+        const lines = text.split('\n');
+        let foundName = '';
+        for (const line of lines) {
+          const trimmed = line.trim().toUpperCase();
+          if (/^[A-Z ]+$/.test(trimmed) && trimmed.length > 5 && trimmed.includes(' ')) {
+            if (!['VISA', 'MASTERCARD', 'The', 'VALiD', 'THRU'].some(w => trimmed.includes(w.toUpperCase()))) {
+              foundName = trimmed;
+              break;
+            }
+          }
+        }
+
+        if (foundNumber || foundDate) {
+          if (foundNumber) setCardNumber(formatCardNumber(foundNumber));
+          if (foundDate) setExpiryDate(foundDate);
+          if (foundName) setCardHolder(foundName);
+          setSaveCard(true);
+
+          toast({ title: "Card Scanned", description: "Details extracted successfully." });
+          stopCamera();
+          setStep('manual');
+        } else {
+          toast({ title: "No details found", description: "Try creating better lighting or alignment.", variant: "destructive" });
+        }
       }
-
-      await worker.terminate();
-
-      if (extractedNumber) {
-        setCardNumber(formatCardNumber(extractedNumber));
-        toast({ title: "Card Number Detected", description: "extracted successfully." });
-      } else {
-        toast({ title: "Scan Failed", description: "Could not detect card number. Please try again or enter manually.", variant: "destructive" });
-      }
-
-      if (extractedDate) setExpiryDate(extractedDate);
-      if (extractedName) setCardHolder(extractedName);
-
-      setSaveCard(true);
 
     } catch (err) {
       console.error(err);
-      toast({
-        title: "Scan Error",
-        description: "Failed to process image. Please try manually.",
-        variant: "destructive"
-      });
+      toast({ title: "Scanning failed", description: "Please try again.", variant: "destructive" });
     } finally {
       setLoading(false);
-      setStep('manual');
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetForm(); }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[94vw] max-w-md rounded-3xl p-6 overflow-hidden">
         <DialogHeader className="pt-2">
           <DialogTitle className="text-center text-xl font-black uppercase tracking-tight">Add Card</DialogTitle>
         </DialogHeader>
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          capture="environment"
-          onChange={handleFileChange}
-        />
+        {/* Hidden Canvas for Capture */}
+        <canvas ref={canvasRef} className="hidden" />
 
         {step === 'choose' && (
           <div className="space-y-4 py-4">
             <button
-              onClick={handleScanTrigger}
+              onClick={startCamera}
               className="w-full flex items-center gap-4 p-5 rounded-3xl border border-border/50 hover:bg-muted/50 transition-all group"
             >
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -217,10 +252,9 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
               </div>
               <div className="text-left">
                 <p className="font-black text-foreground uppercase tracking-tight">Scan Card</p>
-                <p className="text-xs text-muted-foreground font-medium">Capture details with AI scan</p>
+                <p className="text-xs text-muted-foreground font-medium">Capture details with Camera</p>
               </div>
             </button>
-
             <button
               onClick={() => setStep('manual')}
               className="w-full flex items-center gap-4 p-5 rounded-3xl border border-border/50 hover:bg-muted/50 transition-all group"
@@ -236,29 +270,46 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
           </div>
         )}
 
-        {step === 'scan' && loading && (
-          <div className="py-12 flex flex-col items-center gap-4 relative overflow-hidden">
-            <div className="w-48 h-32 rounded-2xl bg-muted/30 border border-border flex flex-col items-center justify-center relative overflow-hidden">
-              <ScanLine className="w-12 h-12 text-primary animate-pulse" />
-              {/* Simulated scan line */}
-              <motion.div
-                className="absolute left-0 right-0 h-1 bg-primary shadow-[0_0_15px_hsl(var(--primary))]"
-                initial={{ top: '0%' }}
-                animate={{ top: '100%' }}
-                transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-              />
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <p className="font-bold text-foreground">Analyzing Card Data</p>
+        {step === 'scan' && (
+          <div className="relative flex flex-col items-center">
+            <div className="relative w-full aspect-[1.58] bg-black rounded-xl overflow-hidden mb-4 shadow-2xl">
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+
+              {/* Overlay Guide */}
+              <div className="absolute inset-0 border-[3px] border-white/30 m-4 rounded-xl pointer-events-none">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-[3px] border-l-[3px] border-primary rounded-tl-xl -mt-[3px] -ml-[3px]" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-[3px] border-r-[3px] border-primary rounded-tr-xl -mt-[3px] -mr-[3px]" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-[3px] border-l-[3px] border-primary rounded-bl-xl -mb-[3px] -ml-[3px]" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[3px] border-r-[3px] border-primary rounded-br-xl -mb-[3px] -mr-[3px]" />
               </div>
-              <p className="text-xs text-muted-foreground text-center px-6">
-                Our AI is extracting the card number, holder name, and expiry date...
-              </p>
+
+              {/* Scan Line Animation */}
+              <motion.div
+                className="absolute left-4 right-4 h-[2px] bg-primary/80 shadow-[0_0_10px_rgba(var(--primary),0.8)]"
+                animate={{ top: ['10%', '90%', '10%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
+
+              {loading && (
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm">
+                  <Loader2 className="w-10 h-10 text-primary animate-spin mb-2" />
+                  <p className="text-white font-bold text-sm">Processing...</p>
+                </div>
+              )}
             </div>
+
+            <div className="flex gap-3 w-full">
+              <Button variant="outline" className="flex-1" onClick={() => { stopCamera(); setStep('choose'); }}>Cancel</Button>
+              <Button className="flex-[2]" onClick={captureAndProcess} disabled={loading}>
+                {loading ? 'Scanning...' : 'Capture & Scan'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 text-center">
+              Align your card within the frame and tap Capture.
+            </p>
           </div>
         )}
+
 
         {step === 'manual' && (
           <div className="max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { X, Camera, Edit3, CreditCard, Loader2, ScanLine } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/hooks/useCurrency';
+import { createWorker } from 'tesseract.js';
 
 interface AddCardModalProps {
   open: boolean;
@@ -130,24 +132,62 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
     setStep('scan');
     setLoading(true);
 
-    // Simulate real OCR processing time
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    try {
+      const worker = await createWorker('eng');
+      const ret = await worker.recognize(file);
+      const text = ret.data.text;
 
-    // Result of "scanning"
-    setCardNumber('4242 4242 4242 4242');
-    setCardHolder('JONATHAN DOE');
-    setExpiryDate('08/28');
-    setSaveCard(true);
-    setLoading(false);
+      console.log('OCR Result:', text);
 
-    toast({
-      title: "Card Recognized!",
-      description: "We've automatically filled the card details from your photo.",
-    });
+      // Extract Card Number (Sequence of 13-19 digits, allowing spaces/dashes)
+      const cardNumberMatch = text.match(/(?:\d[ -]*?){13,19}/);
+      const extractedNumber = cardNumberMatch ? cardNumberMatch[0].replace(/[^0-9]/g, '') : '';
 
-    setStep('manual');
-    // Reset file input
-    if (fileInputRef.current) fileInputRef.current.value = '';
+      // Extract Expiry Date (MM/YY or MM/YYYY)
+      const dateMatch = text.match(/\b(0[1-9]|1[0-2])\/?([0-9]{2,4})\b/);
+      const extractedDate = dateMatch ? `${dateMatch[1]}/${dateMatch[2].slice(-2)}` : '';
+
+      // Attempt to extract name (All uppercase words, 2+ words, avoiding common keywords)
+      // This is basic heuristic and might need refinement
+      const lines = text.split('\n');
+      let extractedName = '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        // Look for lines that are uppercase, have spaces, and exclude common card words
+        if (/^[A-Z ]+$/.test(trimmed) && trimmed.includes(' ') && trimmed.length > 5) {
+          if (!['VISA', 'MASTERCARD', 'AMERICAN EXPRESS', 'DEBIT', 'CREDIT', 'BANK', 'VALID', 'THRU'].some(kw => trimmed.includes(kw))) {
+            extractedName = trimmed;
+            break;
+          }
+        }
+      }
+
+      await worker.terminate();
+
+      if (extractedNumber) {
+        setCardNumber(formatCardNumber(extractedNumber));
+        toast({ title: "Card Number Detected", description: "extracted successfully." });
+      } else {
+        toast({ title: "Scan Failed", description: "Could not detect card number. Please try again or enter manually.", variant: "destructive" });
+      }
+
+      if (extractedDate) setExpiryDate(extractedDate);
+      if (extractedName) setCardHolder(extractedName);
+
+      setSaveCard(true);
+
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Scan Error",
+        description: "Failed to process image. Please try manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setStep('manual');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   return (

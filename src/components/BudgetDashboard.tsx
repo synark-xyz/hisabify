@@ -214,12 +214,7 @@ export function BudgetDashboard() {
         </Card>
       )}
 
-      {/* Historical Chart */}
-      <div className="space-y-4">
-        <PremiumGuard featureName="Advanced Analytics">
-          <BudgetHistoryChart />
-        </PremiumGuard>
-      </div>
+
 
       {/* Modals */}
       <AddBudgetModal

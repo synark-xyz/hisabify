@@ -12,7 +12,14 @@ interface PaymentReminderCarouselProps {
 export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselProps) {
   const { formatAmount } = useCurrency();
 
-  if (reminders.length === 0) return null;
+  if (reminders.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center bg-card/50 rounded-2xl border border-dashed border-muted-foreground/20">
+        <Clock className="w-12 h-12 text-muted-foreground/30 mb-3" weight="duotone" />
+        <p className="text-sm font-medium text-muted-foreground">No reminder has been set yet</p>
+      </div>
+    );
+  }
 
   const shouldAnimate = reminders.length > 2;
   // Duplicate reminders only if we are animating for seamless loop

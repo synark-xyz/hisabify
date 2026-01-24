@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { 
-  format, 
-  subMonths, 
-  subYears, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
+import {
+  format,
+  subMonths,
+  subYears,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
   endOfWeek,
   differenceInDays,
   getDay,
@@ -17,28 +17,25 @@ import {
   endOfYear
 } from 'date-fns';
 
-interface ConvertedTransaction {
-  id: string;
-  amount: number;
+import { Transaction } from '@/types';
+
+interface ConvertedTransaction extends Transaction {
   convertedAmount: number;
-  type: 'expense' | 'income';
-  date: string;
-  category?: { name: string; color: string } | null;
 }
 
 // Simple linear regression for trend prediction
 function linearRegression(data: number[]): { slope: number; intercept: number } {
   const n = data.length;
   if (n === 0) return { slope: 0, intercept: 0 };
-  
+
   const xSum = data.reduce((sum, _, i) => sum + i, 0);
   const ySum = data.reduce((sum, y) => sum + y, 0);
   const xySum = data.reduce((sum, y, i) => sum + i * y, 0);
   const x2Sum = data.reduce((sum, _, i) => sum + i * i, 0);
-  
+
   const slope = (n * xySum - xSum * ySum) / (n * x2Sum - xSum * xSum) || 0;
   const intercept = (ySum - slope * xSum) / n || 0;
-  
+
   return { slope, intercept };
 }
 
@@ -101,7 +98,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
   // Spending patterns analysis
   const spendingPatterns = useMemo<SpendingPattern>(() => {
     const expenses = transactions.filter(t => t.type === 'expense');
-    
+
     if (expenses.length === 0) {
       return {
         dailyAverage: 0,
@@ -119,7 +116,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
     const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
     const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
     const dayRange = Math.max(1, differenceInDays(maxDate, minDate) + 1);
-    
+
     const totalExpenses = expenses.reduce((sum, t) => sum + t.convertedAmount, 0);
     const dailyAverage = totalExpenses / dayRange;
     const weeklyAverage = dailyAverage * 7;
@@ -135,10 +132,10 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
       }
       categoryMap[catName].amount += t.convertedAmount;
     });
-    
+
     const sortedCategories = Object.entries(categoryMap)
       .sort(([, a], [, b]) => b.amount - a.amount);
-    
+
     const mostExpensiveCategory = sortedCategories.length > 0
       ? { name: sortedCategories[0][0], ...sortedCategories[0][1] }
       : null;
@@ -149,7 +146,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
       const dayKey = format(new Date(t.date), 'yyyy-MM-dd');
       dayMap[dayKey] = (dayMap[dayKey] || 0) + t.convertedAmount;
     });
-    
+
     const sortedDays = Object.entries(dayMap).sort(([, a], [, b]) => b - a);
     const mostExpensiveDay = sortedDays.length > 0
       ? { date: sortedDays[0][0], amount: sortedDays[0][1] }
@@ -159,7 +156,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
     const sortedDayKeys = Object.keys(dayMap).sort();
     let currentStreak = 0;
     let maxStreak = 0;
-    
+
     for (let i = 0; i < sortedDayKeys.length; i++) {
       if (i === 0) {
         currentStreak = 1;
@@ -181,11 +178,11 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
     const currentMonthExpenses = expenses
       .filter(t => new Date(t.date) >= currentMonthStart)
       .reduce((sum, t) => sum + t.convertedAmount, 0);
-    
-    const percentageAboveNormal = monthlyAverage > 0 
-      ? ((currentMonthExpenses - monthlyAverage) / monthlyAverage) * 100 
+
+    const percentageAboveNormal = monthlyAverage > 0
+      ? ((currentMonthExpenses - monthlyAverage) / monthlyAverage) * 100
       : 0;
-    
+
     return {
       dailyAverage,
       weeklyAverage,
@@ -210,7 +207,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
     const currentMonthExpenses = expenses
       .filter(t => isSameMonth(new Date(t.date), now))
       .reduce((sum, t) => sum + t.convertedAmount, 0);
-    
+
     const lastMonthExpenses = expenses
       .filter(t => isSameMonth(new Date(t.date), subMonths(now, 1)))
       .reduce((sum, t) => sum + t.convertedAmount, 0);
@@ -273,7 +270,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
     const currentMonthIncome = transactions
       .filter(t => t.type === 'income' && isSameMonth(new Date(t.date), now))
       .reduce((sum, t) => sum + t.convertedAmount, 0);
-    
+
     if (currentMonthIncome > currentMonthExpenses && currentMonthIncome > 0) {
       const savingsRate = ((currentMonthIncome - currentMonthExpenses) / currentMonthIncome) * 100;
       if (savingsRate >= 20) {
@@ -305,14 +302,14 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         const date = new Date(t.date);
         return date >= start && date <= end;
       });
-      
+
       const income = periodTx
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.convertedAmount, 0);
       const expenses = periodTx
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.convertedAmount, 0);
-      
+
       return { income, expenses, net: income - expenses };
     };
 
@@ -348,14 +345,14 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         const date = new Date(t.date);
         return date >= start && date <= end;
       });
-      
+
       const income = periodTx
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.convertedAmount, 0);
       const expenses = periodTx
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.convertedAmount, 0);
-      
+
       return { income, expenses, net: income - expenses };
     };
 
@@ -388,7 +385,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
       const monthDate = subMonths(now, i);
       const monthStart = startOfMonth(monthDate);
       const monthEnd = endOfMonth(monthDate);
-      
+
       const monthExpenses = transactions
         .filter(t => {
           const date = new Date(t.date);
@@ -404,7 +401,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
 
     const values = monthlyData.map(d => d.actual);
     const { slope, intercept } = linearRegression(values);
-    
+
     // Predict next month
     const nextMonthPrediction = slope * values.length + intercept;
     const nextMonthExpenses = Math.max(0, nextMonthPrediction);
@@ -436,7 +433,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
     const now = new Date();
     const startDate = subMonths(startOfMonth(now), 2);
     const endDate = endOfMonth(now);
-    
+
     const days = eachDayOfInterval({ start: startDate, end: endDate });
     const expenses = transactions.filter(t => t.type === 'expense');
 
@@ -458,7 +455,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
     return days.map(day => {
       const dayKey = format(day, 'yyyy-MM-dd');
       const data = dayMap[dayKey] || { amount: 0, count: 0 };
-      
+
       // Calculate intensity (0-4 scale)
       let intensity = 0;
       if (data.amount > 0) {
@@ -482,7 +479,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
   const dayOfWeekAnalysis = useMemo<DayOfWeekAnalysis[]>(() => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const expenses = transactions.filter(t => t.type === 'expense');
-    
+
     // Group by day of week
     const dayData: Record<number, { total: number; count: number; days: Set<string> }> = {};
     for (let i = 0; i < 7; i++) {
@@ -493,7 +490,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
       const date = new Date(t.date);
       const dayIndex = getDay(date);
       const dayKey = format(date, 'yyyy-MM-dd');
-      
+
       dayData[dayIndex].total += t.convertedAmount;
       dayData[dayIndex].count++;
       dayData[dayIndex].days.add(dayKey);
@@ -505,8 +502,8 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
       dayName: name,
       dayIndex: index,
       totalSpent: dayData[index].total,
-      averageSpent: dayData[index].days.size > 0 
-        ? dayData[index].total / dayData[index].days.size 
+      averageSpent: dayData[index].days.size > 0
+        ? dayData[index].total / dayData[index].days.size
         : 0,
       transactionCount: dayData[index].count,
       percentage: totalSpent > 0 ? (dayData[index].total / totalSpent) * 100 : 0,

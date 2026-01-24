@@ -4,70 +4,76 @@
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 
-## How can I edit this code?
+# Hisabify — Personal finance made simple
 
-There are several ways of editing your application.
+Hisabify helps individuals track cards, expenses, budgets, and recurring payments with an easy, mobile-first web interface. This repository contains the frontend SPA and integration points for the backend.
 
-**Use Lovable**
+Key user-facing functionality
+- Add and manage cards
+- Add, edit, and categorize transactions
+- Create budgets and savings goals
+- Set recurring payment reminders
+- View simple analytics and monthly overviews
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+For non-technical information about features, roadmap, and priorities see `PRD.md`.
 
-Changes made via Lovable will be committed automatically to this repo.
+If you want to contribute code or run the project locally, see `CONTRIBUTING.md` (or open an issue requesting setup guidance).
 
-**Use your preferred IDE**
+This README intentionally focuses on product description rather than technical setup.
+ 
+About the project
+-----------------
+Hisabify is a privacy-minded, mobile-first personal finance web app. We help solve these common user problems:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Fragmented spending across multiple cards and accounts — bring card-level visibility into one view.
+- Missed recurring bills — surface upcoming payments and reminders.
+- Lack of simple, actionable insights — provide clear monthly overviews and category breakdowns.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Most attractive features
+------------------------
+- Clean mobile-first UI with a bottom navigation and quick-add modals.
+- Card-centric transactions and per-card spending summaries.
+- Planner & savings goals to help users set and track short-term financial targets.
+- Lightweight analytics (monthly trends + category donut) to spot overspend quickly.
 
-Follow these steps:
+For contributors
+----------------
+We welcome contributors. This repo is private — please open issues or send PRs to the `main` branch and follow this flow:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Create a short issue describing the change or enhancement.
+- Branch from `main` using `feat/`, `fix/`, or `chore/` prefixes (e.g. `feat/payment-reminders`).
+- Open a pull request describing the user problem and solution; link the related issue.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Tech snapshot (quick)
+---------------------
+- Frontend: React + TypeScript, built with Vite.
+- Styling: Tailwind CSS and shadcn UI primitives under `src/components/ui/`.
+- Backend: Supabase for Auth, Postgres, and Edge Functions (see `integrations/supabase`).
 
-# Step 3: Install the necessary dependencies.
-npm i
+Quick local setup (developer)
+-----------------------------
+Use `bun` if available (preferred for fast installs), or `npm` as fallback.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+# with bun
+bun install
+bun dev
+
+# or with npm
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Where to look next
+------------------
+- Product & requirements: `PRD.md`
+- Architecture & tech guidance: `TRD.md`
+- UI components: `src/components/` and `src/components/ui/`
+- Hooks and domain logic: `src/hooks/`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Contact
+-------
+If you need access, onboarding, or project-specific environment variables, open an issue or contact the repo owner.
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Contributing guidelines and local scripts can be added to `CONTRIBUTING.md` on request.
+Follow these steps:

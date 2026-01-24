@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface AddCardModalProps {
   open: boolean;
@@ -28,6 +29,7 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
   const [saveCard, setSaveCard] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+  const { currency } = useCurrency();
   const { toast } = useToast();
 
   const detectCardType = (number: string): 'visa' | 'mastercard' | 'amex' => {
@@ -80,6 +82,11 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
       // SECURITY: Only store masked card number (last 4 digits)
       const maskedNumber = getMaskedCardNumber(cleaned);
 
+      // Adjust random balance based on currency (approximate)
+      const isHighValueCurrency = ['JPY', 'KRW', 'VND', 'IDR'].includes(currency);
+      const baseBalance = Math.floor(Math.random() * 50000) + 10000;
+      const finalBalance = isHighValueCurrency ? baseBalance * 100 : baseBalance;
+
       const { error } = await supabase.from('cards').insert({
         user_id: user.id,
         card_number: maskedNumber, // Only last 4 digits stored
@@ -87,7 +94,8 @@ export function AddCardModal({ open, onOpenChange, onSuccess }: AddCardModalProp
         expiry_date: expiryDate,
         card_type: detectCardType(cleaned),
         color: cardColor,
-        balance: Math.floor(Math.random() * 50000) + 10000,
+        balance: finalBalance,
+        // currency: currency, // Uncomment if schema supports it
       });
 
       if (error) throw error;

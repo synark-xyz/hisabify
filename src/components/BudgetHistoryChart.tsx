@@ -78,61 +78,76 @@ export function BudgetHistoryChart() {
   const hasData = data.some(d => d.budget > 0 || d.spent > 0);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-end space-y-0 pb-2">
+    <Card className="rounded-3xl shadow-none border-none bg-accent/5 overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-2 px-6 pt-6">
+        <div>
+          <CardTitle className="text-lg font-bold">Financial Momentum</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">6-month spending trend</p>
+        </div>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select category" />
+          <SelectTrigger className="w-[140px] h-9 text-xs rounded-full border-0 bg-background shadow-sm hover:bg-muted/50 transition-colors">
+            <SelectValue placeholder="Category" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+          <SelectContent align="end" className="rounded-xl shadow-xl border-border/50">
+            <SelectItem value="all" className="rounded-lg text-xs font-medium">✨ All Categories</SelectItem>
             {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
+              <SelectItem key={cat.id} value={cat.id} className="rounded-lg text-xs">
                 {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="px-2 sm:px-4 pb-6">
         {hasData ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis
-                dataKey="month"
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                axisLine={{ stroke: 'hsl(var(--border))' }}
-              />
-              <YAxis
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                axisLine={{ stroke: 'hsl(var(--border))' }}
-                tickFormatter={(value) => `${currencySymbol}${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                wrapperStyle={{ paddingTop: '20px' }}
-                formatter={(value) => <span className="text-foreground">{value === 'budget' ? 'Budget' : 'Spent'}</span>}
-              />
-              <Bar
-                dataKey="budget"
-                fill="hsl(var(--muted-foreground))"
-                radius={[4, 4, 0, 0]}
-                name="budget"
-                isAnimationActive={false}
-              />
-              <Bar
-                dataKey="spent"
-                fill="hsl(var(--primary))"
-                radius={[4, 4, 0, 0]}
-                name="spent"
-                isAnimationActive={false}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[280px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barGap={2}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+                <XAxis
+                  dataKey="month"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }}
+                  tickFormatter={(value) => `${currencySymbol}${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
+                />
+                <Tooltip
+                  cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                  content={<CustomTooltip />}
+                />
+                <Bar
+                  dataKey="budget"
+                  name="Budget"
+                  fill="hsl(var(--muted-foreground)/0.2)"
+                  radius={[4, 4, 4, 4]}
+                  barSize={12}
+                />
+                <Bar
+                  dataKey="spent"
+                  name="Spent"
+                  fill="hsl(var(--primary))"
+                  radius={[4, 4, 4, 4]}
+                  barSize={12}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-            <p>No budget history available. Create a budget to start tracking!</p>
+          <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground bg-background/50 rounded-2xl border-2 border-dashed border-border/50 m-2">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <span className="text-xl">📉</span>
+            </div>
+            <p className="font-medium text-sm">No momentum yet</p>
+            <p className="text-xs text-muted-foreground/70 mt-1 max-w-[200px] text-center">
+              Create budgets and track expenses to see your financial trend here.
+            </p>
           </div>
         )}
       </CardContent>

@@ -216,7 +216,6 @@ export function BudgetDashboard() {
 
       {/* Historical Chart */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">Financial Momentum</h2>
         <PremiumGuard featureName="Advanced Analytics">
           <BudgetHistoryChart />
         </PremiumGuard>

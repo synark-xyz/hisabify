@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { PiggyBank, Target, TrendingUp, CheckCircle } from "lucide-react";
+import { Money, Target, TrendUp, CheckCircle } from "@phosphor-icons/react";
 import { useCurrency } from "@/hooks/useCurrency";
 
 interface SavingsGoalsSummaryProps {
@@ -16,15 +16,15 @@ export function SavingsGoalsSummary({
   completedGoals,
 }: SavingsGoalsSummaryProps) {
   const { formatAmount } = useCurrency();
-  const overallProgress = totalTarget > 0 
-    ? Math.round((totalSaved / totalTarget) * 100) 
+  const overallProgress = totalTarget > 0
+    ? Math.round((totalSaved / totalTarget) * 100)
     : 0;
 
   const stats = [
     {
       label: "Total Saved",
       value: formatAmount(totalSaved),
-      icon: PiggyBank,
+      icon: Money,
       color: "text-green-500",
       bgColor: "bg-green-500/10",
     },
@@ -38,7 +38,7 @@ export function SavingsGoalsSummary({
     {
       label: "Overall Progress",
       value: `${overallProgress}%`,
-      icon: TrendingUp,
+      icon: TrendUp,
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
     },
@@ -58,7 +58,7 @@ export function SavingsGoalsSummary({
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                <stat.icon className={`h-4 w-4 ${stat.color}`} weight="duotone" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>

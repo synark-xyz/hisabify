@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Check, Sparkles, Crown, X } from 'lucide-react';
+import { Check, Sparkles, X } from 'lucide-react';
+import { Crown } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 
 interface UpgradeModalProps {
@@ -11,12 +12,10 @@ interface UpgradeModalProps {
 }
 
 const benefits = [
-    "Unlimited Budgets (Planner)",
+    "Unlimited Budgets",
     "Unlimited Savings Goals",
-    "Budget vs. Spending History Charts",
-    "Multi-currency Support",
-    "Data Exports (CSV/PDF)",
-    "Advanced Analytics"
+    "Advanced Analytics & Insights",
+    "Budget vs. Spending History",
 ];
 
 export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) {
@@ -36,7 +35,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
 
                     <div className="relative pt-12 px-6 pb-6 text-center">
                         <div className="mx-auto w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mb-4 transform -rotate-6">
-                            <Crown className="w-10 h-10 text-purple-600 fill-purple-600" />
+                            <Crown className="w-10 h-10 text-yellow-500" weight="duotone" />
                         </div>
 
                         <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>

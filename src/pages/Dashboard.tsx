@@ -9,6 +9,7 @@ import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
 import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
 import { ParticlesBackground } from '@/components/ParticlesBackground';
 import { BottomNavigation } from '@/components/BottomNavigation';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { AddCardModal } from '@/components/AddCardModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { ManageRemindersModal } from '@/components/ManageRemindersModal';
@@ -127,6 +128,15 @@ export function Dashboard() {
   useEffect(() => {
     generateMonthlyData();
   }, [transactions, selectedYear]);
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      fetchCards(),
+      fetchTransactions(),
+      fetchMonthlySummary(),
+      refetchReminders() // and reminders!
+    ]);
+  };
 
   const fetchCards = async () => {
     if (!user) return;
@@ -255,218 +265,206 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-transparent">
       <ParticlesBackground />
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
-        <Header title="Home" />
+      <PullToRefresh onRefresh={handleRefresh} className="h-[100dvh] pb-page-content fade-bottom-overlay">
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto safe-top pt-4">
+          <Header title="Dashboard" />
 
-        <motion.main
-          className="px-4 space-y-6 pb-page-content fade-bottom-overlay"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Hero Section - Wallet Overview */}
-          <motion.section variants={itemVariants}>
-            <div className="bg-card rounded-3xl p-6 shadow-card border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-accent/20 transition-colors" />
-              <div className="relative z-10 flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Wallet className="w-4 h-4 text-muted-foreground" weight="duotone" />
-                    <span className="text-sm font-medium text-muted-foreground">Main Balance</span>
-                  </div>
-                  <h2 className="text-3xl font-black tracking-tight text-foreground">
-                    {formatAmount(netBalance)}
-                  </h2>
-                </div>
-                <div className="flex flex-col items-end">
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 rounded-full text-emerald-500 text-xs font-bold ring-1 ring-emerald-500/20">
-                    <TrendUp className="w-3 h-3" weight="duotone" />
-                    Today +$12.50
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendDown className="w-4 h-4 text-rose-500" weight="duotone" />
-                    <span className="text-xs font-medium text-muted-foreground tracking-wider">Expenses</span>
-                  </div>
-                  <p className="text-lg font-bold text-foreground">{formatAmount(totalExpenses)}</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendUp className="w-4 h-4 text-emerald-500" weight="duotone" />
-                    <span className="text-xs font-medium text-muted-foreground tracking-wider">Income</span>
-                  </div>
-                  <p className="text-lg font-bold text-foreground">{formatAmount(totalIncome)}</p>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-
-          {/* Upgrade to Pro Banner - Only for non-premium users */}
-          {!subscriptionLoading && !isPremium && (
+          <motion.main
+            className="px-4 space-y-6 pb-24 mt-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Hero Section - Wallet Overview */}
             <motion.section variants={itemVariants}>
-              <div
-                onClick={() => setShowUpgradeModal(true)}
-                className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl shadow-purple-500/20 cursor-pointer group hover:scale-[1.02] transition-transform"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
-                <div className="relative z-10 flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Crown className="w-5 h-5 text-yellow-400 fill-yellow-400" weight="duotone" />
-                      <span className="text-xs font-black text-white/90 tracking-[0.2em]">Premium Feature</span>
+              <div className="bg-card rounded-3xl p-6 shadow-card border border-white/5 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-accent/20 transition-colors" />
+                <div className="relative z-10 flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Wallet className="w-4 h-4 text-muted-foreground" weight="duotone" />
+                      <span className="text-sm font-medium text-muted-foreground">Main Balance</span>
                     </div>
-                    <h3 className="text-xl font-black text-white">Upgrade to Pro</h3>
-                    <p className="text-sm text-white/70 font-medium">Unlock Unlimited Budgets & Advanced Insights</p>
+                    <h2 className="text-3xl font-black tracking-tight text-foreground">
+                      {formatAmount(netBalance)}
+                    </h2>
                   </div>
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <Sparkle className="w-6 h-6 text-white animate-pulse" weight="duotone" />
+                  <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 rounded-full text-emerald-500 text-xs font-bold ring-1 ring-emerald-500/20">
+                      <TrendUp className="w-3 h-3" weight="duotone" />
+                      Today +$12.50
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendDown className="w-4 h-4 text-rose-500" weight="duotone" />
+                      <span className="text-xs font-medium text-muted-foreground tracking-wider">Expenses</span>
+                    </div>
+                    <p className="text-lg font-bold text-foreground">{formatAmount(totalExpenses)}</p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendUp className="w-4 h-4 text-emerald-500" weight="duotone" />
+                      <span className="text-xs font-medium text-muted-foreground tracking-wider">Income</span>
+                    </div>
+                    <p className="text-lg font-bold text-foreground">{formatAmount(totalIncome)}</p>
                   </div>
                 </div>
               </div>
             </motion.section>
-          )}
 
-          {/* Payment Reminders Section */}
-          <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
-                <Bell className="w-5 h-5 text-accent" weight="duotone" />
-                Reminders
-              </h2>
-              <motion.button
-                onClick={() => setShowAddPaymentReminder(true)}
-                className="p-2 bg-muted/50 rounded-xl hover:bg-muted text-muted-foreground transition-colors border border-border/50"
-                whileHover={{ rotate: 90 }}
-              >
-                <Faders className="w-4 h-4" weight="duotone" />
-              </motion.button>
-            </div>
-            <PaymentReminderCarousel reminders={paymentReminders} />
-          </motion.section>
-
-          {/* Cards Section */}
-          <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
-                <CreditCard className="w-5 h-5 text-primary" weight="duotone" />
-                My Cards
-              </h2>
-              <motion.button
-                onClick={() => navigate('/cards')}
-                className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-accent transition-colors"
-                whileHover={{ x: 4 }}
-              >
-                Manage
-                <ArrowRight className="w-4 h-4" weight="duotone" />
-              </motion.button>
-            </div>
-            {cards.length > 0 ? (
-              <CardStack
-                cards={cards}
-                totalBalance={totalBalance}
-                onCardClick={() => navigate('/cards')}
-              />
-            ) : (
-              <motion.button
-                onClick={() => setShowAddCard(true)}
-                className="w-full aspect-[2.6] rounded-2xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center gap-1.5 hover:border-accent hover:bg-accent/5 transition-all bg-card/50"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-accent" weight="duotone" />
-                </div>
-                <p className="text-sm font-bold text-muted-foreground tracking-tight">Add Your First Card</p>
-              </motion.button>
-            )}
-          </motion.section>
-
-
-          {/* Analytics Section */}
-          <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-4 px-1">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
-                <ChartPie className="w-5 h-5 text-accent" weight="duotone" />
-                Insights
-              </h2>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <motion.button
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-accent text-white rounded-full text-xs font-black shadow-fab tracking-wider"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Year {selectedYear}
-                    <CaretDown className="w-4 h-4" weight="duotone" />
-                  </motion.button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="rounded-2xl border-border/50">
-                  {availableYears.map((year) => (
-                    <DropdownMenuItem
-                      key={year}
-                      onClick={() => setSelectedYear(year)}
-                      className={cn(selectedYear === year ? 'bg-accent text-white' : '', "rounded-xl m-1")}
-                    >
-                      {year}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <div className="bg-card rounded-3xl p-5 shadow-card border border-white/5">
-              <EnhancedAnalyticsChart
-                selectedYear={selectedYear}
-                selectedMonth={selectedMonth}
-                onMonthSelect={handleMonthSelect}
-              />
-            </div>
-          </motion.section>
-
-          {/* Transactions Section */}
-          <motion.section variants={itemVariants}>
-            <div className="flex items-center justify-between mb-4 px-1">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
-                <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />
-                Recent History
-              </h2>
-              <motion.button
-                onClick={() => navigate('/expenses')}
-                className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-accent transition-colors"
-                whileHover={{ x: 4 }}
-              >
-                View All
-                <ArrowRight className="w-4 h-4" weight="duotone" />
-              </motion.button>
-            </div>
-            <div className="space-y-3">
-              {transactions.length > 0 ? (
-                transactions.map((tx, idx) => (
-                  <TransactionItem
-                    key={tx.id}
-                    transaction={tx}
-                    index={idx}
-                    onEdit={setEditingTransaction}
-                    onDelete={setDeletingTransaction}
-                    revealedId={revealedTransactionId}
-                    onReveal={setRevealedTransactionId}
-                  />
-                ))
-              ) : (
-                <div className="bg-card/50 rounded-2xl p-8 text-center border border-dashed border-muted-foreground/20">
-                  <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Sparkle className="w-8 h-8 text-muted-foreground/30" weight="duotone" />
+            {/* Upgrade to Pro Banner - Only for non-premium users */}
+            {!subscriptionLoading && !isPremium && (
+              <motion.section variants={itemVariants}>
+                <div
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl shadow-purple-500/20 cursor-pointer group hover:scale-[1.02] transition-transform"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Crown className="w-5 h-5 text-yellow-400 fill-yellow-400" weight="duotone" />
+                        <span className="text-xs font-black text-white/90 tracking-[0.2em]">Premium Feature</span>
+                      </div>
+                      <h3 className="text-xl font-black text-white">Upgrade to Pro</h3>
+                      <p className="text-sm text-white/70 font-medium">Unlock Unlimited Budgets & Advanced Insights</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Sparkle className="w-6 h-6 text-white animate-pulse" weight="duotone" />
+                    </div>
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground">No transactions yet. Start adding your expenses!</p>
                 </div>
-              )}
-            </div>
-          </motion.section>
-        </motion.main>
-      </div>
+              </motion.section>
+            )}
+
+            {/* Payment Reminders Section */}
+            <motion.section variants={itemVariants}>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                  <Bell className="w-5 h-5 text-accent" weight="duotone" />
+                  Reminders
+                </h2>
+                <motion.button
+                  onClick={() => setShowAddPaymentReminder(true)}
+                  className="p-2 bg-muted/50 rounded-xl hover:bg-muted text-muted-foreground transition-colors border border-border/50"
+                  whileHover={{ rotate: 90 }}
+                >
+                  <Faders className="w-4 h-4" weight="duotone" />
+                </motion.button>
+              </div>
+              <PaymentReminderCarousel reminders={paymentReminders} />
+            </motion.section>
+
+
+
+
+            {/* Analytics Section */}
+            <motion.section variants={itemVariants}>
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                  <ChartPie className="w-5 h-5 text-accent" weight="duotone" />
+                  Insights
+                </h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <motion.button
+                      className="flex items-center gap-1.5 px-4 py-1.5 bg-accent text-white rounded-full text-xs font-black shadow-fab tracking-wider"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Year {selectedYear}
+                      <CaretDown className="w-4 h-4" weight="duotone" />
+                    </motion.button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="rounded-2xl border-border/50">
+                    {availableYears.map((year) => (
+                      <DropdownMenuItem
+                        key={year}
+                        onClick={() => setSelectedYear(year)}
+                        className={cn(selectedYear === year ? 'bg-accent text-white' : '', "rounded-xl m-1")}
+                      >
+                        {year}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="bg-card rounded-3xl p-5 shadow-card border border-white/5 relative overflow-hidden">
+                {/* Premium Guard Overlay */}
+                {!isPremium && !subscriptionLoading && (
+                  <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-4 border border-border/50">
+                      <Crown className="w-8 h-8 text-accent fill-accent" weight="duotone" />
+                    </div>
+                    <h3 className="text-xl font-black mb-2 text-foreground">Unlock Full Insights</h3>
+                    <p className="text-sm text-muted-foreground mb-6 max-w-[240px]">
+                      See exactly where your money goes with advanced analytics and trends.
+                    </p>
+                    <motion.button
+                      onClick={() => setShowUpgradeModal(true)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black shadow-lg shadow-purple-500/25 flex items-center gap-2"
+                    >
+                      Upgrade to Pro
+                    </motion.button>
+                  </div>
+                )}
+
+                <EnhancedAnalyticsChart
+                  selectedYear={selectedYear}
+                  selectedMonth={selectedMonth}
+                  onMonthSelect={handleMonthSelect}
+                />
+              </div>
+            </motion.section>
+
+            {/* Transactions Section */}
+            <motion.section variants={itemVariants}>
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                  <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />
+                  Recent History
+                </h2>
+                <motion.button
+                  onClick={() => navigate('/expenses')}
+                  className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-accent transition-colors"
+                  whileHover={{ x: 4 }}
+                >
+                  View All
+                  <ArrowRight className="w-4 h-4" weight="duotone" />
+                </motion.button>
+              </div>
+              <div className="space-y-3">
+                {transactions.length > 0 ? (
+                  transactions.map((tx, idx) => (
+                    <TransactionItem
+                      key={tx.id}
+                      transaction={tx}
+                      index={idx}
+                      onEdit={setEditingTransaction}
+                      onDelete={setDeletingTransaction}
+                      revealedId={revealedTransactionId}
+                      onReveal={setRevealedTransactionId}
+                    />
+                  ))
+                ) : (
+                  <div className="bg-card/50 rounded-2xl p-8 text-center border border-dashed border-muted-foreground/20">
+                    <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Sparkle className="w-8 h-8 text-muted-foreground/30" weight="duotone" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">No transactions yet. Start adding your expenses!</p>
+                  </div>
+                )}
+              </div>
+            </motion.section>
+          </motion.main>
+        </div>
+      </PullToRefresh>
 
       <BottomNavigation
         onAddTransaction={() => setShowAddTransaction(true)}

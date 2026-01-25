@@ -69,15 +69,46 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const detectLocationCurrency = useCallback(async () => {
     if (hasDetectedLocation) return;
 
+    // Check if user already has a currency preference
+    const storedCurrency = localStorage.getItem('currency');
+    if (storedCurrency && storedCurrency !== 'USD') {
+      setHasDetectedLocation(true);
+      return;
+    }
+
     try {
-      // Check if user already has a currency preference
-      const storedCurrency = localStorage.getItem('currency');
-      if (storedCurrency && storedCurrency !== 'USD') {
-        setHasDetectedLocation(true);
-        return;
+      // 1. Try Geolocation API (This "Asks for location")
+      const getPosition = () => {
+        return new Promise<GeolocationPosition>((resolve, reject) => {
+          if (!navigator.geolocation) reject('Geolocation not supported');
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+      };
+
+      try {
+        const position = await getPosition();
+        const { latitude, longitude } = position.coords;
+
+        // Free reverse geocoding
+        const response = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+        const data = await response.json();
+        const countryCode = data.countryCode;
+        const detectedCurrency = countryCurrencyMap[countryCode];
+
+        if (detectedCurrency && currencyData[detectedCurrency]) {
+          setCurrencyState(detectedCurrency);
+          localStorage.setItem('currency', detectedCurrency);
+          setCurrencyVersion(v => v + 1);
+          setHasDetectedLocation(true);
+          return; // Success
+        }
+      } catch (geoError) {
+        console.log('Geolocation denied or failed, falling back to IP', geoError);
       }
 
-      // Try to get location from IP
+      // 2. Fallback to IP-based detection
       const response = await fetch('https://ipapi.co/json/');
       if (response.ok) {
         const data = await response.json();
@@ -97,10 +128,9 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   }, [hasDetectedLocation]);
 
   useEffect(() => {
-    if (!user) {
-      detectLocationCurrency();
-    }
-  }, [user, detectLocationCurrency]);
+    // Run detection if no user is logged in, or if logged in but waiting for profile
+    detectLocationCurrency();
+  }, [detectLocationCurrency]);
 
   useEffect(() => {
     if (user) {

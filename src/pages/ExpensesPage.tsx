@@ -212,12 +212,12 @@ export function ExpensesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PullToRefresh onRefresh={handleRefresh} className="min-h-screen pb-page-content fade-bottom-overlay">
+      <PullToRefresh onRefresh={handleRefresh} className="h-[100dvh] pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
           <Header title="Expenses" />
 
           <motion.main
-            className="px-4 space-y-6"
+            className="px-4 space-y-6 pt-6 pb-24"
             variants={containerVariants}
             initial="hidden"
             animate="visible"

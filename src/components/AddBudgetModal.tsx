@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { DateSelect } from '@/components/ui/date-select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -35,14 +34,14 @@ interface AddBudgetModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingBudget?: Budget | null;
+  onSuccess?: () => void;
 }
 
-export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetModalProps) {
+export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }: AddBudgetModalProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
-  const [startDateOpen, setStartDateOpen] = useState(false);
-  const [endDateOpen, setEndDateOpen] = useState(false);
-  
+
+
   const { currency } = useCurrency();
   const { createBudget, updateBudget } = useBudgets();
   const currencySymbol = currencyData[currency]?.symbol || '$';
@@ -115,9 +114,8 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
 
   const handleStartDateChange = (date: Date | undefined) => {
     if (!date) return;
-    
+
     form.setValue('startDate', date);
-    setStartDateOpen(false);
 
     // Auto-calculate end date based on period type
     let newEndDate: Date;
@@ -139,7 +137,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
 
   const onSubmit = async (data: BudgetFormData) => {
     setLoading(true);
-    
+
     try {
       if (editingBudget) {
         await updateBudget({
@@ -161,7 +159,8 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
           name: data.name,
         });
       }
-      
+
+      onSuccess?.();
       onOpenChange(false);
     } finally {
       setLoading(false);
@@ -272,38 +271,19 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
             />
 
             {/* Date Range */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              'w-full justify-start text-left font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                          >
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'MMM d, yyyy') : 'Select'}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={field.value}
-                          onSelect={handleStartDateChange}
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DateSelect
+                      label="Start Date"
+                      value={field.value}
+                      onChange={(date) => {
+                        handleStartDateChange(date);
+                      }}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -314,37 +294,11 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget }: AddBudgetM
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              'w-full justify-start text-left font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                          >
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'MMM d, yyyy') : 'Select'}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent
-                          mode="single"
-                          selected={field.value}
-                          onSelect={(date) => {
-                            if (date) {
-                              field.onChange(date);
-                              setEndDateOpen(false);
-                            }
-                          }}
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DateSelect
+                      label="End Date"
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}

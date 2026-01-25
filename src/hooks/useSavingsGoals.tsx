@@ -28,7 +28,7 @@ export function useSavingsGoals() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: goals = [], isLoading } = useQuery({
+  const { data: goals = [], isLoading, refetch } = useQuery({
     queryKey: ["savings-goals", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -180,6 +180,7 @@ export function useSavingsGoals() {
   return {
     goals,
     isLoading,
+    refetch,
     createGoal,
     updateGoal,
     addToGoal,

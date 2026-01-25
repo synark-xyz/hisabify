@@ -437,7 +437,7 @@ export function EnhancedAnalyticsChart({
         </div>
 
         <div className="space-y-4">
-          {(showAllCategories ? categoryBreakdown : categoryBreakdown.slice(0, 3)).map((cat, idx) => (
+          {(showAllCategories ? categoryBreakdown : categoryBreakdown.slice(0, 1)).map((cat, idx) => (
             <motion.div
               key={cat.name}
               className="space-y-1.5 cursor-pointer group"

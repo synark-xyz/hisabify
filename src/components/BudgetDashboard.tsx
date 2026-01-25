@@ -20,7 +20,7 @@ export function BudgetDashboard() {
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetWithSpending | null>(null);
 
-  const { budgets, loading, deleteBudget, copyBudgetToNextPeriod } = useBudgets();
+  const { budgets, loading, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
   const { isPremium } = useSubscription();
@@ -36,6 +36,8 @@ export function BudgetDashboard() {
     setEditingBudget(budget);
     setShowAddBudget(true);
   };
+
+
 
   const handleDelete = (budget: BudgetWithSpending) => {
     setDeletingBudget(budget);
@@ -221,6 +223,7 @@ export function BudgetDashboard() {
         open={showAddBudget}
         onOpenChange={closeAddModal}
         editingBudget={editingBudget}
+        onSuccess={refetch}
       />
 
       <DeleteBudgetDialog

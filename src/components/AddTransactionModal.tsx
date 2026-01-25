@@ -257,6 +257,25 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
     setConvertedPreview(null);
   };
 
+  const handleScanComplete = (data: { amount?: string; date?: Date; merchant?: string }) => {
+    if (data.merchant) {
+      (form.setValue as any)('merchant', data.merchant);
+    }
+    if (data.amount) {
+      (form.setValue as any)('amount', data.amount);
+    }
+    if (data.date) {
+      (form.setValue as any)('date', data.date);
+    }
+
+    if (data.merchant || data.amount || data.date) {
+      toast({
+        title: "Receipt Scanned",
+        description: "Details auto-filled from image.",
+      });
+    }
+  };
+
   const baseCurrencySymbol = currencyData[currency]?.symbol || '$';
 
   return (
@@ -534,10 +553,13 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
                 </FormItem>
               )}
             />
-
             {(type === 'expense' || type === 'lend') && (
               <div className="pt-2">
-                <ReceiptUpload value={receiptUrl} onChange={setReceiptUrl} />
+                <ReceiptUpload
+                  value={receiptUrl}
+                  onChange={setReceiptUrl}
+                  onScanComplete={handleScanComplete}
+                />
               </div>
             )}
 
@@ -548,8 +570,8 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
               </Button>
             </div>
           </form>
-        </Form>
-      </SheetContent>
-    </Sheet>
+        </Form >
+      </SheetContent >
+    </Sheet >
   );
 }

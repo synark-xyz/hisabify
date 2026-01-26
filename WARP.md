@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-This is a personal finance/wallet management application built with React, TypeScript, Vite, and Supabase. The app is called "Hisabify" and was originally generated via Lovable.dev. It supports multi-currency transactions, budgeting, savings goals, analytics, and PWA functionality.
+This is a personal finance/wallet management application built with React, TypeScript, Vite, and Supabase. The app is called "Hisabify" and was originally generated via vibe coding. It supports multi-currency transactions, budgeting, savings goals, analytics, and PWA functionality.
 
 ## Development Commands
 
@@ -190,6 +190,6 @@ const channel = supabase
 ## Notes
 
 - This project uses bun.lockb but package-lock.json is also present; npm is the documented package manager
-- Lovable-specific: `lovable-tagger` plugin is enabled in development mode for component tracking
 - Development server runs on port 8080 (not the default Vite port)
 - ESLint disables `@typescript-eslint/no-unused-vars` warnings
+- ngork url: https://leticia-flavorsome-hooly.ngrok-free.dev/

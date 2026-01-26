@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+/// <reference types="vitest" />
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -10,6 +11,11 @@ export default defineConfig(({ mode }) => ({
     host: true, // Listen on all local IPs
     port: 8080,
     allowedHosts: ["leticia-flavorsome-hooly.ngrok-free.dev"],
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
   },
   plugins: [
     react(),

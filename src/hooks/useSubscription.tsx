@@ -9,7 +9,7 @@ export function useSubscription() {
     const isSpecialUser = user?.email === 'sam103043@gmail.com';
 
     return {
-        isPremium: (profile.subscription_type === 'pro' && profile.subscription_status === 'active') || isSpecialUser,
+        isPremium: (profile.subscription_type === 'pro' && profile.subscription_status === 'active') || profile.referral_credits > 0 || isSpecialUser,
         loading
     };
 }

@@ -9,6 +9,9 @@ interface User {
   currency: string;
   subscription_type: 'base' | 'pro';
   subscription_status: string;
+  referral_code: string | null;
+  referral_credits: number;
+  last_active_at: string | null;
 }
 
 interface ProfileContextType {
@@ -31,6 +34,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     currency: 'USD',
     subscription_type: 'base',
     subscription_status: 'inactive',
+    referral_code: null,
+    referral_credits: 0,
+    last_active_at: null,
   });
 
   const refreshProfile = async () => {
@@ -42,6 +48,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         currency: 'USD',
         subscription_type: 'base',
         subscription_status: 'inactive',
+        referral_code: null,
+        referral_credits: 0,
+        last_active_at: null,
       });
       setLoading(false);
       return;
@@ -62,6 +71,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         currency: data.currency || 'USD',
         subscription_type: data.subscription_type || 'base',
         subscription_status: data.subscription_status || 'inactive',
+        referral_code: data.referral_code,
+        referral_credits: data.referral_credits || 0,
+        last_active_at: data.last_active_at,
       });
     }
     setLoading(false);

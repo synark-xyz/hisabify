@@ -20,7 +20,7 @@
   }
 
   .pt-header {
-    padding-top: calc(env(safe-area-inset-top) + 24px);
+    padding-top: calc(env(safe-area-inset-top) + 8px);
   }
 }
 
@@ -130,10 +130,40 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
+    /* Allow native overscroll for bouncy effect, but maybe prevent nav actions */
+    overscroll-behavior-y: auto;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    /* Ensure body can scroll */
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+  }
+
+  /* Robust scrollbar hiding */
+  ::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    background: transparent;
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  * {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  /* Bouncy scroll container utility */
+  .bouncy-scroll {
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    /* Allow native bounce */
+    -webkit-overflow-scrolling: touch;
+    /* iOS momentum scrolling */
   }
 }
 
@@ -177,7 +207,7 @@
 
   /* Utility for page content to clear the navigation bar */
   .pb-page-content {
-    padding-bottom: calc(100px + env(safe-area-inset-bottom, 16px));
+    padding-bottom: calc(140px + env(safe-area-inset-bottom, 16px));
   }
 
   /* Utility for the navigation bar itself to handle safe areas */

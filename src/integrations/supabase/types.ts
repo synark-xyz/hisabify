@@ -234,6 +234,10 @@ export type Database = {
           week_start_day: string
           subscription_type: 'base' | 'pro'
           subscription_status: string
+          referral_code: string | null
+          referral_credits: number
+          referred_by: string | null
+          last_active_at: string
         }
         Insert: {
           avatar_url?: string | null
@@ -252,6 +256,10 @@ export type Database = {
           week_start_day?: string
           subscription_type?: 'base' | 'pro'
           subscription_status?: string
+          referral_code?: string | null
+          referral_credits?: number
+          referred_by?: string | null
+          last_active_at?: string
         }
         Update: {
           avatar_url?: string | null
@@ -270,6 +278,10 @@ export type Database = {
           week_start_day?: string
           subscription_type?: 'base' | 'pro'
           subscription_status?: string
+          referral_code?: string | null
+          referral_credits?: number
+          referred_by?: string | null
+          last_active_at?: string
         }
         Relationships: []
       }

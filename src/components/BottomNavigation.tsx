@@ -27,18 +27,20 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20 }}
     >
-      <div className="max-w-2xl mx-auto flex items-center justify-around h-16 md:h-18 relative">
+      <div className="max-w-2xl mx-auto grid grid-cols-5 items-center h-16 md:h-18 relative">
         {navItems.map((item, index) => {
           if (item === null) {
             return (
-              <motion.button
-                key="add-button"
-                onClick={onAddTransaction}
-                className="relative -top-3 w-14 h-14 rounded-2xl bg-accent text-white shadow-fab flex items-center justify-center z-51 active:scale-95 transition-transform"
-                whileHover={{ y: -6, scale: 1.05 }}
-              >
-                <Plus className="w-8 h-8" strokeWidth={3} />
-              </motion.button>
+              <div key="add-button-container" className="flex justify-center items-center">
+                <motion.button
+                  onClick={onAddTransaction}
+                  className="relative -top-3 w-14 h-14 rounded-2xl bg-accent text-white shadow-fab flex items-center justify-center z-[51]"
+                  whileHover={{ y: -6, scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Plus className="w-8 h-8" strokeWidth={3} />
+                </motion.button>
+              </div>
             );
           }
 
@@ -46,26 +48,27 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
           const Icon = item.icon;
 
           return (
-            <motion.button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={cn(
-                'relative flex flex-col items-center justify-center gap-1 p-2 rounded-2xl transition-all min-w-[64px]',
-                isActive ? 'text-accent' : 'text-muted-foreground hover:bg-muted/30'
-              )}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Icon className={cn('w-5 h-5', isActive && 'fill-accent/10')} />
-              <span className={cn('text-[10px] font-bold tracking-tight transition-opacity', isActive ? 'opacity-100' : 'opacity-60')}>
-                {item.label}
-              </span>
-              {isActive && (
-                <motion.div
-                  className="absolute -top-1 w-1 h-1 rounded-full bg-accent"
-                  layoutId="nav-indicator"
-                />
-              )}
-            </motion.button>
+            <div key={item.path} className="flex justify-center items-center">
+              <motion.button
+                onClick={() => navigate(item.path)}
+                className={cn(
+                  'relative flex flex-col items-center justify-center gap-1 p-2 rounded-2xl transition-all w-full',
+                  isActive ? 'text-accent' : 'text-muted-foreground hover:bg-muted/30'
+                )}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Icon className={cn('w-5 h-5', isActive && 'fill-accent/10')} />
+                <span className={cn('text-[10px] font-bold tracking-tight transition-opacity', isActive ? 'opacity-100' : 'opacity-60')}>
+                  {item.label}
+                </span>
+                {isActive && (
+                  <motion.div
+                    className="absolute -top-1 w-1 h-1 rounded-full bg-accent"
+                    layoutId="nav-indicator"
+                  />
+                )}
+              </motion.button>
+            </div>
           );
         })}
       </div>

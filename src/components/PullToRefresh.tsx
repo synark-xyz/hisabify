@@ -38,7 +38,7 @@ export const PullToRefresh = forwardRef<HTMLDivElement, PullToRefreshProps>(
           {(isPulling || isRefreshing) && pullDistance > 10 && (
             <motion.div
               className="absolute left-0 right-0 flex justify-center z-10 pointer-events-none"
-              style={{ top: Math.min(pullDistance - 40, 40) }}
+              style={{ top: `calc(env(safe-area-inset-top) + 65px + ${Math.min(pullDistance - 40, 40)}px)` }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
@@ -51,8 +51,8 @@ export const PullToRefresh = forwardRef<HTMLDivElement, PullToRefreshProps>(
                     animate={{ rotate: progress >= 100 ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <ArrowDown 
-                      className="w-5 h-5 text-primary" 
+                    <ArrowDown
+                      className="w-5 h-5 text-primary"
                       style={{ opacity: Math.min(progress / 100, 1) }}
                     />
                   </motion.div>
@@ -71,7 +71,7 @@ export const PullToRefresh = forwardRef<HTMLDivElement, PullToRefreshProps>(
         >
           {children}
         </motion.div>
-      </div>
+      </div >
     );
   }
 );

@@ -1,7 +1,28 @@
 @import url("https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Sticky toolbar safe area */
+  .pb-safe-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+    /* 80px for nav height */
+  }
+
+  .pt-header {
+    padding-top: calc(env(safe-area-inset-top) + 24px);
+  }
+}
 
 /* SettleUp Design System - Fintech aesthetic with purple cards and orange accents */
 

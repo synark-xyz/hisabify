@@ -8,10 +8,10 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import { ProfileProvider } from "@/hooks/useProfile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
-import { CardsPage } from "@/pages/CardsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { AuthPage } from "@/pages/AuthPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
@@ -70,69 +70,22 @@ function AppRoutes() {
   return (
     <Routes>
       <Route
-        path="/"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <Layout />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/expenses"
-        element={
-          <ProtectedRoute>
-            <ExpensesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/analytics"
-        element={
-          <ProtectedRoute>
-            <AnalyticsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/cards"
-        element={
-          <ProtectedRoute>
-            <CardsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/budget"
-        element={
-          <ProtectedRoute>
-            <BudgetPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/savings"
-        element={
-          <ProtectedRoute>
-            <SavingsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reports"
-        element={
-          <ProtectedRoute>
-            <ReportsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/expenses" element={<ExpensesPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/budget" element={<BudgetPage />} />
+        <Route path="/savings" element={<SavingsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Route>
+
       <Route
         path="/auth"
         element={

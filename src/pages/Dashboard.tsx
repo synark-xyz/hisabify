@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { DailyQuote } from '@/components/DailyQuote';
+import { HealthScoreCard } from '@/features/gamification/components/HealthScoreCard';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
 import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
@@ -296,25 +297,38 @@ export function Dashboard() {
               </div>
             </motion.section>
 
+            <HealthScoreCard />
+
             {/* Upgrade to Pro Banner - Only for non-premium users */}
+            {/* Upgrade to Pro Banner - Compact & Premium */}
             {!subscriptionLoading && !isPremium && (
               <motion.section>
                 <div
                   onClick={() => setShowUpgradeModal(true)}
-                  className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl shadow-purple-500/20 cursor-pointer group hover:scale-[1.02] transition-transform"
+                  className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 shadow-lg shadow-purple-500/20 cursor-pointer group transition-all active:scale-95"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
-                  <div className="relative z-10 flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Crown className="w-5 h-5 text-yellow-400 fill-yellow-400" weight="duotone" />
-                        <span className="text-xs font-black text-white/90 tracking-[0.2em]">Premium Feature</span>
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-colors" />
+
+                  <div className="relative z-10 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner ring-1 ring-white/30">
+                        <Crown className="w-5 h-5 text-white" weight="fill" />
                       </div>
-                      <h3 className="text-xl font-black text-white">Upgrade to Pro</h3>
-                      <p className="text-sm text-white/70 font-medium">Unlock Unlimited Budgets & Advanced Insights</p>
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="text-base font-bold text-white tracking-tight">Upgrade to Pro</h3>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white font-bold uppercase tracking-wide">
+                            New
+                          </span>
+                        </div>
+                        <p className="text-xs text-white/80 font-medium">Unlock unlimited budgets & insights</p>
+                      </div>
                     </div>
-                    <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <Sparkle className="w-6 h-6 text-white animate-pulse" weight="duotone" />
+
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-white text-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <Sparkle className="w-4 h-4" weight="fill" />
+                      </div>
                     </div>
                   </div>
                 </div>

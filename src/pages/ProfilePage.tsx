@@ -37,6 +37,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { requestNotificationPermission, sendNotification } from '@/lib/notifications';
+import { ReferralCard } from '@/features/referrals/components/ReferralCard';
+import { Gift } from 'lucide-react';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
@@ -364,6 +366,7 @@ export function ProfilePage() {
     { id: 'personal', icon: User, label: 'Personal' },
     { id: 'preferences', icon: Settings, label: 'Preferences' },
     { id: 'notifications', icon: Bell, label: 'Alerts' },
+    { id: 'referrals', icon: Gift, label: 'Invite' },
     { id: 'data', icon: Database, label: 'Data' },
   ];
 
@@ -402,7 +405,7 @@ export function ProfilePage() {
             </div>
             <h2 className="text-xl font-bold text-foreground mt-4 flex items-center justify-center gap-2">
               {profile.display_name || user?.email?.split('@')[0]}
-              {isPremium && (
+              {(isPremium || profile.referral_credits > 0) && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[10px] font-black text-accent uppercase tracking-wider">
                   PRO
                 </span>
@@ -412,7 +415,7 @@ export function ProfilePage() {
           </motion.div>
 
           {/* Premium Card Upsell */}
-          {!subscriptionLoading && !isPremium && (
+          {!subscriptionLoading && !isPremium && profile.referral_credits === 0 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -445,7 +448,7 @@ export function ProfilePage() {
             transition={{ delay: 0.1 }}
           >
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="w-full grid grid-cols-4 h-auto p-1 bg-muted">
+              <TabsList className="w-full grid grid-cols-5 h-auto p-1 bg-muted">
                 {menuItems.map((item) => (
                   <TabsTrigger
                     key={item.id}
@@ -762,6 +765,11 @@ export function ProfilePage() {
                     }}
                   />
                 </div>
+              </TabsContent>
+
+              {/* Referrals Tab */}
+              <TabsContent value="referrals" className="p-4">
+                <ReferralCard />
               </TabsContent>
 
               {/* Data Management Tab */}

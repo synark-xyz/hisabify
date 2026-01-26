@@ -143,9 +143,27 @@ const App = () => (
 
 // Separated component to use hooks inside BrowserRouter
 function RootLogic() {
-  const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+  const { user } = useAuth();
 
-  // Redirect logic could also be here if needed for onboarding
+  useEffect(() => {
+    if (user) {
+      // Log activity once every 12 hours
+      const logActivity = async () => {
+        const lastLog = localStorage.getItem(`last_activity_log_${user.id}`);
+        const now = new Date().getTime();
+
+        if (!lastLog || now - parseInt(lastLog) > 12 * 60 * 60 * 1000) {
+          const { supabase } = await import("@/integrations/supabase/client");
+          await supabase
+            .from('users')
+            .update({ last_active_at: new Date().toISOString() })
+            .eq('user_id', user.id);
+          localStorage.setItem(`last_activity_log_${user.id}`, now.toString());
+        }
+      };
+      logActivity();
+    }
+  }, [user]);
 
   return <AppRoutes />;
 }

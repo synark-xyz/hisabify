@@ -34,9 +34,9 @@ export function DailyQuote() {
             transition={{ delay: 0.5 }}
             className="mt-4 mb-2 px-1"
         >
-            <div className="relative bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-5 overflow-hidden group hover:bg-card/80 transition-colors">
+            <div className="relative bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-5 overflow-hidden group hover:bg-card/80 transition-colors card-3d">
                 {/* Decorative Icon */}
-                <Quote className="absolute top-4 right-4 w-12 h-12 text-muted-foreground/5 pointer-events-none rotate-180" />
+                <Quote className="absolute top-4 right-4 w-12 h-12 text-muted-foreground/5 pointer-events-none rotate-180 icon-glow" />
 
                 <div className="relative z-10">
                     <p className="text-sm font-medium text-muted-foreground leading-relaxed italic mb-3">

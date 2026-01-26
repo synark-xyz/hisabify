@@ -10,6 +10,7 @@ import { TransactionItem } from '@/components/TransactionItem';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -153,16 +154,16 @@ export function ExpensesPage() {
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
   const totalExpense = rangeTransactions
-    .filter(tx => tx.type === 'expense')
+    .filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
   // Category data for charts (based on range)
   const categoryData: CategorySpending[] = Object.values(
     rangeTransactions
-      .filter(tx => tx.type === 'expense')
+      .filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
       .reduce((acc, tx) => {
-        const catName = tx.category?.name || 'Other';
-        const catColor = tx.category?.color || '#6B7280';
+        const catName = getTransactionCategoryName(tx);
+        const catColor = getTransactionCategoryColor(tx);
 
         if (!acc[catName]) {
           acc[catName] = { name: catName, amount: 0, color: catColor, percentage: 0 };
@@ -173,9 +174,9 @@ export function ExpensesPage() {
   ).map(cat => ({
     ...cat,
     percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
-  }));
+  })).sort((a, b) => b.amount - a.amount);
 
-  const expenseTransactions = listTransactions.filter(tx => tx.type === 'expense');
+  const expenseTransactions = listTransactions.filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe');
 
   const handleDateSelect = (date: Date) => {
     if (selectedDate && isSameDay(date, selectedDate)) {

@@ -1,13 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, Pencil, Trash2 } from 'lucide-react';
+import {
+  ForkKnife,
+  ShoppingBag,
+  Heartbeat,
+  Car,
+  GameController,
+  Receipt,
+  Wallet,
+  Circle,
+  PencilSimple,
+  Trash,
+  Handshake,
+  Bank,
+  Buildings,
+  CreditCard,
+  User,
+} from '@phosphor-icons/react';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
-import { useExchangeRateQuery } from '@/hooks/useExchangeRate';
+import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
+import { cn } from '@/lib/utils';
 
 interface TransactionItemProps {
-  transaction: Transaction;
+  transaction: Transaction & { convertedAmount?: number };
   index?: number;
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
@@ -15,15 +32,21 @@ interface TransactionItemProps {
   onReveal?: (id: string | null) => void;
 }
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  'utensils': Utensils,
+const iconMap: Record<string, React.ComponentType<{ className?: string, weight?: any }>> = {
+  'utensils': ForkKnife,
   'shopping-bag': ShoppingBag,
-  'heart-pulse': HeartPulse,
+  'heart-pulse': Heartbeat,
   'car': Car,
-  'gamepad-2': Gamepad2,
+  'gamepad-2': GameController,
   'receipt': Receipt,
   'wallet': Wallet,
-  'circle-dot': CircleDot,
+  'circle-dot': Circle,
+  'bank': Bank,
+  'buildings': Buildings,
+  'credit_card': CreditCard,
+  'user': User,
+  'lend': Handshake,
+  'owe': Bank,
 };
 
 export function TransactionItem({ transaction, index = 0, onEdit, onDelete, revealedId, onReveal }: TransactionItemProps) {
@@ -34,12 +57,42 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
   const [internalRevealed, setInternalRevealed] = useState(false);
   const actualRevealed = revealedId !== undefined ? isRevealed : internalRevealed;
 
-  const Icon = transaction.category?.icon
-    ? iconMap[transaction.category.icon] || CircleDot
-    : CircleDot;
+  const categoryName = getTransactionCategoryName(transaction);
+  const categoryColor = getTransactionCategoryColor(transaction);
+
+  // Map category icons or use defaults based on keywords
+  const getIcon = () => {
+    try {
+      if (transaction.category?.icon && iconMap[transaction.category.icon]) {
+        return iconMap[transaction.category.icon];
+      }
+
+      // Fallback logic for payment types
+      // Safe access to note
+      const note = (transaction.note || '').toLowerCase();
+
+      if (note.includes('[credit_card]')) return CreditCard;
+      if (note.includes('[utility]')) return Buildings;
+      if (note.includes('[lend]')) return Handshake;
+      if (note.includes('[owe]')) return Bank;
+
+      if (transaction.type === 'lend') return Handshake;
+      if (transaction.type === 'owe') return Bank;
+      if (transaction.type === 'income') return Wallet;
+
+      return Circle;
+    } catch (e) {
+      console.warn("Error resolving icon", e);
+      return Circle;
+    }
+  };
+
+  const Icon = getIcon();
 
   const isIncome = transaction.type === 'income';
-  const formattedDate = format(new Date(transaction.date), 'EEE, dd MMM yyyy');
+  // Additional safety for date parsing
+  const dateObj = new Date(transaction.date);
+  const formattedDate = !isNaN(dateObj.getTime()) ? format(dateObj, 'MMM d, yyyy') : 'Invalid Date';
 
   // Get currency info
   const storedBaseCurrency = transaction.currency_base || 'USD';
@@ -47,19 +100,10 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
   const originalAmount = transaction.amount_original || transaction.amount;
   const originalSymbol = currencyData[originalCurrency]?.symbol || originalCurrency;
 
-  // Use React Query for exchange rate with proper caching
-  const { data: rateData } = useExchangeRateQuery(storedBaseCurrency, currency);
-
-  // Calculate display amount (converted to user's base currency)
-  const displayAmount = useMemo(() => {
-    if (currency === storedBaseCurrency) {
-      return transaction.amount;
-    }
-    if (rateData?.rate) {
-      return transaction.amount * rateData.rate;
-    }
-    return transaction.amount;
-  }, [currency, storedBaseCurrency, transaction.amount, rateData?.rate]);
+  // Use pre-calculated convertedAmount if available (from ExpensesPage), otherwise fallback to amount
+  const displayAmount = typeof transaction.convertedAmount === 'number'
+    ? transaction.convertedAmount
+    : transaction.amount;
 
   // Show original amount if user transacted in a different currency than their current base
   const showOriginal = originalCurrency !== currency;
@@ -105,19 +149,19 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
           >
             <motion.button
               onClick={handleEdit}
-              className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center"
+              className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Pencil className="w-5 h-5 text-primary" />
+              <PencilSimple className="w-5 h-5 text-primary" weight="bold" />
             </motion.button>
             <motion.button
               onClick={handleDelete}
-              className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center"
+              className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center border border-destructive/20"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Trash2 className="w-5 h-5 text-destructive" />
+              <Trash className="w-5 h-5 text-destructive" weight="bold" />
             </motion.button>
           </motion.div>
         )}
@@ -125,7 +169,7 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
 
       {/* Main transaction card - draggable */}
       <motion.div
-        className="flex items-center gap-4 p-4 bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-shadow relative z-10 cursor-grab active:cursor-grabbing"
+        className="flex items-center gap-4 p-4 bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 shadow-card hover:shadow-card-hover transition-all relative z-10 cursor-grab active:cursor-grabbing card-3d"
         initial={{ opacity: 0, y: 20 }}
         animate={{
           opacity: 1,
@@ -140,31 +184,38 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
         onClick={() => actualRevealed && (onReveal ? onReveal(null) : setInternalRevealed(false))}
       >
         <motion.div
-          className="w-12 h-12 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: `${transaction.category?.color}20` }}
+          className="w-12 h-12 rounded-xl flex items-center justify-center shadow-inner"
+          style={{
+            backgroundColor: `${categoryColor}15`,
+            border: `1px solid ${categoryColor}30`
+          }}
           whileHover={{ scale: 1.1, rotate: 5 }}
         >
           <Icon
-            className="w-6 h-6"
-            style={{ color: transaction.category?.color || 'hsl(var(--muted-foreground))' }}
+            className="w-6 h-6 icon-glow"
+            weight="duotone"
+            style={{ color: categoryColor }}
           />
         </motion.div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground truncate">{transaction.merchant}</p>
-          <p className="text-sm text-muted-foreground">{transaction.category?.name || 'Uncategorized'}</p>
+          <p className="font-bold text-foreground truncate tracking-tight">{transaction.merchant}</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-70">{categoryName}</p>
         </div>
         <div className="text-right">
           {/* Main amount in user's base currency */}
-          <p className={`font-bold text-lg ${isIncome ? 'text-emerald-500' : 'text-accent'}`}>
+          <p className={cn(
+            "font-black text-lg tracking-tighter text-glow",
+            isIncome ? 'text-emerald-500' : 'text-rose-500'
+          )}>
             {isIncome ? '+' : '-'}{formatAmount(Math.abs(displayAmount))}
           </p>
           {/* Show original spent amount if different currency */}
           {showOriginal && (
-            <p className="text-xs text-muted-foreground">
-              (~{originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+            <p className="text-[10px] font-bold text-muted-foreground/60">
+              ≈ {originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">{formattedDate}</p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{formattedDate}</p>
         </div>
       </motion.div>
     </div>

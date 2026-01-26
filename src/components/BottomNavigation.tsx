@@ -35,11 +35,11 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
               <div key="add-button-container" className="flex justify-center items-center">
                 <motion.button
                   onClick={onAddTransaction}
-                  className="relative -top-3 w-14 h-14 rounded-2xl bg-accent text-white shadow-fab flex items-center justify-center z-[51]"
+                  className="relative -top-3 w-14 h-14 rounded-2xl bg-accent text-white shadow-fab flex items-center justify-center z-[51] border-glow"
                   whileHover={{ y: -6, scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.9, rotate: 180 }}
                 >
-                  <Plus className="w-8 h-8" strokeWidth={3} />
+                  <Plus className="w-8 h-8 icon-glow" strokeWidth={3} />
                 </motion.button>
               </div>
             );
@@ -56,9 +56,9 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
                   'relative flex flex-col items-center justify-center gap-1 p-2 rounded-2xl transition-all w-full',
                   isActive ? 'text-accent' : 'text-muted-foreground hover:bg-muted/30'
                 )}
-                whileTap={{ scale: 0.9 }}
+                whileTap={{ scale: 0.9, rotate: [0, -10, 10, 0] }}
               >
-                <Icon className={cn('w-5 h-5', isActive && 'fill-accent/10')} />
+                <Icon className={cn('w-5 h-5', isActive && 'fill-accent/10 icon-glow')} />
                 <span className={cn('text-[10px] font-bold tracking-tight transition-opacity', isActive ? 'opacity-100' : 'opacity-60')}>
                   {item.label}
                 </span>

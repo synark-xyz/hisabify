@@ -120,18 +120,18 @@ export function NotificationsPage() {
                                             return (
                                                 <motion.div
                                                     key={reminder.id}
-                                                    className="p-4 rounded-2xl bg-destructive/5 border border-destructive/20"
+                                                    className="p-4 rounded-2xl bg-destructive/5 border border-destructive/20 card-3d transition-all"
                                                     initial={{ opacity: 0, y: 20 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: idx * 0.1 }}
                                                 >
                                                     <div className="flex items-start gap-4">
                                                         <div className={`p-3 rounded-xl ${statusInfo.bg}`}>
-                                                            <Icon className={`w-5 h-5 ${statusInfo.color}`} weight="duotone" />
+                                                            <Icon className={`w-5 h-5 ${statusInfo.color} icon-glow`} weight="duotone" />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="font-bold text-foreground truncate text-lg">{reminder.title}</p>
-                                                            <p className="text-base font-bold text-accent">{formatAmount(reminder.amount)}</p>
+                                                            <p className="font-bold text-foreground truncate text-lg text-glow">{reminder.title}</p>
+                                                            <p className="text-base font-bold text-accent text-glow">{formatAmount(reminder.amount)}</p>
                                                             <p className="text-xs text-destructive mt-1 font-medium">
                                                                 Due: {format(new Date(reminder.due_date), 'MMM d, yyyy')}
                                                             </p>
@@ -140,7 +140,7 @@ export function NotificationsPage() {
                                                             size="sm"
                                                             variant="outline"
                                                             onClick={() => handleMarkAsPaid(reminder.id)}
-                                                            className="shrink-0 h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
+                                                            className="shrink-0 h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 border-glow"
                                                         >
                                                             Mark Paid
                                                         </Button>
@@ -170,18 +170,18 @@ export function NotificationsPage() {
                                     return (
                                         <motion.div
                                             key={reminder.id}
-                                            className={`p-4 rounded-2xl border ${reminder.status === 'paid' ? 'bg-muted/20 border-border/50 opacity-60' : 'bg-card border-border shadow-sm'}`}
+                                            className={`p-4 rounded-2xl border card-3d transition-all ${reminder.status === 'paid' ? 'bg-muted/20 border-border/50 opacity-60' : 'bg-card border-border shadow-sm'}`}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
                                         >
                                             <div className="flex items-start gap-4">
                                                 <div className={`p-3 rounded-xl ${statusInfo.bg}`}>
-                                                    <Icon className={`w-5 h-5 ${statusInfo.color}`} weight="duotone" />
+                                                    <Icon className={`w-5 h-5 ${statusInfo.color} icon-glow`} weight="duotone" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-bold text-foreground truncate">{reminder.title}</p>
-                                                    <p className="text-sm font-bold text-accent">{formatAmount(reminder.amount)}</p>
+                                                    <p className="text-sm font-bold text-accent text-glow">{formatAmount(reminder.amount)}</p>
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
                                                         <span className="text-xs text-muted-foreground">
@@ -196,7 +196,7 @@ export function NotificationsPage() {
                                                         onClick={() => handleMarkAsPaid(reminder.id)}
                                                         className="shrink-0 h-10 w-10 p-0 rounded-xl"
                                                     >
-                                                        <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 hover:border-accent hover:bg-accent/10 transition-all" />
+                                                        <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 hover:border-accent hover:bg-accent/10 transition-all border-glow" />
                                                     </Button>
                                                 )}
                                             </div>

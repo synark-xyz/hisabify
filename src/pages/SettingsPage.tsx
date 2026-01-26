@@ -35,7 +35,7 @@ export function SettingsPage() {
                 {/* General Settings */}
                 <section className="space-y-4">
                     <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">General</h3>
-                    <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
+                    <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm card-3d transition-all">
                         {menuItems.map((item, idx) => (
                             <motion.div
                                 key={item.id}
@@ -45,7 +45,7 @@ export function SettingsPage() {
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`p-2 rounded-xl ${item.color}`}>
-                                        <item.icon className="w-5 h-5" />
+                                        <item.icon className="w-5 h-5 icon-glow" />
                                     </div>
                                     <span className="font-semibold text-foreground">{item.label}</span>
                                 </div>
@@ -58,7 +58,7 @@ export function SettingsPage() {
                 {/* Support */}
                 <section className="space-y-4">
                     <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">Support</h3>
-                    <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm">
+                    <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm card-3d transition-all">
                         {supportItems.map((item, idx) => (
                             <motion.div
                                 key={item.id}
@@ -68,7 +68,7 @@ export function SettingsPage() {
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`p-2 rounded-xl ${item.color}`}>
-                                        <item.icon className="w-5 h-5" />
+                                        <item.icon className="w-5 h-5 icon-glow" />
                                     </div>
                                     <span className="font-semibold text-foreground">{item.label}</span>
                                 </div>
@@ -81,7 +81,7 @@ export function SettingsPage() {
                 {/* Sign Out */}
                 <motion.button
                     onClick={handleSignOut}
-                    className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-destructive/10 text-destructive font-bold hover:bg-destructive/20 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-destructive/10 text-destructive font-bold hover:bg-destructive/20 transition-colors border-glow"
                     whileTap={{ scale: 0.95 }}
                 >
                     <LogOut className="w-5 h-5" />

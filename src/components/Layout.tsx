@@ -3,11 +3,14 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Header } from '@/components/Header';
+import { useTheme } from '@/hooks/useTheme';
+import { CyberpunkBackground } from '@/components/CyberpunkBackground';
 
 export function Layout() {
     const [showAddTransaction, setShowAddTransaction] = useState(false);
     const [transactionType, setTransactionType] = useState<'expense' | 'income' | 'lend' | 'owe' | undefined>(undefined);
     const location = useLocation();
+    const { variant } = useTheme();
 
     // Generic Header Logic
     const getPageTitle = (pathname: string) => {

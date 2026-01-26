@@ -34,16 +34,16 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                     <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500" />
 
                     <div className="relative pt-12 px-6 pb-6 text-center">
-                        <div className="mx-auto w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mb-4 transform -rotate-6">
+                        <div className="mx-auto w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mb-4 transform -rotate-6 icon-glow">
                             <Crown className="w-10 h-10 text-yellow-500" weight="duotone" />
                         </div>
 
-                        <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
+                        <h2 className="text-2xl font-bold mb-2 text-glow">Upgrade to Pro</h2>
                         <p className="text-muted-foreground text-sm mb-6">
                             Unlock the full power of Hisabify and take control of your financial future.
                         </p>
 
-                        <div className="bg-card/50 rounded-2xl p-6 text-left space-y-3 mb-6 border border-white/10">
+                        <div className="bg-card/50 rounded-2xl p-6 text-left space-y-3 mb-6 border border-border/50 card-3d">
                             {benefits.map((benefit, index) => (
                                 <div key={index} className="flex items-center gap-3">
                                     <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
@@ -56,10 +56,10 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
 
                         <div className="space-y-3">
                             <Button
-                                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 transition-opacity h-12 text-lg font-bold shadow-lg shadow-purple-500/25"
+                                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 transition-opacity h-12 text-lg font-bold shadow-lg shadow-purple-500/25 border-glow"
                                 onClick={handleUpgrade}
                             >
-                                <Sparkles className="w-4 h-4 mr-2 fill-white" />
+                                <Sparkles className="w-4 h-4 mr-2 fill-white icon-glow" />
                                 Go Pro for $4.99/mo
                             </Button>
                             <Button

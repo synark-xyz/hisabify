@@ -67,7 +67,7 @@ export function InsightsCards({ insights }: InsightsCardsProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {insights.map((insight, index) => {
         const Icon = getIcon(insight);
-        
+
         return (
           <motion.div
             key={insight.id}
@@ -75,16 +75,16 @@ export function InsightsCards({ insights }: InsightsCardsProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="bg-card shadow-card h-full">
+            <Card className="bg-card shadow-card h-full card-3d transition-all">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-xl ${getBgColor(insight)}`}>
-                    <Icon className={`w-5 h-5 ${getIconColor(insight)}`} />
+                    <Icon className={`w-5 h-5 ${getIconColor(insight)} icon-glow`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{insight.icon}</span>
-                      <h3 className="font-semibold text-foreground truncate">
+                      <h3 className="font-semibold text-foreground truncate text-glow">
                         {insight.title}
                       </h3>
                     </div>

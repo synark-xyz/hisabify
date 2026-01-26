@@ -17,6 +17,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTheme } from '@/hooks/useTheme';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, Transaction, MonthlySpending } from '@/types';
@@ -104,6 +105,7 @@ export function Dashboard() {
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const { user } = useAuth();
+  const { variant } = useTheme();
   const { formatAmount, currencyVersion, currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
@@ -250,7 +252,14 @@ export function Dashboard() {
           >
             {/* Hero Section - Wallet Overview */}
             <motion.section>
-              <div className="bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#DB2777] rounded-3xl p-6 shadow-xl relative overflow-hidden text-white">
+              <div
+                className={cn(
+                  "rounded-3xl p-6 shadow-xl relative overflow-hidden text-white transition-all",
+                  variant === 'cyberpunk'
+                    ? "card-3d bg-card border-none"
+                    : "bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#DB2777]"
+                )}
+              >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none" />
 
@@ -262,7 +271,7 @@ export function Dashboard() {
                       </div>
                       <span className="text-sm font-medium tracking-wide">Main Balance</span>
                     </div>
-                    <h2 className="text-4xl font-black tracking-tight mb-1">
+                    <h2 className={cn("text-4xl font-black tracking-tight mb-1", variant === 'cyberpunk' && "text-glow")}>
                       {formatAmount(netBalance)}
                     </h2>
                   </div>

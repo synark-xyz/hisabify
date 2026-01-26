@@ -50,7 +50,7 @@ export function SummaryCards({ totalExpenses, totalIncome, netBalance, budgetRem
         return (
           <motion.div
             key={card.title}
-            className="p-4 bg-card rounded-2xl shadow-card"
+            className="p-4 bg-card rounded-2xl shadow-card card-3d transition-all"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -58,12 +58,12 @@ export function SummaryCards({ totalExpenses, totalIncome, netBalance, budgetRem
           >
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-8 h-8 rounded-full ${card.iconBg} flex items-center justify-center`}>
-                <Icon className={`w-4 h-4 ${card.iconColor}`} />
+                <Icon className={`w-4 h-4 ${card.iconColor} icon-glow`} />
               </div>
             </div>
             <p className="text-xs text-muted-foreground mb-1">{card.title}</p>
             <motion.p
-              className="text-lg font-bold text-foreground"
+              className="text-lg font-bold text-foreground text-glow"
               key={card.amount}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

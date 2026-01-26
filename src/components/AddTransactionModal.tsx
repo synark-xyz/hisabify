@@ -299,16 +299,16 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
                 key={opt.id}
                 onClick={() => setType(opt.id as any)}
                 className={cn(
-                  "flex-1 flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all",
+                  "flex-1 flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all card-3d",
                   type === opt.id
-                    ? "border-accent bg-accent/5 ring-1 ring-accent/20"
+                    ? "border-accent bg-accent/5 ring-1 ring-accent/20 border-glow"
                     : "border-border bg-card hover:bg-muted"
                 )}
               >
                 <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", opt.bg)}>
-                  <opt.icon className={cn("w-5 h-5", opt.color)} />
+                  <opt.icon className={cn("w-5 h-5", opt.color, "icon-glow")} />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider">{opt.name}</span>
+                <span className={cn("text-[10px] font-bold uppercase tracking-wider", type === opt.id && "text-glow")}>{opt.name}</span>
               </button>
             ))}
           </div>

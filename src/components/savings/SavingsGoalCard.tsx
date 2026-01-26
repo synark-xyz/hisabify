@@ -66,7 +66,7 @@ export function SavingsGoalCard({
 
   return (
     <>
-      <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300">
+      <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300 card-3d">
         <CardHeader className="p-4 pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -74,7 +74,7 @@ export function SavingsGoalCard({
                 className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
                 style={{ backgroundColor: goal.color + "15" }}
               >
-                <Target className="w-5 h-5" style={{ color: goal.color }} />
+                <Target className="w-5 h-5 icon-glow" style={{ color: goal.color }} />
               </div>
               <div>
                 <CardTitle className="text-sm font-black uppercase tracking-tight">{goal.name}</CardTitle>

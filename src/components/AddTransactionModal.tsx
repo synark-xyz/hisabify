@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, CreditCard, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Bell, Edit3 } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -279,183 +279,260 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
   const baseCurrencySymbol = currencyData[currency]?.symbol || '$';
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-auto max-h-[95vh] rounded-t-3xl overflow-y-auto pb-safe-nav">
-        <SheetHeader className="pb-4">
-          <SheetTitle className="text-center font-bold text-xl">
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh]">
+        <DrawerHeader className="pb-4">
+          <DrawerTitle className="text-center font-bold text-xl">
             {`Add ${type.charAt(0).toUpperCase() + type.slice(1)}`}
-          </SheetTitle>
-        </SheetHeader>
+          </DrawerTitle>
+        </DrawerHeader>
+        <div className="overflow-y-auto px-4 pb-safe-nav">
 
-        <div className="flex gap-2 mb-6">
-          {[
-            { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-            { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-            { id: 'lend', name: 'Lend', icon: Handshake, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-            { id: 'owe', name: 'Owe', icon: Landmark, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-          ].map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => setType(opt.id as any)}
-              className={cn(
-                "flex-1 flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all",
-                type === opt.id
-                  ? "border-accent bg-accent/5 ring-1 ring-accent/20"
-                  : "border-border bg-card hover:bg-muted"
-              )}
-            >
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", opt.bg)}>
-                <opt.icon className={cn("w-5 h-5", opt.color)} />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider">{opt.name}</span>
-            </button>
-          ))}
-        </div>
+          <div className="flex gap-2 mb-6">
+            {[
+              { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+              { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+              { id: 'lend', name: 'Lend', icon: Handshake, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+              { id: 'owe', name: 'Owe', icon: Landmark, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => setType(opt.id as any)}
+                className={cn(
+                  "flex-1 flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all",
+                  type === opt.id
+                    ? "border-accent bg-accent/5 ring-1 ring-accent/20"
+                    : "border-border bg-card hover:bg-muted"
+                )}
+              >
+                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", opt.bg)}>
+                  <opt.icon className={cn("w-5 h-5", opt.color)} />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{opt.name}</span>
+              </button>
+            ))}
+          </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
-            <FormField
-              control={form.control}
-              name="merchant"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Description</FormLabel>
-                  <FormControl>
-                    <Input placeholder="What was this for?" className="rounded-xl" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Amount</FormLabel>
-                  <div className="flex gap-2">
-                    <FormField
-                      control={form.control}
-                      name="currency"
-                      render={({ field: currencyField }) => (
-                        <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                          <PopoverTrigger asChild>
-                            <Button type="button" variant="outline" className="w-20 rounded-xl flex items-center justify-between px-3">
-                              <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
-                              <ChevronDown className="w-3 h-3 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-48 p-1 rounded-2xl shadow-xl" align="start">
-                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                              {Object.entries(currencyData).map(([code, { symbol }]) => (
-                                <button
-                                  key={code}
-                                  type="button"
-                                  onClick={() => {
-                                    currencyField.onChange(code);
-                                    setCurrencyOpen(false);
-                                  }}
-                                  className={cn(
-                                    'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors',
-                                    currencyField.value === code && 'bg-muted font-bold'
-                                  )}
-                                >
-                                  <span className="w-6 text-center">{symbol}</span>
-                                  <span>{code}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                    />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
+              <FormField
+                control={form.control}
+                name="merchant"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Description</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" className="flex-1 rounded-xl text-lg font-bold" {...field} />
+                      <Input placeholder="What was this for?" className="rounded-xl" {...field} />
                     </FormControl>
-                  </div>
-                  {convertedPreview && (
-                    <p className="text-xs text-muted-foreground mt-1 px-1">
-                      ≈ {baseCurrencySymbol}{convertedPreview.amount.toFixed(2)} {currency}
-                    </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="grid grid-cols-2 gap-4">
-              {type !== 'income' && (
-                <FormField
-                  control={expenseForm.control}
-                  name="paymentType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Type</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue placeholder="Category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="rounded-2xl">
-                          {paymentCategories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                              <div className="flex items-center gap-2">
-                                {cat.icon}
-                                <span>{cat.name}</span>
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Amount</FormLabel>
+                    <div className="flex gap-2">
+                      <FormField
+                        control={form.control}
+                        name="currency"
+                        render={({ field: currencyField }) => (
+                          <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                            <PopoverTrigger asChild>
+                              <Button type="button" variant="outline" className="w-20 rounded-xl flex items-center justify-between px-3">
+                                <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
+                                <ChevronDown className="w-3 h-3 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-1 rounded-2xl shadow-xl" align="start">
+                              <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                {Object.entries(currencyData).map(([code, { symbol }]) => (
+                                  <button
+                                    key={code}
+                                    type="button"
+                                    onClick={() => {
+                                      currencyField.onChange(code);
+                                      setCurrencyOpen(false);
+                                    }}
+                                    className={cn(
+                                      'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors',
+                                      currencyField.value === code && 'bg-muted font-bold'
+                                    )}
+                                  >
+                                    <span className="w-6 text-center">{symbol}</span>
+                                    <span>{code}</span>
+                                  </button>
+                                ))}
                               </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      />
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" className="flex-1 rounded-xl text-lg font-bold" {...field} />
+                      </FormControl>
+                    </div>
+                    {convertedPreview && (
+                      <p className="text-xs text-muted-foreground mt-1 px-1">
+                        ≈ {baseCurrencySymbol}{convertedPreview.amount.toFixed(2)} {currency}
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                {type !== 'income' && (
+                  <FormField
+                    control={expenseForm.control}
+                    name="paymentType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Type</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger className="rounded-xl">
+                              <SelectValue placeholder="Category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="rounded-2xl">
+                            {paymentCategories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
+                                <div className="flex items-center gap-2">
+                                  {cat.icon}
+                                  <span>{cat.name}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {type === 'expense' && !expenseForm.getValues('paymentType') && (
+                  <FormField
+                    control={expenseForm.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Budget Category</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger className="rounded-xl">
+                              <SelectValue placeholder="Budget" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="rounded-2xl">
+                            {categories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id} className="rounded-xl">{cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {type === 'income' && (
+                  <FormField
+                    control={incomeForm.control}
+                    name="incomeSource"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Source</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger className="rounded-xl">
+                              <SelectValue placeholder="Source" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="rounded-2xl">
+                            {incomeSources.map((source) => (
+                              <SelectItem key={source.id} value={source.id} className="rounded-xl">
+                                {source.icon} {source.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Date</FormLabel>
+                      <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
+                              <Calendar className="mr-2 h-4 w-4 opacity-50" />
+                              {field.value ? format(field.value, 'MMM dd, yyyy') : 'Pick date'}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-50 rounded-2xl shadow-2xl" align="end">
+                          <CalendarComponent
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => { field.onChange(date); setDateOpen(false); }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </FormItem>
                   )}
                 />
-              )}
+              </div>
 
-              {type === 'expense' && !expenseForm.getValues('paymentType') && (
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-500/10 rounded-xl">
+                    <Bell className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-bold">Set Reminder</Label>
+                    <p className="text-xs text-muted-foreground">Notify me on the due date</p>
+                  </div>
+                </div>
+                <FormField
+                  control={form.control}
+                  name="createReminder"
+                  render={({ field }) => (
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  )}
+                />
+              </div>
+
+              {type !== 'income' && cards.length > 0 && (
                 <FormField
                   control={expenseForm.control}
-                  name="categoryId"
+                  name="cardId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Budget Category</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Payment Method</FormLabel>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger className="rounded-xl">
-                            <SelectValue placeholder="Budget" />
+                            <SelectValue placeholder="Select card" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="rounded-2xl">
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id} className="rounded-xl">{cat.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {type === 'income' && (
-                <FormField
-                  control={incomeForm.control}
-                  name="incomeSource"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Source</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl">
-                            <SelectValue placeholder="Source" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="rounded-2xl">
-                          {incomeSources.map((source) => (
-                            <SelectItem key={source.id} value={source.id} className="rounded-xl">
-                              {source.icon} {source.name}
+                          {cards.map((card) => (
+                            <SelectItem key={card.id} value={card.id} className="rounded-xl">
+                              •••• {card.card_number.slice(-4)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -467,111 +544,36 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
 
               <FormField
                 control={form.control}
-                name="date"
+                name="note"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Date</FormLabel>
-                    <Popover open={dateOpen} onOpenChange={setDateOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
-                            <Calendar className="mr-2 h-4 w-4 opacity-50" />
-                            {field.value ? format(field.value, 'MMM dd, yyyy') : 'Pick date'}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-50 rounded-2xl shadow-2xl" align="end">
-                        <CalendarComponent
-                          mode="single"
-                          selected={field.value}
-                          onSelect={(date) => { field.onChange(date); setDateOpen(false); }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Note</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Add details..." className="resize-none rounded-xl" rows={2} {...field} />
+                    </FormControl>
                   </FormItem>
                 )}
               />
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-500/10 rounded-xl">
-                  <Bell className="w-5 h-5 text-amber-500" />
+              {(type === 'expense' || type === 'lend') && (
+                <div className="pt-2">
+                  <ReceiptUpload
+                    value={receiptUrl}
+                    onChange={setReceiptUrl}
+                    onScanComplete={handleScanComplete}
+                  />
                 </div>
-                <div>
-                  <Label className="text-sm font-bold">Set Reminder</Label>
-                  <p className="text-xs text-muted-foreground">Notify me on the due date</p>
-                </div>
-              </div>
-              <FormField
-                control={form.control}
-                name="createReminder"
-                render={({ field }) => (
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                )}
-              />
-            </div>
-
-            {type !== 'income' && cards.length > 0 && (
-              <FormField
-                control={expenseForm.control}
-                name="cardId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Payment Method</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Select card" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="rounded-2xl">
-                        {cards.map((card) => (
-                          <SelectItem key={card.id} value={card.id} className="rounded-xl">
-                            •••• {card.card_number.slice(-4)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Note</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Add details..." className="resize-none rounded-xl" rows={2} {...field} />
-                  </FormControl>
-                </FormItem>
               )}
-            />
-            {(type === 'expense' || type === 'lend') && (
-              <div className="pt-2">
-                <ReceiptUpload
-                  value={receiptUrl}
-                  onChange={setReceiptUrl}
-                  onScanComplete={handleScanComplete}
-                />
-              </div>
-            )}
 
-            <div className="flex gap-3 pt-4 sticky bottom-0 bg-background/80 backdrop-blur-sm pb-4">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="flex-1 text-muted-foreground rounded-2xl">Cancel</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting} className="flex-1 bg-accent hover:bg-accent/90 rounded-2xl shadow-fab font-bold">
-                {form.formState.isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Record'}
-              </Button>
-            </div>
-          </form>
-        </Form >
-      </SheetContent >
-    </Sheet >
+              <div className="flex gap-3 pt-4 sticky bottom-0 bg-background/80 backdrop-blur-sm pb-4">
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="flex-1 text-muted-foreground rounded-2xl">Cancel</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting} className="flex-1 bg-accent hover:bg-accent/90 rounded-2xl shadow-fab font-bold">
+                  {form.formState.isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Record'}
+                </Button>
+              </div>
+            </form>
+          </Form >
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

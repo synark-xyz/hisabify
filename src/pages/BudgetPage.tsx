@@ -1,12 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Target, Sparkles, ChevronRight } from 'lucide-react';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { Header } from '@/components/Header';
+import { ChevronRight, Sparkles, Target } from 'lucide-react';
 import { BudgetDashboard } from '@/components/BudgetDashboard';
 import { AddBudgetModal } from '@/components/AddBudgetModal';
-import { AddTransactionModal } from '@/components/AddTransactionModal';
-import { AddPaymentReminderModal } from '@/components/AddPaymentReminderModal';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
@@ -15,11 +11,20 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 export function BudgetPage() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showAddTransaction, setShowAddTransaction] = useState(false);
-  const [showAddReminder, setShowAddReminder] = useState(false);
-  const [transactionType, setTransactionType] = useState<'expense' | 'income' | 'lend' | 'owe' | undefined>(undefined);
   const { budgets, refetch } = useBudgets();
   const { isPremium } = useSubscription();
+
+  // Listen for transaction updates from the global modal
+  useEffect(() => {
+    const handleUpdate = () => {
+      refetch();
+    };
+
+    window.addEventListener('transaction-updated', handleUpdate);
+    return () => {
+      window.removeEventListener('transaction-updated', handleUpdate);
+    };
+  }, [refetch]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -45,11 +50,10 @@ export function BudgetPage() {
   return (
     <div className="min-h-screen bg-background">
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-[100dvh] pb-page-content fade-bottom-overlay">
-        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto safe-top pt-4">
-          <Header title="Planner" />
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
           <motion.main
-            className="px-4 py-4 space-y-6 mt-2"
+            className="px-4 py-4 space-y-6 pt-header"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -106,28 +110,9 @@ export function BudgetPage() {
         </div>
       </PullToRefresh>
 
-      <BottomNavigation
-        onAddTransaction={() => setShowAddTransaction(true)}
-      />
-
       <AddBudgetModal open={showAddBudget} onOpenChange={setShowAddBudget} />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
 
-      <AddTransactionModal
-        open={showAddTransaction}
-        onOpenChange={(open) => {
-          setShowAddTransaction(open);
-          if (!open) setTransactionType(undefined);
-        }}
-        onSuccess={() => { }}
-        initialType={transactionType}
-      />
-
-      <AddPaymentReminderModal
-        open={showAddReminder}
-        onOpenChange={setShowAddReminder}
-        onSuccess={() => { }}
-      />
     </div>
   );
 }

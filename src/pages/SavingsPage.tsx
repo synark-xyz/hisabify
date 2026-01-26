@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Plus, HandCoins, Sparkles, ChevronRight } from "lucide-react";
@@ -21,23 +21,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BottomNavigation } from "@/components/BottomNavigation";
-import { AddTransactionModal } from "@/components/AddTransactionModal";
-import { AddPaymentReminderModal } from "@/components/AddPaymentReminderModal";
 import { format } from "date-fns";
-import { Header } from "@/components/Header";
+
 import { PullToRefresh } from '@/components/PullToRefresh';
 
 export default function SavingsPage() {
-  const [showAddTransaction, setShowAddTransaction] = useState(false);
-  const [showAddReminder, setShowAddReminder] = useState(false);
-  const [transactionType, setTransactionType] = useState<'expense' | 'income' | 'lend' | 'owe' | undefined>(undefined);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const { isPremium } = useSubscription();
 
   const {
     goals,
@@ -51,6 +43,20 @@ export default function SavingsPage() {
     completedGoals,
     refetch,
   } = useSavingsGoals();
+
+  const { isPremium } = useSubscription();
+
+  // Listen for transaction updates from the global modal
+  useEffect(() => {
+    const handleUpdate = () => {
+      refetch();
+    };
+
+    window.addEventListener('transaction-updated', handleUpdate);
+    return () => {
+      window.removeEventListener('transaction-updated', handleUpdate);
+    };
+  }, [refetch]);
 
   const handleAddGoal = () => {
     if (!isPremium && goals.length >= 1) {
@@ -148,11 +154,10 @@ export default function SavingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-[100dvh] pb-page-content fade-bottom-overlay">
-        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto safe-top pt-4">
-          <Header title="Savings" />
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
           <motion.main
-            className="px-4 space-y-6 mt-2"
+            className="px-4 space-y-6 pt-header"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -282,26 +287,6 @@ export default function SavingsPage() {
       </AlertDialog>
 
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
-
-      <BottomNavigation
-        onAddTransaction={() => setShowAddTransaction(true)}
-      />
-
-      <AddTransactionModal
-        open={showAddTransaction}
-        onOpenChange={(open) => {
-          setShowAddTransaction(open);
-          if (!open) setTransactionType(undefined);
-        }}
-        onSuccess={() => { }}
-        initialType={transactionType}
-      />
-
-      <AddPaymentReminderModal
-        open={showAddReminder}
-        onOpenChange={setShowAddReminder}
-        onSuccess={() => { }}
-      />
     </div>
   );
 }

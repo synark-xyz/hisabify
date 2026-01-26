@@ -2,14 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Header } from '@/components/Header';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
 import { ExpenseOverview } from '@/components/ExpenseOverview';
 import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { TransactionItem } from '@/components/TransactionItem';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -39,7 +36,6 @@ export function ExpensesPage() {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
@@ -48,13 +44,7 @@ export function ExpensesPage() {
   const { currency, currencyVersion } = useCurrency();
   const { convertAmount } = useExchangeRate();
 
-  useEffect(() => {
-    if (user) {
-      fetchTransactions();
-      fetchBudgets();
-    }
-  }, [user, currentDate, viewMode, currency, currencyVersion]);
-
+  // Move definitions up
   const fetchTransactions = useCallback(async () => {
     if (!user) return;
 
@@ -115,6 +105,24 @@ export function ExpensesPage() {
   const handleRefresh = useCallback(async () => {
     await Promise.all([fetchTransactions(), fetchBudgets()]);
   }, [fetchTransactions, fetchBudgets]);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      fetchTransactions();
+      fetchBudgets();
+    };
+    window.addEventListener('transaction-updated', handleUpdate);
+    return () => window.removeEventListener('transaction-updated', handleUpdate);
+  }, [fetchTransactions, fetchBudgets]);
+
+  useEffect(() => {
+    if (user) {
+      fetchTransactions();
+      fetchBudgets();
+    }
+  }, [user, currentDate, viewMode, currency, currencyVersion]);
+
+
 
   const hasTransactions = (date: Date) => {
     return transactions.some(tx => isSameDay(new Date(tx.date), date));
@@ -214,10 +222,10 @@ export function ExpensesPage() {
     <div className="min-h-screen bg-background">
       <PullToRefresh onRefresh={handleRefresh} className="h-[100dvh] pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
-          <Header title="Expenses" />
+
 
           <motion.main
-            className="px-4 space-y-6 pt-6 pb-24"
+            className="px-4 space-y-6 pt-header pb-24"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -462,16 +470,7 @@ export function ExpensesPage() {
         </div>
       </PullToRefresh>
 
-      <BottomNavigation
-        onAddTransaction={() => setShowAddTransaction(true)}
-        onAddReminder={() => { }} // Could navigate or open reminder modal if needed
-      />
 
-      <AddTransactionModal
-        open={showAddTransaction}
-        onOpenChange={setShowAddTransaction}
-        onSuccess={fetchTransactions}
-      />
 
       <EditTransactionModal
         open={!!editingTransaction}

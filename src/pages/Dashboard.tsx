@@ -1,17 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, CreditCard, Faders, Plus, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
+import { motion } from 'framer-motion';
+import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '@/components/Header';
-import { CardStack } from '@/components/CardStack';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
 import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
 import { ParticlesBackground } from '@/components/ParticlesBackground';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { PullToRefresh } from '@/components/PullToRefresh';
-import { AddCardModal } from '@/components/AddCardModal';
-import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { ManageRemindersModal } from '@/components/ManageRemindersModal';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
@@ -93,15 +88,11 @@ const sampleAnalyticsData: Record<number, MonthlySpending[]> = {
 };
 
 export function Dashboard() {
-  const [cards, setCards] = useState<Card[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlySpending[]>([]);
-  const [showAddCard, setShowAddCard] = useState(false);
-  const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
-  const [transactionType, setTransactionType] = useState<'expense' | 'income' | 'lend' | 'owe' | undefined>(undefined);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -117,9 +108,15 @@ export function Dashboard() {
 
   const availableYears = [2023, 2024, 2025, 2026];
 
+  // Event listener for layout modal updates
+  useEffect(() => {
+    const onTransactionUpdated = () => handleRefresh();
+    window.addEventListener('transaction-updated', onTransactionUpdated);
+    return () => window.removeEventListener('transaction-updated', onTransactionUpdated);
+  }, [user]);
+
   useEffect(() => {
     if (user) {
-      fetchCards();
       fetchTransactions();
       fetchMonthlySummary();
     }
@@ -131,23 +128,13 @@ export function Dashboard() {
 
   const handleRefresh = async () => {
     await Promise.all([
-      fetchCards(),
       fetchTransactions(),
       fetchMonthlySummary(),
-      refetchReminders() // and reminders!
+      refetchReminders()
     ]);
   };
 
-  const fetchCards = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('cards')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
 
-    if (data) setCards(data as unknown as Card[]);
-  };
 
   const fetchTransactions = async () => {
     if (!user) return;
@@ -245,72 +232,64 @@ export function Dashboard() {
     setSelectedMonth(month);
   };
 
-  const totalBalance = cards.reduce((sum, card) => sum + Number(card.balance), 0);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.08 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-  };
-
   const netBalance = totalIncome - totalExpenses;
 
   return (
     <div className="min-h-screen bg-transparent">
       <ParticlesBackground />
       <PullToRefresh onRefresh={handleRefresh} className="h-[100dvh] pb-page-content fade-bottom-overlay">
-        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto safe-top pt-4">
-          <Header title="Dashboard" />
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
+
 
           <motion.main
-            className="px-4 space-y-6 pb-24 mt-6"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            className="px-4 space-y-6 pb-24 pt-header"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
           >
             {/* Hero Section - Wallet Overview */}
-            <motion.section variants={itemVariants}>
-              <div className="bg-card rounded-3xl p-6 shadow-card border border-white/5 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-accent/20 transition-colors" />
-                <div className="relative z-10 flex justify-between items-start">
+            <motion.section>
+              <div className="bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#DB2777] rounded-3xl p-6 shadow-xl relative overflow-hidden text-white">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none" />
+
+                <div className="relative z-10 flex justify-between items-start mb-6">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Wallet className="w-4 h-4 text-muted-foreground" weight="duotone" />
-                      <span className="text-sm font-medium text-muted-foreground">Main Balance</span>
+                    <div className="flex items-center gap-2 mb-2 opacity-90">
+                      <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                        <Wallet className="w-4 h-4 text-white" weight="fill" />
+                      </div>
+                      <span className="text-sm font-medium tracking-wide">Main Balance</span>
                     </div>
-                    <h2 className="text-3xl font-black tracking-tight text-foreground">
+                    <h2 className="text-4xl font-black tracking-tight mb-1">
                       {formatAmount(netBalance)}
                     </h2>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 rounded-full text-emerald-500 text-xs font-bold ring-1 ring-emerald-500/20">
-                      <TrendUp className="w-3 h-3" weight="duotone" />
-                      Today +$12.50
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold ring-1 ring-white/30 shadow-sm">
+                      <TrendUp className="w-3.5 h-3.5 text-emerald-300" weight="bold" />
+                      <span className="text-white">Today +$12.50</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <TrendDown className="w-4 h-4 text-rose-500" weight="duotone" />
-                      <span className="text-xs font-medium text-muted-foreground tracking-wider">Expenses</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="group p-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-full bg-rose-500/20">
+                        <TrendDown className="w-3.5 h-3.5 text-rose-300" weight="bold" />
+                      </div>
+                      <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Expenses</span>
                     </div>
-                    <p className="text-lg font-bold text-foreground">{formatAmount(totalExpenses)}</p>
+                    <p className="text-lg font-bold text-white tracking-tight">{formatAmount(totalExpenses)}</p>
                   </div>
-                  <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <TrendUp className="w-4 h-4 text-emerald-500" weight="duotone" />
-                      <span className="text-xs font-medium text-muted-foreground tracking-wider">Income</span>
+                  <div className="group p-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-full bg-emerald-500/20">
+                        <TrendUp className="w-3.5 h-3.5 text-emerald-300" weight="bold" />
+                      </div>
+                      <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Income</span>
                     </div>
-                    <p className="text-lg font-bold text-foreground">{formatAmount(totalIncome)}</p>
+                    <p className="text-lg font-bold text-white tracking-tight">{formatAmount(totalIncome)}</p>
                   </div>
                 </div>
               </div>
@@ -318,7 +297,7 @@ export function Dashboard() {
 
             {/* Upgrade to Pro Banner - Only for non-premium users */}
             {!subscriptionLoading && !isPremium && (
-              <motion.section variants={itemVariants}>
+              <motion.section>
                 <div
                   onClick={() => setShowUpgradeModal(true)}
                   className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl shadow-purple-500/20 cursor-pointer group hover:scale-[1.02] transition-transform"
@@ -342,7 +321,7 @@ export function Dashboard() {
             )}
 
             {/* Payment Reminders Section */}
-            <motion.section variants={itemVariants}>
+            <motion.section>
               <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <Bell className="w-5 h-5 text-accent" weight="duotone" />
@@ -359,11 +338,8 @@ export function Dashboard() {
               <PaymentReminderCarousel reminders={paymentReminders} />
             </motion.section>
 
-
-
-
             {/* Analytics Section */}
-            <motion.section variants={itemVariants}>
+            <motion.section>
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ChartPie className="w-5 h-5 text-accent" weight="duotone" />
@@ -397,7 +373,7 @@ export function Dashboard() {
                 {/* Premium Guard Overlay */}
                 {!isPremium && !subscriptionLoading && (
                   <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-4 border border-border/50">
+                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-4 border border-50">
                       <Crown className="w-8 h-8 text-accent fill-accent" weight="duotone" />
                     </div>
                     <h3 className="text-xl font-black mb-2 text-foreground">Unlock Full Insights</h3>
@@ -424,7 +400,7 @@ export function Dashboard() {
             </motion.section>
 
             {/* Transactions Section */}
-            <motion.section variants={itemVariants}>
+            <motion.section>
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />
@@ -466,31 +442,7 @@ export function Dashboard() {
         </div>
       </PullToRefresh>
 
-      <BottomNavigation
-        onAddTransaction={() => setShowAddTransaction(true)}
-      />
 
-      <AddCardModal
-        open={showAddCard}
-        onOpenChange={setShowAddCard}
-        onSuccess={() => {
-          setShowAddCard(false);
-          fetchCards();
-        }}
-      />
-
-      <AddTransactionModal
-        open={showAddTransaction}
-        onOpenChange={(open) => {
-          setShowAddTransaction(open);
-          if (!open) setTransactionType(undefined);
-        }}
-        onSuccess={() => {
-          fetchTransactions();
-          fetchMonthlySummary();
-        }}
-        initialType={transactionType}
-      />
 
       <EditTransactionModal
         open={!!editingTransaction}

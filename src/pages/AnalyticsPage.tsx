@@ -1,9 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, RefreshCw } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Lock, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,7 +9,6 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
-import { Lock, Crown, Sparkles } from 'lucide-react';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { CategoryBreakdownChart } from '@/components/dashboard/CategoryBreakdownChart';
 import { MonthlyTrendChart } from '@/components/dashboard/MonthlyTrendChart';
@@ -33,7 +30,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PremiumGuard } from '@/components/PremiumGuard';
 
 export function AnalyticsPage() {
-  const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [dateRange, setDateRange] = useState({
     from: startOfMonth(subMonths(new Date(), 11)), // Extended to 12 months for better analysis
@@ -54,6 +50,15 @@ export function AnalyticsPage() {
     loading,
     refetch,
   } = useDashboardData(dateRange);
+
+  // Listen for transaction updates
+  useEffect(() => {
+    const handleUpdate = () => {
+      refetch();
+    };
+    window.addEventListener('transaction-updated', handleUpdate);
+    return () => window.removeEventListener('transaction-updated', handleUpdate);
+  }, [refetch]);
 
   const { isPremium, loading: subscriptionLoading } = useSubscription();
 
@@ -272,16 +277,6 @@ export function AnalyticsPage() {
           </motion.section>
         </motion.main>
       </div>
-
-      <BottomNavigation
-        onAddTransaction={() => setShowAddTransaction(true)}
-      />
-
-      <AddTransactionModal
-        open={showAddTransaction}
-        onOpenChange={setShowAddTransaction}
-        onSuccess={refetch}
-      />
 
       <UpgradeModal
         open={showUpgradeModal}

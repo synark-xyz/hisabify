@@ -88,12 +88,40 @@ export function useSavingsGoals() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["savings-goals"] });
+    onMutate: async (newGoalData) => {
+      await queryClient.cancelQueries({ queryKey: ["savings-goals", user?.id] });
+      const previousGoals = queryClient.getQueryData(["savings-goals", user?.id]);
+
+      const optimisticGoal: SavingsGoalWithProgress = {
+        id: `temp-${Date.now()}`,
+        user_id: user?.id || '',
+        name: newGoalData.name,
+        target_amount: newGoalData.target_amount,
+        current_amount: newGoalData.current_amount,
+        deadline: newGoalData.deadline,
+        icon: newGoalData.icon,
+        color: newGoalData.color,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        percentage: Math.min(Math.round((newGoalData.current_amount / newGoalData.target_amount) * 100), 100),
+        remaining: Math.max(newGoalData.target_amount - newGoalData.current_amount, 0),
+        daysLeft: newGoalData.deadline ? differenceInDays(new Date(newGoalData.deadline), new Date()) : null,
+        status: 'on_track'
+      };
+
+      queryClient.setQueryData(["savings-goals", user?.id], (old: SavingsGoalWithProgress[] | undefined) => [optimisticGoal, ...(old || [])]);
       toast.success("Savings goal created!");
+
+      return { previousGoals };
     },
-    onError: (error) => {
+    onError: (error, _newGoal, context) => {
+      if (context?.previousGoals) {
+        queryClient.setQueryData(["savings-goals", user?.id], context.previousGoals);
+      }
       toast.error("Failed to create goal: " + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["savings-goals"] });
     },
   });
 

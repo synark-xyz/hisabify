@@ -55,12 +55,12 @@ export function useBudgets() {
   const { user } = useAuth();
   const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
-  
+
   // Refs to prevent infinite loops and duplicate fetches
   const isFetchingRef = useRef(false);
   const lastFetchRef = useRef<number>(0);
   const convertAmountRef = useRef(convertAmount);
-  
+
   // Keep convertAmount ref up to date
   useEffect(() => {
     convertAmountRef.current = convertAmount;
@@ -82,13 +82,13 @@ export function useBudgets() {
 
   const fetchBudgets = useCallback(async () => {
     if (!user) return;
-    
+
     // Prevent duplicate fetches within 500ms
     const now = Date.now();
     if (isFetchingRef.current || (now - lastFetchRef.current) < 500) {
       return;
     }
-    
+
     isFetchingRef.current = true;
     lastFetchRef.current = now;
     setLoading(true);
@@ -154,7 +154,7 @@ export function useBudgets() {
 
           const remaining = Math.max(0, budget.amount - spent);
           const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-          
+
           let status: 'safe' | 'warning' | 'exceeded' = 'safe';
           if (percentage >= 100) {
             status = 'exceeded';
@@ -204,28 +204,56 @@ export function useBudgets() {
   const createBudget = async (input: CreateBudgetInput): Promise<boolean> => {
     if (!user) return false;
 
+    const { start, end } = getPeriodDates(input.period_type, input.start_date);
+    const startDate = input.start_date || start;
+    const endDate = input.end_date || end;
+
+    // Optimistic Update
+    const tempId = `temp-${Date.now()}`;
+    const newBudget: BudgetWithSpending = {
+      id: tempId,
+      user_id: user.id,
+      category_id: input.category_id || null,
+      amount: input.amount,
+      period_type: input.period_type,
+      start_date: startDate.toISOString(),
+      end_date: endDate.toISOString(),
+      name: input.name || `${input.period_type.charAt(0).toUpperCase() + input.period_type.slice(1)} Budget`,
+      month: startDate.getMonth() + 1,
+      year: startDate.getFullYear(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      spent: 0,
+      remaining: input.amount,
+      percentage: 0,
+      status: 'safe'
+    };
+
+    setBudgets(current => [newBudget, ...current]);
+    toast.success('Budget created successfully');
+
     try {
-      const { start, end } = getPeriodDates(input.period_type, input.start_date);
-      
       const { error } = await supabase.from('budgets').insert({
         user_id: user.id,
         category_id: input.category_id,
         amount: input.amount,
         period_type: input.period_type,
-        start_date: (input.start_date || start).toISOString(),
-        end_date: (input.end_date || end).toISOString(),
-        name: input.name || `${input.period_type.charAt(0).toUpperCase() + input.period_type.slice(1)} Budget`,
-        month: (input.start_date || start).getMonth() + 1,
-        year: (input.start_date || start).getFullYear()
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        name: newBudget.name,
+        month: newBudget.month,
+        year: newBudget.year
       });
 
       if (error) throw error;
 
-      toast.success('Budget created successfully');
-      await fetchBudgets();
+      // Background fetch to ensure consistency
+      fetchBudgets();
       return true;
     } catch (err) {
       console.error('Error creating budget:', err);
+      // Revert optimistic update
+      setBudgets(current => current.filter(b => b.id !== tempId));
       toast.error('Failed to create budget');
       return false;
     }
@@ -236,12 +264,12 @@ export function useBudgets() {
 
     try {
       const updateData: Record<string, unknown> = {};
-      
+
       if (input.category_id !== undefined) updateData.category_id = input.category_id;
       if (input.amount !== undefined) updateData.amount = input.amount;
       if (input.period_type !== undefined) updateData.period_type = input.period_type;
       if (input.name !== undefined) updateData.name = input.name;
-      
+
       if (input.start_date) {
         updateData.start_date = input.start_date.toISOString();
         updateData.month = input.start_date.getMonth() + 1;
@@ -332,7 +360,7 @@ export function useBudgets() {
         }
 
         const { data: spendingData } = await spendingQuery;
-        
+
         let spent = 0;
         if (spendingData) {
           for (const t of spendingData) {
@@ -405,7 +433,7 @@ export function useBudgets() {
     if (!user) return;
 
     let debounceTimer: NodeJS.Timeout | null = null;
-    
+
     const debouncedFetch = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {

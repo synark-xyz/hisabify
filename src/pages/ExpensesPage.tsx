@@ -220,7 +220,7 @@ export function ExpensesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PullToRefresh onRefresh={handleRefresh} className="h-[100dvh] pb-page-content fade-bottom-overlay">
+      <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
 

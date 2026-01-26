@@ -49,7 +49,7 @@ export function BudgetPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-[100dvh] pb-page-content fade-bottom-overlay">
+      <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
           <motion.main
@@ -110,7 +110,15 @@ export function BudgetPage() {
         </div>
       </PullToRefresh>
 
-      <AddBudgetModal open={showAddBudget} onOpenChange={setShowAddBudget} />
+      <AddBudgetModal
+        open={showAddBudget}
+        onOpenChange={setShowAddBudget}
+        onSuccess={() => {
+          refetch();
+          // Also dispatch global event just in case
+          window.dispatchEvent(new Event('transaction-updated'));
+        }}
+      />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
 
     </div>

@@ -23,7 +23,7 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50 glass bg-background/70 backdrop-blur-sm border-t border-border/40 pb-nav-safe"
+      className="fixed bottom-0 left-0 right-0 z-50 glass bg-background/60 backdrop-blur-md border-t border-border/40 pb-nav-safe"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20 }}

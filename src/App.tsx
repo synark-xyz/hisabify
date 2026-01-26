@@ -23,6 +23,14 @@ import { InstallPage } from "@/pages/InstallPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { SplashScreen } from "@/components/SplashScreen";
 import NotFound from "@/pages/NotFound";
+import { SettingsPage } from "@/pages/SettingsPage";
+import { PreferencesPage } from "@/pages/settings/PreferencesPage";
+import { NotificationSettingsPage } from "@/pages/settings/NotificationSettingsPage";
+import { NotificationsPage } from "@/pages/NotificationsPage";
+import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { PersonalPage } from "@/pages/profile/PersonalPage";
+import { DataPage } from "@/pages/profile/DataPage";
+import { ReferralsPage } from "@/pages/profile/ReferralsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,7 +103,28 @@ function AppRoutes() {
         <Route path="/savings" element={<SavingsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/personal" element={<PersonalPage />} />
+        <Route path="/profile/data" element={<DataPage />} />
+        <Route path="/profile/invite" element={<ReferralsPage />} />
       </Route>
+
+      {/* Pages without Main Layout (No double header) */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <div className="min-h-screen bg-background">
+              {/* These pages have their own internal Headers */}
+              <SettingsPage />
+            </div>
+          </ProtectedRoute>
+        }
+        path="/settings"
+      />
+
+      <Route element={<ProtectedRoute><PreferencesPage /></ProtectedRoute>} path="/settings/preferences" />
+      <Route element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} path="/settings/notifications" />
+      <Route element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} path="/notifications" />
+      <Route element={<ProtectedRoute><PrivacyPolicyPage /></ProtectedRoute>} path="/privacy" />
 
       <Route
         path="/auth"

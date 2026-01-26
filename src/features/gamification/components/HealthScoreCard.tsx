@@ -5,11 +5,10 @@ import { useHealthScore } from '../hooks/useHealthScore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 
 export function HealthScoreCard() {
     const { score, loading } = useHealthScore();
@@ -67,30 +66,30 @@ export function HealthScoreCard() {
                     </div>
                 </div>
 
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <button className="focus:outline-none">
                             <Info className="w-5 h-5 text-white/20 hover:text-white/60 transition-colors" />
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="bg-[#1a1a2e] border-white/10 text-white">
-                            <div className="space-y-1.5 py-1 min-w-[120px]">
-                                <p className="text-xs font-bold text-white/40 uppercase mb-2">Breakdown</p>
-                                <div className="flex justify-between text-xs">
-                                    <span>Budgeting</span>
-                                    <span className="font-mono text-emerald-400">{score.breakdown.budget}</span>
-                                </div>
-                                <div className="flex justify-between text-xs">
-                                    <span>Savings</span>
-                                    <span className="font-mono text-blue-400">{score.breakdown.savings}</span>
-                                </div>
-                                <div className="flex justify-between text-xs">
-                                    <span>Activity</span>
-                                    <span className="font-mono text-amber-400">{score.breakdown.activity}</span>
-                                </div>
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent side="left" className="bg-[#1a1a2e] border-white/10 text-white w-auto p-3">
+                        <div className="space-y-1.5 min-w-[120px]">
+                            <p className="text-xs font-bold text-white/40 uppercase mb-2">Breakdown</p>
+                            <div className="flex justify-between text-xs gap-4">
+                                <span>Budgeting</span>
+                                <span className="font-mono text-emerald-400">{score.breakdown.budget}</span>
                             </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                            <div className="flex justify-between text-xs gap-4">
+                                <span>Savings</span>
+                                <span className="font-mono text-blue-400">{score.breakdown.savings}</span>
+                            </div>
+                            <div className="flex justify-between text-xs gap-4">
+                                <span>Activity</span>
+                                <span className="font-mono text-amber-400">{score.breakdown.activity}</span>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
 
             <div className="flex items-center gap-6">
@@ -137,17 +136,63 @@ export function HealthScoreCard() {
                 </div>
 
                 {/* Info / Tip */}
-                <div className="flex-1 bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-3 opacity-10">
-                        <TrendingUp className="w-12 h-12 rotate-[-15deg]" />
-                    </div>
-                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                        Smart Insight
-                    </p>
-                    <p className="text-sm font-medium text-white/90 leading-relaxed pr-2">
-                        "{getTip()}"
-                    </p>
+                <div className="flex-1 space-y-3">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <div className="bg-white/5 rounded-2xl p-4 border border-white/5 backdrop-blur-sm relative overflow-hidden group cursor-pointer transition-colors hover:bg-white/10 active:scale-[0.98] transition-all">
+                                <div className="absolute top-0 right-0 p-3 opacity-10">
+                                    <TrendingUp className="w-12 h-12 rotate-[-15deg]" />
+                                </div>
+                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                                    Smart Insight
+                                </p>
+                                <p className="text-sm font-medium text-white/90 leading-relaxed pr-2">
+                                    "{getTip()}"
+                                </p>
+                            </div>
+                        </PopoverTrigger>
+                        <PopoverContent side="bottom" className="max-w-[300px] bg-[#1a1a2e] border-white/10 p-4 shadow-xl z-50">
+                            <div className="space-y-3">
+                                <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                                    <Info className="w-4 h-4 text-accent" />
+                                    How it works
+                                </h4>
+                                <p className="text-xs text-white/70 leading-relaxed">
+                                    Your Financial Health Score is calculated based on three key factors:
+                                </p>
+                                <ul className="space-y-2">
+                                    <li className="flex items-start gap-2 text-xs">
+                                        <div className="mt-0.5 p-1 rounded-full bg-emerald-500/20 text-emerald-400">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-emerald-400">Budget Adherence (40%)</span>
+                                            <p className="text-white/50">Staying within your set budgets.</p>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-2 text-xs">
+                                        <div className="mt-0.5 p-1 rounded-full bg-blue-500/20 text-blue-400">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-blue-400">Savings Habits (40%)</span>
+                                            <p className="text-white/50">Consistently adding to goals.</p>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-2 text-xs">
+                                        <div className="mt-0.5 p-1 rounded-full bg-amber-500/20 text-amber-400">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-amber-400">Activity (20%)</span>
+                                            <p className="text-white/50">Regularly logging transactions.</p>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
             </div>
         </motion.div>

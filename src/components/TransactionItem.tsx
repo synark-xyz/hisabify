@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, Pencil, Trash2 } from 'lucide-react';
 import { Transaction } from '@/types';
@@ -28,13 +28,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export function TransactionItem({ transaction, index = 0, onEdit, onDelete, revealedId, onReveal }: TransactionItemProps) {
   const { currency, formatAmount } = useCurrency();
-  
+
   // Use external control if provided, otherwise use internal state
   const isRevealed = revealedId !== undefined ? revealedId === transaction.id : false;
   const [internalRevealed, setInternalRevealed] = useState(false);
   const actualRevealed = revealedId !== undefined ? isRevealed : internalRevealed;
-  
-  const Icon = transaction.category?.icon 
+
+  const Icon = transaction.category?.icon
     ? iconMap[transaction.category.icon] || CircleDot
     : CircleDot;
 
@@ -127,8 +127,8 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
       <motion.div
         className="flex items-center gap-4 p-4 bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-shadow relative z-10 cursor-grab active:cursor-grabbing"
         initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: 1, 
+        animate={{
+          opacity: 1,
           y: 0,
           x: actualRevealed ? -120 : 0
         }}

@@ -225,7 +225,7 @@ export function ExpensesPage() {
 
 
           <motion.main
-            className="px-4 space-y-6 pt-header pb-24"
+            className="px-4 space-y-6 pb-24"
             variants={containerVariants}
             initial="hidden"
             animate="visible"

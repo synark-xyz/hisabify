@@ -157,7 +157,7 @@ export default function SavingsPage() {
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
           <motion.main
-            className="px-4 space-y-6 pt-header"
+            className="px-4 space-y-6"
             variants={containerVariants}
             initial="hidden"
             animate="visible"

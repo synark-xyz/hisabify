@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // Re-verify imports to fix refresh crash
 import { motion } from 'framer-motion';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
+import { DailyQuote } from '@/components/DailyQuote';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
 import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
@@ -242,7 +243,7 @@ export function Dashboard() {
 
 
           <motion.main
-            className="px-4 space-y-6 pb-24 pt-header"
+            className="px-4 space-y-6 pb-24"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
@@ -399,7 +400,9 @@ export function Dashboard() {
               </div>
             </motion.section>
 
-            {/* Transactions Section */}
+            <DailyQuote />
+
+            {/* Monthly Reports Preview */}
             <motion.section>
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">

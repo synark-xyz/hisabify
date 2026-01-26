@@ -8,8 +8,15 @@ import { UpgradeModal } from '@/components/UpgradeModal';
 import {
   User, Settings, Shield, HelpCircle, ChevronRight,
   Camera, Save, LogOut, Moon, Sun, Bell, Database,
-  Download, Trash2, AlertTriangle, Monitor, Crown, Sparkles
+  Download, Trash2, AlertTriangle, Monitor, Crown, Sparkles, FileText
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,6 +80,9 @@ export function ProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Changelog state
+  const [showChangelog, setShowChangelog] = useState(false);
 
   // Sync localProfile when profile changes
   useEffect(() => {
@@ -816,11 +826,25 @@ export function ProfilePage() {
                   <LogOut className="w-5 h-5 mr-2" />
                   Sign Out
                 </Button>
+
+                {/* Version Info / Changelog Button */}
+                <div className="mt-8 text-center">
+                  <button
+                    onClick={() => setShowChangelog(true)}
+                    className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-accent transition-colors"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>OneWallet v1.0.0</span>
+                    <span className="underline decoration-dotted">What's New</span>
+                  </button>
+                </div>
               </TabsContent>
             </Tabs>
           </motion.div>
         </main>
       </div>
+
+
 
       {/* Delete Account Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -874,6 +898,59 @@ export function ProfilePage() {
         onOpenChange={setShowUpgradeModal}
         source="profile_page"
       />
-    </div>
+
+      {/* Changelog Dialog */}
+      <Dialog open={showChangelog} onOpenChange={setShowChangelog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-accent" />
+              What's New in v1.0
+            </DialogTitle>
+            <DialogDescription>
+              Latest updates and improvements
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 pt-2">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                New Features
+              </h3>
+              <ul className="space-y-2 pl-4 border-l-2 border-emerald-500/20 ml-1">
+                {[
+                  "Premium Splash Screen with Health Scan animation",
+                  "Interactive Onboarding Flow",
+                  "Daily Fintech Quotes on Dashboard",
+                  "Comprehensive Budget Planner",
+                  "Savings Goals Tracking",
+                  "Recurring Payment Reminders",
+                  "Advanced Spending Analytics"
+                ].map((item, i) => (
+                  <li key={i} className="text-sm text-muted-foreground">{item}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                Improvements
+              </h3>
+              <ul className="space-y-2 pl-4 border-l-2 border-blue-500/20 ml-1">
+                {[
+                  "Optimized safe-area layouts for all devices",
+                  "Persistent bottom navigation",
+                  "Enhanced performance and transitions"
+                ].map((item, i) => (
+                  <li key={i} className="text-sm text-muted-foreground">{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 }

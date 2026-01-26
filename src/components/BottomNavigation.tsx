@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { Home, List, Plus, HandCoins, Target } from 'lucide-react';
+import { Home, List, Plus, HandCoins, Target, LayoutDashboardIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+
 
 interface BottomNavigationProps {
   onAddTransaction: () => void;
@@ -9,7 +10,7 @@ interface BottomNavigationProps {
 }
 
 const navItems = [
-  { path: '/', icon: Home, label: 'Home' },
+  { path: '/', icon: LayoutDashboardIcon, label: 'Dashboard' },
   { path: '/budget', icon: Target, label: 'Planner' },
   null, // Placeholder for the center FAB
   { path: '/savings', icon: HandCoins, label: 'Savings' },
@@ -22,7 +23,7 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50 glass bg-background/80 backdrop-blur-xl border-t border-border/40 pb-nav-safe"
+      className="fixed bottom-0 left-0 right-0 z-50 glass bg-background/70 backdrop-blur-sm border-t border-border/40 pb-nav-safe"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20 }}

@@ -20,7 +20,7 @@
   }
 
   .pt-header {
-    padding-top: calc(env(safe-area-inset-top) + 24px);
+    padding-top: calc(env(safe-area-inset-top) + 8px);
   }
 }
 

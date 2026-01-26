@@ -1,4 +1,4 @@
-import { ReactNode, forwardRef } from 'react';
+import React, { ReactNode, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, ArrowDown } from 'lucide-react';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -38,7 +38,7 @@ export const PullToRefresh = forwardRef<HTMLDivElement, PullToRefreshProps>(
           {(isPulling || isRefreshing) && pullDistance > 10 && (
             <motion.div
               className="absolute left-0 right-0 flex justify-center z-10 pointer-events-none"
-              style={{ top: `calc(env(safe-area-inset-top) + 65px + ${Math.min(pullDistance - 40, 40)}px)` }}
+              style={{ top: `calc(env(safe-area-inset-top) + 65px + ${Math.min(pullDistance - 30, 30)}px)` }}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}

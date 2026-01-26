@@ -1,8 +1,9 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { CurrencyProvider } from "@/hooks/useCurrency";
@@ -19,6 +20,8 @@ import { BudgetPage } from "@/pages/BudgetPage";
 import SavingsPage from "@/pages/SavingsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import { InstallPage } from "@/pages/InstallPage";
+import { OnboardingPage } from "@/pages/OnboardingPage";
+import { SplashScreen } from "@/components/SplashScreen";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -34,6 +37,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
+    /* Loading is handled by splash screen or internal loaders closer to implementation */
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
@@ -50,13 +54,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return null;
+  }
+
+  if (!hasSeenOnboarding) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   if (user) {
@@ -67,6 +72,13 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  const [showSplash, setShowSplash] = useState(true);
+  const location = useLocation();
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
   return (
     <Routes>
       <Route
@@ -78,7 +90,6 @@ function AppRoutes() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/expenses" element={<ExpensesPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/savings" element={<SavingsPage />} />
@@ -94,6 +105,7 @@ function AppRoutes() {
           </AuthRoute>
         }
       />
+      <Route path="/onboarding" element={<OnboardingPage />} />
       <Route
         path="/reset-password"
         element={<ResetPasswordPage />}
@@ -118,7 +130,7 @@ const App = () => (
             <AuthProvider>
               <ProfileProvider>
                 <CurrencyProvider>
-                  <AppRoutes />
+                  <RootLogic />
                 </CurrencyProvider>
               </ProfileProvider>
             </AuthProvider>
@@ -128,5 +140,14 @@ const App = () => (
     </QueryClientProvider>
   </ErrorBoundary>
 );
+
+// Separated component to use hooks inside BrowserRouter
+function RootLogic() {
+  const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+
+  // Redirect logic could also be here if needed for onboarding
+
+  return <AppRoutes />;
+}
 
 export default App;

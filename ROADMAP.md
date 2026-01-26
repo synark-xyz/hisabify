@@ -10,6 +10,7 @@ To become the most frictionless and engaging personal finance manager, helping u
 ## 🏗️ 1. Infrastructure & Monetization (High Priority)
 - [ ] **Subscription Gating**: Implement `useSubscription` and `PremiumGuard` (As per `PRD.md`).
 - [ ] **Payment Gateway**: Integrate Stripe Checkout for web subscriptions.
+- [ ] **Google Authentication**: One-tap sign-in/signup integration.
 - [ ] **Data Portability**: Premium feature to export transactions to CSV, Excel, and PDF.
 - [ ] **Backup & Sync**: Ensure seamless real-time syncing across devices via Supabase.
 

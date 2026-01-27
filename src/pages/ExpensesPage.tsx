@@ -176,6 +176,9 @@ export function ExpensesPage() {
     percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
   })).sort((a, b) => b.amount - a.amount);
 
+  // Create timeframe key for chart updates
+  const timeframeKey = `${viewMode}-${currentDate.toISOString().split('T')[0]}`;
+
   const expenseTransactions = listTransactions.filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe');
 
   const handleDateSelect = (date: Date) => {
@@ -455,7 +458,7 @@ export function ExpensesPage() {
                     exit={{ opacity: 0, x: 20 }}
                   >
                     {categoryData.length > 0 ? (
-                      <ExpenseDonutChart data={categoryData} />
+                      <ExpenseDonutChart data={categoryData} timeframeKey={timeframeKey} />
                     ) : (
                       <div className="bg-card rounded-2xl p-8 text-center shadow-card">
                         <span className="text-5xl">📊</span>

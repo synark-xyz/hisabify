@@ -21,7 +21,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, Transaction, MonthlySpending } from '@/types';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -100,6 +100,7 @@ export function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
+  const [todayNet, setTodayNet] = useState(0);
   const [showAddPaymentReminder, setShowAddPaymentReminder] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
@@ -123,6 +124,7 @@ export function Dashboard() {
     if (user) {
       fetchTransactions();
       fetchMonthlySummary();
+      fetchTodayTransactions();
     }
   }, [user, currencyVersion]);
 
@@ -134,6 +136,7 @@ export function Dashboard() {
     await Promise.all([
       fetchTransactions(),
       fetchMonthlySummary(),
+      fetchTodayTransactions(),
       refetchReminders()
     ]);
   };
@@ -186,6 +189,40 @@ export function Dashboard() {
       const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
       setTotalIncome(income);
       setTotalExpenses(expenses);
+    }
+  };
+
+  const fetchTodayTransactions = async () => {
+    if (!user) return;
+    const now = new Date();
+    const start = startOfDay(now).toISOString();
+    const end = endOfDay(now).toISOString();
+
+    const { data } = await supabase
+      .from('transactions')
+      .select('amount, type, currency_base')
+      .eq('user_id', user.id)
+      .gte('date', start)
+      .lte('date', end);
+
+    if (data) {
+      const convertedData = await Promise.all(
+        data.map(async (t) => {
+          const storedCurrency = t.currency_base || 'USD';
+          if (storedCurrency === currency) {
+            return { ...t, convertedAmount: Number(t.amount) };
+          }
+          const result = await convertAmount(Number(t.amount), storedCurrency, currency);
+          return {
+            ...t,
+            convertedAmount: result ? result.convertedAmount : Number(t.amount)
+          };
+        })
+      );
+
+      const income = convertedData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.convertedAmount, 0);
+      const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
+      setTodayNet(income - expenses);
     }
   };
 
@@ -278,7 +315,7 @@ export function Dashboard() {
                   <div className="flex flex-col items-end">
                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold ring-1 ring-white/30 shadow-sm">
                       <TrendUp className="w-3.5 h-3.5 text-emerald-300" weight="bold" />
-                      <span className="text-white">Today +$12.50</span>
+                      <span className="text-white">Today {formatAmount(todayNet)}</span>
                     </div>
                   </div>
                 </div>

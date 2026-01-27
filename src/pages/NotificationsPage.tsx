@@ -88,7 +88,7 @@ export function NotificationsPage() {
         <div className="min-h-screen bg-background pb-page-content">
             <Header title="Notifications" showBack onBack={() => navigate('/')} />
 
-            <main className="px-4 py-6 space-y-6 pt-[calc(env(safe-area-inset-top)+1rem)]">
+            <main className="px-4 py-6 space-y-6">
 
                 {loading ? (
                     <div className="space-y-4">

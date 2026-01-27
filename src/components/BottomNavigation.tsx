@@ -56,7 +56,8 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
                   'relative flex flex-col items-center justify-center gap-1 p-2 rounded-2xl transition-all w-full',
                   isActive ? 'text-accent' : 'text-muted-foreground hover:bg-muted/30'
                 )}
-                whileTap={{ scale: 0.9, rotate: [0, -10, 10, 0] }}
+                whileTap={{ scale: 0.95, rotate: [0, -5, 5, 0] }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
                 <Icon className={cn('w-5 h-5', isActive && 'fill-accent/10 icon-glow')} />
                 <span className={cn('text-[10px] font-bold tracking-tight transition-opacity', isActive ? 'opacity-100' : 'opacity-60')}>

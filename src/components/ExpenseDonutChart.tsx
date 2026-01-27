@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { CategorySpending } from '@/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
 
 interface ExpenseDonutChartProps {
   data: CategorySpending[];
+  timeframeKey?: string;
 }
 
 const COLORS = ['#5B4B8A', '#F97316', '#3B4B6B', '#7B6BA8', '#10B981', '#F59E0B'];
@@ -37,9 +38,14 @@ const renderActiveShape = (props: any) => {
   );
 };
 
-export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
+export function ExpenseDonutChart({ data, timeframeKey }: ExpenseDonutChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const { formatAmount } = useCurrency();
+
+  // Reset active index when timeframe changes
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [timeframeKey, data?.length]);
 
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);
@@ -53,6 +59,7 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
 
   return (
     <motion.div
+      key={timeframeKey || 'chart'}
       className="w-full bg-card/50 backdrop-blur-md rounded-2xl p-6 border border-border/50 shadow-xl card-3d transition-all"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}

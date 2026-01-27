@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bell, CheckCircle, WarningCircle, Clock } from '@phosphor-icons/react';
+import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target } from '@phosphor-icons/react';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format, isPast, isToday, differenceInDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getNotifications, markNotificationAsRead, clearOldNotifications, AppNotification } from '@/lib/notificationManager';
 
 interface PaymentReminder {
     id: string;
@@ -24,11 +25,14 @@ export function NotificationsPage() {
     const { user } = useAuth();
     const { formatAmount } = useCurrency();
     const [reminders, setReminders] = useState<PaymentReminder[]>([]);
+    const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (user) {
             fetchReminders();
+            fetchAppNotifications();
+            clearOldNotifications(); // Clean up old notifications
         }
     }, [user]);
 
@@ -43,6 +47,11 @@ export function NotificationsPage() {
 
         if (data) setReminders(data as PaymentReminder[]);
         setLoading(false);
+    };
+
+    const fetchAppNotifications = () => {
+        const notifications = getNotifications();
+        setAppNotifications(notifications);
     };
 
     const handleMarkAsPaid = async (id: string) => {
@@ -84,6 +93,22 @@ export function NotificationsPage() {
         return r.status === 'upcoming' && isPast(new Date(r.due_date)) && !isToday(new Date(r.due_date));
     }).length;
 
+    const getNotificationIcon = (type: AppNotification['type']) => {
+        switch (type) {
+            case 'budget_warning':
+                return { icon: WarningCircle, color: 'text-amber-500', bg: 'bg-amber-500/10' };
+            case 'budget_exceeded':
+                return { icon: WarningCircle, color: 'text-destructive', bg: 'bg-destructive/10' };
+            case 'goal_milestone':
+                return { icon: TrendUp, color: 'text-blue-500', bg: 'bg-blue-500/10' };
+            case 'goal_completed':
+                return { icon: Target, color: 'text-green-500', bg: 'bg-green-500/10' };
+        }
+    };
+
+    const unreadNotificationsCount = appNotifications.filter(n => !n.read).length;
+    const hasAnyNotifications = reminders.length > 0 || appNotifications.length > 0;
+
     return (
         <div className="min-h-screen bg-background pb-page-content">
             <Header title="Notifications" showBack onBack={() => navigate('/')} />
@@ -96,7 +121,7 @@ export function NotificationsPage() {
                             <Skeleton key={i} className="h-20 w-full rounded-2xl" />
                         ))}
                     </div>
-                ) : reminders.length === 0 ? (
+                ) : !hasAnyNotifications ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                         <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
                             <Bell className="w-10 h-10 text-muted-foreground/30" weight="duotone" />
@@ -152,8 +177,53 @@ export function NotificationsPage() {
                             </section>
                         )}
 
-                        <section>
-                            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">All Reminders</h3>
+                        {appNotifications.length > 0 && (
+                            <section>
+                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Budget & Goals</h3>
+                                <div className="space-y-3">
+                                    {appNotifications.map((notification, idx) => {
+                                        const iconInfo = getNotificationIcon(notification.type);
+                                        const Icon = iconInfo.icon;
+                                        return (
+                                            <motion.div
+                                                key={notification.id}
+                                                className={`p-4 rounded-2xl border card-3d transition-all ${
+                                                    notification.read
+                                                        ? 'bg-muted/20 border-border/50 opacity-60'
+                                                        : 'bg-card border-border shadow-sm'
+                                                }`}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: idx * 0.05 }}
+                                                onClick={() => {
+                                                    if (!notification.read) {
+                                                        markNotificationAsRead(notification.id);
+                                                        fetchAppNotifications();
+                                                    }
+                                                }}
+                                            >
+                                                <div className="flex items-start gap-4">
+                                                    <div className={`p-3 rounded-xl ${iconInfo.bg}`}>
+                                                        <Icon className={`w-5 h-5 ${iconInfo.color} icon-glow`} weight="duotone" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-foreground truncate">{notification.title}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1">{notification.description}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">
+                                                            {format(new Date(notification.timestamp), 'MMM d, yyyy • h:mm a')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        )}
+
+                        {reminders.length > 0 && (
+                            <section>
+                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Payment Reminders</h3>
                             <div className="space-y-3">
                                 {reminders.map((reminder, index) => {
                                     const statusInfo = getStatusInfo(reminder.status, reminder.due_date);
@@ -204,7 +274,8 @@ export function NotificationsPage() {
                                     );
                                 })}
                             </div>
-                        </section>
+                            </section>
+                        )}
                     </div>
                 )}
             </main>

@@ -3,15 +3,6 @@ import { motion } from 'framer-motion';
 import { Quote } from 'lucide-react';
 import quotesData from '../../quotes/fintech-learders-quotes.json';
 
-// Use standard calculation for the day of the year
-const getDayOfYear = () => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const diff = now.getTime() - start.getTime();
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
-};
-
 export function DailyQuote() {
     const quote = useMemo(() => {
         // Handle potential different import behaviors (default vs named)
@@ -20,9 +11,9 @@ export function DailyQuote() {
 
         if (!Array.isArray(quotesArray) || quotesArray.length === 0) return null;
 
-        const dayOfYear = getDayOfYear();
-        const index = dayOfYear % quotesArray.length;
-        return quotesArray[index];
+        // Select a random quote each time the component mounts
+        const randomIndex = Math.floor(Math.random() * quotesArray.length);
+        return quotesArray[randomIndex];
     }, []);
 
     if (!quote) return null;

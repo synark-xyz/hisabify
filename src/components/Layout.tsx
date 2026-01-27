@@ -41,7 +41,7 @@ export function Layout() {
                 onBack={isProfileSubPage ? () => navigate('/profile') : undefined}
             />
 
-            <div>
+            <div key={location.pathname}>
                 <Outlet />
             </div>
 

@@ -1,12 +1,9 @@
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { ChevronDown } from "lucide-react";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import {
   Form,
   FormControl,
@@ -18,10 +15,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DateSelect } from "@/components/ui/date-select";
-import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
-import { useEffect } from "react";
+import { useCurrency, currencyData } from "@/hooks/useCurrency";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const goalSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -29,6 +27,7 @@ const goalSchema = z.object({
   current_amount: z.coerce.number().min(0, "Cannot be negative").default(0),
   deadline: z.date().optional(),
   color: z.string().default("#10B981"),
+  currency: z.string().default("USD"),
 });
 
 type GoalFormValues = z.infer<typeof goalSchema>;
@@ -57,6 +56,10 @@ export function AddSavingsGoalModal({
   onSubmit,
   editingGoal,
 }: AddSavingsGoalModalProps) {
+  const { currency } = useCurrency();
+  const { isPremium } = useSubscription();
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
     defaultValues: {
@@ -64,6 +67,7 @@ export function AddSavingsGoalModal({
       target_amount: 0,
       current_amount: 0,
       color: "#10B981",
+      currency: currency,
     },
   });
 
@@ -73,10 +77,9 @@ export function AddSavingsGoalModal({
         name: editingGoal.name,
         target_amount: editingGoal.target_amount,
         current_amount: editingGoal.current_amount,
-        deadline: editingGoal.deadline
-          ? new Date(editingGoal.deadline)
-          : undefined,
+        deadline: editingGoal.deadline ? new Date(editingGoal.deadline) : undefined,
         color: editingGoal.color,
+        currency: currency,
       });
     } else {
       form.reset({
@@ -84,9 +87,10 @@ export function AddSavingsGoalModal({
         target_amount: 0,
         current_amount: 0,
         color: "#10B981",
+        currency: currency,
       });
     }
-  }, [editingGoal, form]);
+  }, [editingGoal, form, currency]);
 
   const handleSubmit = (data: GoalFormValues) => {
     onSubmit(data);
@@ -95,131 +99,196 @@ export function AddSavingsGoalModal({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-        <SheetHeader className="pb-4">
-          <SheetTitle className="text-xl font-bold">
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh]">
+        <DrawerHeader className="pb-4">
+          <DrawerTitle className="text-center font-bold text-xl">
             {editingGoal ? "Edit Savings Goal" : "Create Savings Goal"}
-          </SheetTitle>
-        </SheetHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-5 overflow-y-auto pb-8"
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Goal Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Emergency Fund" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          </DrawerTitle>
+        </DrawerHeader>
+        <div className="overflow-y-auto px-4 pb-safe-nav">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      Goal Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Emergency Fund" className="rounded-xl" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="target_amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target Amount</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="10000"
-                      {...field}
-                      min="0"
-                      step="0.01"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="current_amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Starting Amount</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...field}
-                      min="0"
-                      step="0.01"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="deadline"
-              render={({ field }) => (
-                <FormItem>
-                  <DateSelect
-                    label="Target Date (Optional)"
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="color"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Color</FormLabel>
-                  <FormControl>
-                    <div className="flex gap-2 flex-wrap">
-                      {colorOptions.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          className={cn(
-                            "w-8 h-8 rounded-full transition-all",
-                            field.value === color
-                              ? "ring-2 ring-offset-2 ring-primary"
-                              : "hover:scale-110"
-                          )}
-                          style={{ backgroundColor: color }}
-                          onClick={() => field.onChange(color)}
+              <FormField
+                control={form.control}
+                name="target_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      Target Amount
+                    </FormLabel>
+                    <div className="flex gap-2">
+                      <FormField
+                        control={form.control}
+                        name="currency"
+                        render={({ field: currencyField }) => (
+                          isPremium ? (
+                            <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="w-20 rounded-xl flex items-center justify-between px-3"
+                                >
+                                  <span className="font-bold">
+                                    {currencyData[currencyField.value]?.symbol || '$'}
+                                  </span>
+                                  <ChevronDown className="w-3 h-3 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-48 p-1 rounded-2xl shadow-xl" align="start">
+                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                  {Object.entries(currencyData).map(([code, { symbol }]) => (
+                                    <button
+                                      key={code}
+                                      type="button"
+                                      onClick={() => {
+                                        currencyField.onChange(code);
+                                        setCurrencyOpen(false);
+                                      }}
+                                      className={cn(
+                                        'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors',
+                                        currencyField.value === code && 'bg-muted font-bold'
+                                      )}
+                                    >
+                                      <span className="w-6 text-center">{symbol}</span>
+                                      <span>{code}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-20 rounded-xl flex items-center justify-center px-3"
+                              disabled
+                            >
+                              <span className="font-bold">
+                                {currencyData[currencyField.value]?.symbol || '$'}
+                              </span>
+                            </Button>
+                          )
+                        )}
+                      />
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="10000"
+                          className="rounded-xl flex-1"
+                          {...field}
+                          min="0"
+                          step="0.01"
                         />
-                      ))}
+                      </FormControl>
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingGoal ? "Update Goal" : "Create Goal"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </SheetContent>
-    </Sheet>
+              <FormField
+                control={form.control}
+                name="current_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      Starting Amount
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        className="rounded-xl"
+                        {...field}
+                        min="0"
+                        step="0.01"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deadline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      Target Date (Optional)
+                    </FormLabel>
+                    <DateSelect value={field.value} onChange={field.onChange} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      Color Theme
+                    </FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2 flex-wrap">
+                        {colorOptions.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            className={cn(
+                              "w-10 h-10 rounded-xl transition-all card-3d",
+                              field.value === color
+                                ? "ring-2 ring-offset-2 ring-accent border-glow scale-110"
+                                : "hover:scale-105 opacity-70 hover:opacity-100"
+                            )}
+                            style={{ backgroundColor: color }}
+                            onClick={() => field.onChange(color)}
+                          />
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="flex-1 rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 rounded-xl">
+                  {editingGoal ? "Update Goal" : "Create Goal"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

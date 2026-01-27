@@ -149,17 +149,20 @@ export function ExpensesPage() {
     ? transactions.filter(tx => isSameDay(new Date(tx.date), selectedDate))
     : rangeTransactions;
 
-  const totalIncome = rangeTransactions
+  // Use listTransactions for calculations so chart respects selected date
+  const chartTransactions = listTransactions;
+
+  const totalIncome = chartTransactions
     .filter(tx => tx.type === 'income')
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
-  const totalExpense = rangeTransactions
+  const totalExpense = chartTransactions
     .filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
-  // Category data for charts (based on range)
+  // Category data for charts (based on selected date or range)
   const categoryData: CategorySpending[] = Object.values(
-    rangeTransactions
+    chartTransactions
       .filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
       .reduce((acc, tx) => {
         const catName = getTransactionCategoryName(tx);
@@ -176,8 +179,10 @@ export function ExpensesPage() {
     percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
   })).sort((a, b) => b.amount - a.amount);
 
-  // Create timeframe key for chart updates
-  const timeframeKey = `${viewMode}-${currentDate.toISOString().split('T')[0]}`;
+  // Create timeframe key for chart updates - include selected date so chart re-renders
+  const timeframeKey = selectedDate
+    ? `day-${selectedDate.toISOString().split('T')[0]}`
+    : `${viewMode}-${currentDate.toISOString().split('T')[0]}`;
 
   const expenseTransactions = listTransactions.filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe');
 

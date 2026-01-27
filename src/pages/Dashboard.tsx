@@ -152,7 +152,27 @@ export function Dashboard() {
       .order('date', { ascending: false })
       .limit(5);
 
-    if (data) setTransactions(data as unknown as Transaction[]);
+    if (data) {
+      // Convert amounts from stored currency to current currency
+      const convertedData = await Promise.all(
+        data.map(async (t) => {
+          const storedCurrency = t.currency_base || 'USD';
+          if (storedCurrency === currency) {
+            return { ...t, convertedAmount: Number(t.amount) };
+          }
+          // Convert to current currency
+          const result = await convertAmount(Number(t.amount), storedCurrency, currency);
+          if (!result) {
+            console.warn(`Failed to convert ${t.amount} from ${storedCurrency} to ${currency} for transaction ${t.id}`);
+          }
+          return {
+            ...t,
+            convertedAmount: result ? result.convertedAmount : Number(t.amount)
+          };
+        })
+      );
+      setTransactions(convertedData as unknown as Transaction[]);
+    }
   };
 
   const fetchMonthlySummary = async () => {
@@ -343,6 +363,8 @@ export function Dashboard() {
               </div>
             </motion.section>
 
+            <DailyQuote />
+
             <HealthScoreCard />
 
             {/* Upgrade to Pro Banner - Only for non-premium users */}
@@ -459,8 +481,6 @@ export function Dashboard() {
                 />
               </div>
             </motion.section>
-
-            <DailyQuote />
 
             {/* Monthly Reports Preview */}
             <motion.section>

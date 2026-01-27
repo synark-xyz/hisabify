@@ -44,9 +44,9 @@ export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
   ];
 
   return (
-    <Card className="bg-card shadow-card">
+    <Card className="bg-card shadow-card card-3d transition-all">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-foreground">
+        <CardTitle className="text-lg font-semibold text-foreground text-glow">
           Spending Patterns
         </CardTitle>
       </CardHeader>
@@ -57,18 +57,18 @@ export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
             return (
               <motion.div
                 key={stat.label}
-                className="p-3 rounded-xl bg-muted/50"
+                className="p-3 rounded-xl bg-muted/50 card-3d"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className={`p-1.5 rounded-lg ${stat.bgColor}`}>
-                    <Icon className={`w-3.5 h-3.5 ${stat.color}`} />
+                    <Icon className={`w-3.5 h-3.5 ${stat.color} icon-glow`} />
                   </div>
                   <span className="text-xs text-muted-foreground">{stat.label}</span>
                 </div>
-                <p className="text-sm font-bold text-foreground">{stat.value}</p>
+                <p className="text-sm font-bold text-foreground text-glow">{stat.value}</p>
               </motion.div>
             );
           })}

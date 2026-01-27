@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Edit2, Trash2, Calendar, DollarSign, Bell, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,28 +74,28 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
 
     return (
         <>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-lg bg-card border-border h-[80vh] flex flex-col p-0 overflow-hidden">
+            <Drawer open={open} onOpenChange={onOpenChange}>
+                <DrawerContent className="max-h-[85vh] h-[85vh] border-none bg-background rounded-t-[32px]">
                     <div className="p-6 pb-0">
-                        <DialogHeader className="flex flex-row items-center justify-between mb-6">
-                            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <DrawerHeader className="flex flex-row items-center justify-between mb-6 p-0">
+                            <DrawerTitle className="text-xl font-extrabold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                                 Manage Reminders
-                            </DialogTitle>
+                            </DrawerTitle>
                             <Button
                                 onClick={() => {
                                     setEditingReminder(null);
                                     setShowAddModal(true);
                                 }}
                                 size="sm"
-                                className="bg-accent hover:bg-accent/90 text-white rounded-full px-4 gap-2"
+                                className="bg-accent hover:bg-accent/90 text-white rounded-full px-4 h-9 gap-2 shadow-lg shadow-accent/20"
                             >
                                 <Plus className="w-4 h-4" />
-                                Add New
+                                <span className="text-xs font-bold uppercase tracking-wider">Add New</span>
                             </Button>
-                        </DialogHeader>
+                        </DrawerHeader>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-3 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto px-6 pb-safe-nav space-y-3 custom-scrollbar">
                         <AnimatePresence mode="popLayout">
                             {reminders.length === 0 ? (
                                 <div className="text-center py-12 text-muted-foreground">
@@ -173,8 +173,8 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                             )}
                         </AnimatePresence>
                     </div>
-                </DialogContent>
-            </Dialog>
+                </DrawerContent>
+            </Drawer>
 
             <AddPaymentReminderModal
                 open={showAddModal}

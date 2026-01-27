@@ -39,7 +39,7 @@ export function SavingsGoalCard({
 }: SavingsGoalCardProps) {
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [fundAmount, setFundAmount] = useState("");
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currencySymbol } = useCurrency();
 
   const handleAddFunds = () => {
     const amount = parseFloat(fundAmount);
@@ -66,7 +66,7 @@ export function SavingsGoalCard({
 
   return (
     <>
-      <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300">
+      <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300 card-3d">
         <CardHeader className="p-4 pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -74,7 +74,7 @@ export function SavingsGoalCard({
                 className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
                 style={{ backgroundColor: goal.color + "15" }}
               >
-                <Target className="w-5 h-5" style={{ color: goal.color }} />
+                <Target className="w-5 h-5 icon-glow" style={{ color: goal.color }} />
               </div>
               <div>
                 <CardTitle className="text-sm font-black uppercase tracking-tight">{goal.name}</CardTitle>
@@ -200,7 +200,7 @@ export function SavingsGoalCard({
                   min="0"
                   step="0.01"
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{currencySymbol}</span>
               </div>
             </div>
             <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">

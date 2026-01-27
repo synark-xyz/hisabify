@@ -42,14 +42,14 @@ export function PremiumGuard({ children, featureName = "Premium Feature", classN
                         whileTap={{ scale: 0.95 }}
                     >
                         <Button
-                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 transition-opacity font-bold rounded-full shadow-xl shadow-purple-500/20"
+                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 transition-opacity font-bold rounded-full shadow-xl shadow-purple-500/20 border-glow"
                             onClick={() => setShowUpgrade(true)}
                         >
-                            <Sparkles className="w-4 h-4 mr-2" />
+                            <Sparkles className="w-4 h-4 mr-2 icon-glow" />
                             Be a Pro
                         </Button>
                     </motion.div>
-                    <span className="mt-2 text-xs font-bold text-foreground/80 bg-background/40 px-3 py-1 rounded-full backdrop-blur-md border border-white/10 uppercase tracking-widest">
+                    <span className="mt-2 text-xs font-bold text-foreground/80 bg-background/40 px-3 py-1 rounded-full backdrop-blur-md border border-border/50 uppercase tracking-widest">
                         Unlock {featureName}
                     </span>
                 </div>

@@ -69,9 +69,9 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
     label: string
   ) => (
     <div className="grid grid-cols-3 gap-2 mb-4">
-      <div className="p-3 rounded-xl bg-muted/50 text-center">
+      <div className="p-3 rounded-xl bg-muted/50 text-center card-3d">
         <p className="text-xs text-muted-foreground">Income</p>
-        <p className="text-sm font-bold text-foreground mt-1">
+        <p className="text-sm font-bold text-foreground mt-1 text-glow">
           {formatAmount(current.income)}
         </p>
         <div className={`flex items-center justify-center gap-1 mt-1 text-xs ${getTrendColor(changes.income)}`}>
@@ -79,9 +79,9 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
           <span>{changes.income > 0 ? '+' : ''}{changes.income.toFixed(0)}%</span>
         </div>
       </div>
-      <div className="p-3 rounded-xl bg-muted/50 text-center">
+      <div className="p-3 rounded-xl bg-muted/50 text-center card-3d">
         <p className="text-xs text-muted-foreground">Expenses</p>
-        <p className="text-sm font-bold text-foreground mt-1">
+        <p className="text-sm font-bold text-foreground mt-1 text-glow">
           {formatAmount(current.expenses)}
         </p>
         <div className={`flex items-center justify-center gap-1 mt-1 text-xs ${getTrendColor(changes.expenses, true)}`}>
@@ -89,9 +89,9 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
           <span>{changes.expenses > 0 ? '+' : ''}{changes.expenses.toFixed(0)}%</span>
         </div>
       </div>
-      <div className="p-3 rounded-xl bg-muted/50 text-center">
+      <div className="p-3 rounded-xl bg-muted/50 text-center card-3d">
         <p className="text-xs text-muted-foreground">Net</p>
-        <p className="text-sm font-bold text-foreground mt-1">
+        <p className="text-sm font-bold text-foreground mt-1 text-glow">
           {formatAmount(current.net)}
         </p>
         <div className={`flex items-center justify-center gap-1 mt-1 text-xs ${getTrendColor(changes.net)}`}>
@@ -103,9 +103,9 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
   );
 
   return (
-    <Card className="bg-card shadow-card">
+    <Card className="bg-card shadow-card card-3d transition-all">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-foreground">
+        <CardTitle className="text-lg font-semibold text-foreground text-glow">
           Comparison Analysis
         </CardTitle>
       </CardHeader>
@@ -115,7 +115,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
             <TabsTrigger value="month">Month vs Month</TabsTrigger>
             <TabsTrigger value="year">Year vs Year</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="month">
             {renderComparisonStats(
               monthComparison.currentMonth,
@@ -126,17 +126,17 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis 
-                    dataKey="name" 
+                  <XAxis
+                    dataKey="name"
                     className="text-muted-foreground text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                   />
-                  <YAxis 
+                  <YAxis
                     className="text-muted-foreground text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                     tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number) => formatAmount(value)}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
@@ -152,7 +152,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
               </ResponsiveContainer>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="year">
             {renderComparisonStats(
               yearComparison.currentYear,
@@ -163,17 +163,17 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={yearData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis 
-                    dataKey="name" 
+                  <XAxis
+                    dataKey="name"
                     className="text-muted-foreground text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                   />
-                  <YAxis 
+                  <YAxis
                     className="text-muted-foreground text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                     tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number) => formatAmount(value)}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',

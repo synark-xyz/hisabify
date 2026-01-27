@@ -17,10 +17,11 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTheme } from '@/hooks/useTheme';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, Transaction, MonthlySpending } from '@/types';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -99,11 +100,13 @@ export function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
+  const [todayNet, setTodayNet] = useState(0);
   const [showAddPaymentReminder, setShowAddPaymentReminder] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const { user } = useAuth();
+  const { variant } = useTheme();
   const { formatAmount, currencyVersion, currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
@@ -121,6 +124,7 @@ export function Dashboard() {
     if (user) {
       fetchTransactions();
       fetchMonthlySummary();
+      fetchTodayTransactions();
     }
   }, [user, currencyVersion]);
 
@@ -132,6 +136,7 @@ export function Dashboard() {
     await Promise.all([
       fetchTransactions(),
       fetchMonthlySummary(),
+      fetchTodayTransactions(),
       refetchReminders()
     ]);
   };
@@ -147,7 +152,27 @@ export function Dashboard() {
       .order('date', { ascending: false })
       .limit(5);
 
-    if (data) setTransactions(data as unknown as Transaction[]);
+    if (data) {
+      // Convert amounts from stored currency to current currency
+      const convertedData = await Promise.all(
+        data.map(async (t) => {
+          const storedCurrency = t.currency_base || 'USD';
+          if (storedCurrency === currency) {
+            return { ...t, convertedAmount: Number(t.amount) };
+          }
+          // Convert to current currency
+          const result = await convertAmount(Number(t.amount), storedCurrency, currency);
+          if (!result) {
+            console.warn(`Failed to convert ${t.amount} from ${storedCurrency} to ${currency} for transaction ${t.id}`);
+          }
+          return {
+            ...t,
+            convertedAmount: result ? result.convertedAmount : Number(t.amount)
+          };
+        })
+      );
+      setTransactions(convertedData as unknown as Transaction[]);
+    }
   };
 
   const fetchMonthlySummary = async () => {
@@ -184,6 +209,40 @@ export function Dashboard() {
       const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
       setTotalIncome(income);
       setTotalExpenses(expenses);
+    }
+  };
+
+  const fetchTodayTransactions = async () => {
+    if (!user) return;
+    const now = new Date();
+    const start = startOfDay(now).toISOString();
+    const end = endOfDay(now).toISOString();
+
+    const { data } = await supabase
+      .from('transactions')
+      .select('amount, type, currency_base')
+      .eq('user_id', user.id)
+      .gte('date', start)
+      .lte('date', end);
+
+    if (data) {
+      const convertedData = await Promise.all(
+        data.map(async (t) => {
+          const storedCurrency = t.currency_base || 'USD';
+          if (storedCurrency === currency) {
+            return { ...t, convertedAmount: Number(t.amount) };
+          }
+          const result = await convertAmount(Number(t.amount), storedCurrency, currency);
+          return {
+            ...t,
+            convertedAmount: result ? result.convertedAmount : Number(t.amount)
+          };
+        })
+      );
+
+      const income = convertedData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.convertedAmount, 0);
+      const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
+      setTodayNet(income - expenses);
     }
   };
 
@@ -250,7 +309,14 @@ export function Dashboard() {
           >
             {/* Hero Section - Wallet Overview */}
             <motion.section>
-              <div className="bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#DB2777] rounded-3xl p-6 shadow-xl relative overflow-hidden text-white">
+              <div
+                className={cn(
+                  "rounded-3xl p-6 shadow-xl relative overflow-hidden text-white transition-all",
+                  variant === 'cyberpunk'
+                    ? "card-3d bg-card border-none"
+                    : "bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#DB2777]"
+                )}
+              >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none" />
 
@@ -262,14 +328,14 @@ export function Dashboard() {
                       </div>
                       <span className="text-sm font-medium tracking-wide">Main Balance</span>
                     </div>
-                    <h2 className="text-4xl font-black tracking-tight mb-1">
+                    <h2 className={cn("text-4xl font-black tracking-tight mb-1", variant === 'cyberpunk' && "text-glow")}>
                       {formatAmount(netBalance)}
                     </h2>
                   </div>
                   <div className="flex flex-col items-end">
                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold ring-1 ring-white/30 shadow-sm">
                       <TrendUp className="w-3.5 h-3.5 text-emerald-300" weight="bold" />
-                      <span className="text-white">Today +$12.50</span>
+                      <span className="text-white">Today {formatAmount(todayNet)}</span>
                     </div>
                   </div>
                 </div>
@@ -296,6 +362,8 @@ export function Dashboard() {
                 </div>
               </div>
             </motion.section>
+
+            <DailyQuote />
 
             <HealthScoreCard />
 
@@ -413,8 +481,6 @@ export function Dashboard() {
                 />
               </div>
             </motion.section>
-
-            <DailyQuote />
 
             {/* Monthly Reports Preview */}
             <motion.section>

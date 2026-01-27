@@ -5,6 +5,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { Transaction, CategorySpending, MonthlySpending } from '@/types';
 import { format, startOfMonth, endOfMonth, subMonths, parseISO } from 'date-fns';
+import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
 
 interface ConvertedTransaction extends Transaction {
   convertedAmount: number;
@@ -109,8 +110,8 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
       // Calculate spent for each budget
       const budgetsWithSpending = (budgetData || []).map((budget: any) => {
         const spent = convertedTransactions
-          .filter(tx => 
-            tx.type === 'expense' && 
+          .filter(tx =>
+            (tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe') &&
             tx.category_id === budget.category_id &&
             new Date(tx.date).getMonth() === now.getMonth() &&
             new Date(tx.date).getFullYear() === now.getFullYear()
@@ -145,19 +146,19 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
   }, [fetchData]);
 
   // Calculate totals
-  const totalExpenses = useMemo(() => 
-    transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0),
+  const totalExpenses = useMemo(() =>
+    transactions.filter(t => t.type === 'expense' || t.type === 'lend' || t.type === 'owe').reduce((sum, t) => sum + t.convertedAmount, 0),
     [transactions]
   );
 
-  const totalIncome = useMemo(() => 
+  const totalIncome = useMemo(() =>
     transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.convertedAmount, 0),
     [transactions]
   );
 
   const netBalance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
 
-  const budgetRemaining = useMemo(() => 
+  const budgetRemaining = useMemo(() =>
     budgets.reduce((sum, b) => sum + b.remaining, 0),
     [budgets]
   );
@@ -165,15 +166,15 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
   // Category spending breakdown
   const categoryData = useMemo<CategorySpending[]>(() => {
     const categoryMap: Record<string, CategorySpending> = {};
-    
+
     transactions
-      .filter(t => t.type === 'expense')
+      .filter(t => t.type === 'expense' || t.type === 'lend' || t.type === 'owe')
       .forEach(tx => {
-        const catName = tx.category?.name || 'Other';
-        const catColor = tx.category?.color || '#6B7280';
-        
+        const catName = getTransactionCategoryName(tx);
+        const catColor = getTransactionCategoryColor(tx);
+
         if (!categoryMap[catName]) {
-          categoryMap[catName] = { category: catName, amount: 0, color: catColor, percentage: 0 };
+          categoryMap[catName] = { name: catName, amount: 0, color: catColor, percentage: 0 };
         }
         categoryMap[catName].amount += tx.convertedAmount;
       });
@@ -206,7 +207,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
           .filter(t => t.type === 'income')
           .reduce((sum, t) => sum + t.convertedAmount, 0),
         expenses: monthTransactions
-          .filter(t => t.type === 'expense')
+          .filter(t => t.type === 'expense' || t.type === 'lend' || t.type === 'owe')
           .reduce((sum, t) => sum + t.convertedAmount, 0),
       });
     }

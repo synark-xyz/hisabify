@@ -1,12 +1,20 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/hooks/useTheme';
+import { CyberpunkSplash } from './CyberpunkSplash';
 
 interface SplashScreenProps {
     onComplete: () => void;
 }
 
-export function SplashScreen({ onComplete }: SplashScreenProps) {
+export function SplashScreen({ onComplete }: { onComplete: () => void }) {
+    const { variant } = useTheme();
+
+    if (variant === 'cyberpunk') {
+        return <CyberpunkSplash onComplete={onComplete} />;
+    }
+
     const [progress, setProgress] = useState(0);
     const [message, setMessage] = useState('Initializing secure vault...');
 

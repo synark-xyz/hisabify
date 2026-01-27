@@ -95,7 +95,7 @@ export function AnalyticsPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.header
-          className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10"
+          className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 card-3d rounded-b-3xl"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -105,7 +105,7 @@ export function AnalyticsPage() {
                 <ChevronLeft className="w-5 h-5" />
               </Button>
             </motion.div>
-            <h1 className="text-xl font-bold text-foreground">Analytics Dashboard</h1>
+            <h1 className="text-xl font-bold text-foreground text-glow">Analytics Dashboard</h1>
           </div>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
@@ -113,8 +113,9 @@ export function AnalyticsPage() {
               size="icon"
               onClick={refetch}
               disabled={loading}
+              className="border-glow"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 icon-glow ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </motion.div>
         </motion.header>
@@ -155,10 +156,10 @@ export function AnalyticsPage() {
           {/* Tabs for Overview vs Advanced */}
           <motion.section variants={itemVariants}>
             <Tabs defaultValue="insights" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12">
-                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-accent">Insights</TabsTrigger>
-                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-primary">Overview</TabsTrigger>
-                <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-purple-500 relative overflow-hidden">
+              <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12 card-3d">
+                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-accent data-[state=active]:text-glow">Insights</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:text-glow">Overview</TabsTrigger>
+                <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-purple-500 data-[state=active]:text-glow relative overflow-hidden">
                   Advanced
                   {!isPremium && !subscriptionLoading && <Lock className="ml-1.5 w-3 h-3 text-muted-foreground/50" />}
                 </TabsTrigger>

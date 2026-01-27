@@ -6,6 +6,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { toast } from 'sonner';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, format } from 'date-fns';
 import { Category } from '@/types';
+import { showBudgetWarning, showBudgetExceeded } from '@/lib/notificationManager';
 
 export type PeriodType = 'weekly' | 'monthly' | 'yearly';
 
@@ -45,8 +46,7 @@ export interface UpdateBudgetInput extends Partial<CreateBudgetInput> {
   id: string;
 }
 
-// Track shown alerts to prevent duplicates
-const shownAlerts = new Set<string>();
+// Notification manager now handles alert deduplication
 
 export function useBudgets() {
   const [budgets, setBudgets] = useState<BudgetWithSpending[]>([]);
@@ -176,19 +176,11 @@ export function useBudgets() {
 
       // Show alerts for budgets at warning or exceeded levels
       budgetsWithSpending.forEach((budget) => {
-        const alertKey = `${budget.id}-${budget.status}`;
-        if (!shownAlerts.has(alertKey)) {
-          if (budget.status === 'exceeded') {
-            shownAlerts.add(alertKey);
-            toast.error(`Budget Exceeded: ${budget.category?.name || budget.name || 'Budget'}`, {
-              description: `You've spent ${budget.percentage.toFixed(0)}% of your ${budget.period_type} budget.`
-            });
-          } else if (budget.status === 'warning') {
-            shownAlerts.add(alertKey);
-            toast.warning(`Budget Warning: ${budget.category?.name || budget.name || 'Budget'}`, {
-              description: `You've used ${budget.percentage.toFixed(0)}% of your ${budget.period_type} budget.`
-            });
-          }
+        const budgetName = budget.category?.name || budget.name || 'Budget';
+        if (budget.status === 'exceeded') {
+          showBudgetExceeded(budgetName, budget.percentage, budget.period_type);
+        } else if (budget.status === 'warning') {
+          showBudgetWarning(budgetName, budget.percentage, budget.period_type);
         }
       });
 

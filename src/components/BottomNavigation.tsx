@@ -35,11 +35,25 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
               <div key="add-button-container" className="flex justify-center items-center">
                 <motion.button
                   onClick={onAddTransaction}
-                  className="relative -top-3 w-14 h-14 rounded-2xl bg-accent text-white shadow-fab flex items-center justify-center z-[51]"
-                  whileHover={{ y: -6, scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  className="relative -top-3 w-14 h-14 rounded-2xl bg-accent text-white shadow-fab flex items-center justify-center z-[51] border-glow"
+                  whileHover={{ y: -8, scale: 1.1 }}
+                  whileTap={{ scale: 0.85, rotate: 90 }}
+                  animate={{
+                    boxShadow: [
+                      '0 8px 24px -4px rgba(251, 146, 60, 0.4)',
+                      '0 12px 32px -4px rgba(251, 146, 60, 0.6)',
+                      '0 8px 24px -4px rgba(251, 146, 60, 0.4)',
+                    ],
+                  }}
+                  transition={{
+                    boxShadow: {
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    },
+                  }}
                 >
-                  <Plus className="w-8 h-8" strokeWidth={3} />
+                  <Plus className="w-8 h-8 icon-glow" strokeWidth={3} />
                 </motion.button>
               </div>
             );
@@ -53,19 +67,45 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
               <motion.button
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  'relative flex flex-col items-center justify-center gap-1 p-2 rounded-2xl transition-all w-full',
-                  isActive ? 'text-accent' : 'text-muted-foreground hover:bg-muted/30'
+                  'relative flex flex-col items-center justify-center gap-1 p-2 rounded-2xl w-full',
+                  isActive ? 'text-accent' : 'text-muted-foreground'
                 )}
+                animate={{
+                  scale: isActive ? 1.05 : 1,
+                  y: isActive ? -2 : 0,
+                }}
+                whileHover={{ scale: 1.1, y: -3 }}
                 whileTap={{ scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
               >
-                <Icon className={cn('w-5 h-5', isActive && 'fill-accent/10')} />
-                <span className={cn('text-[10px] font-bold tracking-tight transition-opacity', isActive ? 'opacity-100' : 'opacity-60')}>
+                <motion.div
+                  animate={{
+                    scale: isActive ? 1.1 : 1,
+                    rotate: isActive ? [0, -5, 5, 0] : 0,
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Icon className={cn('w-5 h-5', isActive && 'fill-accent/10 icon-glow')} />
+                </motion.div>
+                <motion.span
+                  className={cn('text-[10px] font-bold tracking-tight')}
+                  animate={{
+                    opacity: isActive ? 1 : 0.6,
+                    y: isActive ? 0 : 2,
+                  }}
+                  transition={{ duration: 0.2 }}
+                >
                   {item.label}
-                </span>
+                </motion.span>
                 {isActive && (
                   <motion.div
-                    className="absolute -top-1 w-1 h-1 rounded-full bg-accent"
+                    className="absolute -top-1 w-1.5 h-1.5 rounded-full bg-accent shadow-lg"
                     layoutId="nav-indicator"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    style={{ boxShadow: '0 0 8px currentColor' }}
                   />
                 )}
               </motion.button>

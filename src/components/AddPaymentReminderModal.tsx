@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, DollarSign, Bell, RefreshCw } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { X, Calendar, DollarSign, Bell, RefreshCw, Loader2 } from 'lucide-react';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { schedulePaymentReminder, requestNotificationPermission } from '@/lib/notifications';
+import { cn } from '@/lib/utils';
 
 interface AddPaymentReminderModalProps {
   open: boolean;
@@ -112,131 +113,141 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card border-border">
-        <DialogHeader>
-          <DialogTitle className="text-foreground">
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[90vh] border-none bg-background rounded-t-[32px]">
+        <DrawerHeader className="pb-4">
+          <DrawerTitle className="text-center font-bold text-xl">
             {reminder ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
-          </DialogTitle>
-        </DialogHeader>
+          </DrawerTitle>
+        </DrawerHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Electricity Bill"
-              required
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="amount">Amount</Label>
-            <div className="relative mt-1">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="overflow-y-auto px-6 pb-safe-nav">
+          <form onSubmit={handleSubmit} className="space-y-5 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider opacity-70">Title</Label>
               <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Electricity Bill"
                 required
-                className="pl-9"
+                className="rounded-xl h-12"
               />
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="dueDate">Due Date</Label>
-            <div className="relative mt-1">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="amount" className="text-xs font-bold uppercase tracking-wider opacity-70">Amount</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    required
+                    className="pl-9 rounded-xl h-12 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="dueDate" className="text-xs font-bold uppercase tracking-wider opacity-70">Due Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    required
+                    className="pl-9 rounded-xl h-12"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="notifyBefore" className="text-xs font-bold uppercase tracking-wider opacity-70">Notify Before (days)</Label>
+              <div className="relative">
+                <Bell className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="notifyBefore"
+                  type="number"
+                  min="1"
+                  max="30"
+                  value={notifyBeforeDays}
+                  onChange={(e) => setNotifyBeforeDays(e.target.value)}
+                  className="pl-9 rounded-xl h-12"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-accent/10 rounded-xl">
+                  <RefreshCw className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <Label className="text-sm font-bold">Recurring Payment</Label>
+                  <p className="text-xs text-muted-foreground">Repeat this payment automatically</p>
+                </div>
+              </div>
+              <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
+            </div>
+
+            <AnimatePresence>
+              {isRecurring && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-1.5 overflow-hidden"
+                >
+                  <Label htmlFor="interval" className="text-xs font-bold uppercase tracking-wider opacity-70">Repeat Interval</Label>
+                  <Select value={recurringInterval} onValueChange={setRecurringInterval}>
+                    <SelectTrigger className="rounded-xl h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      <SelectItem value="weekly" className="rounded-xl">Weekly</SelectItem>
+                      <SelectItem value="monthly" className="rounded-xl">Monthly</SelectItem>
+                      <SelectItem value="yearly" className="rounded-xl">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="note" className="text-xs font-bold uppercase tracking-wider opacity-70">Note (optional)</Label>
               <Input
-                id="dueDate"
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                required
-                className="pl-9"
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Add a note..."
+                className="rounded-xl h-12"
               />
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="notifyBefore">Notify Before (days)</Label>
-            <div className="relative mt-1">
-              <Bell className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                id="notifyBefore"
-                type="number"
-                min="1"
-                max="30"
-                value={notifyBeforeDays}
-                onChange={(e) => setNotifyBeforeDays(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-foreground">Recurring Payment</span>
-            </div>
-            <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
-          </div>
-
-          <AnimatePresence>
-            {isRecurring && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
+            <div className="flex gap-3 pt-4 sticky bottom-0 bg-background/80 backdrop-blur-sm pb-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="flex-1 text-muted-foreground rounded-2xl h-12"
               >
-                <Label htmlFor="interval">Repeat Interval</Label>
-                <Select value={recurringInterval} onValueChange={setRecurringInterval}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div>
-            <Label htmlFor="note">Note (optional)</Label>
-            <Input
-              id="note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Add a note..."
-              className="mt-1"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-accent hover:bg-accent/90">
-              {loading ? 'Saving...' : reminder ? 'Update' : 'Create'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1 bg-accent hover:bg-accent/90 rounded-2xl h-12 shadow-fab font-bold">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reminder ? 'Update Reminder' : 'Create Reminder'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

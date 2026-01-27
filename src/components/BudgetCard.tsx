@@ -27,18 +27,18 @@ export function BudgetCard({ budget, spent }: BudgetCardProps) {
 
   return (
     <motion.div
-      className="bg-card rounded-2xl p-4 shadow-card"
+      className="bg-card rounded-2xl p-4 shadow-card card-3d transition-all"
       whileHover={{ scale: 1.01, x: 4 }}
       whileTap={{ scale: 0.99 }}
     >
       <div className="flex items-center gap-3 mb-3">
         <motion.div
-          className="w-12 h-12 rounded-xl flex items-center justify-center"
+          className="w-12 h-12 rounded-xl flex items-center justify-center backdrop-blur-sm"
           style={{ backgroundColor: `${budget.category?.color}20` }}
           whileHover={{ rotate: 5, scale: 1.1 }}
         >
           <Icon
-            className="w-6 h-6"
+            className="w-6 h-6 icon-glow"
             style={{ color: budget.category?.color }}
           />
         </motion.div>

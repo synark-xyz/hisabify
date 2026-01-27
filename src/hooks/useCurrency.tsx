@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useExchangeRate } from './useExchangeRate';
+import { startExchangeRateService } from '@/lib/exchangeRateService';
 
 interface CurrencyContextType {
   currency: string;
@@ -59,6 +61,7 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { prefetchRates } = useExchangeRate();
   const [currency, setCurrencyState] = useState<string>(() => {
     return localStorage.getItem('currency') || 'USD';
   });
@@ -152,6 +155,14 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         });
     }
   }, [user, detectLocationCurrency]);
+
+  // Background exchange rate service - runs every 24 hours
+  useEffect(() => {
+    if (user && currency) {
+      // Start the background service (only updates if >24h since last update)
+      startExchangeRateService(currency, prefetchRates);
+    }
+  }, [user, currency, prefetchRates]);
 
   const refreshCurrency = async () => {
     if (user) {

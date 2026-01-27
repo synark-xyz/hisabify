@@ -175,14 +175,15 @@ export function useBudgets() {
       setBudgets(budgetsWithSpending);
 
       // Show alerts for budgets at warning or exceeded levels
-      budgetsWithSpending.forEach((budget) => {
-        const budgetName = budget.category?.name || budget.name || 'Budget';
-        if (budget.status === 'exceeded') {
-          showBudgetExceeded(budgetName, budget.percentage, budget.period_type);
-        } else if (budget.status === 'warning') {
-          showBudgetWarning(budgetName, budget.percentage, budget.period_type);
-        }
-      });
+      // Alerts disabled per user request to avoid spam on tab open
+      // budgetsWithSpending.forEach((budget) => {
+      //   const budgetName = budget.category?.name || budget.name || 'Budget';
+      //   if (budget.status === 'exceeded') {
+      //     showBudgetExceeded(budgetName, budget.percentage, budget.period_type);
+      //   } else if (budget.status === 'warning') {
+      //     showBudgetWarning(budgetName, budget.percentage, budget.period_type);
+      //   }
+      // });
 
     } catch (err) {
       console.error('Error fetching budgets:', err);

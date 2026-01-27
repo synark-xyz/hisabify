@@ -21,6 +21,7 @@ import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
+import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
 interface TransactionItemProps {
@@ -51,6 +52,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string, weight?:
 
 export function TransactionItem({ transaction, index = 0, onEdit, onDelete, revealedId, onReveal }: TransactionItemProps) {
   const { currency, formatAmount } = useCurrency();
+  const { variant } = useTheme();
 
   // Use external control if provided, otherwise use internal state
   const isRevealed = revealedId !== undefined ? revealedId === transaction.id : false;

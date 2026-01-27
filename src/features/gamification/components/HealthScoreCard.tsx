@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChartPie, Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useHealthScore } from '../hooks/useHealthScore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import {
     Popover,
@@ -12,6 +13,7 @@ import {
 
 export function HealthScoreCard() {
     const { score, loading } = useHealthScore();
+    const { variant } = useTheme();
 
     if (loading) {
         return <Skeleton className="w-full h-[180px] rounded-3xl" />;

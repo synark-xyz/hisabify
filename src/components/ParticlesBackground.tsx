@@ -1,8 +1,10 @@
-
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 
 export const ParticlesBackground = () => {
+    const { variant } = useTheme();
     const particles = useMemo(() => {
         return Array.from({ length: 20 }).map((_, i) => ({
             id: i,
@@ -15,7 +17,7 @@ export const ParticlesBackground = () => {
     }, []);
 
     return (
-        <div className="fixed inset-0 -z-10 bg-background overflow-hidden">
+        <div className={cn("fixed inset-0 -z-10 overflow-hidden", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
             {particles.map((particle) => (
                 <motion.div
                     key={particle.id}
@@ -53,7 +55,7 @@ export const ParticlesBackground = () => {
                     }}
                 />
             ))}
-            <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px]" />
+            <div className={cn("absolute inset-0 backdrop-blur-[1px]", variant === 'cyberpunk' ? "bg-transparent" : "bg-background/50")} />
         </div>
     );
 };

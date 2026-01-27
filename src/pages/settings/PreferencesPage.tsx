@@ -10,6 +10,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
@@ -78,7 +79,7 @@ export function PreferencesPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-page-content">
+        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
             <Header title="Preferences" showBack onBack={() => navigate('/settings')} />
             <main className="px-4 py-6 space-y-6">
 
@@ -106,7 +107,7 @@ export function PreferencesPage() {
                         >
                             <div className="font-bold text-sm mb-1">Default</div>
                             <div className="text-xs text-muted-foreground">Clean & Modern</div>
-                            {variant === 'default' && <div className="absolute top-3 right-3 text-primary"><CheckCircle className="w-4 h-4" weight="bold" /></div>}
+                            {variant === 'default' && <div className="absolute top-3 right-3 text-primary"><CheckCircle className="w-4 h-4" /></div>}
                         </button>
 
                         <button

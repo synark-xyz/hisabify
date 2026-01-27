@@ -57,6 +57,7 @@ export interface Insight {
   description: string;
   value?: number;
   trend?: 'up' | 'down' | 'neutral';
+  suggestion?: string;
 }
 
 export interface MonthComparison {
@@ -223,6 +224,9 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
           description: `You spent ${Math.abs(changePercent).toFixed(0)}% ${changePercent > 0 ? 'more' : 'less'} this month compared to last month`,
           value: changePercent,
           trend: changePercent > 0 ? 'up' : 'down',
+          suggestion: changePercent > 0
+            ? "Try to identify non-essential expenses from this month to bring your spending back to baseline."
+            : "Great job! Consider moving the leftover balance to your savings goal to maintain this momentum."
         });
       }
     }
@@ -237,6 +241,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         description: `Your biggest spending area is ${spendingPatterns.mostExpensiveCategory.name}`,
         value: spendingPatterns.mostExpensiveCategory.amount,
         trend: 'neutral',
+        suggestion: `To improve your score, try to reduce spending in ${spendingPatterns.mostExpensiveCategory.name} by 10% next week.`
       });
     }
 
@@ -250,6 +255,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         description: `Your spending is ${spendingPatterns.unusualSpending.percentageAboveNormal.toFixed(0)}% higher than your average`,
         value: spendingPatterns.unusualSpending.percentageAboveNormal,
         trend: 'up',
+        suggestion: "Review your recent high-value transactions to ensure they align with your financial goals."
       });
     }
 
@@ -263,6 +269,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         description: `You've spent money for ${spendingPatterns.spendingStreak} consecutive days`,
         value: spendingPatterns.spendingStreak,
         trend: 'up',
+        suggestion: "Try a 'No Spend Day' tomorrow to break the cycle and boost your savings rate!"
       });
     }
 
@@ -282,6 +289,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
           description: `You're saving ${savingsRate.toFixed(0)}% of your income this month`,
           value: savingsRate,
           trend: 'down',
+          suggestion: "You're ahead of schedule! Consider diversifying your savings into a high-yield account."
         });
       }
     }

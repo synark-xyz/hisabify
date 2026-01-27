@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, RefreshCw, Lock, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardData } from '@/hooks/useDashboardData';
@@ -36,6 +38,7 @@ export function AnalyticsPage() {
     to: endOfMonth(new Date()),
   });
   const { user } = useAuth();
+  const { variant } = useTheme();
   const navigate = useNavigate();
 
   const {
@@ -91,11 +94,11 @@ export function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-page-content fade-bottom-overlay">
+    <div className={cn("min-h-screen pb-page-content fade-bottom-overlay", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.header
-          className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 card-3d rounded-b-3xl"
+          className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 rounded-b-3xl"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >

@@ -8,11 +8,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { requestNotificationPermission, sendNotification } from '@/lib/notifications';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 
 export function NotificationSettingsPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { toast } = useToast();
+    const { variant } = useTheme();
 
     const [preferences, setPreferences] = useState({
         budgetAlerts: true,
@@ -80,7 +83,7 @@ export function NotificationSettingsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-page-content">
+        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
             <Header title="Notifications" showBack onBack={() => navigate('/settings')} />
             <main className="px-4 py-6 space-y-6">
 

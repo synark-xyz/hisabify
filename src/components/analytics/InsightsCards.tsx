@@ -91,6 +91,11 @@ export function InsightsCards({ insights }: InsightsCardsProps) {
                     <p className="text-sm text-muted-foreground mt-1">
                       {insight.description}
                     </p>
+                    {insight.suggestion && (
+                      <p className="text-xs text-primary font-bold mt-2 leading-relaxed italic">
+                        💡 Tip: {insight.suggestion}
+                      </p>
+                    )}
                     {insight.value !== undefined && insight.type !== 'comparison' && (
                       <p className="text-lg font-bold text-foreground mt-2">
                         {insight.type === 'alert' && insight.id === 'biggest-expense'

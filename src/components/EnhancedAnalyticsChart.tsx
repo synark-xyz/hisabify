@@ -32,6 +32,7 @@ export function EnhancedAnalyticsChart({
   const [loading, setLoading] = useState(true);
   const [quarterFilter, setQuarterFilter] = useState<'All' | 'Q1' | 'Q2' | 'Q3' | 'Q4'>('All');
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllInsights, setShowAllInsights] = useState(false);
   const [fullYearData, setFullYearData] = useState<MonthlySpending[]>([]);
   const [comparisonData, setComparisonData] = useState<MonthlySpending[]>([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategorySpending[]>([]);
@@ -400,18 +401,28 @@ export function EnhancedAnalyticsChart({
         </div>
       </div>
 
-      {/* 2B. Insights Section */}
       <div className="bg-[#1a1a2e]/40 backdrop-blur-md border border-white/5 rounded-2xl p-4 space-y-3">
-        <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2 mb-1">
-          <Lightbulb className="w-3.5 h-3.5 text-yellow-400" /> Key Insights
-        </h4>
-        {insights.map((insight, idx) => (
+        <div className="flex items-center justify-between mb-1">
+          <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+            <Lightbulb className="w-3.5 h-3.5 text-yellow-400" /> Key Insights
+          </h4>
+          {insights.length > 1 && (
+            <button
+              onClick={() => setShowAllInsights(!showAllInsights)}
+              className="text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors"
+            >
+              {showAllInsights ? 'Show Less' : 'View all'}
+            </button>
+          )}
+        </div>
+        {(showAllInsights ? insights : insights.slice(0, 1)).map((insight, idx) => (
           <motion.div
             key={idx}
             className="flex items-start gap-3 p-3 bg-white/5 rounded-xl border border-white/5"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.1 }}
+            layout
           >
             <span className="text-lg leading-none">{insight.icon}</span>
             <p className="text-sm text-white/80 leading-snug">{insight.message}</p>

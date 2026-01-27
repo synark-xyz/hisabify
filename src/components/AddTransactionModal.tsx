@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useSubscription } from '@/hooks/useSubscription';
 import { ReceiptUpload } from '@/components/ReceiptUpload';
 import { expenseFormSchema, incomeFormSchema, ExpenseFormData, IncomeFormData } from '@/lib/transaction-schemas';
 import { Category, Card } from '@/types';
@@ -62,6 +63,7 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
   const { toast } = useToast();
   const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
+  const { isPremium } = useSubscription();
 
   const expenseForm = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseFormSchema),
@@ -340,35 +342,41 @@ export function AddTransactionModal({ open, onOpenChange, onSuccess, initialType
                         control={form.control}
                         name="currency"
                         render={({ field: currencyField }) => (
-                          <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                            <PopoverTrigger asChild>
-                              <Button type="button" variant="outline" className="w-20 rounded-xl flex items-center justify-between px-3">
-                                <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
-                                <ChevronDown className="w-3 h-3 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-48 p-1 rounded-2xl shadow-xl" align="start">
-                              <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                                {Object.entries(currencyData).map(([code, { symbol }]) => (
-                                  <button
-                                    key={code}
-                                    type="button"
-                                    onClick={() => {
-                                      currencyField.onChange(code);
-                                      setCurrencyOpen(false);
-                                    }}
-                                    className={cn(
-                                      'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors',
-                                      currencyField.value === code && 'bg-muted font-bold'
-                                    )}
-                                  >
-                                    <span className="w-6 text-center">{symbol}</span>
-                                    <span>{code}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
+                          isPremium ? (
+                            <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                              <PopoverTrigger asChild>
+                                <Button type="button" variant="outline" className="w-20 rounded-xl flex items-center justify-between px-3">
+                                  <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
+                                  <ChevronDown className="w-3 h-3 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-48 p-1 rounded-2xl shadow-xl" align="start">
+                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                  {Object.entries(currencyData).map(([code, { symbol }]) => (
+                                    <button
+                                      key={code}
+                                      type="button"
+                                      onClick={() => {
+                                        currencyField.onChange(code);
+                                        setCurrencyOpen(false);
+                                      }}
+                                      className={cn(
+                                        'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors',
+                                        currencyField.value === code && 'bg-muted font-bold'
+                                      )}
+                                    >
+                                      <span className="w-6 text-center">{symbol}</span>
+                                      <span>{code}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <Button type="button" variant="outline" className="w-20 rounded-xl flex items-center justify-center px-3" disabled>
+                              <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
+                            </Button>
+                          )
                         )}
                       />
                       <FormControl>

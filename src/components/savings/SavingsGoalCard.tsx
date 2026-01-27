@@ -39,7 +39,7 @@ export function SavingsGoalCard({
 }: SavingsGoalCardProps) {
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [fundAmount, setFundAmount] = useState("");
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currencySymbol } = useCurrency();
 
   const handleAddFunds = () => {
     const amount = parseFloat(fundAmount);
@@ -200,7 +200,7 @@ export function SavingsGoalCard({
                   min="0"
                   step="0.01"
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{currencySymbol}</span>
               </div>
             </div>
             <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">

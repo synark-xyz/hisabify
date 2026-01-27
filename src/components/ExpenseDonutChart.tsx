@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { CategorySpending } from '@/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
 
 interface ExpenseDonutChartProps {
   data: CategorySpending[];
+  timeframeKey?: string;
 }
 
 const COLORS = ['#5B4B8A', '#F97316', '#3B4B6B', '#7B6BA8', '#10B981', '#F59E0B'];
@@ -16,33 +17,62 @@ const renderActiveShape = (props: any) => {
 
   return (
     <g>
+      {/* Outer glow ring */}
       <Sector
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 10}
+        outerRadius={outerRadius + 15}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        fillOpacity={0.2}
+        cornerRadius={10}
+        style={{ filter: `blur(4px)` }}
+      />
+      {/* Main active segment */}
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 12}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
         cornerRadius={8}
-        style={{ filter: `drop-shadow(0 0 8px ${fill}80)` }}
+        style={{ filter: `drop-shadow(0 0 12px ${fill}90)` }}
       />
-      <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={24} fontWeight="bold" className="text-glow">
+      {/* Percentage text */}
+      <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={26} fontWeight="bold" className="text-glow">
         {`${(percent * 100).toFixed(0)}%`}
       </text>
-      <text x={cx} y={cy + 16} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={14} fontWeight="medium">
+      {/* Category name */}
+      <text x={cx} y={cy + 18} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={15} fontWeight="600">
         {payload.name}
       </text>
     </g>
   );
 };
 
-export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
+export function ExpenseDonutChart({ data, timeframeKey }: ExpenseDonutChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [clickAnimation, setClickAnimation] = useState(false);
   const { formatAmount } = useCurrency();
+
+  // Reset active index when timeframe changes
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [timeframeKey, data?.length]);
 
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);
+  };
+
+  const onPieClick = (_: any, index: number) => {
+    setActiveIndex(index);
+    // Trigger click animation
+    setClickAnimation(true);
+    setTimeout(() => setClickAnimation(false), 300);
   };
 
   // Assign colors if not already set
@@ -53,12 +83,22 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
 
   return (
     <motion.div
+      key={timeframeKey || 'chart'}
       className="w-full bg-card/50 backdrop-blur-md rounded-2xl p-6 border border-border/50 shadow-xl card-3d transition-all"
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{
+        opacity: 1,
+        scale: clickAnimation ? 0.98 : 1,
+      }}
       transition={{ duration: 0.4 }}
     >
-      <div className="h-72 relative">
+      <motion.div
+        className="h-72 relative"
+        animate={{
+          scale: clickAnimation ? 1.05 : 1
+        }}
+        transition={{ type: "spring", stiffness: 500, damping: 25 }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -72,6 +112,7 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
               dataKey="amount"
               nameKey="name"
               onMouseEnter={onPieEnter}
+              onClick={onPieClick}
               paddingAngle={3}
               cornerRadius={10}
               animationBegin={0}
@@ -91,7 +132,7 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-      </div>
+      </motion.div>
 
       {/* Legend - Grid layout for better alignment */}
       <div className="grid grid-cols-2 gap-3 mt-6">
@@ -105,16 +146,36 @@ export function ExpenseDonutChart({ data }: ExpenseDonutChartProps) {
                 : "bg-muted/30 border-transparent hover:bg-muted/50"
             )}
             initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: activeIndex === index ? 1.02 : 1,
+            }}
             transition={{ delay: 0.05 * index }}
-            whileHover={{ scale: 1.02 }}
-            onClick={() => setActiveIndex(index)}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{
+              scale: 0.95,
+              transition: { type: "spring", stiffness: 400, damping: 17 }
+            }}
+            onClick={() => {
+              setActiveIndex(index);
+              setClickAnimation(true);
+              setTimeout(() => setClickAnimation(false), 300);
+            }}
           >
-            <div
+            <motion.div
               className="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-lg"
               style={{
                 backgroundColor: item.color,
                 boxShadow: `0 0 10px ${item.color}60`
+              }}
+              animate={{
+                scale: activeIndex === index ? [1, 1.2, 1] : 1,
+              }}
+              transition={{
+                duration: 0.5,
+                repeat: activeIndex === index ? Infinity : 0,
+                repeatDelay: 1,
               }}
             />
             <div className="min-w-0 flex-1">

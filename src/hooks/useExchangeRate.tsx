@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ExchangeRateResult {
   rate: number;
@@ -56,20 +55,36 @@ export function useExchangeRate() {
     // Create the request promise
     const requestPromise = (async (): Promise<ExchangeRateResult | null> => {
       try {
-        const { data, error } = await supabase.functions.invoke('get-exchange-rate', {
-          body: {
-            from_currency: fromCurrency,
-            to_currency: toCurrency
-          }
-        });
+        // Use exchangerate-api.com free tier (1500 requests/month, no API key needed)
+        const response = await fetch(
+          `https://open.er-api.com/v6/latest/${fromCurrency}`
+        );
 
-        if (error) {
-          console.error('Error fetching exchange rate:', error);
+        if (!response.ok) {
+          console.error('Exchange rate API error:', response.statusText);
           return null;
         }
 
-        const result = data as ExchangeRateResult;
-        
+        const data = await response.json();
+
+        if (data.result === 'error') {
+          console.error('Exchange rate API returned error:', data);
+          return null;
+        }
+
+        const rate = data.rates[toCurrency];
+
+        if (!rate) {
+          console.error(`No exchange rate found for ${toCurrency}`);
+          return null;
+        }
+
+        const result: ExchangeRateResult = {
+          rate: rate,
+          source: 'exchangerate-api',
+          timestamp: new Date(data.time_last_update_unix * 1000).toISOString()
+        };
+
         // Store in memory cache
         rateCache.set(cacheKey, {
           rate: result.rate,

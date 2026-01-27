@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddPaymentReminderModal } from './AddPaymentReminderModal';
@@ -33,6 +34,7 @@ interface PaymentReminder {
 export function PaymentRemindersManager() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { formatAmount } = useCurrency();
   const [reminders, setReminders] = useState<PaymentReminder[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingReminder, setEditingReminder] = useState<PaymentReminder | null>(null);
@@ -149,7 +151,7 @@ export function PaymentRemindersManager() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-foreground">{reminder.title}</h3>
-                    <p className="text-lg font-bold text-accent">${reminder.amount.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-accent">{formatAmount(reminder.amount)}</p>
                     <p className="text-sm text-muted-foreground">
                       Due: {format(new Date(reminder.due_date), 'MMM dd, yyyy')}
                     </p>

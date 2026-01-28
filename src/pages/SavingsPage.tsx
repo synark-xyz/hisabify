@@ -24,6 +24,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 
 export default function SavingsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -45,6 +47,7 @@ export default function SavingsPage() {
   } = useSavingsGoals();
 
   const { isPremium } = useSubscription();
+  const { variant } = useTheme();
 
   // Listen for transaction updates from the global modal
   useEffect(() => {
@@ -152,7 +155,7 @@ export default function SavingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 

@@ -11,8 +11,11 @@ import {
 } from "@/components/reports";
 import { useReportData } from "@/hooks/useReportData";
 import { useReportTemplates, ReportFilters } from "@/hooks/useReportTemplates";
+import { useTheme } from "@/hooks/useTheme";
+import { cn } from "@/lib/utils";
 
 export default function ReportsPage() {
+  const { variant } = useTheme();
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: format(startOfMonth(new Date()), "yyyy-MM-dd"),
     dateTo: format(new Date(), "yyyy-MM-dd"),
@@ -36,7 +39,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 pb-24 space-y-6">
+    <div className={cn("container mx-auto p-4 pb-24 space-y-6", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
       <div className="flex items-center gap-2">
         <FileBarChart className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">Reports</h1>

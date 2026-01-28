@@ -111,7 +111,9 @@ export function AuthPage() {
         return;
       }
 
-      toast({ title: mode === 'login' ? 'Welcome back!' : 'Account created!' });
+      if (mode === 'signup') {
+        toast({ title: 'Account created!' });
+      }
       navigate('/');
     } finally {
       setLoading(false);
@@ -238,17 +240,15 @@ export function AuthPage() {
           <div className="flex gap-2 p-1 bg-muted rounded-lg mb-6">
             <button
               onClick={() => handleModeChange('login')}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                mode === 'login' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
-              }`}
+              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'login' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
+                }`}
             >
               Sign In
             </button>
             <button
               onClick={() => handleModeChange('signup')}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
-                mode === 'signup' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
-              }`}
+              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'signup' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
+                }`}
             >
               Sign Up
             </button>

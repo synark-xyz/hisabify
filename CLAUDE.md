@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚀 Senior Developer Protocol
+
+All work performed by the AI agent must adhere to the following safety and quality rules:
+1. **No Blind Edits:** Analyze all dependencies using `grep` before modifying code.
+2. **Plan First:** Propose a detailed `implementation_plan.md` for every task.
+3. **Wait for Approval:** Never modify source code until the user provides explicit "Go" or "Approved".
+4. **Zero Placeholders:** Deliver complete, typed, and production-ready code.
+5. **Ask for Clarification:** If any business logic or requirement is unclear, STOP and ask the user.
+6. **Detailed Rules:** Refer to `.agent/rules.md` for the full instruction set.
+
 ## Project Overview
 
 Hisabify is a mobile-first personal finance web application for tracking cards, expenses, budgets, and recurring payments. Built as a SPA with React + TypeScript + Vite, backed by Supabase (PostgreSQL + Auth + Edge Functions).

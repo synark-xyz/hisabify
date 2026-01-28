@@ -47,5 +47,15 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+    <key>NSCameraUsageDescription</key>
+    <string>To scan receipts and extract transaction data.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>To upload receipt images for data extraction.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>To save receipt images.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>To record voice commands for transaction entry.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>To transcribe voice commands into text.</string>
 </dict>
 </plist>

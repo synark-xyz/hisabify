@@ -6,15 +6,17 @@ import { useReceiptUpload } from '@/hooks/useReceiptUpload';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { createWorker } from 'tesseract.js';
 import { format, parse } from 'date-fns';
+import { preprocessImage } from '@/lib/imageProcessor';
 
 interface ReceiptUploadProps {
   value?: string | null;
   onChange: (url: string | null, path?: string) => void;
   onScanComplete?: (data: { amount?: string, date?: Date, merchant?: string }) => void;
   disabled?: boolean;
+  transient?: boolean;
 }
 
-export function ReceiptUpload({ value, onChange, onScanComplete, disabled }: ReceiptUploadProps) {
+export function ReceiptUpload({ value, onChange, onScanComplete, disabled, transient = false }: ReceiptUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadReceipt, uploading: uploadLoading, progress } = useReceiptUpload();
   const [previewUrl, setPreviewUrl] = useState<string | null>(value || null);
@@ -32,12 +34,16 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled }: Rec
     if (onScanComplete && file.type.startsWith('image/')) {
       setScanning(true);
       try {
+        // Preprocess image for better OCR accuracy
+        console.log("Preprocessing image...");
+        const processedImage = await preprocessImage(file);
+
         const worker = await createWorker('eng', 1, {
           workerPath: '/worker.min.js',
           corePath: '/tesseract-core.wasm.js',
         });
 
-        const ret = await worker.recognize(localPreview);
+        const ret = await worker.recognize(processedImage);
         const text = ret.data.text;
         await worker.terminate();
 
@@ -51,15 +57,21 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled }: Rec
       }
     }
 
-    // 2. Upload File
-    const result = await uploadReceipt(file);
-    if (result) {
-      setPreviewUrl(result.url);
-      onChange(result.url, result.path);
+    // 2. Upload File (Skip if transient)
+    if (!transient) {
+      const result = await uploadReceipt(file);
+      if (result) {
+        setPreviewUrl(result.url);
+        onChange(result.url, result.path);
+      } else {
+        // If upload fails but we have a local preview, maybe keep it?
+        // For now, if upload fails, we revert to initial value
+        if (!value) setPreviewUrl(null);
+      }
     } else {
-      // If upload failed but we have a local preview, maybe keep it?
-      // For now, if upload fails, we revert to initial value
-      if (!value) setPreviewUrl(null);
+      // In transient mode, we just keep the local preview for now
+      // It won't be persisted to DB
+      onChange(localPreview);
     }
 
     // Reset input

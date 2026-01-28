@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { DailyQuote } from '@/components/DailyQuote';
+import { StreamingGreeting } from '@/components/StreamingGreeting';
 import { HealthScoreCard } from '@/features/gamification/components/HealthScoreCard';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
@@ -307,6 +308,7 @@ export function Dashboard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
+            <StreamingGreeting />
             {/* Hero Section - Wallet Overview */}
             <motion.section>
               <div
@@ -452,7 +454,10 @@ export function Dashboard() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className="bg-card rounded-3xl p-5 shadow-card border border-white/5 relative overflow-hidden">
+              <div className={cn(
+                "bg-card rounded-3xl p-5 shadow-card border border-white/5 relative overflow-hidden transition-all duration-500",
+                !isPremium && !subscriptionLoading && "max-h-[280px]"
+              )}>
                 {/* Premium Guard Overlay */}
                 {!isPremium && !subscriptionLoading && (
                   <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">

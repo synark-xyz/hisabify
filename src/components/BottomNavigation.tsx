@@ -53,6 +53,7 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
                     },
                   }}
                 >
+                  {/* Nexus Trigger Icon */}
                   <Plus className="w-8 h-8 icon-glow" strokeWidth={3} />
                 </motion.button>
               </div>

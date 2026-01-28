@@ -7,12 +7,15 @@ import { useBudgets } from '@/hooks/useBudgets';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 
 export function BudgetPage() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { budgets, refetch } = useBudgets();
   const { isPremium } = useSubscription();
+  const { variant } = useTheme();
 
   // Listen for transaction updates from the global modal
   useEffect(() => {
@@ -48,7 +51,7 @@ export function BudgetPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 

@@ -20,6 +20,8 @@ interface ProfileContextType {
   updateAvatar: (url: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   loading: boolean;
+  privacyMode: boolean;
+  togglePrivacyMode: () => void;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -27,6 +29,7 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [privacyMode, setPrivacyMode] = useState(false);
   const [profile, setProfile] = useState<User>({
     display_name: null,
     phone: null,
@@ -89,12 +92,16 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setProfile(prev => ({ ...prev, avatar_url: url }));
   };
 
+  const togglePrivacyMode = () => {
+    setPrivacyMode(prev => !prev);
+  };
+
   useEffect(() => {
     refreshProfile();
   }, [user]);
 
   return (
-    <ProfileContext.Provider value={{ profile, setProfile, updateAvatar, refreshProfile, loading }}>
+    <ProfileContext.Provider value={{ profile, setProfile, updateAvatar, refreshProfile, loading, privacyMode, togglePrivacyMode }}>
       {children}
     </ProfileContext.Provider>
   );

@@ -16,9 +16,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 
 export function DataPage() {
+    const { variant } = useTheme();
     const navigate = useNavigate();
+    // ... rest of state ...
     const { user, signOut } = useAuth();
     const { profile } = useProfile();
     const { toast } = useToast();
@@ -97,7 +101,7 @@ export function DataPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-page-content">
+        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
 
             <main className="px-4 py-6 space-y-6">
 

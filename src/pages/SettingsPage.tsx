@@ -5,11 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 
 export function SettingsPage() {
     const navigate = useNavigate();
     const { signOut } = useAuth();
     const { toast } = useToast();
+    const { variant } = useTheme();
 
     const handleSignOut = async () => {
         await signOut();
@@ -28,7 +31,7 @@ export function SettingsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-background pb-page-content">
+        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
             <Header title="Settings" showBack onBack={() => navigate('/')} />
             <main className="px-4 py-6 space-y-8">
 

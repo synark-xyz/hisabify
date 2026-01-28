@@ -14,6 +14,7 @@ import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/t
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, Budget, CategorySpending } from '@/types';
 import {
@@ -44,6 +45,7 @@ export function ExpensesPage() {
   const { user } = useAuth();
   const { currency, currencyVersion } = useCurrency();
   const { convertAmount } = useExchangeRate();
+  const { variant } = useTheme();
 
   // Move definitions up
   const fetchTransactions = useCallback(async () => {
@@ -228,7 +230,7 @@ export function ExpensesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
       <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 

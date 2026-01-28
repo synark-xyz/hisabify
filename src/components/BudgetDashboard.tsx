@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { PrivacyMask } from '@/components/ui/privacy-mask';
 
 export function BudgetDashboard() {
   const [showAddBudget, setShowAddBudget] = useState(false);
@@ -101,7 +102,9 @@ export function BudgetDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm text-muted-foreground">Budget</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
-                    {currencySymbol}{totalBudget.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    <PrivacyMask>
+                      {currencySymbol}{totalBudget.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </PrivacyMask>
                   </p>
                 </div>
                 <div className="hidden sm:flex w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 items-center justify-center flex-shrink-0">
@@ -123,7 +126,9 @@ export function BudgetDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm text-muted-foreground">Spent</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
-                    {currencySymbol}{totalSpent.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    <PrivacyMask>
+                      {currencySymbol}{totalSpent.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </PrivacyMask>
                   </p>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
                     {overallPercentage.toFixed(0)}% used
@@ -151,7 +156,9 @@ export function BudgetDashboard() {
                     "text-lg sm:text-2xl font-bold truncate",
                     totalRemaining >= 0 ? "text-green-500" : "text-destructive"
                   )}>
-                    {totalRemaining >= 0 ? '' : '-'}{currencySymbol}{Math.abs(totalRemaining).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    <PrivacyMask>
+                      {totalRemaining >= 0 ? '' : '-'}{currencySymbol}{Math.abs(totalRemaining).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </PrivacyMask>
                   </p>
                 </div>
                 <div className={cn(

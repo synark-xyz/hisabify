@@ -2,8 +2,11 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Quote } from 'lucide-react';
 import quotesData from '../../quotes/fintech-learders-quotes.json';
+import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 
 export function DailyQuote() {
+    const { variant } = useTheme();
     const quote = useMemo(() => {
         // Handle potential different import behaviors (default vs named)
         const data = quotesData as any;

@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npm run dev:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(node scripts/get-local-ip.js:*)",
+      "Bash(npm run local-ip:*)",
+      "Bash(ls:*)"
     ]
-  }
+  },
+  "outputStyle": "default"
 }

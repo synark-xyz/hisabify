@@ -444,3 +444,137 @@
     }
   }
 }
+/* =========================================
+   PERFORMANCE OPTIMIZATIONS FOR MOBILE/ANDROID
+   GPU acceleration & smooth animations
+   ========================================= */
+
+/* Force GPU acceleration for all animated elements */
+.motion-element,
+[class*="motion-"],
+.animated,
+.backdrop-blur-sm,
+.backdrop-blur-md,
+.blur-2xl,
+.blur-3xl {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+}
+
+/* Optimize backdrop-blur for better performance on Android */
+.backdrop-blur-sm {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  will-change: backdrop-filter;
+}
+
+.backdrop-blur-md {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  will-change: backdrop-filter;
+}
+
+/* Optimize blur filters */
+.blur-2xl {
+  will-change: filter;
+  filter: blur(40px);
+  -webkit-filter: blur(40px);
+}
+
+.blur-3xl {
+  will-change: filter;
+  filter: blur(64px);
+  -webkit-filter: blur(64px);
+}
+
+/* Smooth scrolling optimization for Capacitor/Android */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Optimize for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices to prevent sticky states */
+  .group:hover .group-hover\:scale-110 {
+    transform: none;
+  }
+  
+  .group:hover .group-hover\:bg-white\/20 {
+    background-color: inherit;
+  }
+  
+  /* Optimize animations for mobile */
+  * {
+    animation-duration: 0.3s !important;
+    transition-duration: 0.3s !important;
+  }
+}
+
+/* Android-specific optimizations */
+@supports (-webkit-overflow-scrolling: touch) {
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Reduce motion blur on Android */
+  .blur-3xl {
+    filter: blur(48px);
+  }
+  
+  .blur-2xl {
+    filter: blur(32px);
+  }
+}
+
+/* CSS Containment for better rendering performance */
+.card-3d,
+[class*="rounded-"] {
+  contain: layout style paint;
+}
+
+/* Optimize gradient rendering */
+[class*="bg-gradient-"] {
+  will-change: auto;
+  transform: translateZ(0);
+}
+
+/* Prevent layout shifts during animations */
+.min-h-\[1\.5rem\],
+.min-h-\[1\.75rem\] {
+  contain: layout;
+}
+
+/* Force hardware acceleration on transforms */
+.transform,
+[style*="transform"] {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimize opacity transitions */
+.transition-opacity,
+[class*="opacity-"] {
+  will-change: opacity;
+}
+
+/* Reduce paint areas for better performance */
+.overflow-hidden {
+  contain: paint;
+}
+
+/* Optimize fixed positioning for mobile */
+.fixed {
+  will-change: transform;
+  transform: translateZ(0);
+}

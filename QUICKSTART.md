@@ -200,7 +200,56 @@ npm install
 
 ---
 
-## 📱 Testing on Mobile Devices
+## 📱 Mobile App Development (iOS/Android)
+
+Hisabify runs as a **native mobile app** using Capacitor 8!
+
+### Quick Mobile Setup
+
+**Option 1: Localhost Development (Fastest) ⚡**
+
+Perfect for rapid development with instant hot reload:
+
+```bash
+# 1. Find your local IP
+npm run local-ip
+
+# 2. Configure capacitor.config.ts
+# Set USE_LOCALHOST = true
+
+# 3. Start dev server
+npm run dev
+
+# 4. Run on device
+npm run dev:android  # for Android
+npm run dev:ios      # for iOS
+```
+
+**Option 2: Build & Deploy**
+
+```bash
+# Build and open in IDE
+npm run cap:android  # Opens Android Studio
+npm run cap:ios      # Opens Xcode
+```
+
+**📖 Complete mobile setup guide:** [CAPACITOR_LOCALHOST_SETUP.md](./CAPACITOR_LOCALHOST_SETUP.md)
+**📱 Mobile deployment guide:** [MOBILE_DEPLOYMENT.md](./MOBILE_DEPLOYMENT.md)
+
+### Available Mobile Scripts
+
+```bash
+npm run local-ip        # Find your local IP for device testing
+npm run cap:sync        # Sync web app with native projects
+npm run cap:android     # Build and open Android Studio
+npm run cap:ios         # Build and open Xcode
+npm run dev:android     # Quick run on Android
+npm run dev:ios         # Quick run on iOS
+```
+
+---
+
+## 🌐 Testing on Mobile Browser
 
 ### On your local network:
 
@@ -213,9 +262,12 @@ npm install
    ```bash
    # On macOS/Linux
    ifconfig | grep "inet " | grep -v 127.0.0.1
-   
+
    # Or on macOS
    ipconfig getifaddr en0
+
+   # Or use the helper script
+   npm run local-ip
    ```
 
 3. On your mobile device, visit:

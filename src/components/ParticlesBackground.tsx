@@ -17,7 +17,10 @@ export const ParticlesBackground = () => {
     }, []);
 
     return (
-        <div className={cn("fixed inset-0 -z-10 overflow-hidden", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+        <div
+            className={cn("fixed inset-0 -z-10 overflow-hidden", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}
+            style={{ contain: 'strict', willChange: 'transform' }}
+        >
             {particles.map((particle) => (
                 <motion.div
                     key={particle.id}
@@ -46,16 +49,22 @@ export const ParticlesBackground = () => {
                         duration: particle.duration,
                         repeat: Infinity,
                         repeatType: "reverse",
-                        ease: "easeInOut",
+                        ease: "linear",
                         delay: particle.delay
                     }}
                     style={{
                         width: particle.size,
                         height: particle.size,
+                        willChange: 'transform, opacity',
+                        backfaceVisibility: 'hidden',
+                        perspective: 1000,
                     }}
                 />
             ))}
-            <div className={cn("absolute inset-0 backdrop-blur-[1px]", variant === 'cyberpunk' ? "bg-transparent" : "bg-background/50")} />
+            <div
+                className={cn("absolute inset-0 backdrop-blur-[1px]", variant === 'cyberpunk' ? "bg-transparent" : "bg-background/50")}
+                style={{ willChange: 'backdrop-filter' }}
+            />
         </div>
     );
 };

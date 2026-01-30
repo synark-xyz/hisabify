@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { HisabifyLogo } from '@/components/HisabifyLogo';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -172,8 +173,8 @@ export function AuthPage() {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-8">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl card-gradient-purple mx-auto flex items-center justify-center mb-4 shadow-lg">
-              <Wallet className="w-8 h-8 text-primary-foreground" />
+            <div className="mx-auto flex items-center justify-center mb-4">
+              <HisabifyLogo size={64} showText={false} />
             </div>
             <h1 className="text-2xl font-bold text-foreground">Forgot Password?</h1>
             <p className="text-muted-foreground mt-1">Enter your email to reset your password</p>
@@ -228,8 +229,8 @@ export function AuthPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl card-gradient-purple mx-auto flex items-center justify-center mb-4 shadow-lg">
-            <Wallet className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto flex items-center justify-center mb-4">
+            <HisabifyLogo size={64} showText={false} />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Hisabify</h1>
           <p className="text-muted-foreground mt-1">Track your finances with ease</p>

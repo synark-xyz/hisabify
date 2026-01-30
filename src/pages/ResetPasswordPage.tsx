@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { HisabifyLogo } from '@/components/HisabifyLogo';
 
 const passwordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -99,8 +100,8 @@ export function ResetPasswordPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Logo */}
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl card-gradient-purple mx-auto flex items-center justify-center mb-4 shadow-lg">
-            <Wallet className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto flex items-center justify-center mb-4">
+            <HisabifyLogo size={64} showText={false} />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Reset Password</h1>
           <p className="text-muted-foreground mt-1">Enter your new password</p>

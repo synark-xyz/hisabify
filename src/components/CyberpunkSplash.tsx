@@ -86,17 +86,66 @@ export function CyberpunkSplash({ onComplete }: { onComplete: () => void }) {
                                     {/* Scanline overlay */}
                                     <div className="absolute inset-0 bg-[linear-gradient(transparent,rgba(0,0,0,0.2)_50%,transparent)] bg-[length:100%_4px]" />
 
-                                    <svg width="32" height="32" viewBox="0 0 100 100" className="z-10">
+                                    {/* Donut Chart Logo */}
+                                    <svg width="40" height="40" viewBox="0 0 100 100" fill="none" className="z-10">
+                                        {/* Segment 1 - Teal */}
                                         <motion.path
-                                            d="M20 10 V90 M80 10 V90 M20 50 H80"
-                                            fill="none"
-                                            stroke="#0a0f1c"
-                                            strokeWidth="15"
-                                            strokeLinecap="butt"
+                                            d="M 50 18 A 32 32 0 0 1 75.5 30.5 L 64.75 40.75 A 18 18 0 0 0 50 32 Z"
+                                            fill="currentColor"
+                                            className="text-primary"
+                                            opacity="0.95"
                                             initial={{ pathLength: 0 }}
                                             animate={{ pathLength: 1 }}
-                                            transition={{ duration: 0.8, ease: "easeInOut" }}
+                                            transition={{ duration: 0.2, delay: 0 }}
                                         />
+
+                                        {/* Segment 2 - Gold */}
+                                        <motion.path
+                                            d="M 75.5 30.5 A 32 32 0 0 1 82 50 L 68 50 A 18 18 0 0 0 64.75 40.75 Z"
+                                            fill="currentColor"
+                                            className="text-accent"
+                                            opacity="0.95"
+                                            initial={{ pathLength: 0 }}
+                                            animate={{ pathLength: 1 }}
+                                            transition={{ duration: 0.2, delay: 0.2 }}
+                                        />
+
+                                        {/* Segment 3 - Pink */}
+                                        <motion.path
+                                            d="M 82 50 A 32 32 0 0 1 69.5 75.5 L 60.75 64.75 A 18 18 0 0 0 68 50 Z"
+                                            fill="#FF00FF"
+                                            opacity="0.95"
+                                            initial={{ pathLength: 0 }}
+                                            animate={{ pathLength: 1 }}
+                                            transition={{ duration: 0.2, delay: 0.4 }}
+                                        />
+
+                                        {/* Segment 4 - Purple */}
+                                        <motion.path
+                                            d="M 69.5 75.5 A 32 32 0 0 1 50 82 L 50 68 A 18 18 0 0 0 60.75 64.75 Z"
+                                            fill="#A855F7"
+                                            opacity="0.95"
+                                            initial={{ pathLength: 0 }}
+                                            animate={{ pathLength: 1 }}
+                                            transition={{ duration: 0.2, delay: 0.6 }}
+                                        />
+
+                                        {/* Inner circle */}
+                                        <circle cx="50" cy="50" r="17" fill="#0a0f1c" opacity="0.98" />
+
+                                        {/* Dollar sign */}
+                                        <text
+                                            x="50"
+                                            y="58"
+                                            fontSize="20"
+                                            fontWeight="bold"
+                                            fill="currentColor"
+                                            textAnchor="middle"
+                                            className="text-accent"
+                                            fontFamily="system-ui, -apple-system, sans-serif"
+                                        >
+                                            $
+                                        </text>
                                     </svg>
                                 </div>
                             </motion.div>

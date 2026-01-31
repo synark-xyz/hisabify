@@ -57,5 +57,12 @@
     <string>To record voice commands for transaction entry.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>To transcribe voice commands into text.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+        <key>NSAllowsArbitraryLoadsInWebContent</key>
+        <true/>
+    </dict>
 </dict>
 </plist>

@@ -109,9 +109,9 @@ export function OnboardingPage() {
 
     const slideVariants = {
         enter: (direction: number) => ({
-            x: direction > 0 ? 300 : -300,
+            x: direction > 0 ? 100 : -100,
             opacity: 0,
-            scale: 0.8
+            scale: 0.95
         }),
         center: {
             x: 0,
@@ -119,9 +119,9 @@ export function OnboardingPage() {
             scale: 1
         },
         exit: (direction: number) => ({
-            x: direction > 0 ? -300 : 300,
+            x: direction > 0 ? -100 : 100,
             opacity: 0,
-            scale: 0.8
+            scale: 0.95
         })
     };
 
@@ -132,51 +132,100 @@ export function OnboardingPage() {
             {/* Animated Background Gradient */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
-                    className={cn(
-                        "absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full blur-[120px] transition-colors duration-1000",
-                        `bg-gradient-to-br ${currentSlide.color}`
-                    )}
-                    animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.2, 0.3, 0.2],
+                    className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[140px]"
+                    style={{
+                        background: `linear-gradient(to bottom right, var(--gradient-color-1), var(--gradient-color-2))`,
+                        willChange: 'transform, opacity'
                     }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                    style={{ willChange: 'transform, opacity' }}
+                    key={`gradient-top-${currentIndex}`}
+                    initial={{ opacity: 0 }}
+                    animate={{
+                        scale: [1, 1.12, 1],
+                        opacity: [0.18, 0.28, 0.18],
+                    }}
+                    transition={{
+                        duration: 12,
+                        repeat: Infinity,
+                        ease: [0.4, 0, 0.6, 1],
+                        opacity: { duration: 3, ease: [0.4, 0, 0.2, 1] }
+                    }}
                 />
                 <motion.div
-                    className={cn(
-                        "absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full blur-[120px] transition-colors duration-1000",
-                        `bg-gradient-to-tr ${currentSlide.color}`
-                    )}
+                    className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full blur-[140px]"
+                    style={{
+                        background: `linear-gradient(to top right, var(--gradient-color-2), var(--gradient-color-3))`,
+                        willChange: 'transform, opacity'
+                    }}
+                    key={`gradient-bottom-${currentIndex}`}
+                    initial={{ opacity: 0 }}
                     animate={{
-                        scale: [1.2, 1, 1.2],
+                        scale: [1.12, 1, 1.12],
                         opacity: [0.15, 0.25, 0.15],
                     }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                    style={{ willChange: 'transform, opacity' }}
+                    transition={{
+                        duration: 14,
+                        repeat: Infinity,
+                        ease: [0.4, 0, 0.6, 1],
+                        delay: 3,
+                        opacity: { duration: 3.5, ease: [0.4, 0, 0.2, 1] }
+                    }}
                 />
             </div>
 
+            <style>{`
+                :root {
+                    --gradient-color-1: ${currentIndex === 0 ? '#3B82F6' : currentIndex === 1 ? '#8B5CF6' : currentIndex === 2 ? '#10B981' : '#F59E0B'};
+                    --gradient-color-2: ${currentIndex === 0 ? '#22D3EE' : currentIndex === 1 ? '#EC4899' : currentIndex === 2 ? '#14B8A6' : '#FBBF24'};
+                    --gradient-color-3: ${currentIndex === 0 ? '#60A5FA' : currentIndex === 1 ? '#F472B6' : currentIndex === 2 ? '#34D399' : '#FCD34D'};
+                }
+            `}</style>
+
             {/* Skip Button with safe area */}
-            <div className="absolute top-0 right-0 z-50 pt-safe pr-4">
+            <motion.div
+                className="absolute top-0 right-0 z-50 pt-safe pr-4"
+                initial={{ opacity: 0, x: 15, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                transition={{
+                    delay: 0.1,
+                    duration: 0.6,
+                    ease: [0.4, 0, 0.2, 1]
+                }}
+            >
                 <motion.button
                     onClick={handleComplete}
-                    className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors px-4 py-3 rounded-full hover:bg-muted/50 mt-2"
-                    whileHover={{ scale: 1.05 }}
+                    className="text-sm font-bold text-muted-foreground hover:text-foreground px-4 py-3 rounded-full hover:bg-muted/50 mt-2 backdrop-blur-sm"
+                    whileHover={{
+                        scale: 1.05,
+                        backgroundColor: "rgba(0, 0, 0, 0.05)"
+                    }}
                     whileTap={{ scale: 0.95 }}
+                    transition={{
+                        duration: 0.2,
+                        ease: [0.4, 0, 0.2, 1]
+                    }}
                 >
                     Skip
                 </motion.button>
-            </div>
+            </motion.div>
 
             {/* Logo/Brand */}
             <motion.div
                 className="absolute top-0 left-0 z-50 pt-safe pl-6 mt-2"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+                initial={{ opacity: 0, y: -15, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                    delay: 0.1,
+                    duration: 0.6,
+                    ease: [0.4, 0, 0.2, 1]
+                }}
             >
-                <HisabifyLogo size={40} showText={true} />
+                <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    <HisabifyLogo size={40} showText={true} />
+                </motion.div>
             </motion.div>
 
             {/* Main Content */}
@@ -191,9 +240,9 @@ export function OnboardingPage() {
                             animate="center"
                             exit="exit"
                             transition={{
-                                x: { type: "spring", stiffness: 350, damping: 30 },
-                                opacity: { duration: 0.2 },
-                                scale: { duration: 0.2 }
+                                x: { type: "spring", stiffness: 260, damping: 30 },
+                                opacity: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                                scale: { duration: 0.35, ease: [0.4, 0, 0.2, 1] }
                             }}
                             className="flex flex-col items-center text-center"
                         >
@@ -207,16 +256,23 @@ export function OnboardingPage() {
                                         { left: '15%', top: '65%' }
                                     ];
 
-                                    // Different animation patterns for each icon
+                                    // Ultra-smooth floating animations
                                     const animations = [
-                                        { y: [0, -20, 0], x: [0, 10, 0], rotate: [0, 10, -5, 0] },
-                                        { y: [0, 15, 0], x: [0, -8, 0], rotate: [0, -8, 8, 0] },
-                                        { y: [0, -12, 0], x: [0, 12, 0], rotate: [0, 12, -12, 0] }
+                                        { y: [0, -12, 0], x: [0, 6, 0], rotate: [0, 6, -3, 0] },
+                                        { y: [0, 10, 0], x: [0, -5, 0], rotate: [0, -5, 5, 0] },
+                                        { y: [0, -8, 0], x: [0, 8, 0], rotate: [0, 8, -8, 0] }
                                     ];
 
-                                    // Different sizes
+                                    // Varied sizes for depth
                                     const sizes = ['w-7 h-7', 'w-9 h-9', 'w-8 h-8'];
                                     const paddings = ['p-3', 'p-4', 'p-3.5'];
+
+                                    // Smooth easing for organic movement
+                                    const easings = [
+                                        [0.45, 0, 0.55, 1],
+                                        [0.42, 0, 0.58, 1],
+                                        [0.47, 0, 0.53, 1]
+                                    ];
 
                                     return (
                                         <motion.div
@@ -237,11 +293,38 @@ export function OnboardingPage() {
                                                 ...animations[index]
                                             }}
                                             transition={{
-                                                scale: { type: "spring", stiffness: 200, damping: 20, delay: 0.15 + index * 0.1 },
-                                                opacity: { duration: 0.3, delay: 0.15 + index * 0.1 },
-                                                y: { duration: 2.5 + index * 0.5, repeat: Infinity, ease: "easeInOut", delay: index * 0.3 },
-                                                x: { duration: 3 + index * 0.5, repeat: Infinity, ease: "easeInOut", delay: index * 0.2 },
-                                                rotate: { duration: 4 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.15 }
+                                                scale: {
+                                                    type: "spring",
+                                                    stiffness: 160,
+                                                    damping: 24,
+                                                    delay: 0.25 + index * 0.12
+                                                },
+                                                opacity: {
+                                                    duration: 0.5,
+                                                    ease: [0.4, 0, 0.2, 1],
+                                                    delay: 0.25 + index * 0.12
+                                                },
+                                                y: {
+                                                    duration: 4 + index * 0.6,
+                                                    repeat: Infinity,
+                                                    ease: easings[index],
+                                                    delay: index * 0.5,
+                                                    repeatType: "reverse"
+                                                },
+                                                x: {
+                                                    duration: 4.5 + index * 0.6,
+                                                    repeat: Infinity,
+                                                    ease: easings[index],
+                                                    delay: index * 0.4,
+                                                    repeatType: "reverse"
+                                                },
+                                                rotate: {
+                                                    duration: 6 + index * 0.8,
+                                                    repeat: Infinity,
+                                                    ease: easings[index],
+                                                    delay: index * 0.3,
+                                                    repeatType: "reverse"
+                                                }
                                             }}
                                         >
                                             <Icon className={cn("text-white", sizes[index])} />
@@ -249,25 +332,52 @@ export function OnboardingPage() {
                                     );
                                 })}
 
-                                {/* Main Icon */}
+                                {/* Main Icon with subtle pulse */}
                                 <motion.div
                                     className={cn(
                                         "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-3xl flex items-center justify-center shadow-2xl bg-gradient-to-br z-10",
                                         currentSlide.color
                                     )}
-                                    initial={{ scale: 0, rotate: -180 }}
-                                    animate={{ scale: 1, rotate: 0 }}
-                                    transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+                                    key={`main-icon-${currentIndex}`}
+                                    initial={{ scale: 0, rotate: -45, opacity: 0 }}
+                                    animate={{
+                                        scale: 1,
+                                        rotate: 0,
+                                        opacity: 1
+                                    }}
+                                    transition={{
+                                        type: "spring",
+                                        stiffness: 160,
+                                        damping: 20,
+                                        delay: 0.2,
+                                        opacity: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+                                    }}
                                 >
-                                    <currentSlide.icon className="w-14 h-14 text-white" />
+                                    <motion.div
+                                        animate={{
+                                            scale: [1, 1.05, 1],
+                                        }}
+                                        transition={{
+                                            duration: 3,
+                                            repeat: Infinity,
+                                            ease: [0.4, 0, 0.6, 1],
+                                            repeatType: "reverse"
+                                        }}
+                                    >
+                                        <currentSlide.icon className="w-14 h-14 text-white" />
+                                    </motion.div>
                                 </motion.div>
                             </div>
 
                             {/* Pain Point Title */}
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 12 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.15 }}
+                                transition={{
+                                    delay: 0.25,
+                                    duration: 0.5,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }}
                                 className="mb-2"
                             >
                                 <h2 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">
@@ -277,11 +387,15 @@ export function OnboardingPage() {
 
                             {/* Subtitle */}
                             <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
+                                initial={{ opacity: 0, scale: 0.92, y: 8 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                transition={{
+                                    delay: 0.35,
+                                    duration: 0.4,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }}
                                 className={cn(
-                                    "inline-block px-4 py-2 rounded-full text-sm font-bold mb-4 bg-gradient-to-r",
+                                    "inline-block px-4 py-2 rounded-full text-sm font-bold mb-4 bg-gradient-to-r shadow-lg",
                                     currentSlide.color,
                                     "text-white"
                                 )}
@@ -291,9 +405,13 @@ export function OnboardingPage() {
 
                             {/* Description */}
                             <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.25 }}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{
+                                    delay: 0.42,
+                                    duration: 0.5,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }}
                                 className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-sm mb-8"
                             >
                                 {currentSlide.description}
@@ -301,23 +419,40 @@ export function OnboardingPage() {
 
                             {/* Feature Pills */}
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3 }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{
+                                    delay: 0.5,
+                                    duration: 0.4,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }}
                                 className="flex flex-wrap justify-center gap-3"
                             >
                                 {currentSlide.features.map((feature, index) => (
                                     <motion.div
                                         key={index}
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: 0.35 + index * 0.05 }}
+                                        initial={{ opacity: 0, scale: 0.88, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        transition={{
+                                            delay: 0.55 + index * 0.1,
+                                            duration: 0.45,
+                                            ease: [0.34, 1.56, 0.64, 1],
+                                            type: "spring",
+                                            stiffness: 150,
+                                            damping: 15
+                                        }}
                                         className={cn(
-                                            "flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-colors",
+                                            "flex items-center gap-2 px-4 py-2.5 rounded-full border-2 backdrop-blur-sm",
                                             currentSlide.bgColor,
-                                            "border-current"
+                                            "border-current shadow-sm"
                                         )}
-                                        whileHover={{ scale: 1.05, y: -2 }}
+                                        whileHover={{
+                                            scale: 1.06,
+                                            y: -3,
+                                            boxShadow: "0 8px 16px -4px rgba(0, 0, 0, 0.15)"
+                                        }}
+                                        whileTap={{ scale: 0.96 }}
+                                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                                     >
                                         <feature.icon className="w-4 h-4" />
                                         <span className="text-sm font-semibold">{feature.text}</span>
@@ -333,7 +468,7 @@ export function OnboardingPage() {
             <div className="px-6 pb-8 w-full max-w-md mx-auto relative z-10">
                 <div className="flex flex-col gap-4">
                     {/* Pagination Indicators */}
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex gap-2 justify-center items-center">
                         {slides.map((_, index) => (
                             <motion.button
                                 key={index}
@@ -341,13 +476,39 @@ export function OnboardingPage() {
                                     setDirection(index > currentIndex ? 1 : -1);
                                     setCurrentIndex(index);
                                 }}
-                                className={cn(
-                                    "h-2 rounded-full transition-all duration-300",
-                                    index === currentIndex ? "w-8 bg-foreground" : "w-2 bg-muted-foreground/30"
+                                className="relative"
+                            >
+                                <motion.div
+                                    className={cn(
+                                        "h-2 rounded-full",
+                                        index === currentIndex ? "bg-foreground" : "bg-muted-foreground/30"
+                                    )}
+                                    animate={{
+                                        width: index === currentIndex ? 32 : 8
+                                    }}
+                                    transition={{
+                                        duration: 0.4,
+                                        ease: [0.4, 0, 0.2, 1]
+                                    }}
+                                    whileHover={{
+                                        scale: 1.4,
+                                        backgroundColor: index === currentIndex
+                                            ? "hsl(var(--foreground))"
+                                            : "hsl(var(--foreground) / 0.5)"
+                                    }}
+                                    whileTap={{ scale: 0.8 }}
+                                />
+                                {index === currentIndex && (
+                                    <motion.div
+                                        className="absolute inset-0 bg-foreground/30 rounded-full blur-sm"
+                                        layoutId="activeIndicator"
+                                        transition={{
+                                            duration: 0.4,
+                                            ease: [0.4, 0, 0.2, 1]
+                                        }}
+                                    />
                                 )}
-                                whileHover={{ scale: 1.2 }}
-                                whileTap={{ scale: 0.9 }}
-                            />
+                            </motion.button>
                         ))}
                     </div>
 
@@ -356,12 +517,19 @@ export function OnboardingPage() {
                         {/* Back Button */}
                         {currentIndex > 0 && (
                             <motion.button
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
+                                initial={{ opacity: 0, x: -12, scale: 0.95 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: -12, scale: 0.95 }}
+                                transition={{
+                                    duration: 0.3,
+                                    ease: [0.4, 0, 0.2, 1]
+                                }}
                                 onClick={handlePrev}
-                                className="px-6 py-3 rounded-full font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                                whileHover={{ scale: 1.05 }}
+                                className="px-6 py-3 rounded-full font-bold text-muted-foreground hover:text-foreground hover:bg-muted/50 backdrop-blur-sm"
+                                whileHover={{
+                                    scale: 1.05,
+                                    backgroundColor: "rgba(0, 0, 0, 0.05)"
+                                }}
                                 whileTap={{ scale: 0.95 }}
                             >
                                 Back
@@ -372,21 +540,44 @@ export function OnboardingPage() {
                         <motion.button
                             onClick={handleNext}
                             className={cn(
-                                "flex-1 h-14 rounded-full px-8 text-white shadow-lg font-bold text-base transition-all bg-gradient-to-r flex items-center justify-center gap-2",
+                                "relative flex-1 h-14 rounded-full px-8 text-white shadow-xl font-bold text-base bg-gradient-to-r flex items-center justify-center gap-2 overflow-hidden",
                                 currentSlide.color
                             )}
-                            whileHover={{ scale: 1.02, boxShadow: "0 20px 40px -10px rgba(0,0,0,0.3)" }}
-                            whileTap={{ scale: 0.98 }}
+                            whileHover={{
+                                scale: 1.04,
+                                boxShadow: "0 24px 48px -12px rgba(0,0,0,0.4)"
+                            }}
+                            whileTap={{ scale: 0.96 }}
+                            transition={{
+                                duration: 0.25,
+                                ease: [0.4, 0, 0.2, 1]
+                            }}
                             style={{ marginLeft: currentIndex === 0 ? 'auto' : '0' }}
                         >
-                            <span>
+                            <motion.div
+                                className="absolute inset-0 bg-white/20"
+                                initial={{ x: '-100%' }}
+                                whileHover={{ x: '100%' }}
+                                transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                            />
+                            <span className="relative z-10">
                                 {currentSlide.isFinal ? 'Get Started Free' : 'Next'}
                             </span>
-                            {currentSlide.isFinal ? (
-                                <Check className="w-5 h-5" />
-                            ) : (
-                                <ArrowRight className="w-5 h-5" />
-                            )}
+                            <motion.div
+                                className="relative z-10"
+                                animate={{ x: [0, 3, 0] }}
+                                transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    ease: [0.4, 0, 0.6, 1]
+                                }}
+                            >
+                                {currentSlide.isFinal ? (
+                                    <Check className="w-5 h-5" />
+                                ) : (
+                                    <ArrowRight className="w-5 h-5" />
+                                )}
+                            </motion.div>
                         </motion.button>
                     </div>
                 </div>

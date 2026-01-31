@@ -1,15 +1,33 @@
 import type { CapacitorConfig } from '@capacitor/cli';
+import os from 'os';
 
-// Set to true to use localhost, false to use ngrok
-const USE_LOCALHOST = true;
+// Get local IP automatically
+function getLocalIP(): string {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]!) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
 
-// Localhost configuration (change IP to your machine's local IP)
-// For Android Emulator: use 10.0.2.2
-// For Android Physical Device: use your computer's IP (e.g., 192.168.1.x)
-// For iOS Simulator: use localhost
-const LOCALHOST_URL = 'http://10.0.2.2:8080'; // Android Emulator
-// const LOCALHOST_URL = 'http://192.168.1.100:8080'; // Physical Device - Update with your IP
-// const LOCALHOST_URL = 'http://localhost:8080'; // iOS Simulator
+// Configuration switches
+const USE_LOCALHOST = false; // Toggle between localhost and ngrok - SET TO FALSE FOR PRODUCTION BUILD
+const DEVICE_TYPE: 'android-emulator' | 'android-physical' | 'ios-simulator' | 'ios-physical' = 'android-physical';
+
+// Server URLs
+const LOCAL_IP = getLocalIP();
+const PORT = 8080;
+
+const DEVICE_URLS = {
+  'android-emulator': `http://10.0.2.2:${PORT}`,
+  'android-physical': `http://${LOCAL_IP}:${PORT}`,
+  'ios-simulator': `http://localhost:${PORT}`,
+  'ios-physical': `http://${LOCAL_IP}:${PORT}`,
+};
 
 const NGROK_URL = 'https://leticia-flavorsome-hooly.ngrok-free.dev';
 
@@ -17,22 +35,7 @@ const config: CapacitorConfig = {
   appId: 'io.synark.hisabify',
   appName: 'Hisabify',
   webDir: 'dist',
-  server: USE_LOCALHOST ? {
-    url: LOCALHOST_URL,
-    cleartext: true,
-    androidScheme: 'http',
-    iosScheme: 'http',
-    allowNavigation: [
-      'localhost:*',
-      '10.0.2.2:*',
-      '192.168.*.*:*',
-      '*.ngrok-free.dev'
-    ]
-  } : {
-    url: NGROK_URL,
-    cleartext: true,
-    allowNavigation: ['*.ngrok-free.dev']
-  },
+  // No server config - will use built assets from dist folder
   android: {
     allowMixedContent: true,
     captureInput: true,
@@ -41,7 +44,18 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     allowsLinkPreview: false
+  },
+  plugins: {
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true
+    }
   }
 };
+
+// Log the active configuration
+console.log(`\n🔧 Capacitor Config:`);
+console.log(`   Mode: Production Build (using bundled assets)`);
+console.log(`   Device: ${DEVICE_TYPE}\n`);
 
 export default config;

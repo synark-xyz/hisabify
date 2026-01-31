@@ -5,7 +5,8 @@
       "Bash(curl:*)",
       "Bash(node scripts/get-local-ip.js:*)",
       "Bash(npm run local-ip:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run build:*)"
     ]
   },
   "outputStyle": "default"

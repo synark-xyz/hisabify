@@ -76,8 +76,8 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
                   y: isActive ? -2 : 0,
                 }}
                 whileHover={{ scale: 1.1, y: -3 }}
-                whileTap={{ scale: 0.9 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                whileTap={{ scale: 0.95, rotate: [0, -5, 5, 0] }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               >
                 <motion.div
                   animate={{

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Loader2, Lock, Wallet, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,19 +97,48 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 relative overflow-hidden">
+      {/* Animated gradient background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-500/20 to-cyan-400/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.15, 0.25, 0.15],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-500/20 to-pink-400/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1.1, 1, 1.1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
+      </div>
+
+      <div className="w-full max-w-sm space-y-8 relative z-10">
         {/* Logo */}
         <div className="text-center">
           <div className="mx-auto flex items-center justify-center mb-4">
-            <HisabifyLogo size={64} showText={false} />
+            <HisabifyLogo size={80} showText={false} />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Reset Password</h1>
-          <p className="text-muted-foreground mt-1">Enter your new password</p>
+          <h1 className="text-2xl font-black tracking-tight text-foreground bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Reset Password</h1>
+          <p className="text-muted-foreground mt-2 font-medium">Enter your new password</p>
         </div>
 
         {/* Form */}
-        <div className="bg-card rounded-2xl p-6 shadow-card">
+        <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-border/50">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="password">New Password</Label>
@@ -149,7 +179,7 @@ export function ResetPasswordPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-accent hover:bg-accent/90"
+              className="w-full h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold shadow-lg hover:shadow-xl transition-all"
             >
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Update Password

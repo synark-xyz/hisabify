@@ -17,7 +17,9 @@
     "cap:run:ios": "npm run build && npx cap sync && npx cap run ios",
     "dev:android": "npx cap run android",
     "dev:ios": "npx cap run ios",
-    "local-ip": "node scripts/get-local-ip.js"
+    "local-ip": "node scripts/get-local-ip.js",
+    "cap:dev:android": "npm run dev & npx cap run android",
+    "cap:dev:ios": "npm run dev & npx cap run ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.1",

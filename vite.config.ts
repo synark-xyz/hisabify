@@ -10,7 +10,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: true, // Listen on all local IPs
     port: 8080,
-    allowedHosts: ["localhost","leticia-flavorsome-hooly.ngrok-free.dev"],
   },
   test: {
     globals: true,

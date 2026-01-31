@@ -17,6 +17,11 @@ export function BudgetPage() {
   const { isPremium } = useSubscription();
   const { variant } = useTheme();
 
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   // Listen for transaction updates from the global modal
   useEffect(() => {
     const handleUpdate = () => {

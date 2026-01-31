@@ -153,43 +153,55 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
           </motion.button>
         ) : (
           <>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <div className="relative">
                   <motion.button
-                    className="w-10 h-10 rounded-full bg-card shadow-card flex items-center justify-center border border-border/50"
+                    className="w-10 h-10 rounded-full bg-card shadow-card flex items-center justify-center border border-border/50 relative overflow-visible"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     <List className="w-5 h-5 text-muted-foreground" weight="duotone" />
-                    {notificationCount > 0 && (
-                      <span className="absolute top-0 right-0 min-w-4 h-4 px-1 bg-destructive rounded-full border-2 border-card flex items-center justify-center transform -translate-y-1 translate-x-1">
-                        <span className="text-[9px] font-bold text-white">{notificationCount}</span>
-                      </span>
-                    )}
                   </motion.button>
+                  {notificationCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-destructive rounded-full border-2 border-background flex items-center justify-center z-10 shadow-sm"
+                    >
+                      <span className="text-[10px] font-bold text-white leading-none">{notificationCount}</span>
+                    </motion.span>
+                  )}
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => navigate('/notifications')} className="flex items-center justify-between cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4" />
-                    <span>Notifications</span>
+              <DropdownMenuContent
+                side="bottom"
+                align="end"
+                className="w-60"
+                sideOffset={12}
+                alignOffset={-4}
+                forceMount={undefined}
+              >
+                <DropdownMenuItem onClick={() => navigate('/notifications')} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Bell className="w-4 h-4" weight="duotone" />
+                    <span className="font-medium">Notifications</span>
                   </div>
                   {notificationCount > 0 && (
-                    <span className="min-w-5 h-5 px-1.5 bg-destructive rounded-full text-white text-[10px] flex items-center justify-center font-bold">
+                    <span className="min-w-5 h-5 px-2 bg-destructive rounded-full text-white text-[10px] flex items-center justify-center font-bold">
                       {notificationCount}
                     </span>
                   )}
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Gear className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                <DropdownMenuItem onClick={() => navigate('/settings')} className="gap-3">
+                  <Gear className="w-4 h-4" weight="duotone" />
+                  <span className="font-medium">Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Lifebuoy className="mr-2 h-4 w-4" />
-                  <span>Support</span>
+
+                <DropdownMenuItem onClick={() => navigate('/settings')} className="gap-3">
+                  <Lifebuoy className="w-4 h-4" weight="duotone" />
+                  <span className="font-medium">Support</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

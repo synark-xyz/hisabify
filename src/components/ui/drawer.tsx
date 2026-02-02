@@ -4,8 +4,24 @@ import { Capacitor } from "@capacitor/core";
 
 import { cn } from "@/lib/utils";
 
-const Drawer = ({ shouldScaleBackground = true, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
-  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
+const Drawer = ({
+  shouldScaleBackground = true,
+  snapPoints,
+  activeSnapPoint,
+  setActiveSnapPoint,
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.Root> & {
+  snapPoints?: (string | number)[];
+  activeSnapPoint?: string | number;
+  setActiveSnapPoint?: (snapPoint: string | number) => void;
+}) => (
+  <DrawerPrimitive.Root
+    shouldScaleBackground={shouldScaleBackground}
+    snapPoints={snapPoints}
+    activeSnapPoint={activeSnapPoint}
+    setActiveSnapPoint={setActiveSnapPoint}
+    {...props}
+  />
 );
 Drawer.displayName = "Drawer";
 
@@ -35,12 +51,12 @@ const DrawerContent = React.forwardRef<
       <DrawerPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[20px] border bg-background pb-safe",
+          "fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[96vh] flex-col rounded-t-[20px] border bg-background pb-safe",
           className,
         )}
         {...props}
       >
-        <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+        <div className="mx-auto mt-4 h-1.5 w-12 flex-shrink-0 rounded-full bg-muted/60" />
         {children}
       </DrawerPrimitive.Content>
     </>

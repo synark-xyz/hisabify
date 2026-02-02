@@ -111,18 +111,26 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
   const showOriginal = originalCurrency !== currency;
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.x < -80) {
+    const threshold = -80;
+    const closeThreshold = 40;
+
+    if (info.offset.x < threshold) {
+      // Swipe left to reveal - ensure only this item is revealed
       if (onReveal) {
         onReveal(transaction.id);
       } else {
         setInternalRevealed(true);
       }
-    } else if (info.offset.x > 40) {
+    } else if (info.offset.x > closeThreshold || info.offset.x > 20) {
+      // Swipe right or small movement to close
       if (onReveal) {
         onReveal(null);
       } else {
         setInternalRevealed(false);
       }
+    } else {
+      // Snap back to current state
+      // Do nothing - animation will handle it
     }
   };
 
@@ -144,14 +152,24 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
       <AnimatePresence>
         {actualRevealed && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 25,
+              mass: 0.5
+            }}
             className="absolute right-0 top-0 bottom-0 flex items-center gap-2 pr-2 z-0"
           >
             <motion.button
               onClick={handleEdit}
               className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ delay: 0.05 }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -160,6 +178,10 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
             <motion.button
               onClick={handleDelete}
               className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center border border-destructive/20"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ delay: 0.1 }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -178,10 +200,21 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
           y: 0,
           x: actualRevealed ? -120 : 0
         }}
-        transition={{ delay: index * 0.05, duration: 0.3 }}
+        transition={{
+          delay: index * 0.05,
+          y: { duration: 0.3, ease: 'easeOut' },
+          opacity: { duration: 0.3, ease: 'easeOut' },
+          x: {
+            type: 'spring',
+            stiffness: 300,
+            damping: 30,
+            mass: 0.8
+          }
+        }}
         drag="x"
         dragConstraints={{ left: -120, right: 0 }}
-        dragElastic={0.1}
+        dragElastic={0.15}
+        dragMomentum={false}
         onDragEnd={handleDragEnd}
         onClick={() => actualRevealed && (onReveal ? onReveal(null) : setInternalRevealed(false))}
       >

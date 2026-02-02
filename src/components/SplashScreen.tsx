@@ -50,10 +50,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
     return (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-background">
-            {/* Background Gradient & Effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0B4619] to-[#007BFF] opacity-10" />
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay" />
-            <div className="absolute inset-0 backdrop-blur-3xl" />
+            {/* Background Effects - Minimal */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
 
             {/* Main Content Container */}
             <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-sm px-8">
@@ -62,10 +60,10 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 <div className="relative mb-12">
                     {/* Ripple/Pulse Effect */}
                     <motion.div
-                        className="absolute inset-0 rounded-full bg-accent/20 blur-xl"
+                        className="absolute inset-0 rounded-full bg-primary/15 blur-2xl"
                         initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1.5, opacity: [0, 0.5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        animate={{ scale: 1.5, opacity: [0, 0.4, 0] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                     />
 
                     {/* Logo */}
@@ -75,7 +73,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className="relative"
                     >
-                        <HisabifyLogo size={128} showText={false} />
+                        <HisabifyLogo size={180} showText={false} />
                     </motion.div>
                 </div>
 

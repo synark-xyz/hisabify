@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
@@ -445,19 +445,35 @@ export function ExpensesPage() {
 
             {/* Summary Cards */}
             <motion.div variants={itemVariants}>
-              <div className="mb-2 flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {selectedDate
-                    ? 'Daily Overview'
-                    : viewMode === 'day' ? 'Daily Overview'
-                    : viewMode === 'week' ? 'Weekly Overview'
-                    : viewMode === 'month' ? 'Monthly Overview'
-                    : 'Yearly Overview'}
-                </span>
-                {selectedDate && (
-                  <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full">
-                    {format(selectedDate, 'MMM d')}
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {selectedDate
+                      ? 'Daily Overview'
+                      : viewMode === 'day' ? 'Daily Overview'
+                      : viewMode === 'week' ? 'Weekly Overview'
+                      : viewMode === 'month' ? 'Monthly Overview'
+                      : 'Yearly Overview'}
                   </span>
+                  {selectedDate && (
+                    <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium">
+                      {format(selectedDate, 'MMM d')}
+                    </span>
+                  )}
+                </div>
+                {selectedDate && (
+                  <motion.button
+                    onClick={() => setSelectedDate(null)}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-destructive bg-muted/30 hover:bg-destructive/10 rounded-full transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                  >
+                    <X className="w-3 h-3" />
+                    Clear
+                  </motion.button>
                 )}
               </div>
               <ExpenseOverview

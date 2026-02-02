@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Edit2, Trash2, Calendar, DollarSign, Bell, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { X, Plus, Trash2, Calendar, DollarSign, Bell, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -145,17 +145,6 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                                                 <div className="text-right">
                                                     <p className="text-lg font-black text-foreground">{formatAmount(reminder.amount)}</p>
                                                     <div className="flex items-center justify-end gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8 text-muted-foreground hover:text-accent"
-                                                            onClick={() => {
-                                                                setEditingReminder(reminder);
-                                                                setShowAddModal(true);
-                                                            }}
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </Button>
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"

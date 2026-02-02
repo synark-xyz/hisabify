@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
 import { format, startOfWeek, addDays, isSameDay, isSameMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface SwipeableWeekCalendarProps {
     currentDate: Date;
@@ -75,9 +75,9 @@ export function SwipeableWeekCalendar({
                             key={index}
                             onClick={() => !dragging && onDateSelect(day)}
                             className={cn(
-                                'relative flex flex-col items-center py-2.5 rounded-xl transition-all border',
+                                'relative flex flex-col items-center py-2.5 rounded-xl transition-all border-2',
                                 isSelected
-                                    ? 'bg-accent/10 border-accent text-accent shadow-[0_0_15px_rgba(249,115,22,0.3)]'
+                                    ? 'bg-accent/10 border-accent border-3 text-accent shadow-[0_0_15px_rgba(249,115,22,0.3)]'
                                     : 'border-transparent hover:bg-muted/50',
                                 !isCurrentMonth && 'opacity-30'
                             )}
@@ -105,12 +105,34 @@ export function SwipeableWeekCalendar({
                 })}
             </motion.div>
 
-            {/* Visual Hint for Swipe */}
-            <div className="flex justify-between items-center mt-3 px-1 opacity-20 pointer-events-none">
-                <ChevronLeft className="w-3 h-3" />
-                <span className="text-[9px] font-bold uppercase tracking-widest">Swipe for more</span>
-                <ChevronRight className="w-3 h-3" />
-            </div>
+            {/* Visual Hint for Swipe or Clear Button */}
+            {selectedDate ? (
+                <motion.div
+                    className="mt-3 flex items-center justify-center gap-2"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                >
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">
+                        {format(selectedDate, 'MMM dd')} selected
+                    </p>
+                    <motion.button
+                        onClick={() => selectedDate && onDateSelect(selectedDate)}
+                        className="flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-destructive/70 hover:text-destructive bg-destructive/5 hover:bg-destructive/10 rounded-full transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <X className="w-2.5 h-2.5" />
+                        Clear
+                    </motion.button>
+                </motion.div>
+            ) : (
+                <div className="flex justify-between items-center mt-3 px-1 opacity-20 pointer-events-none">
+                    <ChevronLeft className="w-3 h-3" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest">Swipe for more</span>
+                    <ChevronRight className="w-3 h-3" />
+                </div>
+            )}
         </div>
     );
 }

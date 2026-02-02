@@ -182,11 +182,11 @@ export function SavingsGoalCard({
       </Card>
 
       <Dialog open={showAddFunds} onOpenChange={setShowAddFunds}>
-        <DialogContent className="sm:max-w-[400px] rounded-3xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[400px] max-h-[90vh] rounded-3xl flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="font-black text-xl">Top Up "{goal.name}"</DialogTitle>
           </DialogHeader>
-          <div className="space-y-5 py-4">
+          <div className="space-y-5 py-4 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label htmlFor="amount" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Amount to add</Label>
               <div className="relative">
@@ -224,7 +224,7 @@ export function SavingsGoalCard({
               </div>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 sm:gap-0 flex-shrink-0">
             <Button variant="ghost" className="rounded-2xl font-bold" onClick={() => setShowAddFunds(false)}>
               Cancel
             </Button>

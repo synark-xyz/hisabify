@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useTheme } from '@/hooks/useTheme';
 
 export function CyberpunkBackground() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const { theme } = useTheme();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -28,6 +30,18 @@ export function CyberpunkBackground() {
         const gridSize = 40;
         let offset = 0;
 
+        // Theme-aware colors
+        const isLight = theme === 'light';
+        const bgColor = isLight ? '#FAFAFA' : '#0a0f1c';
+        const gridColor = isLight
+            ? 'rgba(0, 168, 168, 0.08)'  // Darker teal for light mode
+            : 'rgba(0, 240, 255, 0.1)';   // Neon teal for dark mode
+        const scanlineColor = isLight
+            ? 'rgba(0, 0, 0, 0.02)'
+            : 'rgba(0, 0, 0, 0.3)';
+        const particleColor1 = isLight ? '#00A8A8' : '#00E5FF'; // Darker teal / Neon teal
+        const particleColor2 = isLight ? '#CC8800' : '#FFD700'; // Darker gold / Neon gold
+
         // Particles
         const particles: { x: number; y: number; speed: number; size: number; color: string }[] = [];
         const particleCount = 30;
@@ -38,17 +52,17 @@ export function CyberpunkBackground() {
                 y: Math.random() * height,
                 speed: 0.5 + Math.random(),
                 size: 1 + Math.random() * 2,
-                color: Math.random() > 0.5 ? '#00E5FF' : '#FFD700' // Teal or Gold
+                color: Math.random() > 0.5 ? particleColor1 : particleColor2
             });
         }
 
         const animate = () => {
-            ctx.fillStyle = '#0a0f1c'; // Deep Midnight Blue Base
+            ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, width, height);
 
             // Draw Perspective Grid (Retro Game Style)
             ctx.beginPath();
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.1)';
+            ctx.strokeStyle = gridColor;
             ctx.lineWidth = 1;
 
             // Vertical lines
@@ -66,7 +80,7 @@ export function CyberpunkBackground() {
             ctx.stroke();
 
             // Scanline effect overlaid
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillStyle = scanlineColor;
             for (let y = 0; y < height; y += 4) {
                 ctx.fillRect(0, y, width, 1);
             }
@@ -97,15 +111,28 @@ export function CyberpunkBackground() {
             window.removeEventListener('resize', resize);
             cancelAnimationFrame(animId);
         };
-    }, []);
+    }, [theme]);
 
     return (
         <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden">
-            <canvas ref={canvasRef} className="absolute inset-0 opacity-60" />
+            <canvas
+                ref={canvasRef}
+                className="absolute inset-0"
+                style={{ opacity: theme === 'light' ? 0.4 : 0.6 }}
+            />
 
-            {/* Vignette & Ambient Glow */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1c] via-transparent to-[#0a0f1c]/50" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#0a0f1c_90%)]" />
+            {/* Vignette & Ambient Glow - Theme aware */}
+            {theme === 'light' ? (
+                <>
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-background/30" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,hsl(var(--background))_90%)]" />
+                </>
+            ) : (
+                <>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1c] via-transparent to-[#0a0f1c]/50" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#0a0f1c_90%)]" />
+                </>
+            )}
         </div>
     );
 }

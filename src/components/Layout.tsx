@@ -19,9 +19,22 @@ export function Layout() {
     const [smartData, setSmartData] = useState<any>(undefined);
 
     const location = useLocation();
-    const { variant } = useTheme();
+    const { variant, theme } = useTheme();
     const navigate = useNavigate();
     const { isPremium } = useSubscription();
+
+    // Get theme-aware colors for Nexus FAB
+    const getNexusShadowColor = () => {
+        if (variant === 'cyberpunk') {
+            return theme === 'light'
+                ? 'rgba(204, 136, 0, 0.5)' // Darker gold for light mode
+                : 'rgba(255, 215, 0, 0.6)'; // Neon gold for dark mode
+        }
+        // Default theme - primary color
+        return theme === 'light'
+            ? 'rgba(255, 152, 0, 0.5)' // Orange for light mode
+            : 'rgba(255, 152, 0, 0.6)'; // Orange for dark mode
+    };
 
     // Generic Header Logic
     const getPageTitle = (pathname: string) => {
@@ -51,7 +64,7 @@ export function Layout() {
     };
 
     return (
-        <div className="min-h-screen bg-transparent relative">
+        <div className="min-h-screen relative">
             {/* Common Animating Background (Cyberpunk only) */}
             {variant === 'cyberpunk' && <CyberpunkBackground />}
 
@@ -62,7 +75,7 @@ export function Layout() {
                 onBack={isProfileSubPage ? () => navigate('/profile') : undefined}
             />
 
-            <main className="relative z-0">
+            <main className="relative z-10 pb-page-content">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={location.pathname}
@@ -111,17 +124,52 @@ export function Layout() {
                 source="nexus_fab"
             />
 
-            {/* Floating Nexus Button */}
+            {/* Floating Nexus AI Button */}
             {!showManual && !showNexus && (
                 <motion.button
                     initial={{ scale: 0, rotate: 180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    whileHover={{ scale: 1.1, rotate: 15 }}
+                    animate={{
+                        scale: 1,
+                        rotate: 0,
+                        boxShadow: variant === 'cyberpunk'
+                            ? [
+                                `0 4px 16px -4px ${getNexusShadowColor()}`,
+                                `0 6px 20px -4px ${getNexusShadowColor().replace('0.5', '0.6').replace('0.6', '0.7')}`,
+                                `0 4px 16px -4px ${getNexusShadowColor()}`,
+                            ]
+                            : undefined,
+                    }}
+                    whileHover={{ scale: 1.1, y: -4 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={handleNexusClick}
-                    className="fixed bottom-32 right-6 z-40 w-12 h-12 rounded-full bg-indigo-600 text-white shadow-2xl flex items-center justify-center border-2 border-white/20 hover:bg-indigo-500 transition-colors"
+                    transition={{
+                        boxShadow: {
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                        },
+                    }}
+                    className={cn(
+                        "fixed bottom-32 right-6 z-40 w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center overflow-hidden",
+                        variant === 'cyberpunk'
+                            ? theme === 'light'
+                                ? "bg-primary border-2 border-primary/60 text-primary-foreground"
+                                : "bg-primary border-2 border-primary/40 text-primary-foreground"
+                            : "bg-gradient-to-br from-primary to-accent text-primary-foreground border-2 border-primary/20"
+                    )}
                 >
+                    {/* Icon */}
                     <Zap className="w-6 h-6 fill-current" />
+
+                    {/* Premium badge indicator */}
+                    {isPremium && (
+                        <motion.div
+                            className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-background shadow-sm"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.5 }}
+                        />
+                    )}
                 </motion.button>
             )}
         </div>

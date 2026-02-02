@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useBudgets, PeriodType, Budget } from '@/hooks/useBudgets';
+import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
 import { Category } from '@/types';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -49,6 +50,9 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
   const { isPremium } = useSubscription();
   const { createBudget, updateBudget } = useBudgets();
   const currencySymbol = currencyData[currency]?.symbol || '$';
+
+  // Handle keyboard on mobile
+  useKeyboardHandler(open);
 
   const form = useForm<BudgetFormData>({
     resolver: zodResolver(budgetFormSchema),
@@ -175,14 +179,14 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="pb-4">
+    <Drawer open={open} onOpenChange={onOpenChange} snapPoints={[0.9, 0.6]} activeSnapPoint={0.9}>
+      <DrawerContent>
+        <DrawerHeader className="pb-2 flex-shrink-0">
           <DrawerTitle className="text-center font-bold text-xl">
             {editingBudget ? 'Edit Budget' : 'Create Budget'}
           </DrawerTitle>
         </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-safe-nav">
+        <div className="overflow-y-auto overflow-x-hidden px-4 pb-6 flex-1">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
               {/* Budget Name */}
@@ -251,7 +255,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  className="w-20 rounded-xl flex items-center justify-between px-3"
+                                  className="w-20 flex items-center justify-between px-3"
                                 >
                                   <span className="font-bold">
                                     {currencyData[currencyField.value]?.symbol || '$'}
@@ -285,7 +289,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                             <Button
                               type="button"
                               variant="outline"
-                              className="w-20 rounded-xl flex items-center justify-center px-3"
+                              className="w-20 flex items-center justify-center px-3"
                               disabled
                             >
                               <span className="font-bold">
@@ -375,11 +379,11 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  className="flex-1 rounded-xl"
+                  className="flex-1"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1 rounded-xl" disabled={loading}>
+                <Button type="submit" className="flex-1" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingBudget ? 'Update Budget' : 'Create Budget'}
                 </Button>

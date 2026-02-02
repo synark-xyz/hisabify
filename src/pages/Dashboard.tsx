@@ -107,12 +107,35 @@ export function Dashboard() {
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const { user } = useAuth();
-  const { variant } = useTheme();
+  const { variant, theme } = useTheme();
   const { formatAmount, currencyVersion, currency } = useCurrency();
+
+  // Determine if balance card should use light or dark text
+  const useDarkText = variant === 'cyberpunk' && theme === 'light';
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
 
-  const availableYears = [2023, 2024, 2025, 2026];
+  // Dynamically calculate available years based on transaction data
+  const availableYears = useMemo(() => {
+    if (transactions.length === 0) {
+      return [new Date().getFullYear()];
+    }
+
+    const years = new Set<number>();
+    transactions.forEach(tx => {
+      const year = new Date(tx.date).getFullYear();
+      if (!isNaN(year)) {
+        years.add(year);
+      }
+    });
+
+    // Add current year if not present
+    const currentYear = new Date().getFullYear();
+    years.add(currentYear);
+
+    // Convert to sorted array (ascending)
+    return Array.from(years).sort((a, b) => a - b);
+  }, [transactions]);
 
   // Event listener for layout modal updates
   useEffect(() => {
@@ -297,9 +320,9 @@ export function Dashboard() {
   const netBalance = totalIncome - totalExpenses;
 
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen relative">
       <ParticlesBackground />
-      <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
+      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
 
@@ -319,19 +342,26 @@ export function Dashboard() {
             >
               <div
                 className={cn(
-                  "rounded-3xl p-6 shadow-xl relative overflow-hidden text-white transition-all",
+                  "rounded-3xl p-6 shadow-xl relative overflow-hidden transition-all",
                   variant === 'cyberpunk'
                     ? "card-3d bg-card border-none"
-                    : "bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#DB2777]"
+                    : "bg-[image:var(--gradient-balance)] text-white",
+                  useDarkText ? "text-foreground" : "text-white"
                 )}
                 style={{ contain: 'layout', willChange: 'transform' }}
               >
                 <div
-                  className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none"
+                  className={cn(
+                    "absolute top-0 right-0 w-64 h-64 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none",
+                    useDarkText ? "bg-primary/10" : "bg-white/10"
+                  )}
                   style={{ willChange: 'filter', transform: 'translateZ(0)' }}
                 />
                 <div
-                  className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none"
+                  className={cn(
+                    "absolute bottom-0 left-0 w-48 h-48 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none",
+                    useDarkText ? "bg-accent/10" : "bg-black/10"
+                  )}
                   style={{ willChange: 'filter', transform: 'translateZ(0)' }}
                 />
 
@@ -339,52 +369,68 @@ export function Dashboard() {
                   <div>
                     <div className="flex items-center gap-2 mb-2 opacity-90">
                       <div
-                        className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm"
+                        className={cn(
+                          "p-1.5 rounded-lg backdrop-blur-sm",
+                          useDarkText ? "bg-primary/20" : "bg-white/20"
+                        )}
                         style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                       >
-                        <Wallet className="w-4 h-4 text-white" weight="fill" />
+                        <Wallet className={cn("w-4 h-4", useDarkText ? "text-primary" : "text-white")} weight="fill" />
                       </div>
                       <span className="text-sm font-medium tracking-wide">Main Balance</span>
                     </div>
-                    <h2 className={cn("text-4xl font-black tracking-tight mb-1", variant === 'cyberpunk' && "text-glow")}>
+                    <h2 className={cn("text-4xl font-black tracking-tight mb-1", variant === 'cyberpunk' && !useDarkText && "text-glow")}>
                       {formatAmount(netBalance)}
                     </h2>
                   </div>
                   <div className="flex flex-col items-end">
                     <div
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold ring-1 ring-white/30 shadow-sm"
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 backdrop-blur-md rounded-full text-xs font-bold ring-1 shadow-sm",
+                        useDarkText ? "bg-muted/30 ring-border" : "bg-white/20 ring-white/30"
+                      )}
                       style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                     >
-                      <TrendUp className="w-3.5 h-3.5 text-emerald-300" weight="bold" />
-                      <span className="text-white">Today {formatAmount(todayNet)}</span>
+                      <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
+                      <span>Today {formatAmount(todayNet)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div
-                    className="group p-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30 transition-colors"
+                    className={cn(
+                      "group p-4 rounded-2xl backdrop-blur-sm border transition-colors",
+                      useDarkText
+                        ? "bg-muted/20 border-border hover:bg-muted/30"
+                        : "bg-black/20 border-white/10 hover:bg-black/30"
+                    )}
                     style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="p-1.5 rounded-full bg-rose-500/20">
-                        <TrendDown className="w-3.5 h-3.5 text-rose-300" weight="bold" />
+                      <div className={cn("p-1.5 rounded-full", useDarkText ? "bg-red-500/20" : "bg-rose-500/20")}>
+                        <TrendDown className={cn("w-3.5 h-3.5", useDarkText ? "text-red-600" : "text-rose-300")} weight="bold" />
                       </div>
-                      <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Expenses</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>Expenses</span>
                     </div>
-                    <p className="text-lg font-bold text-white tracking-tight">{formatAmount(totalExpenses)}</p>
+                    <p className={cn("text-lg font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
                   </div>
                   <div
-                    className="group p-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30 transition-colors"
+                    className={cn(
+                      "group p-4 rounded-2xl backdrop-blur-sm border transition-colors",
+                      useDarkText
+                        ? "bg-muted/20 border-border hover:bg-muted/30"
+                        : "bg-black/20 border-white/10 hover:bg-black/30"
+                    )}
                     style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="p-1.5 rounded-full bg-emerald-500/20">
-                        <TrendUp className="w-3.5 h-3.5 text-emerald-300" weight="bold" />
+                      <div className={cn("p-1.5 rounded-full", useDarkText ? "bg-green-500/20" : "bg-emerald-500/20")}>
+                        <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
                       </div>
-                      <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Income</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>Income</span>
                     </div>
-                    <p className="text-lg font-bold text-white tracking-tight">{formatAmount(totalIncome)}</p>
+                    <p className={cn("text-lg font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
                   </div>
                 </div>
               </div>

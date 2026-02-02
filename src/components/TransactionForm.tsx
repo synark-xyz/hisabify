@@ -316,7 +316,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                                             isPremium ? (
                                                 <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                                                     <PopoverTrigger asChild>
-                                                        <Button type="button" variant="outline" className="w-20 rounded-xl flex items-center justify-between px-3">
+                                                        <Button type="button" variant="outline" className="w-20 flex items-center justify-between px-3">
                                                             <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
                                                             <ChevronDown className="w-3 h-3 opacity-50" />
                                                         </Button>
@@ -344,7 +344,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                                                     </PopoverContent>
                                                 </Popover>
                                             ) : (
-                                                <Button type="button" variant="outline" className="w-20 rounded-xl flex items-center justify-center px-3" disabled>
+                                                <Button type="button" variant="outline" className="w-20 flex items-center justify-center px-3" disabled>
                                                     <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
                                                 </Button>
                                             )
@@ -467,7 +467,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                                     <Popover open={dateOpen} onOpenChange={setDateOpen}>
                                         <PopoverTrigger asChild>
                                             <FormControl>
-                                                <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
+                                                <Button variant="outline" className="w-full justify-start text-left font-normal">
                                                     <Calendar className="mr-2 h-4 w-4 opacity-50" />
                                                     {field.value ? format(field.value, 'MMM dd, yyyy') : 'Pick date'}
                                                 </Button>
@@ -558,8 +558,8 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                     )}
 
                     <div className="flex gap-3 pt-6 pb-2">
-                        <Button type="button" variant="ghost" onClick={onCancel} className="flex-1 text-muted-foreground rounded-2xl">Cancel</Button>
-                        <Button type="submit" disabled={form.formState.isSubmitting} className="flex-1 bg-accent hover:bg-accent/90 rounded-2xl shadow-fab font-bold">
+                        <Button type="button" variant="ghost" onClick={onCancel} className="flex-1">Cancel</Button>
+                        <Button type="submit" disabled={form.formState.isSubmitting} className="flex-1">
                             {form.formState.isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Record'}
                         </Button>
                     </div>

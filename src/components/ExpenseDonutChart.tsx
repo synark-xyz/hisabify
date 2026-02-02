@@ -10,7 +10,20 @@ interface ExpenseDonutChartProps {
   timeframeKey?: string;
 }
 
-const COLORS = ['#5B4B8A', '#F97316', '#3B4B6B', '#7B6BA8', '#10B981', '#F59E0B'];
+// Get theme-aware colors from CSS variables
+const getChartColors = () => {
+  const root = getComputedStyle(document.documentElement);
+  return [
+    `hsl(${root.getPropertyValue('--chart-1')})`, // Orange
+    `hsl(${root.getPropertyValue('--chart-2')})`, // Purple
+    `hsl(${root.getPropertyValue('--chart-3')})`, // Blue
+    `hsl(${root.getPropertyValue('--chart-4')})`, // Green
+    `hsl(${root.getPropertyValue('--chart-5')})`, // Red
+    `hsl(${root.getPropertyValue('--primary')})`, // Primary color
+  ];
+};
+
+const COLORS = getChartColors();
 
 const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;

@@ -26,8 +26,8 @@ export function HisabifyLogo({ size = 40, className, showText = true }: Hisabify
                     </linearGradient>
                 </defs>
 
-                {/* Background circle with gradient */}
-                <circle cx="50" cy="50" r="48" fill="url(#logoGradient)" />
+                {/* Background circle with gradient - TRANSPARENT */}
+                <circle cx="50" cy="50" r="48" fill="none" />
 
                 {/* Donut Chart (main element) */}
                 {/* Outer ring - segmented donut chart */}

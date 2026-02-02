@@ -113,15 +113,15 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh] border-none bg-background rounded-t-[32px]">
-        <DrawerHeader className="pb-4">
+    <Drawer open={open} onOpenChange={onOpenChange} snapPoints={[0.9, 0.6]} activeSnapPoint={0.9}>
+      <DrawerContent className="border-none bg-background rounded-t-[32px]">
+        <DrawerHeader className="pb-2 flex-shrink-0">
           <DrawerTitle className="text-center font-bold text-xl">
             {reminder ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
           </DrawerTitle>
         </DrawerHeader>
 
-        <div className="overflow-y-auto px-6 pb-safe-nav">
+        <div className="overflow-y-auto overflow-x-hidden px-6 pb-6 flex-1">
           <form onSubmit={handleSubmit} className="space-y-5 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider opacity-70">Title</Label>
@@ -241,7 +241,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading} className="flex-1 bg-accent hover:bg-accent/90 rounded-2xl h-12 shadow-fab font-bold">
+              <Button type="submit" disabled={loading} className="flex-1 h-12">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reminder ? 'Update Reminder' : 'Create Reminder'}
               </Button>
             </div>

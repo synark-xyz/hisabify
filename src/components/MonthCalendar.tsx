@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { format, isSameDay, isSameMonth } from 'date-fns';
 import { DayPicker, DayContentProps } from 'react-day-picker';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 
 interface MonthCalendarProps {
@@ -79,12 +79,12 @@ export function MonthCalendar({
             "focus-within:relative focus-within:z-20"
           ),
           day: cn(
-            "h-10 w-full p-0 font-bold rounded-xl transition-all border border-transparent hover:bg-muted/50 hover:border-border/50",
+            "h-10 w-full p-0 font-bold rounded-xl transition-all border-2 border-transparent hover:bg-muted/50 hover:border-border/50",
             "aria-selected:opacity-100"
           ),
           day_range_end: "day-range-end",
           day_selected: cn(
-            "bg-accent/10 text-accent border-accent text-glow shadow-[0_0_15px_rgba(249,115,22,0.3)]",
+            "bg-accent/10 text-accent border-accent border-3 text-glow shadow-[0_0_15px_rgba(249,115,22,0.3)]",
             "hover:bg-accent/20 hover:text-accent",
             "focus:bg-accent/10 focus:text-accent"
           ),
@@ -101,9 +101,25 @@ export function MonthCalendar({
         }}
       />
       {selectedDate && (
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center mt-4 opacity-70">
-          Showing expenses for {format(selectedDate, 'MMM dd')} • Tap to clear
-        </p>
+        <motion.div
+          className="mt-4 flex items-center justify-center gap-2"
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -5 }}
+        >
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">
+            {format(selectedDate, 'MMM dd, yyyy')} selected
+          </p>
+          <motion.button
+            onClick={() => onDateSelect(selectedDate)}
+            className="flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-destructive/70 hover:text-destructive bg-destructive/5 hover:bg-destructive/10 rounded-full transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <X className="w-2.5 h-2.5" />
+            Clear
+          </motion.button>
+        </motion.div>
       )}
     </motion.div>
   );

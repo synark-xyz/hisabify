@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -174,14 +174,6 @@ export function PaymentRemindersManager() {
                       <CheckCircle className="w-4 h-4" />
                     </Button>
                   )}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setEditingReminder(reminder)}
-                    className="h-8 w-8"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
                   <Button
                     size="icon"
                     variant="ghost"

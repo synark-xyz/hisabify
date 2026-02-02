@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
 import { useCurrency, currencyData } from "@/hooks/useCurrency";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 
 const goalSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -60,6 +61,9 @@ export function AddSavingsGoalModal({
   const { isPremium } = useSubscription();
   const [currencyOpen, setCurrencyOpen] = useState(false);
 
+  // Handle keyboard on mobile
+  useKeyboardHandler(open);
+
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
     defaultValues: {
@@ -99,14 +103,14 @@ export function AddSavingsGoalModal({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="pb-4">
+    <Drawer open={open} onOpenChange={onOpenChange} snapPoints={[0.9, 0.6]} activeSnapPoint={0.9}>
+      <DrawerContent>
+        <DrawerHeader className="pb-2 flex-shrink-0">
           <DrawerTitle className="text-center font-bold text-xl">
             {editingGoal ? "Edit Savings Goal" : "Create Savings Goal"}
           </DrawerTitle>
         </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-safe-nav">
+        <div className="overflow-y-auto overflow-x-hidden px-4 pb-6 flex-1">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
               <FormField

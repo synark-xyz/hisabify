@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { usePermissions } from './usePermissions';
 
 // Type definitions for Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -54,6 +55,7 @@ export function useVoiceInput() {
     const [transcript, setTranscript] = useState('');
     const [error, setError] = useState<string | null>(null);
     const recognitionRef = useRef<SpeechRecognition | null>(null);
+    const { ensurePermission } = usePermissions();
 
     useEffect(() => {
         // Check browser support
@@ -97,15 +99,24 @@ export function useVoiceInput() {
         recognitionRef.current = recognition;
     }, []);
 
-    const startListening = () => {
+    const startListening = async () => {
         if (recognitionRef.current && !isListening) {
             setTranscript('');
             setError(null);
+
+            // Request microphone permission first
+            const hasPermission = await ensurePermission('microphone');
+            if (!hasPermission) {
+                setError('Microphone access denied. Please enable in device settings.');
+                return;
+            }
+
             try {
                 recognitionRef.current.start();
                 setIsListening(true);
             } catch (e) {
                 console.error("Failed to start speech recognition:", e);
+                setError('Failed to start voice recording. Please try again.');
             }
         }
     };
@@ -117,11 +128,11 @@ export function useVoiceInput() {
         }
     };
 
-    const toggleListening = () => {
+    const toggleListening = async () => {
         if (isListening) {
             stopListening();
         } else {
-            startListening();
+            await startListening();
         }
     };
 

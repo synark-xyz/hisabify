@@ -20,9 +20,18 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/80 pt-safe pb-safe data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100dvh'
+    }}
     {...props}
   />
 ));
@@ -32,24 +41,32 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  const isNative = Capacitor.isNativePlatform();
-
-  const content = (
-    <>
+  return (
+    <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200",
+          "fixed left-[50%] top-[50%] z-50 grid translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200",
+          // Mobile-first sizing with proper margins: calc(100vw - 2rem) ensures 1rem margin on each side
+          "w-[calc(100vw-2rem)] max-w-[500px]",
+          // Mobile-optimized padding
+          "p-4 sm:p-6",
+          // Mobile-optimized max-height with safe areas
+          "max-h-[85vh] overflow-y-auto overflow-x-hidden",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           "data-[state=open]:slide-in-from-left-2 data-[state=closed]:slide-out-to-right-2",
-          "sm:rounded-lg rounded-2xl",
+          "rounded-2xl",
           // Mobile safe areas
           "pt-safe pb-safe",
           className,
         )}
+        style={{
+          // Force viewport-relative positioning
+          position: 'fixed',
+        }}
         {...props}
       >
         {children}
@@ -58,11 +75,8 @@ const DialogContent = React.forwardRef<
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
-    </>
+    </DialogPortal>
   );
-
-  // Disable portal on native to avoid viewport issues
-  return isNative ? content : <DialogPortal>{content}</DialogPortal>;
 });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 

@@ -98,9 +98,9 @@ export function ReportTemplatesPanel({
       </Card>
 
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>Save Report Template</DialogTitle>
+            <DialogTitle className="pr-8">Save Report Template</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Input

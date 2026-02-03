@@ -1,4 +1,4 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import { TransactionForm } from '@/components/TransactionForm';
 
 interface AddTransactionModalProps {
@@ -21,25 +21,22 @@ export function AddTransactionModal({
   initialData
 }: AddTransactionModalProps) {
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} snapPoints={[0.95, 0.7]} activeSnapPoint={0.95}>
-      <DrawerContent>
-        <DrawerHeader className="pb-2 flex-shrink-0">
-          <DrawerTitle className="text-center font-bold text-xl">
-            New Transaction
-          </DrawerTitle>
-        </DrawerHeader>
-
-        {/* Pass initialData to pre-fill the form */}
-        <TransactionForm
-          onSuccess={() => {
-            onSuccess();
-            onOpenChange(false);
-          }}
-          onCancel={() => onOpenChange(false)}
-          initialType={initialType}
-          initialData={initialData}
-        />
-      </DrawerContent>
-    </Drawer>
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="New Transaction"
+      className="max-h-[90vh]"
+    >
+      {/* Pass initialData to pre-fill the form */}
+      <TransactionForm
+        onSuccess={() => {
+          onSuccess();
+          onOpenChange(false);
+        }}
+        onCancel={() => onOpenChange(false)}
+        initialType={initialType}
+        initialData={initialData}
+      />
+    </ResponsiveDrawer>
   );
 }

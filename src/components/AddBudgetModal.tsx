@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, ChevronDown } from 'lucide-react';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { MobileDialog } from '@/components/ui/mobile-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -179,16 +179,13 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} snapPoints={[0.9, 0.6]} activeSnapPoint={0.9}>
-      <DrawerContent>
-        <DrawerHeader className="pb-2 flex-shrink-0">
-          <DrawerTitle className="text-center font-bold text-xl">
-            {editingBudget ? 'Edit Budget' : 'Create Budget'}
-          </DrawerTitle>
-        </DrawerHeader>
-        <div className="overflow-y-auto overflow-x-hidden px-4 pb-6 flex-1">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+    <MobileDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editingBudget ? 'Edit Budget' : 'Create Budget'}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Budget Name */}
               <FormField
                 control={form.control}
@@ -388,10 +385,8 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                   {editingBudget ? 'Update Budget' : 'Create Budget'}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </div>
-      </DrawerContent>
-    </Drawer>
+          </form>
+        </Form>
+    </MobileDialog>
   );
 }

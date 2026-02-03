@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronDown } from "lucide-react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { MobileDialog } from "@/components/ui/mobile-dialog";
 import {
   Form,
   FormControl,
@@ -103,16 +103,13 @@ export function AddSavingsGoalModal({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} snapPoints={[0.9, 0.6]} activeSnapPoint={0.9}>
-      <DrawerContent>
-        <DrawerHeader className="pb-2 flex-shrink-0">
-          <DrawerTitle className="text-center font-bold text-xl">
-            {editingGoal ? "Edit Savings Goal" : "Create Savings Goal"}
-          </DrawerTitle>
-        </DrawerHeader>
-        <div className="overflow-y-auto overflow-x-hidden px-4 pb-6 flex-1">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
+    <MobileDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editingGoal ? "Edit Savings Goal" : "Create Savings Goal"}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -289,10 +286,8 @@ export function AddSavingsGoalModal({
                   {editingGoal ? "Update Goal" : "Create Goal"}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </div>
-      </DrawerContent>
-    </Drawer>
+          </form>
+        </Form>
+    </MobileDialog>
   );
 }

@@ -324,9 +324,68 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    /* Ensure body can scroll */
+    /* Fixed body to prevent keyboard resize */
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #root {
+    width: 100%;
+    height: 100%;
     overflow-y: auto;
-    overscroll-behavior-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Ensure portal containers are positioned correctly */
+  [data-radix-portal] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Allow interactions with portal content */
+  [data-radix-portal] > * {
+    pointer-events: auto;
+  }
+
+  /* Remove yellow selection boxes and default focus outlines for mobile-first UX */
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"] {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+  }
+
+  /* Disable text selection on UI components (not on inputs/textareas) */
+  *:not(input):not(textarea):not([contenteditable="true"]) {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+  }
+
+  /* Remove default focus outlines, but keep accessibility with focus-visible */
+  *:focus {
+    outline: none;
+  }
+
+  /* Custom focus styles for accessibility (keyboard navigation only) */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
   }
 
   /* Robust scrollbar hiding */

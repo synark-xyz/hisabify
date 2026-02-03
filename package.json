@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:managed": "node scripts/managed-dev-server.js",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
@@ -18,13 +19,17 @@
     "dev:android": "npx cap run android",
     "dev:ios": "npx cap run ios",
     "local-ip": "node scripts/get-local-ip.js",
-    "cap:dev:android": "npm run dev & npx cap run android",
-    "cap:dev:ios": "npm run dev & npx cap run ios"
+    "cap:dev:android": "npm run dev:managed & npx cap run android",
+    "cap:dev:ios": "npm run dev:managed & npx cap run ios",
+    "cap:dev:android:unmanaged": "npm run dev & npx cap run android",
+    "cap:dev:ios:unmanaged": "npm run dev & npx cap run ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.1",
+    "@capacitor/camera": "^6.0.2",
     "@capacitor/cli": "^8.0.1",
     "@capacitor/core": "^8.0.1",
+    "@capacitor/geolocation": "^6.0.1",
     "@capacitor/ios": "^8.0.1",
     "@capacitor/keyboard": "^8.0.0",
     "@hookform/resolvers": "^3.10.0",

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Copy, Lock } from 'lucide-react';
+import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Copy, Lock, Bookmark } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -18,6 +18,7 @@ interface BudgetProgressCardProps {
   onEdit: (budget: BudgetWithSpending) => void;
   onDelete: (budget: BudgetWithSpending) => void;
   onCopyToNext: (budgetId: string) => void;
+  onSaveAsTemplate?: (budgetId: string) => void;
 }
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -53,7 +54,7 @@ const getStatusBgColor = (status: 'safe' | 'warning' | 'exceeded'): string => {
   }
 };
 
-export function BudgetProgressCard({ budget, onEdit, onDelete, onCopyToNext }: BudgetProgressCardProps) {
+export function BudgetProgressCard({ budget, onEdit, onDelete, onCopyToNext, onSaveAsTemplate }: BudgetProgressCardProps) {
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
   const { isPremium } = useSubscription();
@@ -102,7 +103,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onCopyToNext }: B
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={() => onEdit(budget)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
@@ -113,6 +114,14 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onCopyToNext }: B
               Copy to Next Period
               {!isPremium && <Lock className="ml-2 h-3 w-3 text-amber-500" />}
             </DropdownMenuItem>
+
+            {onSaveAsTemplate && (
+              <DropdownMenuItem onClick={() => onSaveAsTemplate(budget.id)}>
+                <Bookmark className="mr-2 h-4 w-4" />
+                Save as Template
+              </DropdownMenuItem>
+            )}
+
             <DropdownMenuItem
               onClick={() => onDelete(budget)}
               className="text-destructive focus:text-destructive"

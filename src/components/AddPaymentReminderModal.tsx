@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, DollarSign, Bell, RefreshCw, Loader2 } from 'lucide-react';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Calendar, DollarSign, Bell, RefreshCw, Loader2 } from 'lucide-react';
+import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,15 +113,11 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} snapPoints={[0.9, 0.6]} activeSnapPoint={0.9}>
-      <DrawerContent className="border-none bg-background rounded-t-[32px]">
-        <DrawerHeader className="pb-2 flex-shrink-0">
-          <DrawerTitle className="text-center font-bold text-xl">
-            {reminder ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
-          </DrawerTitle>
-        </DrawerHeader>
-
-        <div className="overflow-y-auto overflow-x-hidden px-6 pb-6 flex-1">
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={reminder ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
+    >
           <form onSubmit={handleSubmit} className="space-y-5 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider opacity-70">Title</Label>
@@ -246,8 +242,6 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
               </Button>
             </div>
           </form>
-        </div>
-      </DrawerContent>
-    </Drawer>
+    </ResponsiveDrawer>
   );
 }

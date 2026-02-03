@@ -20,6 +20,8 @@ const Drawer = ({
     snapPoints={snapPoints}
     activeSnapPoint={activeSnapPoint}
     setActiveSnapPoint={setActiveSnapPoint}
+    dismissible={true}
+    modal={true}
     {...props}
   />
 );
@@ -35,7 +37,20 @@ const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-50 bg-black/80 pt-safe", className)} {...props} />
+  <DrawerPrimitive.Overlay
+    ref={ref}
+    className={cn("fixed inset-0 z-40 bg-black/80 transition-opacity duration-200", className)}
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100dvh'
+    }}
+    {...props}
+  />
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
@@ -43,32 +58,35 @@ const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  const isNative = Capacitor.isNativePlatform();
-
-  const content = (
-    <>
+  return (
+    <DrawerPortal>
       <DrawerOverlay />
       <DrawerPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[96vh] flex-col rounded-t-[20px] border bg-background pb-safe",
+          "fixed inset-x-0 bottom-0 z-[60] flex flex-col rounded-t-[24px] border-t-4 border-muted bg-background shadow-2xl pb-safe",
           className,
         )}
+        style={{
+          // Force viewport-relative positioning
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+        }}
         {...props}
       >
-        <div className="mx-auto mt-4 h-1.5 w-12 flex-shrink-0 rounded-full bg-muted/60" />
+        {/* Material 3 Drag Handle */}
+        <div className="mx-auto mt-3 h-1 w-12 flex-shrink-0 rounded-full bg-muted-foreground/30" />
         {children}
       </DrawerPrimitive.Content>
-    </>
+    </DrawerPortal>
   );
-
-  // Disable portal on native to avoid viewport issues
-  return isNative ? content : <DrawerPortal>{content}</DrawerPortal>;
 });
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("grid gap-1.5 p-4 text-center sm:text-left", className)} {...props} />
+  <div className={cn("flex flex-col gap-1.5 text-center", className)} {...props} />
 );
 DrawerHeader.displayName = "DrawerHeader";
 

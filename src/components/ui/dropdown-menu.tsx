@@ -4,6 +4,7 @@ import { Check, ChevronRight, Circle } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 
 import { cn } from "@/lib/utils";
+import { getOverlayRoot } from "@/lib/overlay-portal";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
@@ -53,14 +54,15 @@ const DropdownMenuSubContent = React.forwardRef<
     ref={ref}
     className={cn(
       // Mobile-optimized styling with solid background
-      "z-50 min-w-[240px] overflow-hidden rounded-2xl border-2 bg-popover backdrop-blur-xl p-2 text-popover-foreground",
+      "z-[99999] min-w-[240px] overflow-hidden rounded-2xl border-2 bg-popover backdrop-blur-xl p-2 text-popover-foreground",
       // Enhanced shadows for depth
       "shadow-[0_8px_30px_rgb(0,0,0,0.12)]",
-      // Pop-up animation: slide from left + zoom in
+      // Dropdown animation: slide from direction
       "data-[state=open]:animate-in data-[state=closed]:animate-out",
       "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-      "data-[state=open]:slide-in-from-left-2 data-[state=closed]:slide-out-to-right-2",
+      "data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:slide-in-from-top-2",
+      "data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2",
       "data-[state=open]:duration-200 data-[state=closed]:duration-150",
       // Cyberpunk: Gold border + neon glow + solid background
       "[html[data-variant='cyberpunk']_&]:bg-popover",
@@ -78,37 +80,51 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 8, ...props }, ref) => {
-  const isNative = Capacitor.isNativePlatform();
-  const content = (
-    <DropdownMenuPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        // Mobile-optimized: Larger minimum width, generous padding, SOLID background
-        "z-50 min-w-[240px] overflow-hidden rounded-2xl border-2 bg-popover backdrop-blur-xl p-2 text-popover-foreground",
-        // Enhanced shadows for better depth perception
-        "shadow-[0_8px_30px_rgb(0,0,0,0.12)]",
-        // Pop-up animation: slide from left + zoom in on open, slide to right + zoom out on close
-        "data-[state=open]:animate-in data-[state=closed]:animate-out",
-        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-        "data-[state=open]:slide-in-from-left-2 data-[state=closed]:slide-out-to-right-2",
-        "data-[state=open]:duration-200 data-[state=closed]:duration-150",
-        // Cyberpunk: Gold border + neon glow + bouncy pop-up + SOLID background
-        "[html[data-variant='cyberpunk']_&]:bg-popover",
-        "[html[data-variant='cyberpunk']_&]:border-accent/30",
-        "[html[data-variant='cyberpunk']_&]:shadow-[0_0_30px_rgba(255,215,0,0.2),0_0_15px_rgba(0,255,255,0.15)]",
-        "[html[data-variant='cyberpunk']_&]:data-[state=open]:zoom-in-90",
-        "[html[data-variant='cyberpunk']_&]:data-[state=open]:duration-300",
-        "[html[data-variant='cyberpunk']_&]:data-[state=closed]:duration-200",
-        className,
-      )}
-      {...props}
-    />
-  );
+>(({ className, sideOffset = 8, collisionPadding = 12, avoidCollisions = true, sticky = "partial", ...props }, ref) => {
+  const [overlayRoot, setOverlayRoot] = React.useState<HTMLElement | null>(null);
 
-  return isNative ? content : <DropdownMenuPrimitive.Portal>{content}</DropdownMenuPrimitive.Portal>;
+  React.useEffect(() => {
+    // Prioritize page-specific overlay root (e.g., planner-overlay-root) over global
+    const plannerRoot = document.getElementById('planner-overlay-root');
+    const savingsRoot = document.getElementById('savings-overlay-root');
+    const pageRoot = plannerRoot || savingsRoot;
+
+    setOverlayRoot(pageRoot || getOverlayRoot());
+  }, []);
+
+  return (
+    <DropdownMenuPrimitive.Portal container={overlayRoot}>
+      <DropdownMenuPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        collisionPadding={collisionPadding}
+        avoidCollisions={avoidCollisions}
+        sticky={sticky}
+        className={cn(
+          // Mobile-optimized: Larger minimum width, generous padding, SOLID background
+          "z-[99999] min-w-[240px] max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border-2 bg-popover backdrop-blur-xl p-2 text-popover-foreground",
+          // Enhanced shadows for better depth perception
+          "shadow-[0_8px_30px_rgb(0,0,0,0.12)]",
+          // Dropdown animation: slide from top + fade in
+          "data-[state=open]:animate-in data-[state=closed]:animate-out",
+          "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+          "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+          "data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:slide-in-from-top-2",
+          "data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2",
+          "data-[state=open]:duration-200 data-[state=closed]:duration-150",
+          // Cyberpunk: Gold border + neon glow + SOLID background
+          "[html[data-variant='cyberpunk']_&]:bg-popover",
+          "[html[data-variant='cyberpunk']_&]:border-accent/30",
+          "[html[data-variant='cyberpunk']_&]:shadow-[0_0_30px_rgba(255,215,0,0.2),0_0_15px_rgba(0,255,255,0.15)]",
+          "[html[data-variant='cyberpunk']_&]:data-[state=open]:zoom-in-90",
+          "[html[data-variant='cyberpunk']_&]:data-[state=open]:duration-300",
+          "[html[data-variant='cyberpunk']_&]:data-[state=closed]:duration-200",
+          className,
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
+  );
 });
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 

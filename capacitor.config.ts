@@ -47,8 +47,10 @@ const config: CapacitorConfig = {
   },
   plugins: {
     Keyboard: {
-      resize: 'body',
-      resizeOnFullScreen: true
+      resize: 'none',
+      style: 'dark',
+      resizeOnFullScreen: false,
+      accessoryBarVisible: true
     }
   }
 };

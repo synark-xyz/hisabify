@@ -1,12 +1,12 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Home, List, Plus, HandCoins, Target, LayoutDashboardIcon } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useVisualViewport } from '@/hooks/useVisualViewport';
 
 
 interface BottomNavigationProps {
-  onAddTransaction: () => void;
-  onAddReminder?: () => void;
+  onOpenInputSheet: () => void;
 }
 
 const navItems = [
@@ -17,24 +17,28 @@ const navItems = [
   { path: '/expenses', icon: List, label: 'Expenses' },
 ];
 
-export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
+export function BottomNavigation({ onOpenInputSheet }: BottomNavigationProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isKeyboardOpen } = useVisualViewport();
 
   return (
-    <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg"
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-    >
+    <AnimatePresence>
+      {!isKeyboardOpen && (
+        <motion.nav
+          className="fixed bottom-0 left-0 right-0 z-50 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg"
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          exit={{ y: 100 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        >
       <div className="max-w-2xl mx-auto grid grid-cols-5 items-center h-20 md:h-20 relative">
         {navItems.map((item, index) => {
           if (item === null) {
             return (
               <div key="add-button-container" className="flex justify-center items-center">
                 <motion.button
-                  onClick={onAddTransaction}
+                  onClick={onOpenInputSheet}
                   className="relative -top-4 w-16 h-16 rounded-full bg-accent text-white shadow-fab flex items-center justify-center z-[51]"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.9 }}
@@ -70,10 +74,12 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
                   <motion.div
                     className="absolute top-0 w-8 h-0.5 rounded-full bg-accent"
                     layoutId="nav-indicator"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 350,
+                      damping: 30,
+                      mass: 0.8
+                    }}
                   />
                 )}
               </motion.button>
@@ -82,5 +88,7 @@ export function BottomNavigation({ onAddTransaction }: BottomNavigationProps) {
         })}
       </div>
     </motion.nav>
+      )}
+    </AnimatePresence>
   );
 }

@@ -7,7 +7,13 @@
       "Bash(npm run local-ip:*)",
       "Bash(ls:*)",
       "Bash(npm run build:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(grep:*)",
+      "Bash(git -C /Users/sadat.sayem/Biz/contributions/hisabify log --oneline -10)",
+      "Bash(bun add:*)",
+      "Bash(npx cap sync)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:dev:*)"
     ]
   },
   "outputStyle": "default"

@@ -46,6 +46,13 @@ const config: CapacitorConfig = {
     allowsLinkPreview: false
   },
   plugins: {
+    SplashScreen: {
+      launchAutoHide: false,
+      launchShowDuration: 3000,
+      backgroundColor: '#ffffff',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false
+    },
     Keyboard: {
       resize: 'none',
       style: 'dark',

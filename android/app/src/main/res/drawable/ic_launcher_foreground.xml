@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+    width="1024"
+    height="1024"
+    viewBox="0 0 1024 1024"
+    fill="none">
+
+    <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3B82F6"/>
+            <stop offset="50%" stop-color="#8B5CF6"/>
+            <stop offset="100%" stop-color="#EC4899"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Background -->
+    <circle
+        cx="512"
+        cy="512"
+        r="492"
+        fill="url(#grad)" />
+
+    <!-- Decorative arcs -->
+    <path
+        d="M512 184
+           A328 328 0 0 1 774 312
+           L664 409
+           A184 184 0 0 0 512 328 Z"
+        fill="#60A5FA"
+        opacity="0.95"/>
+
+    <path
+        d="M774 312
+           A328 328 0 0 1 840 512
+           H696
+           A184 184 0 0 0 664 409 Z"
+        fill="#A78BFA"
+        opacity="0.95"/>
+
+    <path
+        d="M840 512
+           A328 328 0 0 1 712 774
+           L623 664
+           A184 184 0 0 0 696 512 Z"
+        fill="#F472B6"
+        opacity="0.95"/>
+
+    <path
+        d="M712 774
+           A328 328 0 0 1 512 840
+           V696
+           A184 184 0 0 0 623 664 Z"
+        fill="#FCD34D"
+        opacity="0.95"/>
+
+    <!-- Inner white circle -->
+    <circle
+        cx="512"
+        cy="512"
+        r="174"
+        fill="#FFFFFF"
+        opacity="0.98"/>
+
+    <!-- Dollar symbol (converted to path) -->
+    <path
+        fill="url(#grad)"
+        d="M505 390
+           c-42 4-74 32-74 70
+           0 34 26 55 72 65
+           42 9 54 19 54 35
+           0 19-18 33-44 33
+           -27 0-46-12-54-31
+           l-43 18
+           c10 29 37 49 75 54
+           v42
+           h36
+           v-40
+           c46-5 78-33 78-73
+           0-36-22-56-70-68
+           -44-11-57-19-57-34
+           0-17 15-28 40-28
+           22 0 38 9 47 25
+           l40-19
+           c-11-25-35-42-67-46
+           v-40
+           h-36
+           Z"/>
+</svg>
+

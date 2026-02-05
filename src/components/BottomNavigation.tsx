@@ -9,6 +9,10 @@ interface BottomNavigationProps {
   onOpenInputSheet: () => void;
 }
 
+const dashboardLabel = 'Dashboard';
+const budgetLabel = 'Budget';
+const savingsLabel = 'Savings';
+const expensesLabel = 'Expenses';
 const navItems = [
   { path: '/', icon: LayoutDashboardIcon, label: 'Dashboard' },
   { path: '/budget', icon: Target, label: 'Planner' },

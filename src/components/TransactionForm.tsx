@@ -473,7 +473,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                                                 </Button>
                                             </FormControl>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0 z-50 rounded-2xl shadow-2xl" align="end">
+                                        <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl" align="end">
                                             <CalendarComponent
                                                 mode="single"
                                                 selected={field.value}

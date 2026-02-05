@@ -349,7 +349,7 @@
     height: 100vh;
     height: 100dvh;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 99999;
   }
 
   /* Allow interactions with portal content */
@@ -681,6 +681,16 @@ html {
   contain: layout style paint;
 }
 
+/* Exception: Drawer/Dialog containers should NOT have containment
+   to allow portaled dropdowns to render properly */
+[data-vaul-drawer] [class*="rounded-"],
+[data-radix-dialog-content] [class*="rounded-"],
+[role="dialog"] [class*="rounded-"],
+[data-vaul-drawer-content],
+[data-radix-dialog-content] {
+  contain: none !important;
+}
+
 /* Optimize gradient rendering */
 [class*="bg-gradient-"] {
   will-change: auto;
@@ -715,4 +725,13 @@ html {
 .fixed {
   will-change: transform;
   transform: translateZ(0);
+}
+
+/* Exception: Drawer/Dialog containers should NOT create stacking contexts
+   to allow portaled dropdowns to render above them
+   NOTE: We keep transforms for animation but prevent isolation */
+[data-vaul-drawer-wrapper],
+[data-radix-dialog-content],
+[role="dialog"] {
+  isolation: auto !important;
 }

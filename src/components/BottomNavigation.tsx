@@ -15,7 +15,7 @@ const savingsLabel = 'Savings';
 const expensesLabel = 'Expenses';
 const navItems = [
   { path: '/', icon: LayoutDashboardIcon, label: 'Dashboard' },
-  { path: '/budget', icon: Target, label: 'Planner' },
+  { path: '/budget', icon: Target, label: 'Budget' },
   null, // Placeholder for the center FAB
   { path: '/savings', icon: HandCoins, label: 'Savings' },
   { path: '/expenses', icon: List, label: 'Expenses' },

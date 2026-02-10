@@ -26,8 +26,19 @@ export function BudgetHistoryChart() {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data } = await supabase.from('categories').select('*');
-      if (data) setCategories(data as Category[]);
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('is_system_category', false);
+        if (error) throw error;
+        if (data) {
+          setCategories(data as Category[]);
+        }
+      } catch (err) {
+        console.error('Error fetching categories for chart:', err);
+        // Continue with empty categories - chart will still work
+      }
     };
     fetchCategories();
   }, []);
@@ -35,10 +46,16 @@ export function BudgetHistoryChart() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const categoryId = selectedCategory === 'all' ? undefined : selectedCategory;
-      const history = await getHistoricalBudgets(categoryId, 6);
-      setData(history);
-      setLoading(false);
+      try {
+        const categoryId = selectedCategory === 'all' ? undefined : selectedCategory;
+        const history = await getHistoricalBudgets(categoryId, 6);
+        setData(history);
+      } catch (err) {
+        console.error('Error fetching budget history:', err);
+        setData([]); // Set empty data on error
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, [selectedCategory, getHistoricalBudgets]);

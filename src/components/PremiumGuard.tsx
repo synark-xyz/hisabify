@@ -5,6 +5,8 @@ import { Lock, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
+import { Card, CardContent, CardHeader } from './ui/card';
 
 interface PremiumGuardProps {
     children: ReactNode;
@@ -17,9 +19,18 @@ export function PremiumGuard({ children, featureName = "Premium Feature", classN
     const [showUpgrade, setShowUpgrade] = useState(false);
 
     if (loading) {
-        // Optionally return a skeleton or just render children invisibly, but usually waiting is fine.
-        // For specific UI parts, rendering children might be cleaner to avoid layout shift, but let's just wait.
-        return null;
+        // Show skeleton during loading to prevent layout shift
+        return (
+            <Card className={cn("rounded-3xl shadow-none border-none bg-accent/5", className)}>
+                <CardHeader className="pb-2 px-6 pt-6">
+                    <Skeleton className="h-6 w-48 mb-2" />
+                    <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent className="px-2 sm:px-4 pb-6">
+                    <Skeleton className="h-[280px] w-full mt-4 rounded-2xl" />
+                </CardContent>
+            </Card>
+        );
     }
 
     if (isPremium) {

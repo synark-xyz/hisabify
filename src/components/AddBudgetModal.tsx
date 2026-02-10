@@ -183,6 +183,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
       open={open}
       onOpenChange={onOpenChange}
       title={editingBudget ? 'Edit Budget' : 'Create Budget'}
+      className="z-[10000]"
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

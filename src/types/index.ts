@@ -18,6 +18,8 @@ export interface Category {
   icon: string;
   color: string;
   created_at: string;
+  is_system_category?: boolean;
+  category_type?: string;
 }
 
 export interface Transaction {

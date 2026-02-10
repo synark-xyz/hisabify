@@ -89,6 +89,7 @@ export function useBudgets() {
   }, [convertAmount]);
 
   // Returns start/end dates for a given period type and start date
+  // Returns start/end dates for a given period type and start date
   const getPeriodDates = (periodType: PeriodType, startDate?: Date): { start: Date; end: Date } => {
     const now = startDate || new Date();
     switch (periodType) {
@@ -103,6 +104,7 @@ export function useBudgets() {
     }
   };
 
+  // Fetch budgets and compute spending for each
   // Fetch budgets and compute spending for each
   const fetchBudgets = useCallback(async () => {
     if (!user) return;
@@ -130,9 +132,11 @@ export function useBudgets() {
       if (budgetsError) throw budgetsError;
 
       // Filter to current period budgets (support recurring)
+      // Filter to current period budgets (support recurring)
       const now = new Date();
       const activeBudgets = (budgetsData || []).filter((budget) => {
         if (budget.start_date && budget.end_date) {
+          // Recurring: if is_template, skip; else, check interval
           // Recurring: if is_template, skip; else, check interval
           return isWithinInterval(now, {
             start: new Date(budget.start_date),
@@ -151,8 +155,10 @@ export function useBudgets() {
           const endDate = budget.end_date || getPeriodDates(periodType).end.toISOString();
 
           // Query transactions for this budget's period/category
+          // Query transactions for this budget's period/category
           let query = supabase
             .from('transactions')
+            .select('amount, currency_base, category_id, category:categories(category_type)')
             .select('amount, currency_base, category_id, category:categories(category_type)')
             .eq('user_id', user.id)
             .eq('type', 'expense')
@@ -173,7 +179,17 @@ export function useBudgets() {
           }) || [];
 
           // Sum transactions, convert currency if needed
+          // Filter out lend/owe system categories from expense budgets
+          // (they're transfers, not true expenses)
+          const filteredTransactions = transactions?.filter((t: any) => {
+            const categoryType = t.category?.category_type;
+            return !['lend', 'owe'].includes(categoryType || '');
+          }) || [];
+
+          // Sum transactions, convert currency if needed
           let spent = 0;
+          if (filteredTransactions) {
+            for (const t of filteredTransactions) {
           if (filteredTransactions) {
             for (const t of filteredTransactions) {
               const storedCurrency = t.currency_base || 'USD';
@@ -248,6 +264,8 @@ export function useBudgets() {
       name: input.name || `${input.period_type.charAt(0).toUpperCase() + input.period_type.slice(1)} Budget`,
       month: startDate.getMonth() + 1,
       year: startDate.getFullYear(),
+      is_template: input.is_template || false,
+      template_name: input.template_name || null,
       is_template: input.is_template || false,
       template_name: input.template_name || null,
       created_at: new Date().toISOString(),
@@ -471,6 +489,7 @@ export function useBudgets() {
         .update({
           is_template: true,
           template_name: templateName || budget.name || budget.category?.name || 'Budget Template'
+        } as any)
         } as any)
         .eq('id', budgetId)
         .eq('user_id', user.id);

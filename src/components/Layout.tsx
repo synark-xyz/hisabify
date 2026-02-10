@@ -27,7 +27,7 @@ export function Layout() {
     const getPageTitle = (pathname: string) => {
         switch (pathname) {
             case '/': return 'Dashboard';
-            case '/budget': return 'Planner';
+            case '/budget': return 'Budget';
             case '/savings': return 'Savings';
             case '/expenses': return 'Expenses';
             case '/reports': return 'Reports';

@@ -23,6 +23,10 @@ import { Category, Card } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { schedulePaymentReminder, requestNotificationPermission } from '@/lib/notifications';
+import { useBudgetContext } from '@/hooks/useBudgetContext';
+import { BudgetStatusCard } from '@/components/BudgetStatusCard';
+import { BudgetSuggestions } from '@/components/BudgetSuggestions';
+import { BudgetExceedDialog } from '@/components/BudgetExceedDialog';
 
 interface TransactionFormProps {
     onSuccess: () => void;
@@ -55,6 +59,7 @@ const paymentCategories = [
 
 export function TransactionForm({ onSuccess, onCancel, initialType, initialData }: TransactionFormProps) {
     const [categories, setCategories] = useState<Category[]>([]);
+    const [systemCategories, setSystemCategories] = useState<Category[]>([]);
     const [cards, setCards] = useState<Card[]>([]);
     const [type, setType] = useState<'expense' | 'income' | 'lend' | 'owe'>(initialType || 'expense');
     const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
@@ -68,6 +73,10 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
     const { currency } = useCurrency();
     const { convertAmount } = useExchangeRate();
     const { isPremium } = useSubscription();
+    const { getBudgetStatus, suggestBudgets } = useBudgetContext();
+    const [budgetStatus, setBudgetStatus] = useState<any>(null);
+    const [showBudgetExceedDialog, setShowBudgetExceedDialog] = useState(false);
+    const [pendingSubmission, setPendingSubmission] = useState<any>(null);
 
     const form = useForm<any>({
         defaultValues: {
@@ -86,12 +95,27 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
 
     const watchedAmount = form.watch('amount');
     const watchedCurrency = form.watch('currency');
+    const watchedCategoryId = form.watch('categoryId');
+    const watchedType = form.watch('type') || type;
 
     useEffect(() => {
         fetchCategories();
         fetchCards();
         if (initialType) setType(initialType);
     }, [initialType]);
+
+    // Calculate budget status when amount or category changes
+    useEffect(() => {
+        if (watchedType === 'expense' && watchedAmount && watchedCategoryId) {
+            const amountNum = parseFloat(watchedAmount);
+            if (!isNaN(amountNum)) {
+                const status = getBudgetStatus(watchedCategoryId, amountNum);
+                setBudgetStatus(status);
+            }
+        } else {
+            setBudgetStatus(null);
+        }
+    }, [watchedAmount, watchedCategoryId, watchedType, getBudgetStatus]);
 
     // Handle initialData updates (e.g. from Voice/Scan)
     useEffect(() => {
@@ -129,8 +153,12 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
     }, [watchedAmount, watchedCurrency, currency, convertAmount]);
 
     const fetchCategories = async () => {
-        const { data } = await supabase.from('categories').select('*');
+        const { data } = await supabase.from('categories').select('*').eq('is_system_category', false);
         if (data) setCategories(data as Category[]);
+
+        // Fetch system categories separately
+        const { data: systemData } = await supabase.from('categories').select('*').eq('is_system_category', true);
+        if (systemData) setSystemCategories(systemData as Category[]);
     };
 
     const fetchCards = async () => {
@@ -140,6 +168,39 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
     };
 
     const handleSubmit = async (data: any) => {
+        // Check budget before submission (for expenses only)
+        if (type === 'expense' && data.categoryId && data.amount) {
+            const amountNum = parseFloat(data.amount);
+            if (!isNaN(amountNum)) {
+                const status = getBudgetStatus(data.categoryId, amountNum);
+
+                if (status.wouldExceed) {
+                    // Store pending data and show confirmation dialog
+                    setPendingSubmission(data);
+                    setShowBudgetExceedDialog(true);
+                    return; // Halt submission
+                }
+            }
+        }
+
+        // Continue with normal submission
+        await processTransaction(data);
+    };
+
+    const handleBudgetExceedConfirm = async () => {
+        setShowBudgetExceedDialog(false);
+        if (pendingSubmission) {
+            await processTransaction(pendingSubmission);
+            setPendingSubmission(null);
+        }
+    };
+
+    const handleBudgetExceedCancel = () => {
+        setShowBudgetExceedDialog(false);
+        setPendingSubmission(null);
+    };
+
+    const processTransaction = async (data: any) => {
         if (!user) return;
 
         try {
@@ -170,6 +231,18 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                 ? data.paymentType
                 : type;
 
+            // Helper function to get system category ID by payment type
+            const getSystemCategoryId = (paymentType: string): string | null => {
+                const mapping: Record<string, string | undefined> = {
+                    'credit_card': systemCategories.find(c => c.category_type === 'credit_card')?.id,
+                    'utility': systemCategories.find(c => c.category_type === 'utility')?.id,
+                    'lend': systemCategories.find(c => c.category_type === 'lend')?.id,
+                    'owe': systemCategories.find(c => c.category_type === 'owe')?.id,
+                    'custom': systemCategories.find(c => c.category_type === 'other')?.id,
+                };
+                return mapping[paymentType] || null;
+            };
+
             const baseData = {
                 user_id: user.id,
                 merchant: data.merchant,
@@ -196,7 +269,9 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                 }
                 : {
                     ...baseData,
-                    category_id: (data.paymentType === 'lend' || data.paymentType === 'owe' || data.paymentType === 'credit_card' || data.paymentType === 'utility') ? null : (data.categoryId || null),
+                    category_id: data.paymentType
+                        ? getSystemCategoryId(data.paymentType)
+                        : (data.categoryId || null),
                     card_id: data.cardId || null,
                     note: data.paymentType
                         ? (data.paymentType === 'custom' && customCategory
@@ -363,6 +438,23 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                             </FormItem>
                         )}
                     />
+
+                    {/* Budget Suggestions - show if expense and no category selected */}
+                    {type === 'expense' && !watchedCategoryId && !form.getValues('paymentType') && (
+                        <BudgetSuggestions
+                            suggestions={suggestBudgets()}
+                            onSelect={(categoryId) => {
+                                if (categoryId) {
+                                    form.setValue('categoryId', categoryId);
+                                }
+                            }}
+                        />
+                    )}
+
+                    {/* Budget Status - show if expense with category and amount */}
+                    {type === 'expense' && budgetStatus && (
+                        <BudgetStatusCard status={budgetStatus} />
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                         {type !== 'income' && (
@@ -565,6 +657,20 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                     </div>
                 </form>
             </Form >
+
+            {/* Budget Exceed Confirmation Dialog */}
+            {budgetStatus && (
+                <BudgetExceedDialog
+                    open={showBudgetExceedDialog}
+                    onOpenChange={setShowBudgetExceedDialog}
+                    budgetName={budgetStatus.budget?.name || budgetStatus.budget?.category?.name || 'Budget'}
+                    amount={Number(watchedAmount || 0)}
+                    remaining={Math.max(0, budgetStatus.budget?.remaining || 0)}
+                    excess={Math.abs(budgetStatus.remaining)}
+                    onConfirm={handleBudgetExceedConfirm}
+                    onCancel={handleBudgetExceedCancel}
+                />
+            )}
         </div>
     );
 }

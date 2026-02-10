@@ -57,8 +57,8 @@ export function BudgetPage() {
 
   return (
     <div className={cn("min-h-screen relative", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-      {/* Local overlay container for Planner page dropdowns */}
-      <div id="planner-overlay-root" className="fixed inset-0 pointer-events-none z-[9999]" />
+      {/* Local overlay container for Budget page dropdowns */}
+      <div id="budget-overlay-root" className="fixed inset-0 pointer-events-none z-[9999]" />
 
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
@@ -79,7 +79,7 @@ export function BudgetPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-5 h-5 text-white/80" />
-                    <span className="text-white/80 text-sm font-medium">Budget Planner</span>
+                    <span className="text-white/80 text-sm font-medium">Budget Manager</span>
                   </div>
                   <h1 className="text-2xl font-bold text-white mb-1">Plan Your Finances</h1>
                   <p className="text-white/70 text-sm">Set goals, track spending, stay on target</p>

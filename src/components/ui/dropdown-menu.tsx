@@ -81,15 +81,16 @@ const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
 >(({ className, sideOffset = 8, collisionPadding = 12, avoidCollisions = true, sticky = "partial", ...props }, ref) => {
-  const [overlayRoot, setOverlayRoot] = React.useState<HTMLElement | null>(null);
+  // Get overlay root synchronously to avoid clipping issues
+  const overlayRoot = React.useMemo(() => {
+    if (typeof document === 'undefined') return null;
 
-  React.useEffect(() => {
-    // Prioritize page-specific overlay root (e.g., planner-overlay-root) over global
-    const plannerRoot = document.getElementById('planner-overlay-root');
+    // Prioritize page-specific overlay root (e.g., budget-overlay-root) over global
+    const budgetRoot = document.getElementById('budget-overlay-root');
     const savingsRoot = document.getElementById('savings-overlay-root');
-    const pageRoot = plannerRoot || savingsRoot;
+    const pageRoot = budgetRoot || savingsRoot;
 
-    setOverlayRoot(pageRoot || getOverlayRoot());
+    return pageRoot || getOverlayRoot();
   }, []);
 
   return (

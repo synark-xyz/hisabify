@@ -22,6 +22,7 @@ interface ManageRemindersModalProps {
 export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh }: ManageRemindersModalProps) {
     const { formatAmount } = useCurrency();
     const { toast } = useToast();
+    const { user } = useAuth();
     const [editingReminder, setEditingReminder] = useState<PaymentReminder | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
 
@@ -43,6 +44,7 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
 
     const handleToggleStatus = async (reminder: PaymentReminder) => {
         const newStatus = reminder.status === 'paid' ? 'upcoming' : 'paid';
+
         const { error } = await supabase
             .from('payment_reminders')
             .update({ status: newStatus })
@@ -50,10 +52,38 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
 
         if (error) {
             toast({ title: 'Error updating status', variant: 'destructive' });
-        } else {
-            toast({ title: `Marked as ${newStatus}` });
-            onRefresh();
+            return;
         }
+
+        // If marking as paid, optionally create a linked expense transaction
+        if (newStatus === 'paid' && user?.id) {
+            try {
+                await supabase.from('transactions').insert({
+                    user_id: user.id,
+                    merchant: reminder.title,
+                    amount: reminder.amount,
+                    amount_original: reminder.amount,
+                    currency_original: 'USD',
+                    amount_converted: reminder.amount,
+                    currency_base: 'USD',
+                    exchange_rate: 1,
+                    rate_timestamp: new Date().toISOString(),
+                    exchange_source: 'same_currency',
+                    type: 'expense',
+                    date: new Date(reminder.due_date).toISOString(),
+                    note: '[Reminder Paid] Auto-created from payment reminder',
+                    category_id: reminder.category_id || null,
+                    card_id: null,
+                });
+                toast({ title: 'Expense recorded for paid reminder' });
+            } catch (txErr) {
+                console.error('Failed to create transaction from reminder:', txErr);
+                toast({ title: 'Marked as paid, but failed to create transaction', variant: 'destructive' });
+            }
+        }
+
+        toast({ title: `Marked as ${newStatus}` });
+        onRefresh();
     };
 
     const getStatusInfo = (reminder: PaymentReminder) => {

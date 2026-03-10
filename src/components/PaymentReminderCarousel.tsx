@@ -5,6 +5,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { PaymentReminder } from '@/types';
 import { format, differenceInDays, isPast, isToday } from 'date-fns';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
+import { formatReminderAmount } from '@/lib/reminderAmount';
 
 interface PaymentReminderCarouselProps {
   reminders: PaymentReminder[];
@@ -119,7 +120,9 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-black text-foreground">{formatAmount(reminder.amount)}</p>
+                <p className="text-sm font-black text-foreground">
+                  {formatReminderAmount(reminder, formatAmount)}
+                </p>
               </div>
             </motion.div>
           );

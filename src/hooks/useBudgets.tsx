@@ -497,7 +497,8 @@ export function useBudgets() {
         .select('*, category:categories(*)')
         .eq('user_id', user.id)
         .eq('is_template', true)
-        .order('template_name', { ascending: true });
+        .order('template_name', { ascending: true, nullsFirst: true })
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 

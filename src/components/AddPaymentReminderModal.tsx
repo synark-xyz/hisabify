@@ -93,7 +93,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     const txCurrency = transaction.currency_original || currency;
     const txCurrencySymbol = currencyData[txCurrency]?.symbol || '$';
     const txAmount = (transaction.amount_original || transaction.amount).toFixed(2);
-    setNote(`Based on transaction: ${txCurrencySymbol}${txAmount} on ${format(txDate, 'MMM dd, yyyy')}`);
+    setNote(`Based on transaction [${txCurrency}]: ${txCurrencySymbol}${txAmount} on ${format(txDate, 'MMM dd, yyyy')}`);
 
     // Mark as selected and collapse quick fill
     setSelectedTransactionId(transaction.id);

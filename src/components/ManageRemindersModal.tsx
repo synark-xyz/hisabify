@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
 import { AddPaymentReminderModal } from './AddPaymentReminderModal';
 import { EditRecurringReminderDialog } from './EditRecurringReminderDialog';
+import { formatReminderAmount } from '@/lib/reminderAmount';
 
 interface ManageRemindersModalProps {
     open: boolean;
@@ -189,7 +190,9 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-lg font-black text-foreground">{formatAmount(reminder.amount)}</p>
+                                                    <p className="text-lg font-black text-foreground">
+                                                        {formatReminderAmount(reminder, formatAmount)}
+                                                    </p>
                                                     <div className="flex items-center justify-end gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <Button
                                                             size="icon"

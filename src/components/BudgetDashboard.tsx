@@ -19,12 +19,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { PrivacyMask } from '@/components/ui/privacy-mask';
 
+type BudgetCategoryOption = Pick<Category, 'id' | 'name'>;
+type BudgetCategoryRow = BudgetCategoryOption & { category_type?: string | null };
+
 export function BudgetDashboard() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetWithSpending | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<BudgetCategoryOption[]>([]);
 
   const { budgets, loading, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
   const { currency } = useCurrency();
@@ -35,12 +38,15 @@ export function BudgetDashboard() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res: any = await (supabase.from('categories') as any)
-          .select('id,name')
-          .eq('is_system_category', false);
-        if (res?.error) throw res.error;
-        if (res?.data) {
-          setCategories((res.data as any[]).map((row) => ({ id: row.id, name: row.name })) as Category[]);
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id,name,category_type');
+        if (error) throw error;
+        if (data) {
+          const allowedCategories = (data as BudgetCategoryRow[])
+            .filter((row) => !['lend', 'owe'].includes(row.category_type || ''))
+            .map((row) => ({ id: row.id, name: row.name }));
+          setCategories(allowedCategories);
         }
       } catch (err) {
         console.error('Error fetching categories:', err);
@@ -112,8 +118,6 @@ export function BudgetDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Local overlay container for Budget page dropdowns/sheets */}
-      <div id="budget-overlay-root" className="fixed inset-0 pointer-events-none z-[9999]" />
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <motion.div

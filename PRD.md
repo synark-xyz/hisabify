@@ -6,6 +6,13 @@
 
 **Purpose**: Provide a lightweight, privacy-first mobile-first web app to let individual users track cards, expenses, budgets, and recurring payment reminders with simple analytics.
 
+**Implementation Alignment (Current Build - 2026-03-10)**
+- Dashboard no longer includes the Daily Quote block.
+- Reminder "Mark Paid" updates reminder status only; it does not auto-create transactions.
+- Client-side `setTimeout` reminder scheduling is intentionally disabled; persistent backend/system scheduling is required for reliable delivery.
+- Analytics uses real transaction data only (no demo/sample fallback) and shows empty states when data is insufficient.
+- Reminder dates are normalized to calendar-day-safe values to avoid timezone day-shift bugs.
+
 **Problem Statement**: Many users lack a single, simple app to track multiple cards/accounts, recurring payments and visualize spending trends without heavy complexity or exposing data to third parties.
 
 **Target Users**

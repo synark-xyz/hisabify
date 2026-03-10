@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, CreditCard, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Bell, Edit3 } from 'lucide-react';
+import { Loader2, CreditCard, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -18,12 +16,11 @@ import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { ReceiptUpload } from '@/components/ReceiptUpload';
-import { expenseFormSchema, incomeFormSchema, ExpenseFormData, IncomeFormData } from '@/lib/transaction-schemas';
 import { Category, Card } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { schedulePaymentReminder, requestNotificationPermission } from '@/lib/notifications';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
+import { BudgetWithSpending } from '@/hooks/useBudgets';
 import { BudgetStatusCard } from '@/components/BudgetStatusCard';
 import { BudgetSuggestions } from '@/components/BudgetSuggestions';
 import { BudgetExceedDialog } from '@/components/BudgetExceedDialog';
@@ -57,6 +54,29 @@ const paymentCategories = [
     { id: 'custom', name: 'Custom Field', icon: <Edit3 className="w-4 h-4" /> },
 ];
 
+type PaymentType = '' | 'credit_card' | 'utility' | 'lend' | 'owe' | 'custom';
+
+interface TransactionFormValues {
+    merchant: string;
+    amount: string;
+    categoryId: string;
+    incomeSource: string;
+    date: Date;
+    note: string;
+    currency: string;
+    cardId: string;
+    paymentType: PaymentType;
+}
+
+interface BudgetStatus {
+    hasActiveBudget: boolean;
+    budget: BudgetWithSpending | null;
+    remaining: number;
+    wouldExceed: boolean;
+    status: 'safe' | 'warning' | 'exceeded';
+    message?: string;
+}
+
 export function TransactionForm({ onSuccess, onCancel, initialType, initialData }: TransactionFormProps) {
     const [categories, setCategories] = useState<Category[]>([]);
     const [systemCategories, setSystemCategories] = useState<Category[]>([]);
@@ -74,11 +94,11 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
     const { convertAmount } = useExchangeRate();
     const { isPremium } = useSubscription();
     const { getBudgetStatus, suggestBudgets } = useBudgetContext();
-    const [budgetStatus, setBudgetStatus] = useState<any>(null);
+    const [budgetStatus, setBudgetStatus] = useState<BudgetStatus | null>(null);
     const [showBudgetExceedDialog, setShowBudgetExceedDialog] = useState(false);
-    const [pendingSubmission, setPendingSubmission] = useState<any>(null);
+    const [pendingSubmission, setPendingSubmission] = useState<TransactionFormValues | null>(null);
 
-    const form = useForm<any>({
+    const form = useForm<TransactionFormValues>({
         defaultValues: {
             merchant: initialData?.merchant || '',
             amount: initialData?.amount ? String(initialData.amount) : '',
@@ -89,20 +109,46 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
             currency: currency,
             cardId: '',
             paymentType: '',
-            createReminder: false,
         },
     });
 
     const watchedAmount = form.watch('amount');
     const watchedCurrency = form.watch('currency');
     const watchedCategoryId = form.watch('categoryId');
-    const watchedType = form.watch('type') || type;
+    const watchedPaymentType = form.watch('paymentType');
+    const watchedType = type;
+
+    const fetchCategories = useCallback(async () => {
+        const { data } = await supabase.from('categories').select('*').eq('is_system_category', false);
+        if (data) {
+            setCategories(data as Category[]);
+        }
+
+        const { data: systemData } = await supabase.from('categories').select('*').eq('is_system_category', true);
+        if (systemData) {
+            setSystemCategories(systemData as Category[]);
+        }
+    }, []);
+
+    const fetchCards = useCallback(async () => {
+        if (!user) {
+            setCards([]);
+            return;
+        }
+
+        const { data } = await supabase.from('cards').select('*').eq('user_id', user.id);
+        if (data) {
+            setCards(data as unknown as Card[]);
+        }
+    }, [user]);
 
     useEffect(() => {
-        fetchCategories();
-        fetchCards();
-        if (initialType) setType(initialType);
-    }, [initialType]);
+        void fetchCategories();
+        void fetchCards();
+        if (initialType) {
+            setType(initialType);
+        }
+    }, [initialType, fetchCategories, fetchCards]);
 
     // Calculate budget status when amount or category changes
     useEffect(() => {
@@ -152,45 +198,101 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
         return () => clearTimeout(debounce);
     }, [watchedAmount, watchedCurrency, currency, convertAmount]);
 
-    const fetchCategories = async () => {
-        const { data } = await supabase.from('categories').select('*').eq('is_system_category', false);
-        if (data) setCategories(data as Category[]);
+    const getSystemCategoryId = useCallback((paymentType: PaymentType): string | null => {
+        const mapping: Record<Exclude<PaymentType, ''>, string | undefined> = {
+            credit_card: systemCategories.find((category) => category.category_type === 'credit_card')?.id,
+            utility: systemCategories.find((category) => category.category_type === 'utility')?.id,
+            lend: systemCategories.find((category) => category.category_type === 'lend')?.id,
+            owe: systemCategories.find((category) => category.category_type === 'owe')?.id,
+            custom: systemCategories.find((category) => category.category_type === 'other')?.id,
+        };
 
-        // Fetch system categories separately
-        const { data: systemData } = await supabase.from('categories').select('*').eq('is_system_category', true);
-        if (systemData) setSystemCategories(systemData as Category[]);
-    };
+        if (!paymentType) {
+            return null;
+        }
 
-    const fetchCards = async () => {
-        if (!user) return;
-        const { data } = await supabase.from('cards').select('*').eq('user_id', user.id);
-        if (data) setCards(data as unknown as Card[]);
-    };
+        return mapping[paymentType] || null;
+    }, [systemCategories]);
 
-    const handleSubmit = async (data: any) => {
-        // Check budget before submission (for expenses only)
-        if (type === 'expense' && data.categoryId && data.amount) {
-            const amountNum = parseFloat(data.amount);
-            if (!isNaN(amountNum)) {
-                const status = getBudgetStatus(data.categoryId, amountNum);
+    const handleSubmit = async (data: TransactionFormValues) => {
+        const merchant = data.merchant.trim();
+        const amountNum = Number.parseFloat(data.amount);
+        const normalizedAmount = Number.isFinite(amountNum) ? Number(amountNum.toFixed(2)) : NaN;
+        const hasValidDate = data.date instanceof Date && !Number.isNaN(data.date.getTime());
 
-                if (status.wouldExceed) {
-                    // Store pending data and show confirmation dialog
-                    setPendingSubmission(data);
-                    setShowBudgetExceedDialog(true);
-                    return; // Halt submission
-                }
+        if (!merchant) {
+            form.setError('merchant', { type: 'manual', message: 'Description is required.' });
+            return;
+        }
+
+        if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+            form.setError('amount', { type: 'manual', message: 'Amount must be greater than 0.' });
+            return;
+        }
+
+        if (!hasValidDate) {
+            form.setError('date', { type: 'manual', message: 'Date is required.' });
+            return;
+        }
+
+        if (type === 'expense') {
+            if (!data.paymentType && !data.categoryId) {
+                form.setError('categoryId', { type: 'manual', message: 'Please select a category.' });
+                return;
+            }
+
+            if (cards.length > 0 && !data.cardId) {
+                form.setError('cardId', { type: 'manual', message: 'Please select a payment method.' });
+                return;
+            }
+
+            if (data.paymentType === 'custom' && !customCategory.trim()) {
+                toast({
+                    title: 'Custom category required',
+                    description: 'Add a custom category name before saving.',
+                    variant: 'destructive'
+                });
+                return;
             }
         }
 
-        // Continue with normal submission
-        await processTransaction(data);
+        const normalizedData: TransactionFormValues = {
+            ...data,
+            merchant,
+            amount: normalizedAmount.toString(),
+            note: data.note.trim(),
+        };
+
+        const effectiveCategoryId = normalizedData.paymentType
+            ? getSystemCategoryId(normalizedData.paymentType)
+            : (normalizedData.categoryId || null);
+
+        if (type === 'expense' && effectiveCategoryId) {
+            const status = getBudgetStatus(effectiveCategoryId, normalizedAmount);
+            if (status.wouldExceed) {
+                setPendingSubmission(normalizedData);
+                setShowBudgetExceedDialog(true);
+                return;
+            }
+        }
+
+        await processTransaction(normalizedData, normalizedAmount);
     };
 
     const handleBudgetExceedConfirm = async () => {
         setShowBudgetExceedDialog(false);
         if (pendingSubmission) {
-            await processTransaction(pendingSubmission);
+            const pendingAmount = Number.parseFloat(pendingSubmission.amount);
+            if (!Number.isFinite(pendingAmount) || pendingAmount <= 0) {
+                toast({
+                    title: 'Unable to save',
+                    description: 'Transaction amount is invalid. Please try again.',
+                    variant: 'destructive'
+                });
+                setPendingSubmission(null);
+                return;
+            }
+            await processTransaction(pendingSubmission, Number(pendingAmount.toFixed(2)));
             setPendingSubmission(null);
         }
     };
@@ -200,11 +302,12 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
         setPendingSubmission(null);
     };
 
-    const processTransaction = async (data: any) => {
-        if (!user) return;
+    const processTransaction = async (data: TransactionFormValues, originalAmount: number) => {
+        if (!user) {
+            return;
+        }
 
         try {
-            const originalAmount = parseFloat(data.amount);
             let convertedAmount = originalAmount;
             let exchangeRate = 1;
             let exchangeSource = 'same_currency';
@@ -227,21 +330,10 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                 }
             }
 
-            const finalType = (type === 'expense' && (data.paymentType === 'lend' || data.paymentType === 'owe'))
+            const finalType: 'expense' | 'income' | 'lend' | 'owe' =
+                (type === 'expense' && (data.paymentType === 'lend' || data.paymentType === 'owe'))
                 ? data.paymentType
                 : type;
-
-            // Helper function to get system category ID by payment type
-            const getSystemCategoryId = (paymentType: string): string | null => {
-                const mapping: Record<string, string | undefined> = {
-                    'credit_card': systemCategories.find(c => c.category_type === 'credit_card')?.id,
-                    'utility': systemCategories.find(c => c.category_type === 'utility')?.id,
-                    'lend': systemCategories.find(c => c.category_type === 'lend')?.id,
-                    'owe': systemCategories.find(c => c.category_type === 'owe')?.id,
-                    'custom': systemCategories.find(c => c.category_type === 'other')?.id,
-                };
-                return mapping[paymentType] || null;
-            };
 
             const baseData = {
                 user_id: user.id,
@@ -260,6 +352,12 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                 receipt_url: receiptUrl,
             };
 
+            const paymentTaggedNote = data.paymentType
+                ? (data.paymentType === 'custom' && customCategory.trim()
+                    ? `[custom] ${customCategory.trim()}${data.note ? ` ${data.note}` : ''}`.trim()
+                    : `[${data.paymentType}] ${data.note || ''}`.trim())
+                : (data.note || null);
+
             const transactionData = (type === 'income')
                 ? {
                     ...baseData,
@@ -273,42 +371,31 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                         ? getSystemCategoryId(data.paymentType)
                         : (data.categoryId || null),
                     card_id: data.cardId || null,
-                    note: data.paymentType
-                        ? (data.paymentType === 'custom' && customCategory
-                            ? `[Custom: ${customCategory}] ${data.note || ''}`
-                            : `[${data.paymentType}] ${data.note || ''}`)
-                        : data.note,
+                    note: paymentTaggedNote,
                 };
 
             const { error } = await supabase.from('transactions').insert(transactionData);
 
-            if (error) throw error;
-
-            if (data.createReminder) {
-                await supabase.from('payment_reminders').insert({
-                    user_id: user.id,
-                    title: `${finalType === 'lend' ? 'Lend Repayment' : finalType === 'owe' ? 'Debt Payment' : data.merchant}`,
-                    amount: originalAmount,
-                    due_date: data.date.toISOString(),
-                    status: 'upcoming',
-                    notify_before_days: 1,
-                    is_recurring: false,
-                    note: `Auto-generated from ${finalType} transaction`,
-                });
-
-                const granted = await requestNotificationPermission();
-                if (granted) {
-                    schedulePaymentReminder({
-                        title: data.merchant,
-                        amount: originalAmount,
-                        due_date: data.date.toISOString(),
-                    });
-                }
+            if (error) {
+                throw error;
             }
 
             toast({ title: `${finalType.charAt(0).toUpperCase() + finalType.slice(1)} added!` });
             onSuccess();
-            form.reset();
+            form.reset({
+                merchant: '',
+                amount: '',
+                categoryId: '',
+                incomeSource: '',
+                date: new Date(),
+                note: '',
+                currency,
+                cardId: '',
+                paymentType: '',
+            });
+            setCustomCategory('');
+            setReceiptUrl(null);
+            setBudgetStatus(null);
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             toast({ title: 'Error', description: message, variant: 'destructive' });
@@ -339,13 +426,13 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
     return (
         <div className="overflow-y-auto px-4 pb-safe-nav h-full">
             <div className="flex gap-2 mb-6">
-                {[
-                    { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                    { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                ].map((opt) => (
-                    <button
-                        key={opt.id}
-                        onClick={() => setType(opt.id as any)}
+                    {[
+                        { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                        { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    ].map((opt: { id: 'expense' | 'income'; name: string; icon: typeof ArrowUpRight; color: string; bg: string }) => (
+                        <button
+                            key={opt.id}
+                            onClick={() => setType(opt.id)}
                         className={cn(
                             "flex-1 flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all card-3d",
                             type === opt.id
@@ -440,7 +527,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                     />
 
                     {/* Budget Suggestions - show if expense and no category selected */}
-                    {type === 'expense' && !watchedCategoryId && !form.getValues('paymentType') && (
+                    {type === 'expense' && !watchedCategoryId && !watchedPaymentType && (
                         <BudgetSuggestions
                             suggestions={suggestBudgets()}
                             onSelect={(categoryId) => {
@@ -485,7 +572,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                                         </FormItem>
                                     )}
                                 />
-                                {form.watch('paymentType') === 'custom' && (
+                                {watchedPaymentType === 'custom' && (
                                     <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                         <Label className="text-xs font-bold uppercase tracking-wider opacity-70">Custom Category Name</Label>
                                         <Input
@@ -499,7 +586,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                             </div>
                         )}
 
-                        {type === 'expense' && !form.getValues('paymentType') && (
+                        {type === 'expense' && !watchedPaymentType && (
                             <FormField
                                 control={form.control}
                                 name="categoryId"
@@ -580,27 +667,6 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                         />
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-amber-500/10 rounded-xl">
-                                <Bell className="w-5 h-5 text-amber-500" />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-bold">Set Reminder</Label>
-                                <p className="text-xs text-muted-foreground">Notify me on the due date</p>
-                            </div>
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name="createReminder"
-                            render={({ field }) => (
-                                <FormControl>
-                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                </FormControl>
-                            )}
-                        />
-                    </div>
-
                     {type !== 'income' && cards.length > 0 && (
                         <FormField
                             control={form.control}
@@ -622,6 +688,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
@@ -665,7 +732,7 @@ export function TransactionForm({ onSuccess, onCancel, initialType, initialData 
                     onOpenChange={setShowBudgetExceedDialog}
                     budgetName={budgetStatus.budget?.name || budgetStatus.budget?.category?.name || 'Budget'}
                     amount={Number(watchedAmount || 0)}
-                    remaining={Math.max(0, budgetStatus.budget?.remaining || 0)}
+                    remaining={Math.max(0, (budgetStatus.budget?.amount || 0) - (budgetStatus.budget?.spent || 0))}
                     excess={Math.abs(budgetStatus.remaining)}
                     onConfirm={handleBudgetExceedConfirm}
                     onCancel={handleBudgetExceedCancel}

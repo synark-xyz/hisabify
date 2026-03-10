@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Sparkles, Target } from 'lucide-react';
 import { BudgetDashboard } from '@/components/BudgetDashboard';
-import { AddBudgetModal } from '@/components/AddBudgetModal';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
@@ -11,9 +10,8 @@ import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
 export function BudgetPage() {
-  const [showAddBudget, setShowAddBudget] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const { budgets, refetch } = useBudgets();
+  const { refetch } = useBudgets();
   const { isPremium } = useSubscription();
   const { variant } = useTheme();
 
@@ -47,19 +45,8 @@ export function BudgetPage() {
     visible: { opacity: 1, y: 0 }
   };
 
-  const handleAddClick = () => {
-    if (!isPremium && budgets.length >= 3) {
-      setShowUpgradeModal(true);
-    } else {
-      setShowAddBudget(true);
-    }
-  };
-
   return (
     <div className={cn("min-h-screen relative", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-      {/* Local overlay container for Budget page dropdowns */}
-      <div id="budget-overlay-root" className="fixed inset-0 pointer-events-none z-[9999]" />
-
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
@@ -107,7 +94,7 @@ export function BudgetPage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-foreground">Unlimited Budgets</p>
-                    <p className="text-xs text-muted-foreground">Upgrade to Pro to create more than 3 budgets</p>
+                    <p className="text-xs text-muted-foreground">Upgrade to Pro to create more than 1 budget</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -121,15 +108,6 @@ export function BudgetPage() {
         </div>
       </PullToRefresh>
 
-      <AddBudgetModal
-        open={showAddBudget}
-        onOpenChange={setShowAddBudget}
-        onSuccess={() => {
-          refetch();
-          // Also dispatch global event just in case
-          window.dispatchEvent(new Event('transaction-updated'));
-        }}
-      />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
 
     </div>

@@ -14,6 +14,8 @@ interface ChartData {
   spent: number;
 }
 
+type BudgetHistoryCategory = Category & { category_type?: string | null };
+
 export function BudgetHistoryChart() {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,11 +31,12 @@ export function BudgetHistoryChart() {
       try {
         const { data, error } = await supabase
           .from('categories')
-          .select('*')
-          .eq('is_system_category', false);
+          .select('*');
         if (error) throw error;
         if (data) {
-          setCategories(data as Category[]);
+          const allowedCategories = (data as BudgetHistoryCategory[])
+            .filter((row) => !['lend', 'owe'].includes(row.category_type || ''));
+          setCategories(allowedCategories as Category[]);
         }
       } catch (err) {
         console.error('Error fetching categories for chart:', err);

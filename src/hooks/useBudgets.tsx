@@ -50,6 +50,14 @@ export interface UpdateBudgetInput extends Partial<CreateBudgetInput> {
   id: string;
 }
 
+interface BudgetSpendingRow {
+  amount: number | string;
+  currency_base: string | null;
+  category?: {
+    category_type?: string | null;
+  } | null;
+}
+
 // Notification manager now handles alert deduplication
 
 export function useBudgets() {
@@ -59,6 +67,16 @@ export function useBudgets() {
   const { user } = useAuth();
   const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
+
+  const emitBudgetSyncEvents = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.dispatchEvent(new Event('budget-updated'));
+    // Compatibility: existing pages already refresh on this event.
+    window.dispatchEvent(new Event('transaction-updated'));
+  }, []);
 
   // Refs to prevent infinite loops and duplicate fetches
   const isFetchingRef = useRef(false);
@@ -149,7 +167,7 @@ export function useBudgets() {
 
           // Filter out lend/owe system categories from expense budgets
           // (they're transfers, not true expenses)
-          const filteredTransactions = transactions?.filter((t: any) => {
+          const filteredTransactions = (transactions as BudgetSpendingRow[] | null)?.filter((t) => {
             const categoryType = t.category?.category_type;
             return !['lend', 'owe'].includes(categoryType || '');
           }) || [];
@@ -262,6 +280,7 @@ export function useBudgets() {
 
       // Background fetch to ensure consistency
       fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error creating budget:', err);
@@ -302,6 +321,7 @@ export function useBudgets() {
 
       toast.success('Budget updated successfully');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error updating budget:', err);
@@ -324,6 +344,7 @@ export function useBudgets() {
 
       toast.success('Budget deleted successfully');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error deleting budget:', err);
@@ -332,7 +353,7 @@ export function useBudgets() {
     }
   };
 
-  const getHistoricalBudgets = async (categoryId?: string, months: number = 6): Promise<{ month: string; budget: number; spent: number }[]> => {
+  const getHistoricalBudgets = useCallback(async (categoryId?: string, months: number = 6): Promise<{ month: string; budget: number; spent: number }[]> => {
     if (!user) return [];
 
     try {
@@ -399,7 +420,7 @@ export function useBudgets() {
       console.error('Error fetching historical budgets:', err);
       return [];
     }
-  };
+  }, [user, currency]);
 
   const copyBudgetToNextPeriod = async (budgetId: string): Promise<boolean> => {
     if (!user) return false;
@@ -429,6 +450,7 @@ export function useBudgets() {
 
       toast.success('Budget copied to next period');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error copying budget:', err);
@@ -449,7 +471,7 @@ export function useBudgets() {
         .update({
           is_template: true,
           template_name: templateName || budget.name || budget.category?.name || 'Budget Template'
-        } as any)
+        })
         .eq('id', budgetId)
         .eq('user_id', user.id);
 
@@ -457,6 +479,7 @@ export function useBudgets() {
 
       toast.success('Budget saved as template');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error saving template:', err);
@@ -520,6 +543,7 @@ export function useBudgets() {
 
       toast.success('Budget created from template');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error creating budget from template:', err);
@@ -542,6 +566,7 @@ export function useBudgets() {
       if (error) throw error;
 
       toast.success('Template deleted');
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error deleting template:', err);

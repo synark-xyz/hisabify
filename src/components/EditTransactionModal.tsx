@@ -42,6 +42,14 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSucces
   const { toast } = useToast();
   const { currency } = useCurrency();
   const { convertAmount, loading: rateLoading } = useExchangeRate();
+  const isExpense = transaction?.type === 'expense';
+  const isIncome = transaction?.type === 'income';
+  const titleByType: Record<'expense' | 'income' | 'lend' | 'owe', string> = {
+    expense: 'Expense',
+    income: 'Income',
+    lend: 'Lend',
+    owe: 'Owe',
+  };
 
   useEffect(() => {
     if (open && transaction) {
@@ -50,7 +58,7 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSucces
       setAmount(String(transaction.amount_original || transaction.amount));
       setCategoryId(transaction.category?.id || '');
       setSelectedCurrency(transaction.currency_original || currency);
-      setIncomeSource(transaction.note || '');
+      setIncomeSource(transaction.type === 'income' ? (transaction.note || '') : '');
     }
   }, [open, transaction, currency]);
 
@@ -72,7 +80,7 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSucces
 
     const debounce = setTimeout(previewConversion, 500);
     return () => clearTimeout(debounce);
-  }, [amount, selectedCurrency, currency]);
+  }, [amount, selectedCurrency, currency, convertAmount]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*');
@@ -114,8 +122,12 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSucces
           exchange_rate: exchangeRate,
           rate_timestamp: rateTimestamp,
           exchange_source: exchangeSource,
-          category_id: transaction.type === 'expense' ? categoryId : null,
-          note: transaction.type === 'income' ? incomeSource : null,
+          category_id: transaction.type === 'expense'
+            ? categoryId
+            : transaction.type === 'income'
+              ? null
+              : transaction.category_id,
+          note: transaction.type === 'income' ? incomeSource : transaction.note,
         })
         .eq('id', transaction.id);
 
@@ -141,17 +153,17 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSucces
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-auto max-h-[90vh] rounded-t-3xl overflow-y-auto">
         <SheetHeader className="pb-4">
-          <SheetTitle className="text-center">Edit {transaction.type === 'expense' ? 'Expense' : 'Income'}</SheetTitle>
+          <SheetTitle className="text-center">Edit {titleByType[transaction.type]}</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-4 py-4">
           <div>
             <Label htmlFor="merchant">
-              {transaction.type === 'expense' ? 'Merchant / Description' : 'Source / Description'}
+              {isIncome ? 'Source / Description' : 'Merchant / Description'}
             </Label>
             <Input
               id="merchant"
-              placeholder={transaction.type === 'expense' ? 'e.g., Starbucks' : 'e.g., Monthly Salary'}
+              placeholder={isIncome ? 'e.g., Monthly Salary' : 'e.g., Starbucks'}
               value={merchant}
               onChange={(e) => setMerchant(e.target.value)}
               className="mt-1"
@@ -218,7 +230,7 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSucces
             )}
           </div>
 
-          {transaction.type === 'expense' && (
+          {isExpense && (
             <div>
               <Label>Category</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
@@ -236,7 +248,7 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSucces
             </div>
           )}
 
-          {transaction.type === 'income' && (
+          {isIncome && (
             <div>
               <Label>Income Source</Label>
               <Select value={incomeSource} onValueChange={setIncomeSource}>

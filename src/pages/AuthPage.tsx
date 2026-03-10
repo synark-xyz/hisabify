@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Loader2, Mail, Lock, Wallet, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { HisabifyLogo } from '@/components/HisabifyLogo';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -169,17 +171,46 @@ export function AuthPage() {
   // Forgot Password Form
   if (mode === 'forgotPassword') {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-8">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 relative overflow-hidden">
+        {/* Animated gradient background blobs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-500/20 to-cyan-400/20 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.15, 0.25, 0.15],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-500/20 to-pink-400/20 rounded-full blur-3xl"
+            animate={{
+              scale: [1.1, 1, 1.1],
+              opacity: [0.2, 0.3, 0.2],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1
+            }}
+          />
+        </div>
+
+        <div className="w-full max-w-sm space-y-8 relative z-10">
           <div className="text-center">
-            <div className="w-16 h-16 rounded-2xl card-gradient-purple mx-auto flex items-center justify-center mb-4 shadow-lg">
-              <Wallet className="w-8 h-8 text-primary-foreground" />
+            <div className="mx-auto flex items-center justify-center mb-4">
+              <HisabifyLogo size={80} showText={false} />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Forgot Password?</h1>
-            <p className="text-muted-foreground mt-1">Enter your email to reset your password</p>
+            <h1 className="text-2xl font-black tracking-tight text-foreground bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Forgot Password?</h1>
+            <p className="text-muted-foreground mt-2 font-medium">Enter your email to reset your password</p>
           </div>
 
-          <div className="bg-card rounded-2xl p-6 shadow-card">
+          <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-border/50">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="email">Email</Label>
@@ -202,7 +233,7 @@ export function AuthPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-accent hover:bg-accent/90"
+                className="w-full h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold shadow-lg hover:shadow-xl transition-all"
               >
                 {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Send Reset Link
@@ -224,31 +255,66 @@ export function AuthPage() {
 
   // Login / Signup Form
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 relative overflow-hidden">
+      {/* Animated gradient background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-500/20 to-cyan-400/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.15, 0.25, 0.15],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-500/20 to-pink-400/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1.1, 1, 1.1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
+      </div>
+
+      <div className="w-full max-w-sm space-y-8 relative z-10">
         {/* Logo */}
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl card-gradient-purple mx-auto flex items-center justify-center mb-4 shadow-lg">
-            <Wallet className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto flex items-center justify-center mb-4">
+            <HisabifyLogo size={80} showText={false} />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Hisabify</h1>
-          <p className="text-muted-foreground mt-1">Track your finances with ease</p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Hisabify</h1>
+          <p className="text-muted-foreground mt-2 font-medium">Track your finances with ease</p>
         </div>
 
         {/* Form */}
-        <div className="bg-card rounded-2xl p-6 shadow-card">
-          <div className="flex gap-2 p-1 bg-muted rounded-lg mb-6">
+        <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-border/50">
+          <div className="flex gap-3 p-1.5 bg-muted/30 rounded-2xl mb-6">
             <button
               onClick={() => handleModeChange('login')}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'login' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
-                }`}
+              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-0 outline-none ${
+                mode === 'login'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-[1.02]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
             >
               Sign In
             </button>
             <button
               onClick={() => handleModeChange('signup')}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${mode === 'signup' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
-                }`}
+              className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 border-0 outline-none ${
+                mode === 'signup'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg scale-[1.02]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
             >
               Sign Up
             </button>
@@ -281,7 +347,7 @@ export function AuthPage() {
                   <button
                     type="button"
                     onClick={() => handleModeChange('forgotPassword')}
-                    className="text-xs text-accent hover:underline"
+                    className="text-xs font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-purple-600 hover:to-pink-600 transition-all"
                   >
                     Forgot password?
                   </button>
@@ -306,7 +372,7 @@ export function AuthPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-accent hover:bg-accent/90"
+              className="w-full h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold shadow-lg hover:shadow-xl transition-all"
             >
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {mode === 'login' ? 'Sign In' : 'Create Account'}

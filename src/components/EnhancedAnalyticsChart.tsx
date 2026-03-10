@@ -233,20 +233,20 @@ export function EnhancedAnalyticsChart({
         : 0;
 
       return (
-        <div className="bg-[#1a1a2e]/95 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-2xl">
+        <div className="bg-card/95 backdrop-blur-md border border-border rounded-xl p-3 shadow-2xl">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex justify-between gap-4">
-              <span className="text-sm text-white/70">Spending:</span>
-              <span className="text-sm font-bold text-white">{formatAmount(data.amount)}</span>
+              <span className="text-sm text-muted-foreground">Spending:</span>
+              <span className="text-sm font-bold text-foreground">{formatAmount(data.amount)}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-sm text-white/70">Top Category:</span>
-              <span className="text-sm font-medium text-orange-400">{data.topCategory || 'N/A'}</span>
+              <span className="text-sm text-muted-foreground">Top Category:</span>
+              <span className="text-sm font-medium text-primary">{data.topCategory || 'N/A'}</span>
             </div>
-            <div className="pt-1 mt-1 border-t border-white/5 flex justify-between gap-4">
-              <span className="text-xs text-white/50">vs Last Year:</span>
-              <span className={cn("text-xs font-bold", diff > 0 ? "text-rose-400" : "text-emerald-400")}>
+            <div className="pt-1 mt-1 border-t border-border flex justify-between gap-4">
+              <span className="text-xs text-muted-foreground">vs Last Year:</span>
+              <span className={cn("text-xs font-bold", diff > 0 ? "text-destructive" : "text-green-500")}>
                 {diff > 0 ? '↑' : '↓'} {Math.abs(diff).toFixed(0)}%
               </span>
             </div>
@@ -274,13 +274,13 @@ export function EnhancedAnalyticsChart({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total This Year */}
         <motion.div
-          className="bg-[#1a1a2e]/40 backdrop-blur-md border border-white/5 p-4 rounded-2xl shadow-lg flex flex-col justify-between"
+          className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between"
           whileHover={{ y: -2 }}
         >
-          <span className="text-xs font-medium text-white/50 uppercase tracking-tight">Total This Year</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">Total This Year</span>
           <div className="mt-1">
-            <h3 className="text-xl font-bold text-white">{formatAmount(metrics.totalThisYear)}</h3>
-            <p className={cn("text-xs font-medium flex items-center gap-1 mt-0.5", metrics.yoyGrowth > 0 ? "text-rose-400" : "text-emerald-400")}>
+            <h3 className="text-xl font-bold text-foreground">{formatAmount(metrics.totalThisYear)}</h3>
+            <p className={cn("text-xs font-medium flex items-center gap-1 mt-0.5", metrics.yoyGrowth > 0 ? "text-destructive" : "text-green-500")}>
               {metrics.yoyGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               {Math.abs(metrics.yoyGrowth).toFixed(1)}% vs last year
             </p>
@@ -289,38 +289,38 @@ export function EnhancedAnalyticsChart({
 
         {/* Monthly Average */}
         <motion.div
-          className="bg-[#1a1a2e]/40 backdrop-blur-md border border-white/5 p-4 rounded-2xl shadow-lg flex flex-col justify-between"
+          className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between"
           whileHover={{ y: -2 }}
         >
-          <span className="text-xs font-medium text-white/50 uppercase tracking-tight">Monthly Average</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">Monthly Average</span>
           <div className="mt-1">
-            <h3 className="text-xl font-bold text-white">{formatAmount(metrics.avgMonthly)}</h3>
-            <p className="text-xs text-white/60 mt-0.5">
-              This month: <span className="font-bold text-white">{formatAmount(metrics.currentMonthAmount)}</span>
+            <h3 className="text-xl font-bold text-foreground">{formatAmount(metrics.avgMonthly)}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              This month: <span className="font-bold text-foreground">{formatAmount(metrics.currentMonthAmount)}</span>
             </p>
           </div>
         </motion.div>
 
         {/* Top Category */}
         <motion.div
-          className="bg-[#1a1a2e]/40 backdrop-blur-md border border-white/5 p-4 rounded-2xl shadow-lg flex flex-col justify-between"
+          className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between"
           whileHover={{ y: -2 }}
         >
-          <span className="text-xs font-medium text-white/50 uppercase tracking-tight">Top Category</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">Top Category</span>
           <div className="mt-1">
-            <h3 className="text-xl font-bold text-orange-400">{metrics.topCat.name}</h3>
-            <p className="text-xs text-white/60 mt-0.5">
-              <span className="font-bold text-white">{metrics.topCat.percentage.toFixed(0)}%</span> of spending
+            <h3 className="text-xl font-bold text-primary">{metrics.topCat.name}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              <span className="font-bold text-foreground">{metrics.topCat.percentage.toFixed(0)}%</span> of spending
             </p>
           </div>
         </motion.div>
       </div>
 
       {/* Main Chart Container */}
-      <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 shadow-xl p-4 overflow-hidden">
+      <div className="bg-[hsl(var(--chart-bg))] rounded-2xl border border-[hsl(var(--chart-border))] shadow-xl p-4 overflow-hidden">
         {/* Quarter Filter */}
         <div className="flex justify-center mb-6">
-          <div className="bg-white/5 p-1 rounded-full flex gap-1">
+          <div className="bg-muted/30 p-1 rounded-full flex gap-1">
             {['All', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
               <button
                 key={q}
@@ -328,8 +328,8 @@ export function EnhancedAnalyticsChart({
                 className={cn(
                   "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
                   quarterFilter === q
-                    ? "bg-orange-500 text-white shadow-lg"
-                    : "text-white/40 hover:text-white"
+                    ? "bg-primary text-primary-foreground shadow-lg"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {q}
@@ -341,24 +341,24 @@ export function EnhancedAnalyticsChart({
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.3} vertical={false} />
               <XAxis
                 dataKey="month"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 700 }}
                 dy={15}
-                label={{ value: 'Month', position: 'bottom', offset: 10, fill: 'rgba(255,255,255,0.2)', fontWeight: 800, fontSize: 10 }}
+                label={{ value: 'Month', position: 'bottom', offset: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 800, fontSize: 10, opacity: 0.5 }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 tickFormatter={(val) => `¥${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
               />
               <Tooltip
                 content={<CustomTooltip />}
-                cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
               />
               <Bar
                 dataKey="amount"
@@ -380,20 +380,20 @@ export function EnhancedAnalyticsChart({
                     x={entry.month}
                     y={entry.comparisonAmount}
                     r={3}
-                    fill="#9ca3af"
-                    stroke="#1a1a2e"
+                    fill="hsl(var(--muted-foreground))"
+                    stroke="hsl(var(--chart-bg))"
                     strokeWidth={1}
                   />
                 ))}
               </Bar>
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f97316" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#ea580c" stopOpacity={0.4} />
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
                 </linearGradient>
                 <linearGradient id="activeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#fbbf24" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={1} />
+                  <stop offset="0%" stopColor="hsl(var(--secondary))" stopOpacity={1} />
+                  <stop offset="100%" stopColor="hsl(var(--secondary))" stopOpacity={0.8} />
                 </linearGradient>
               </defs>
             </BarChart>
@@ -401,15 +401,15 @@ export function EnhancedAnalyticsChart({
         </div>
       </div>
 
-      <div className="bg-[#1a1a2e]/40 backdrop-blur-md border border-white/5 rounded-2xl p-4 space-y-3">
+      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between mb-1">
-          <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
-            <Lightbulb className="w-3.5 h-3.5 text-yellow-400" /> Key Insights
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+            <Lightbulb className="w-3.5 h-3.5 text-yellow-500" /> Key Insights
           </h4>
           {insights.length > 1 && (
             <button
               onClick={() => setShowAllInsights(!showAllInsights)}
-              className="text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors"
+              className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
             >
               {showAllInsights ? 'Show Less' : 'View all'}
             </button>
@@ -418,30 +418,30 @@ export function EnhancedAnalyticsChart({
         {(showAllInsights ? insights : insights.slice(0, 1)).map((insight, idx) => (
           <motion.div
             key={idx}
-            className="flex items-start gap-3 p-3 bg-white/5 rounded-xl border border-white/5"
+            className="flex items-start gap-3 p-3 bg-muted/30 rounded-xl border border-border"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.1 }}
             layout
           >
             <span className="text-lg leading-none">{insight.icon}</span>
-            <p className="text-sm text-white/80 leading-snug">{insight.message}</p>
+            <p className="text-sm text-foreground/90 leading-snug">{insight.message}</p>
           </motion.div>
         ))}
         {insights.length === 0 && (
-          <p className="text-sm text-white/40 text-center py-4 italic">Add more data to see detailed insights</p>
+          <p className="text-sm text-muted-foreground text-center py-4 italic">Add more data to see detailed insights</p>
         )}
       </div>
 
       {/* 2D. Category Breakdown Part */}
-      <div className="bg-[#1a1a2e]/40 backdrop-blur-md border border-white/5 rounded-2xl p-4">
+      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
-            <PieChart className="w-3.5 h-3.5 text-purple-400" /> Category Breakdown
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+            <PieChart className="w-3.5 h-3.5 text-secondary" /> Category Breakdown
           </h4>
           <button
             onClick={() => setShowAllCategories(!showAllCategories)}
-            className="text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors"
+            className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
           >
             {showAllCategories ? 'Show Less' : 'View all'}
           </button>
@@ -456,10 +456,10 @@ export function EnhancedAnalyticsChart({
               layout
             >
               <div className="flex justify-between items-end text-sm">
-                <span className="font-bold text-white/80 group-hover:text-white transition-colors">{cat.name}</span>
-                <span className="font-mono text-white/50">{cat.percentage.toFixed(0)}% • {formatAmount(cat.amount)}</span>
+                <span className="font-bold text-foreground/90 group-hover:text-foreground transition-colors">{cat.name}</span>
+                <span className="font-mono text-muted-foreground">{cat.percentage.toFixed(0)}% • {formatAmount(cat.amount)}</span>
               </div>
-              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
                   initial={{ width: 0 }}

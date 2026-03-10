@@ -155,7 +155,10 @@ export default function SavingsPage() {
   }
 
   return (
-    <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+    <div className={cn("min-h-screen relative", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+      {/* Local overlay container for Savings page dropdowns */}
+      <div id="savings-overlay-root" className="fixed inset-0 pointer-events-none z-[9999]" />
+
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 

@@ -22,6 +22,8 @@ export interface Budget {
   start_date: string | null;
   end_date: string | null;
   name: string | null;
+  is_template: boolean;
+  template_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,6 +42,8 @@ export interface CreateBudgetInput {
   start_date?: Date;
   end_date?: Date;
   name?: string;
+  is_template?: boolean;
+  template_name?: string;
 }
 
 export interface UpdateBudgetInput extends Partial<CreateBudgetInput> {
@@ -95,11 +99,12 @@ export function useBudgets() {
     setError(null);
 
     try {
-      // Fetch budgets with categories
+      // Fetch budgets with categories (exclude templates)
       const { data: budgetsData, error: budgetsError } = await supabase
         .from('budgets')
         .select('*, category:categories(*)')
         .eq('user_id', user.id)
+        .eq('is_template', false)
         .order('created_at', { ascending: false });
 
       if (budgetsError) throw budgetsError;
@@ -235,7 +240,9 @@ export function useBudgets() {
         end_date: endDate.toISOString(),
         name: newBudget.name,
         month: newBudget.month,
-        year: newBudget.year
+        year: newBudget.year,
+        is_template: input.is_template || false,
+        template_name: input.template_name || null
       });
 
       if (error) throw error;
@@ -417,6 +424,119 @@ export function useBudgets() {
     }
   };
 
+  const saveAsTemplate = async (budgetId: string, templateName?: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const budget = budgets.find(b => b.id === budgetId);
+      if (!budget) return false;
+
+      const { error } = await supabase
+        .from('budgets')
+        .update({
+          is_template: true,
+          template_name: templateName || budget.name || budget.category?.name || 'Budget Template'
+        })
+        .eq('id', budgetId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Budget saved as template');
+      await fetchBudgets();
+      return true;
+    } catch (err) {
+      console.error('Error saving template:', err);
+      toast.error('Failed to save template');
+      return false;
+    }
+  };
+
+  const fetchTemplates = async (): Promise<Budget[]> => {
+    if (!user) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('budgets')
+        .select('*, category:categories(*)')
+        .eq('user_id', user.id)
+        .eq('is_template', true)
+        .order('template_name', { ascending: true });
+
+      if (error) throw error;
+
+      return (data || []) as Budget[];
+    } catch (err) {
+      console.error('Error fetching templates:', err);
+      return [];
+    }
+  };
+
+  const createBudgetFromTemplate = async (templateId: string, customStartDate?: Date): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { data: template, error: fetchError } = await supabase
+        .from('budgets')
+        .select('*, category:categories(*)')
+        .eq('id', templateId)
+        .eq('user_id', user.id)
+        .eq('is_template', true)
+        .single();
+
+      if (fetchError || !template) {
+        throw new Error('Template not found');
+      }
+
+      const { start, end } = getPeriodDates(template.period_type as PeriodType, customStartDate);
+
+      const { error } = await supabase.from('budgets').insert({
+        user_id: user.id,
+        category_id: template.category_id,
+        amount: template.amount,
+        period_type: template.period_type,
+        start_date: start.toISOString(),
+        end_date: end.toISOString(),
+        name: template.name,
+        month: start.getMonth() + 1,
+        year: start.getFullYear(),
+        is_template: false
+      });
+
+      if (error) throw error;
+
+      toast.success('Budget created from template');
+      await fetchBudgets();
+      return true;
+    } catch (err) {
+      console.error('Error creating budget from template:', err);
+      toast.error('Failed to create budget from template');
+      return false;
+    }
+  };
+
+  const deleteTemplate = async (templateId: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('id', templateId)
+        .eq('user_id', user.id)
+        .eq('is_template', true);
+
+      if (error) throw error;
+
+      toast.success('Template deleted');
+      return true;
+    } catch (err) {
+      console.error('Error deleting template:', err);
+      toast.error('Failed to delete template');
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchBudgets();
   }, [fetchBudgets]);
@@ -473,6 +593,10 @@ export function useBudgets() {
     deleteBudget,
     getHistoricalBudgets,
     copyBudgetToNextPeriod,
+    saveAsTemplate,
+    fetchTemplates,
+    createBudgetFromTemplate,
+    deleteTemplate,
     refetch: fetchBudgets
   };
 }

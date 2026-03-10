@@ -45,20 +45,31 @@ export function StreamingGreeting() {
             <motion.div
                 initial={{ scale: 0, rotate: -45 }}
                 animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 className="w-10 h-10 rounded-xl bg-muted/30 flex items-center justify-center border border-border/50 shadow-sm"
+                style={{ willChange: 'transform' }}
             >
                 {getIcon()}
             </motion.div>
-            <div className="flex flex-col">
-                <div className="flex items-center gap-1.5 min-h-[1.5rem]">
-                    <h1 className="text-xl font-black tracking-tight text-foreground">
+            <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 min-h-[1.75rem]">
+                    <h1
+                        className="text-xl font-black tracking-tight text-foreground"
+                        style={{
+                            contain: 'layout style',
+                            willChange: 'contents',
+                            minWidth: '200px'
+                        }}
+                    >
                         {displayText}
                     </h1>
                     {index >= greeting.length && (
                         <motion.div
                             initial={{ opacity: 0, scale: 0 }}
                             animate={{ opacity: 1, scale: 1 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 15 }}
                             className="text-accent"
+                            style={{ willChange: 'transform, opacity' }}
                         >
                             <Sparkle size={16} weight="fill" />
                         </motion.div>

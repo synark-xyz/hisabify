@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberpunkSplash } from './CyberpunkSplash';
+import { HisabifyLogo } from './HisabifyLogo';
 
 interface SplashScreenProps {
     onComplete: () => void;
@@ -49,10 +50,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
     return (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-background">
-            {/* Background Gradient & Effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0B4619] to-[#007BFF] opacity-10" />
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay" />
-            <div className="absolute inset-0 backdrop-blur-3xl" />
+            {/* Background Effects - Minimal */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
 
             {/* Main Content Container */}
             <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-sm px-8">
@@ -61,48 +60,20 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 <div className="relative mb-12">
                     {/* Ripple/Pulse Effect */}
                     <motion.div
-                        className="absolute inset-0 rounded-full bg-accent/20 blur-xl"
+                        className="absolute inset-0 rounded-full bg-primary/15 blur-2xl"
                         initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1.5, opacity: [0, 0.5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        animate={{ scale: 1.5, opacity: [0, 0.4, 0] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                     />
 
-                    {/* Logo SVG */}
+                    {/* Logo */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="relative w-32 h-32"
+                        className="relative"
                     >
-                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-2xl">
-                            <defs>
-                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#0B4619" />
-                                    <stop offset="100%" stopColor="#007BFF" />
-                                </linearGradient>
-                            </defs>
-                            {/* Shield/Secure Base */}
-                            <path
-                                d="M50 90C75 80 90 60 90 35V20L50 5L10 20V35C10 60 25 80 50 90Z"
-                                fill="url(#logoGradient)"
-                                opacity="0.9"
-                            />
-                            {/* Growth/Leaf/Trend Line */}
-                            <path
-                                d="M35 55C35 55 45 65 55 45C55 45 65 35 75 25"
-                                stroke="white"
-                                strokeWidth="6"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                            <path
-                                d="M75 25L65 25M75 25L75 35"
-                                stroke="white"
-                                strokeWidth="6"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
+                        <HisabifyLogo size={180} showText={false} />
                     </motion.div>
                 </div>
 

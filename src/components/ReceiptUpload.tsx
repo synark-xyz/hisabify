@@ -3,10 +3,12 @@ import { Upload, X, FileImage, Loader2, Eye, ScanLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useReceiptUpload } from '@/hooks/useReceiptUpload';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { createWorker } from 'tesseract.js';
 import { format, parse } from 'date-fns';
 import { preprocessImage } from '@/lib/imageProcessor';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReceiptUploadProps {
   value?: string | null;
@@ -19,6 +21,8 @@ interface ReceiptUploadProps {
 export function ReceiptUpload({ value, onChange, onScanComplete, disabled, transient = false }: ReceiptUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadReceipt, uploading: uploadLoading, progress } = useReceiptUpload();
+  const { ensurePermission, isNative } = usePermissions();
+  const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = useState<string | null>(value || null);
   const [scanning, setScanning] = useState(false);
 
@@ -139,6 +143,26 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
     onChange(null);
   };
 
+  const handleFilePickerClick = async () => {
+    // On native platforms, request camera/photos permission before opening picker
+    if (isNative) {
+      const hasCameraPermission = await ensurePermission('camera');
+      const hasPhotosPermission = await ensurePermission('photos');
+
+      if (!hasCameraPermission && !hasPhotosPermission) {
+        toast({
+          variant: 'destructive',
+          title: 'Permission Required',
+          description: 'Please enable Camera or Photo Library access in device settings.'
+        });
+        return;
+      }
+    }
+
+    // Trigger file input
+    fileInputRef.current?.click();
+  };
+
   const isPdf = previewUrl?.includes('.pdf') || previewUrl?.includes('application/pdf');
   const isLoading = uploadLoading || scanning;
 
@@ -194,7 +218,7 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
                     <Eye className="w-3.5 h-3.5" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl">
+                <DialogContent className="max-w-[600px]">
                   {isPdf ? (
                     <iframe
                       src={previewUrl}
@@ -230,7 +254,7 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handleFilePickerClick}
             disabled={disabled || isLoading}
             className="w-full h-32 rounded-xl border-2 border-dashed border-border hover:border-accent/50 hover:bg-accent/5 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed group"
           >

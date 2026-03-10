@@ -11,16 +11,23 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 
 type NexusMode = 'voice' | 'scan';
 
-export function NexusModal({ open, onOpenChange, onSmartCapture }: { open: boolean; onOpenChange: (open: boolean) => void; onSmartCapture: (data: any) => void }) {
-    const [mode, setMode] = useState<'voice' | 'scan'>('voice');
+interface NexusModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSmartCapture: (data: any) => void;
+    initialMode?: 'voice' | 'scan';
+}
+
+export function NexusModal({ open, onOpenChange, onSmartCapture, initialMode = 'voice' }: NexusModalProps) {
+    const [mode, setMode] = useState<'voice' | 'scan'>(initialMode);
     const { privacyMode } = useProfile();
 
-    // Reset mode when opened
+    // Update mode when initialMode changes or modal opens
     useEffect(() => {
         if (open) {
-            setMode('voice');
+            setMode(initialMode);
         }
-    }, [open]);
+    }, [open, initialMode]);
 
     if (!open) return null;
 

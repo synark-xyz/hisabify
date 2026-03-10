@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'; // Re-verify imports to fix refresh crash
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { DailyQuote } from '@/components/DailyQuote';
@@ -107,12 +107,35 @@ export function Dashboard() {
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const { user } = useAuth();
-  const { variant } = useTheme();
+  const { variant, theme } = useTheme();
   const { formatAmount, currencyVersion, currency } = useCurrency();
+
+  // Determine if balance card should use light or dark text
+  const useDarkText = variant === 'cyberpunk' && theme === 'light';
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
 
-  const availableYears = [2023, 2024, 2025, 2026];
+  // Dynamically calculate available years based on transaction data
+  const availableYears = useMemo(() => {
+    if (transactions.length === 0) {
+      return [new Date().getFullYear()];
+    }
+
+    const years = new Set<number>();
+    transactions.forEach(tx => {
+      const year = new Date(tx.date).getFullYear();
+      if (!isNaN(year)) {
+        years.add(year);
+      }
+    });
+
+    // Add current year if not present
+    const currentYear = new Date().getFullYear();
+    years.add(currentYear);
+
+    // Convert to sorted array (ascending)
+    return Array.from(years).sort((a, b) => a - b);
+  }, [transactions]);
 
   // Event listener for layout modal updates
   useEffect(() => {
@@ -297,9 +320,9 @@ export function Dashboard() {
   const netBalance = totalIncome - totalExpenses;
 
   return (
-    <div className="min-h-screen bg-transparent">
+    <div className="min-h-screen relative">
       <ParticlesBackground />
-      <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
+      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
 
@@ -307,59 +330,107 @@ export function Dashboard() {
             className="px-4 space-y-6 pb-24"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            style={{ willChange: 'opacity' }}
           >
             <StreamingGreeting />
             {/* Hero Section - Wallet Overview */}
-            <motion.section>
+            <motion.section
+              key="hero-section"
+              initial={{ opacity: 1, y: 0 }}
+              style={{ willChange: 'auto' }}
+            >
               <div
                 className={cn(
-                  "rounded-3xl p-6 shadow-xl relative overflow-hidden text-white transition-all",
+                  "rounded-3xl p-6 shadow-xl relative overflow-hidden transition-all",
                   variant === 'cyberpunk'
                     ? "card-3d bg-card border-none"
-                    : "bg-gradient-to-br from-[#4F46E5] via-[#7C3AED] to-[#DB2777]"
+                    : "bg-[image:var(--gradient-balance)] text-white",
+                  useDarkText ? "text-foreground" : "text-white"
                 )}
+                style={{ contain: 'layout', willChange: 'transform' }}
               >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none" />
+                <div
+                  className={cn(
+                    "absolute top-0 right-0 w-64 h-64 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none",
+                    useDarkText ? "bg-primary/10" : "bg-white/10"
+                  )}
+                  style={{ willChange: 'filter', transform: 'translateZ(0)' }}
+                />
+                <div
+                  className={cn(
+                    "absolute bottom-0 left-0 w-48 h-48 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none",
+                    useDarkText ? "bg-accent/10" : "bg-black/10"
+                  )}
+                  style={{ willChange: 'filter', transform: 'translateZ(0)' }}
+                />
 
                 <div className="relative z-10 flex justify-between items-start mb-6">
                   <div>
                     <div className="flex items-center gap-2 mb-2 opacity-90">
-                      <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
-                        <Wallet className="w-4 h-4 text-white" weight="fill" />
+                      <div
+                        className={cn(
+                          "p-1.5 rounded-lg backdrop-blur-sm",
+                          useDarkText ? "bg-primary/20" : "bg-white/20"
+                        )}
+                        style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
+                      >
+                        <Wallet className={cn("w-4 h-4", useDarkText ? "text-primary" : "text-white")} weight="fill" />
                       </div>
                       <span className="text-sm font-medium tracking-wide">Main Balance</span>
                     </div>
-                    <h2 className={cn("text-4xl font-black tracking-tight mb-1", variant === 'cyberpunk' && "text-glow")}>
+                    <h2 className={cn("text-4xl font-black tracking-tight mb-1", variant === 'cyberpunk' && !useDarkText && "text-glow")}>
                       {formatAmount(netBalance)}
                     </h2>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold ring-1 ring-white/30 shadow-sm">
-                      <TrendUp className="w-3.5 h-3.5 text-emerald-300" weight="bold" />
-                      <span className="text-white">Today {formatAmount(todayNet)}</span>
+                    <div
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 backdrop-blur-md rounded-full text-xs font-bold ring-1 shadow-sm",
+                        useDarkText ? "bg-muted/30 ring-border" : "bg-white/20 ring-white/30"
+                      )}
+                      style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
+                    >
+                      <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
+                      <span>Today {formatAmount(todayNet)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="group p-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30 transition-colors">
+                  <div
+                    className={cn(
+                      "group p-4 rounded-2xl backdrop-blur-sm border transition-colors",
+                      useDarkText
+                        ? "bg-muted/20 border-border hover:bg-muted/30"
+                        : "bg-black/20 border-white/10 hover:bg-black/30"
+                    )}
+                    style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
+                  >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="p-1.5 rounded-full bg-rose-500/20">
-                        <TrendDown className="w-3.5 h-3.5 text-rose-300" weight="bold" />
+                      <div className={cn("p-1.5 rounded-full", useDarkText ? "bg-red-500/20" : "bg-rose-500/20")}>
+                        <TrendDown className={cn("w-3.5 h-3.5", useDarkText ? "text-red-600" : "text-rose-300")} weight="bold" />
                       </div>
-                      <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Expenses</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>Expenses</span>
                     </div>
-                    <p className="text-lg font-bold text-white tracking-tight">{formatAmount(totalExpenses)}</p>
+                    <p className={cn("text-lg font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
                   </div>
-                  <div className="group p-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/10 hover:bg-black/30 transition-colors">
+                  <div
+                    className={cn(
+                      "group p-4 rounded-2xl backdrop-blur-sm border transition-colors",
+                      useDarkText
+                        ? "bg-muted/20 border-border hover:bg-muted/30"
+                        : "bg-black/20 border-white/10 hover:bg-black/30"
+                    )}
+                    style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
+                  >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="p-1.5 rounded-full bg-emerald-500/20">
-                        <TrendUp className="w-3.5 h-3.5 text-emerald-300" weight="bold" />
+                      <div className={cn("p-1.5 rounded-full", useDarkText ? "bg-green-500/20" : "bg-emerald-500/20")}>
+                        <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
                       </div>
-                      <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Income</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>Income</span>
                     </div>
-                    <p className="text-lg font-bold text-white tracking-tight">{formatAmount(totalIncome)}</p>
+                    <p className={cn("text-lg font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
                   </div>
                 </div>
               </div>
@@ -371,42 +442,61 @@ export function Dashboard() {
 
             {/* Upgrade to Pro Banner - Only for non-premium users */}
             {/* Upgrade to Pro Banner - Compact & Premium */}
-            {!subscriptionLoading && !isPremium && (
-              <motion.section>
-                <div
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 shadow-lg shadow-purple-500/20 cursor-pointer group transition-all active:scale-95"
+            <AnimatePresence mode="wait">
+              {!subscriptionLoading && !isPremium && (
+                <motion.section
+                  key="upgrade-banner"
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  style={{ willChange: 'transform, opacity' }}
                 >
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-colors" />
+                  <div
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 shadow-lg shadow-purple-500/20 cursor-pointer group transition-all active:scale-95"
+                  >
+                    <div
+                      className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-colors"
+                      style={{ willChange: 'filter', transform: 'translateZ(0)' }}
+                    />
 
-                  <div className="relative z-10 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner ring-1 ring-white/30">
-                        <Crown className="w-5 h-5 text-white" weight="fill" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <h3 className="text-base font-bold text-white tracking-tight">Upgrade to Pro</h3>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white font-bold uppercase tracking-wide">
-                            New
-                          </span>
+                    <div className="relative z-10 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5">
+                        <div
+                          className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner ring-1 ring-white/30"
+                          style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
+                        >
+                          <Crown className="w-5 h-5 text-white" weight="fill" />
                         </div>
-                        <p className="text-xs text-white/80 font-medium">Unlock unlimited budgets & insights</p>
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-base font-bold text-white tracking-tight">Upgrade to Pro</h3>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white font-bold uppercase tracking-wide">
+                              New
+                            </span>
+                          </div>
+                          <p className="text-xs text-white/80 font-medium">Unlock unlimited budgets & insights</p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-white text-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <Sparkle className="w-4 h-4" weight="fill" />
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-white text-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                          <Sparkle className="w-4 h-4" weight="fill" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </motion.section>
-            )}
+                </motion.section>
+              )}
+            </AnimatePresence>
 
             {/* Payment Reminders Section */}
-            <motion.section>
+            <motion.section
+              key="reminders-section"
+              initial={{ opacity: 1, y: 0 }}
+              style={{ willChange: 'auto' }}
+            >
               <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <Bell className="w-5 h-5 text-accent" weight="duotone" />
@@ -416,6 +506,8 @@ export function Dashboard() {
                   onClick={() => setShowAddPaymentReminder(true)}
                   className="p-2 bg-muted/50 rounded-xl hover:bg-muted text-muted-foreground transition-colors border border-border/50"
                   whileHover={{ rotate: 90 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  style={{ willChange: 'transform' }}
                 >
                   <Faders className="w-4 h-4" weight="duotone" />
                 </motion.button>
@@ -424,7 +516,11 @@ export function Dashboard() {
             </motion.section>
 
             {/* Analytics Section */}
-            <motion.section>
+            <motion.section
+              key="analytics-section"
+              initial={{ opacity: 1, y: 0 }}
+              style={{ willChange: 'auto' }}
+            >
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ChartPie className="w-5 h-5 text-accent" weight="duotone" />
@@ -488,7 +584,11 @@ export function Dashboard() {
             </motion.section>
 
             {/* Monthly Reports Preview */}
-            <motion.section>
+            <motion.section
+              key="transactions-section"
+              initial={{ opacity: 1, y: 0 }}
+              style={{ willChange: 'auto' }}
+            >
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />

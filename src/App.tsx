@@ -31,6 +31,7 @@ import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
 import { PersonalPage } from "@/pages/profile/PersonalPage";
 import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
+import { initViewportHeight } from "@/lib/viewport";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -173,6 +174,12 @@ const App = () => (
 // Separated component to use hooks inside BrowserRouter
 function RootLogic() {
   const { user } = useAuth();
+
+  // Initialize viewport height fix for mobile
+  useEffect(() => {
+    const cleanup = initViewportHeight();
+    return cleanup;
+  }, []);
 
   useEffect(() => {
     if (user) {

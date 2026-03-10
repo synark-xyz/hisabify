@@ -17,6 +17,11 @@ export function BudgetPage() {
   const { isPremium } = useSubscription();
   const { variant } = useTheme();
 
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   // Listen for transaction updates from the global modal
   useEffect(() => {
     const handleUpdate = () => {
@@ -51,7 +56,10 @@ export function BudgetPage() {
   };
 
   return (
-    <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+    <div className={cn("min-h-screen relative", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+      {/* Local overlay container for Planner page dropdowns */}
+      <div id="planner-overlay-root" className="fixed inset-0 pointer-events-none z-[9999]" />
+
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 

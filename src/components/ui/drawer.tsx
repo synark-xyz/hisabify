@@ -1,10 +1,29 @@
 import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
+import { Capacitor } from "@capacitor/core";
 
 import { cn } from "@/lib/utils";
 
-const Drawer = ({ shouldScaleBackground = true, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
-  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
+const Drawer = ({
+  shouldScaleBackground = true,
+  snapPoints,
+  activeSnapPoint,
+  setActiveSnapPoint,
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.Root> & {
+  snapPoints?: (string | number)[];
+  activeSnapPoint?: string | number;
+  setActiveSnapPoint?: (snapPoint: string | number) => void;
+}) => (
+  <DrawerPrimitive.Root
+    shouldScaleBackground={shouldScaleBackground}
+    snapPoints={snapPoints}
+    activeSnapPoint={activeSnapPoint}
+    setActiveSnapPoint={setActiveSnapPoint}
+    dismissible={true}
+    modal={true}
+    {...props}
+  />
 );
 Drawer.displayName = "Drawer";
 
@@ -18,33 +37,56 @@ const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-50 bg-black/80", className)} {...props} />
+  <DrawerPrimitive.Overlay
+    ref={ref}
+    className={cn("fixed inset-0 z-40 bg-black/80 transition-opacity duration-200", className)}
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100dvh'
+    }}
+    {...props}
+  />
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <DrawerPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
-        className,
-      )}
-      {...props}
-    >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
-      {children}
-    </DrawerPrimitive.Content>
-  </DrawerPortal>
-));
+>(({ className, children, ...props }, ref) => {
+  return (
+    <DrawerPortal>
+      <DrawerOverlay />
+      <DrawerPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-[60] flex flex-col rounded-t-[24px] border-t-4 border-muted bg-background shadow-2xl pb-safe",
+          className,
+        )}
+        style={{
+          // Force viewport-relative positioning
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+        }}
+        {...props}
+      >
+        {/* Material 3 Drag Handle */}
+        <div className="mx-auto mt-3 h-1 w-12 flex-shrink-0 rounded-full bg-muted-foreground/30" />
+        {children}
+      </DrawerPrimitive.Content>
+    </DrawerPortal>
+  );
+});
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("grid gap-1.5 p-4 text-center sm:text-left", className)} {...props} />
+  <div className={cn("flex flex-col gap-1.5 text-center", className)} {...props} />
 );
 DrawerHeader.displayName = "DrawerHeader";
 

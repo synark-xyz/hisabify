@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="2732" height="2732" viewBox="0 0 2732 2732" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3B82F6" />
+            <stop offset="50%" stop-color="#8B5CF6" />
+            <stop offset="100%" stop-color="#EC4899" />
+        </linearGradient>
+        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3B82F6" />
+            <stop offset="50%" stop-color="#8B5CF6" />
+            <stop offset="100%" stop-color="#EC4899" />
+        </linearGradient>
+    </defs>
+
+    <!-- Background -->
+    <rect width="2732" height="2732" fill="url(#bgGradient)" />
+
+    <!-- Logo container (centered, scaled up) -->
+    <g transform="translate(866, 866)">
+        <!-- Donut Chart (main element) -->
+        <!-- Outer ring - segmented donut chart -->
+
+        <!-- Segment 1 - Blue (35%) -->
+        <path
+            d="M 500 180 A 320 320 0 0 1 755 305 L 650 400 A 180 180 0 0 0 500 320 Z"
+            fill="#60A5FA"
+            opacity="0.95"
+        />
+
+        <!-- Segment 2 - Purple (30%) -->
+        <path
+            d="M 755 305 A 320 320 0 0 1 820 500 L 680 500 A 180 180 0 0 0 650 400 Z"
+            fill="#A78BFA"
+            opacity="0.95"
+        />
+
+        <!-- Segment 3 - Pink (25%) -->
+        <path
+            d="M 820 500 A 320 320 0 0 1 695 755 L 610 650 A 180 180 0 0 0 680 500 Z"
+            fill="#F472B6"
+            opacity="0.95"
+        />
+
+        <!-- Segment 4 - Yellow (10%) -->
+        <path
+            d="M 695 755 A 320 320 0 0 1 500 820 L 500 680 A 180 180 0 0 0 610 650 Z"
+            fill="#FCD34D"
+            opacity="0.95"
+        />
+
+        <!-- Inner white circle (donut hole) -->
+        <circle cx="500" cy="500" r="170" fill="white" opacity="0.98" />
+
+        <!-- Dollar symbol in center -->
+        <text
+            x="500"
+            y="580"
+            font-size="200"
+            font-weight="bold"
+            fill="url(#logoGradient)"
+            text-anchor="middle"
+            font-family="system-ui, -apple-system, sans-serif"
+        >
+            $
+        </text>
+    </g>
+
+    <!-- Brand text -->
+    <text x="1366" y="1900" font-family="system-ui, -apple-system, sans-serif" font-size="120" font-weight="900" fill="white" text-anchor="middle">Hisabify</text>
+    <text x="1366" y="2000" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="500" fill="rgba(255,255,255,0.8)" text-anchor="middle">Personal finance made simple</text>
+</svg>

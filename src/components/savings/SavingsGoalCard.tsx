@@ -8,13 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { MobileDialog } from "@/components/ui/mobile-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoreVertical, Plus, Edit, Trash2, Target, Calendar, ArrowUpRight } from "lucide-react";
@@ -66,7 +60,7 @@ export function SavingsGoalCard({
 
   return (
     <>
-      <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300 card-3d">
+      <Card className="overflow-visible border-border/50 bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300 card-3d">
         <CardHeader className="p-4 pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
@@ -90,25 +84,29 @@ export function SavingsGoalCard({
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-xl"
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rounded-2xl border-border/50">
-                <DropdownMenuItem onClick={() => setShowAddFunds(true)} className="rounded-xl m-1 capitalize">
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setShowAddFunds(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Funds
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(goal)} className="rounded-xl m-1 capitalize">
+                <DropdownMenuItem onClick={() => onEdit(goal)}>
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit
+                  Edit Goal
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-destructive rounded-xl m-1 capitalize"
                   onClick={() => onDelete(goal.id)}
+                  className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                  Delete Goal
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -181,14 +179,17 @@ export function SavingsGoalCard({
         </CardContent>
       </Card>
 
-      <Dialog open={showAddFunds} onOpenChange={setShowAddFunds}>
-        <DialogContent className="sm:max-w-[400px] rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="font-black text-xl">Top Up "{goal.name}"</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-5 py-4">
+      <MobileDialog
+        open={showAddFunds}
+        onOpenChange={setShowAddFunds}
+        title={`Top Up "${goal.name}"`}
+        maxWidth="max-w-[400px]"
+      >
+        <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Amount to add</Label>
+              <Label htmlFor="amount" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Amount to add
+              </Label>
               <div className="relative">
                 <Input
                   id="amount"
@@ -200,41 +201,41 @@ export function SavingsGoalCard({
                   min="0"
                   step="0.01"
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">{currencySymbol}</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">
+                  {currencySymbol}
+                </span>
               </div>
             </div>
-            <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">
-              <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                <span>Summary</span>
-              </div>
+
+            <div className="p-3 bg-muted/30 rounded-2xl border border-border/50">
               <div className="space-y-1">
-                <p className="text-sm font-medium flex justify-between">
-                  <span>Current Status:</span>
+                <p className="text-xs font-medium flex justify-between">
+                  <span>Current:</span>
                   <span className="font-bold">{formatAmount(goal.current_amount)}</span>
                 </p>
-                <p className="text-sm font-medium flex justify-between">
-                  <span>Target Goal:</span>
+                <p className="text-xs font-medium flex justify-between">
+                  <span>Target:</span>
                   <span className="font-bold">{formatAmount(goal.target_amount)}</span>
                 </p>
-                <div className="h-px bg-border/50 my-2" />
-                <p className="text-sm font-medium flex justify-between text-accent">
+                <div className="h-px bg-border/50 my-1" />
+                <p className="text-xs font-medium flex justify-between text-accent">
                   <span>Remaining:</span>
-                  <span className="font-black">{formatAmount(goal.remaining)}</span>
+                  <span className="font-bold">{formatAmount(goal.remaining)}</span>
                 </p>
               </div>
             </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => setShowAddFunds(false)}>
+                Cancel
+              </Button>
+              <Button className="flex-1 rounded-2xl font-bold bg-accent hover:bg-accent/90 shadow-fab" onClick={handleAddFunds}>
+                Add Funds
+                <ArrowUpRight className="ml-1 w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" className="rounded-2xl font-bold" onClick={() => setShowAddFunds(false)}>
-              Cancel
-            </Button>
-            <Button className="rounded-2xl font-black bg-accent hover:bg-accent/90 shadow-fab" onClick={handleAddFunds}>
-              Add Funds
-              <ArrowUpRight className="ml-1 w-4 h-4" />
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </MobileDialog>
     </>
   );
 }

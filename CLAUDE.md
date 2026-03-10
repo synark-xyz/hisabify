@@ -294,13 +294,40 @@ if (isFetchingRef.current || (now - lastFetchRef.current) < 500) {
 - Real-time updates on transaction changes
 - Currency conversion applied to spending calculations
 
-### Receipt Upload with OCR
+### Unified FAB with Smart Input Methods
 
-- Component: `ReceiptUpload.tsx`
-- Uses Tesseract.js for text extraction
-- Extracts merchant name, amount, date
-- Pre-fills transaction form with OCR results
-- Stores receipt image URL in transaction
+- **Three Input Methods:** Voice Memo, Receipt Scanner, Manual Entry
+- **Single Entry Point:** Unified FAB in bottom navigation center
+- **Component:** `InputMethodSheet.tsx` - Bottom sheet with 3 action cards
+- **Documentation:** `docs/UNIFIED_FAB_IMPLEMENTATION.md`
+
+### Receipt Upload with OCR & Image Optimization
+
+- **Component:** `ReceiptUpload.tsx` - Receipt capture with OCR
+- **Technology:** Tesseract.js for client-side text extraction
+- **Image Processing:** `src/lib/imageProcessor.ts`
+- **Optimization:** Compress to <500KB while preserving text readability
+- **Storage:** Supabase Storage with RLS policies
+- **Features:** Extracts merchant, amount, date; pre-fills transaction form
+- **Documentation:** `docs/RECEIPT_IMAGE_OPTIMIZATION.md`
+
+### Voice Input for Transactions
+
+- **Component:** `VoiceInputFlow.tsx` - Enhanced voice recording interface
+- **Technology:** Web Speech API (browser native)
+- **Hook:** `useVoiceInput.ts` - Web Speech API integration
+- **Hook:** `usePermissions.ts` - Runtime permission handling
+- **Features:**
+  - Real-time transcription display
+  - Automatic merchant/amount parsing (~70-80% accuracy)
+  - Pulsing animation during recording
+  - Permission checking and error handling
+  - "Use This" button to pre-fill transaction form
+  - Tips for better voice input
+- **Limitations:**
+  - Requires browser support (Chrome, Safari, Edge - full; Firefox - partial)
+  - English only (Phase 2)
+  - Regex-based parsing (AI upgrade in Phase 8)
 
 ### Gamification (Health Score)
 
@@ -375,13 +402,20 @@ npx cap open android
 | `src/hooks/useTransactions.tsx` | Transaction management |
 | `src/hooks/useBudgets.tsx` | Budget management |
 | `src/hooks/useCurrency.tsx` | Multi-currency support |
+| `src/hooks/useVoiceInput.ts` | Voice transcription (Web Speech API) |
 | `src/types/index.ts` | Core type definitions |
 | `src/integrations/supabase/client.ts` | Supabase singleton |
 | `src/lib/security.ts` | Security utilities |
 | `src/lib/logger.ts` | Logging service |
+| `src/lib/imageProcessor.ts` | Receipt image optimization |
 | `src/components/Layout.tsx` | Main layout wrapper |
+| `src/components/InputMethodSheet.tsx` | Unified FAB action menu (3 options) |
+| `src/components/VoiceInputFlow.tsx` | Enhanced voice memo UI with animations |
+| `src/components/ReceiptUpload.tsx` | Receipt OCR + storage |
 | `TRD.md` | Technical requirements & architecture |
 | `PRD.md` | Product requirements & roadmap |
+| `docs/UNIFIED_FAB_IMPLEMENTATION.md` | Unified FAB architecture & roadmap |
+| `docs/RECEIPT_IMAGE_OPTIMIZATION.md` | Receipt image optimization spec |
 
 ## Development Workflow
 

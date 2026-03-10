@@ -1,27 +1,27 @@
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { NexusModal } from '@/components/NexusModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
-import { UpgradeModal } from '@/components/UpgradeModal';
+import { InputMethodSheet } from '@/components/InputMethodSheet';
+import { VoiceInputFlow } from '@/components/VoiceInputFlow';
 import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
-import { useSubscription } from '@/hooks/useSubscription';
 import { CyberpunkBackground } from '@/components/CyberpunkBackground';
 import { cn } from '@/lib/utils';
 
 export function Layout() {
     const [showManual, setShowManual] = useState(false);
     const [showNexus, setShowNexus] = useState(false);
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showInputSheet, setShowInputSheet] = useState(false);
+    const [showVoiceInput, setShowVoiceInput] = useState(false);
+    const [nexusMode, setNexusMode] = useState<'voice' | 'scan'>('voice');
     const [smartData, setSmartData] = useState<any>(undefined);
 
     const location = useLocation();
-    const { variant } = useTheme();
+    const { variant, theme } = useTheme();
     const navigate = useNavigate();
-    const { isPremium } = useSubscription();
 
     // Generic Header Logic
     const getPageTitle = (pathname: string) => {
@@ -42,16 +42,26 @@ export function Layout() {
 
     const isProfileSubPage = location.pathname.startsWith('/profile/');
 
-    const handleNexusClick = () => {
-        if (isPremium) {
-            setShowNexus(true);
-        } else {
-            setShowUpgradeModal(true);
-        }
+    // Input method handlers
+    const handleVoiceInput = () => {
+        setShowInputSheet(false);
+        setShowVoiceInput(true);
+    };
+
+    const handleReceiptInput = () => {
+        setShowInputSheet(false);
+        setNexusMode('scan');
+        setShowNexus(true);
+    };
+
+    const handleManualInput = () => {
+        setShowInputSheet(false);
+        setSmartData(undefined);
+        setShowManual(true);
     };
 
     return (
-        <div className="min-h-screen bg-transparent relative">
+        <div className="min-h-screen relative">
             {/* Common Animating Background (Cyberpunk only) */}
             {variant === 'cyberpunk' && <CyberpunkBackground />}
 
@@ -62,7 +72,7 @@ export function Layout() {
                 onBack={isProfileSubPage ? () => navigate('/profile') : undefined}
             />
 
-            <main className="relative z-0">
+            <main className="relative z-10 pb-page-content">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={location.pathname}
@@ -77,10 +87,16 @@ export function Layout() {
             </main>
 
             <BottomNavigation
-                onAddTransaction={() => {
-                    setSmartData(undefined);
-                    setShowManual(true);
-                }}
+                onOpenInputSheet={() => setShowInputSheet(true)}
+            />
+
+            {/* Input Method Selection Sheet */}
+            <InputMethodSheet
+                open={showInputSheet}
+                onOpenChange={setShowInputSheet}
+                onVoice={handleVoiceInput}
+                onReceipt={handleReceiptInput}
+                onManual={handleManualInput}
             />
 
             {/* Manual Entry Modal */}
@@ -93,37 +109,28 @@ export function Layout() {
                 }}
             />
 
-            {/* The Nexus (AI) Modal */}
+            {/* Voice Input Flow */}
+            <VoiceInputFlow
+                open={showVoiceInput}
+                onOpenChange={setShowVoiceInput}
+                onComplete={(data) => {
+                    setSmartData(data);
+                    setShowVoiceInput(false);
+                    setShowManual(true);
+                }}
+            />
+
+            {/* The Nexus (Receipt Scanner) Modal */}
             <NexusModal
                 open={showNexus}
                 onOpenChange={setShowNexus}
+                initialMode={nexusMode}
                 onSmartCapture={(data) => {
                     setSmartData(data);
                     setShowNexus(false);
                     setShowManual(true);
                 }}
             />
-
-            {/* Premium Upgrade Modal */}
-            <UpgradeModal
-                open={showUpgradeModal}
-                onOpenChange={setShowUpgradeModal}
-                source="nexus_fab"
-            />
-
-            {/* Floating Nexus Button */}
-            {!showManual && !showNexus && (
-                <motion.button
-                    initial={{ scale: 0, rotate: 180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    whileHover={{ scale: 1.1, rotate: 15 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleNexusClick}
-                    className="fixed bottom-32 right-6 z-40 w-12 h-12 rounded-full bg-indigo-600 text-white shadow-2xl flex items-center justify-center border-2 border-white/20 hover:bg-indigo-500 transition-colors"
-                >
-                    <Zap className="w-6 h-6 fill-current" />
-                </motion.button>
-            )}
         </div>
     );
 }

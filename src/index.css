@@ -22,6 +22,66 @@
   .pt-header {
     padding-top: calc(env(safe-area-inset-top) + 8px);
   }
+
+  /* Dynamic viewport height utilities */
+  .h-screen-dynamic {
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+  }
+
+  .min-h-screen-dynamic {
+    min-height: 100vh;
+    min-height: calc(var(--vh, 1vh) * 100);
+  }
+
+  .max-h-screen-dynamic {
+    max-height: 100vh;
+    max-height: calc(var(--vh, 1vh) * 100);
+  }
+
+  /* Custom animations for dropdown menus */
+  @keyframes dropdown-bounce-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.9) translateY(-10px);
+    }
+    50% {
+      transform: scale(1.05) translateY(0);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes dropdown-bounce-out {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.95) translateY(-5px);
+    }
+  }
+
+  @keyframes neon-pulse {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 0 10px rgba(0, 255, 255, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 15px rgba(0, 255, 255, 0.3);
+    }
+  }
+
+  /* Cyberpunk dropdown animations */
+  [data-variant="cyberpunk"] [data-radix-dropdown-menu-content] {
+    animation: dropdown-bounce-in 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  [data-variant="cyberpunk"] [data-radix-dropdown-menu-content][data-state="closed"] {
+    animation: dropdown-bounce-out 0.2s ease-out;
+  }
 }
 
 /* SettleUp Design System - Fintech aesthetic with purple cards and orange accents */
@@ -42,7 +102,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 20%;
 
-    --primary: 262 47% 35%;
+    --primary: 217 91% 60%;
+    /* Blue #3B82F6 */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 96%;
@@ -51,7 +112,8 @@
     --muted: 0 0% 94%;
     --muted-foreground: 240 5% 30%;
 
-    --accent: 24 95% 53%;
+    --accent: 262 83% 58%;
+    /* Purple #8B5CF6 */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -59,34 +121,45 @@
 
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 262 47% 35%;
+    --ring: 217 91% 60%;
 
     --radius: 1rem;
 
-    /* Custom fintech colors */
-    --card-purple: 262 47% 35%;
-    --card-purple-light: 262 47% 45%;
+    /* Gradient colors matching onboarding */
+    --card-purple: 262 83% 58%;
+    /* Purple #8B5CF6 */
+    --card-purple-light: 262 83% 68%;
+    --card-blue: 217 91% 60%;
+    /* Blue #3B82F6 */
+    --card-blue-light: 217 91% 70%;
+    --card-pink: 330 81% 60%;
+    /* Pink #EC4899 */
+    --card-pink-light: 330 81% 70%;
     --card-green: 158 64% 40%;
     --card-green-light: 158 64% 50%;
-    --orange: 24 95% 53%;
-    --orange-light: 24 95% 63%;
 
-    /* Chart colors */
-    --chart-1: 262 47% 45%;
-    --chart-2: 24 95% 53%;
-    --chart-3: 158 64% 45%;
-    --chart-4: 220 14% 50%;
-    --chart-5: 0 0% 75%;
+    /* Chart colors - Gradient palette */
+    --chart-1: 217 91% 60%;
+    /* Blue */
+    --chart-2: 262 83% 58%;
+    /* Purple */
+    --chart-3: 330 81% 60%;
+    /* Pink */
+    --chart-4: 158 64% 45%;
+    /* Green */
+    --chart-5: 45 93% 70%;
+    /* Yellow */
 
-    /* Gradients */
-    --gradient-card-purple: linear-gradient(135deg, hsl(262 47% 35%) 0%, hsl(280 50% 45%) 100%);
-    --gradient-card-green: linear-gradient(135deg, hsl(158 64% 40%) 0%, hsl(165 60% 50%) 100%);
-    --gradient-card-orange: linear-gradient(135deg, hsl(24 95% 53%) 0%, hsl(35 95% 58%) 100%);
+    /* Gradients matching onboarding theme */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(262 83% 58%) 50%, hsl(330 81% 60%) 100%);
+    --gradient-card-purple: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 81% 60%) 100%);
+    --gradient-card-blue: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(199 89% 48%) 100%);
+    --gradient-card-pink: linear-gradient(135deg, hsl(330 81% 60%) 0%, hsl(350 89% 60%) 100%);
 
     /* Shadows */
     --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.1);
     --shadow-card-hover: 0 8px 30px -8px hsl(0 0% 0% / 0.15);
-    --shadow-fab: 0 8px 24px -4px hsl(24 95% 53% / 0.4);
+    --shadow-fab: 0 8px 24px -4px hsl(217 91% 60% / 0.4);
 
     --font-sans: 'Exo 2', system-ui, -apple-system, sans-serif;
   }
@@ -101,7 +174,8 @@
     --popover: 240 10% 12%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 262 47% 55%;
+    --primary: 217 91% 60%;
+    /* Blue #3B82F6 */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 10% 18%;
@@ -110,7 +184,8 @@
     --muted: 240 10% 22%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 24 95% 53%;
+    --accent: 262 83% 58%;
+    /* Purple #8B5CF6 */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -118,10 +193,14 @@
 
     --border: 240 10% 22%;
     --input: 240 10% 22%;
-    --ring: 262 47% 55%;
+    --ring: 217 91% 60%;
 
-    --card-purple: 262 47% 45%;
-    --card-purple-light: 262 47% 55%;
+    --card-purple: 262 83% 58%;
+    --card-purple-light: 262 83% 68%;
+    --card-blue: 217 91% 60%;
+    --card-blue-light: 217 91% 70%;
+    --card-pink: 330 81% 60%;
+    --card-pink-light: 330 81% 70%;
 
     --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
     --shadow-card-hover: 0 8px 30px -8px hsl(0 0% 0% / 0.4);
@@ -245,9 +324,68 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    /* Ensure body can scroll */
+    /* Fixed body to prevent keyboard resize */
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #root {
+    width: 100%;
+    height: 100%;
     overflow-y: auto;
-    overscroll-behavior-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Ensure portal containers are positioned correctly */
+  [data-radix-portal] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    pointer-events: none;
+    z-index: 99999;
+  }
+
+  /* Allow interactions with portal content */
+  [data-radix-portal] > * {
+    pointer-events: auto;
+  }
+
+  /* Remove yellow selection boxes and default focus outlines for mobile-first UX */
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"] {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+  }
+
+  /* Disable text selection on UI components (not on inputs/textareas) */
+  *:not(input):not(textarea):not([contenteditable="true"]) {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+  }
+
+  /* Remove default focus outlines, but keep accessibility with focus-visible */
+  *:focus {
+    outline: none;
+  }
+
+  /* Custom focus styles for accessibility (keyboard navigation only) */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
   }
 
   /* Robust scrollbar hiding */
@@ -443,4 +581,157 @@
       transform: scale(1);
     }
   }
+}
+/* =========================================
+   PERFORMANCE OPTIMIZATIONS FOR MOBILE/ANDROID
+   GPU acceleration & smooth animations
+   ========================================= */
+
+/* Force GPU acceleration for all animated elements */
+.motion-element,
+[class*="motion-"],
+.animated,
+.backdrop-blur-sm,
+.backdrop-blur-md,
+.blur-2xl,
+.blur-3xl {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+}
+
+/* Optimize backdrop-blur for better performance on Android */
+.backdrop-blur-sm {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  will-change: backdrop-filter;
+}
+
+.backdrop-blur-md {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  will-change: backdrop-filter;
+}
+
+/* Optimize blur filters */
+.blur-2xl {
+  will-change: filter;
+  filter: blur(40px);
+  -webkit-filter: blur(40px);
+}
+
+.blur-3xl {
+  will-change: filter;
+  filter: blur(64px);
+  -webkit-filter: blur(64px);
+}
+
+/* Smooth scrolling optimization for Capacitor/Android */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Optimize for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices to prevent sticky states */
+  .group:hover .group-hover\:scale-110 {
+    transform: none;
+  }
+  
+  .group:hover .group-hover\:bg-white\/20 {
+    background-color: inherit;
+  }
+  
+  /* Optimize animations for mobile */
+  * {
+    animation-duration: 0.3s !important;
+    transition-duration: 0.3s !important;
+  }
+}
+
+/* Android-specific optimizations */
+@supports (-webkit-overflow-scrolling: touch) {
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Reduce motion blur on Android */
+  .blur-3xl {
+    filter: blur(48px);
+  }
+  
+  .blur-2xl {
+    filter: blur(32px);
+  }
+}
+
+/* CSS Containment for better rendering performance */
+.card-3d,
+[class*="rounded-"] {
+  contain: layout style paint;
+}
+
+/* Exception: Drawer/Dialog containers should NOT have containment
+   to allow portaled dropdowns to render properly */
+[data-vaul-drawer] [class*="rounded-"],
+[data-radix-dialog-content] [class*="rounded-"],
+[role="dialog"] [class*="rounded-"],
+[data-vaul-drawer-content],
+[data-radix-dialog-content] {
+  contain: none !important;
+}
+
+/* Optimize gradient rendering */
+[class*="bg-gradient-"] {
+  will-change: auto;
+  transform: translateZ(0);
+}
+
+/* Prevent layout shifts during animations */
+.min-h-\[1\.5rem\],
+.min-h-\[1\.75rem\] {
+  contain: layout;
+}
+
+/* Force hardware acceleration on transforms */
+.transform,
+[style*="transform"] {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimize opacity transitions */
+.transition-opacity,
+[class*="opacity-"] {
+  will-change: opacity;
+}
+
+/* Reduce paint areas for better performance */
+.overflow-hidden {
+  contain: paint;
+}
+
+/* Optimize fixed positioning for mobile */
+.fixed {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Exception: Drawer/Dialog containers should NOT create stacking contexts
+   to allow portaled dropdowns to render above them
+   NOTE: We keep transforms for animation but prevent isolation */
+[data-vaul-drawer-wrapper],
+[data-radix-dialog-content],
+[role="dialog"] {
+  isolation: auto !important;
 }

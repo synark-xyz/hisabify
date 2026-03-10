@@ -28,7 +28,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-background/80 backdrop-blur-xl">
+            <DialogContent className="max-w-[420px] p-0 overflow-hidden border-0 bg-background/80 backdrop-blur-xl">
                 <div className="relative">
                     {/* Header Gradient */}
                     <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500" />

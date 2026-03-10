@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
@@ -35,7 +35,7 @@ interface ConvertedTransaction extends Transaction {
 export function ExpensesPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month' | 'year'>('week');
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [showAllExpenses, setShowAllExpenses] = useState(false);
@@ -47,23 +47,37 @@ export function ExpensesPage() {
   const { convertAmount } = useExchangeRate();
   const { variant } = useTheme();
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   // Move definitions up
   const fetchTransactions = useCallback(async () => {
     if (!user) return;
 
     // Determine fetch range based on view mode (add buffer)
     let start, end;
-    if (viewMode === 'week') {
-      start = startOfWeek(currentDate, { weekStartsOn: 1 }).toISOString();
-      end = endOfWeek(currentDate, { weekStartsOn: 1 }).toISOString();
+    if (viewMode === 'day') {
+      start = new Date(currentDate);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(currentDate);
+      end.setHours(23, 59, 59, 999);
+    } else if (viewMode === 'week') {
+      start = startOfWeek(currentDate, { weekStartsOn: 1 });
+      end = endOfWeek(currentDate, { weekStartsOn: 1 });
+    } else if (viewMode === 'month') {
+      start = startOfMonth(currentDate);
+      end = endOfMonth(currentDate);
     } else {
-      start = startOfMonth(currentDate).toISOString();
-      end = endOfMonth(currentDate).toISOString();
+      // year
+      start = new Date(currentDate.getFullYear(), 0, 1);
+      end = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59);
     }
 
     // Safe buffer to handle edge cases
-    const bufferStart = viewMode === 'week' ? subWeeks(new Date(start), 1).toISOString() : start;
-    const bufferEnd = viewMode === 'week' ? addWeeks(new Date(end), 1).toISOString() : end;
+    const bufferStart = viewMode === 'week' ? subWeeks(start, 1).toISOString() : start.toISOString();
+    const bufferEnd = viewMode === 'week' ? addWeeks(end, 1).toISOString() : end.toISOString();
 
     const { data } = await supabase
       .from('transactions')
@@ -132,13 +146,23 @@ export function ExpensesPage() {
   };
 
   // Determine the date range for the current view
-  const viewStart = viewMode === 'week'
-    ? startOfWeek(currentDate, { weekStartsOn: 1 })
-    : startOfMonth(currentDate);
-
-  const viewEnd = viewMode === 'week'
-    ? endOfWeek(currentDate, { weekStartsOn: 1 })
-    : endOfMonth(currentDate);
+  let viewStart, viewEnd;
+  if (viewMode === 'day') {
+    viewStart = new Date(currentDate);
+    viewStart.setHours(0, 0, 0, 0);
+    viewEnd = new Date(currentDate);
+    viewEnd.setHours(23, 59, 59, 999);
+  } else if (viewMode === 'week') {
+    viewStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    viewEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+  } else if (viewMode === 'month') {
+    viewStart = startOfMonth(currentDate);
+    viewEnd = endOfMonth(currentDate);
+  } else {
+    // year
+    viewStart = new Date(currentDate.getFullYear(), 0, 1);
+    viewEnd = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59);
+  }
 
   // Filter transactions for the current VIEW range (for stats)
   const rangeTransactions = transactions.filter(tx => {
@@ -313,11 +337,22 @@ export function ExpensesPage() {
                   </div>
 
                   {/* View Toggle */}
-                  <div className="flex p-1 bg-muted rounded-full">
+                  <div className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-full">
+                    <button
+                      onClick={() => setViewMode('day')}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        viewMode === 'day'
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Daily
+                    </button>
                     <button
                       onClick={() => setViewMode('week')}
                       className={cn(
-                        "px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
                         viewMode === 'week'
                           ? "bg-background text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
@@ -328,13 +363,24 @@ export function ExpensesPage() {
                     <button
                       onClick={() => setViewMode('month')}
                       className={cn(
-                        "px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
                         viewMode === 'month'
                           ? "bg-background text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       Monthly
+                    </button>
+                    <button
+                      onClick={() => setViewMode('year')}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        viewMode === 'year'
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Yearly
                     </button>
                   </div>
                 </div>
@@ -350,12 +396,13 @@ export function ExpensesPage() {
               </div>
 
               <AnimatePresence mode="wait">
-                {viewMode === 'week' ? (
+                {(viewMode === 'week' || viewMode === 'day') ? (
                   <motion.div
                     key="week-calendar"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
                   >
                     <SwipeableWeekCalendar
                       currentDate={currentDate}
@@ -365,12 +412,13 @@ export function ExpensesPage() {
                       hasTransactions={hasTransactions}
                     />
                   </motion.div>
-                ) : (
+                ) : (viewMode === 'month') ? (
                   <motion.div
                     key="month-calendar"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
                   >
                     <MonthCalendar
                       currentDate={currentDate}
@@ -380,22 +428,52 @@ export function ExpensesPage() {
                       hasTransactions={hasTransactions}
                     />
                   </motion.div>
+                ) : (
+                  <motion.div
+                    key="year-view"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="text-center py-4 text-muted-foreground text-sm"
+                  >
+                    Viewing all transactions for {currentDate.getFullYear()}
+                  </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
 
             {/* Summary Cards */}
             <motion.div variants={itemVariants}>
-              <div className="mb-2 flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {selectedDate
-                    ? 'Daily Overview'
-                    : viewMode === 'week' ? 'Weekly Overview' : 'Monthly Overview'}
-                </span>
-                {selectedDate && (
-                  <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full">
-                    {format(selectedDate, 'MMM d')}
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {selectedDate
+                      ? 'Daily Overview'
+                      : viewMode === 'day' ? 'Daily Overview'
+                      : viewMode === 'week' ? 'Weekly Overview'
+                      : viewMode === 'month' ? 'Monthly Overview'
+                      : 'Yearly Overview'}
                   </span>
+                  {selectedDate && (
+                    <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium">
+                      {format(selectedDate, 'MMM d')}
+                    </span>
+                  )}
+                </div>
+                {selectedDate && (
+                  <motion.button
+                    onClick={() => setSelectedDate(null)}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-destructive bg-muted/30 hover:bg-destructive/10 rounded-full transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                  >
+                    <X className="w-3 h-3" />
+                    Clear
+                  </motion.button>
                 )}
               </div>
               <ExpenseOverview
@@ -410,7 +488,10 @@ export function ExpensesPage() {
                 <h2 className="text-lg font-bold text-foreground">
                   {selectedDate
                     ? 'Daily Analytics'
-                    : viewMode === 'week' ? 'Weekly Analytics' : 'Monthly Analytics'}
+                    : viewMode === 'day' ? 'Daily Analytics'
+                    : viewMode === 'week' ? 'Weekly Analytics'
+                    : viewMode === 'month' ? 'Monthly Analytics'
+                    : 'Yearly Analytics'}
                 </h2>
                 <motion.button
                   onClick={() => setShowAllExpenses(!showAllExpenses)}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Edit2, Trash2, Calendar, DollarSign, Bell, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { X, Plus, Trash2, Calendar, DollarSign, Bell, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,10 +75,21 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
     return (
         <>
             <Drawer open={open} onOpenChange={onOpenChange}>
-                <DrawerContent className="max-h-[85vh] h-[85vh] border-none bg-background rounded-t-[32px]">
+                <DrawerContent className="max-h-[66vh]">
+                    {/* Close Button - Top Right */}
+                    <DrawerClose asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-4 right-4 h-8 w-8 rounded-full bg-destructive/10 hover:bg-destructive/20 text-destructive z-10"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </DrawerClose>
+
                     <div className="p-6 pb-0">
-                        <DrawerHeader className="flex flex-row items-center justify-between mb-6 p-0">
-                            <DrawerTitle className="text-xl font-extrabold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <DrawerHeader className="flex flex-row items-center justify-between mb-6 p-0 pr-10">
+                            <DrawerTitle className="text-xl font-extrabold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent pr-3">
                                 Manage Reminders
                             </DrawerTitle>
                             <Button
@@ -145,17 +156,6 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                                                 <div className="text-right">
                                                     <p className="text-lg font-black text-foreground">{formatAmount(reminder.amount)}</p>
                                                     <div className="flex items-center justify-end gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8 text-muted-foreground hover:text-accent"
-                                                            onClick={() => {
-                                                                setEditingReminder(reminder);
-                                                                setShowAddModal(true);
-                                                            }}
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </Button>
                                                         <Button
                                                             size="icon"
                                                             variant="ghost"

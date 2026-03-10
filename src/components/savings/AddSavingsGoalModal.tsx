@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronDown } from "lucide-react";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { MobileDialog } from "@/components/ui/mobile-dialog";
 import {
   Form,
   FormControl,
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
 import { useCurrency, currencyData } from "@/hooks/useCurrency";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 
 const goalSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -60,6 +61,9 @@ export function AddSavingsGoalModal({
   const { isPremium } = useSubscription();
   const [currencyOpen, setCurrencyOpen] = useState(false);
 
+  // Handle keyboard on mobile
+  useKeyboardHandler(open);
+
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
     defaultValues: {
@@ -99,16 +103,13 @@ export function AddSavingsGoalModal({
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh]">
-        <DrawerHeader className="pb-4">
-          <DrawerTitle className="text-center font-bold text-xl">
-            {editingGoal ? "Edit Savings Goal" : "Create Savings Goal"}
-          </DrawerTitle>
-        </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-safe-nav">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-2">
+    <MobileDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editingGoal ? "Edit Savings Goal" : "Create Savings Goal"}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -285,10 +286,8 @@ export function AddSavingsGoalModal({
                   {editingGoal ? "Update Goal" : "Create Goal"}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </div>
-      </DrawerContent>
-    </Drawer>
+          </form>
+        </Form>
+    </MobileDialog>
   );
 }

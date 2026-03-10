@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, DollarSign, Bell, RefreshCw, Loader2 } from 'lucide-react';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Calendar, DollarSign, Bell, RefreshCw, Loader2 } from 'lucide-react';
+import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,15 +113,11 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh] border-none bg-background rounded-t-[32px]">
-        <DrawerHeader className="pb-4">
-          <DrawerTitle className="text-center font-bold text-xl">
-            {reminder ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
-          </DrawerTitle>
-        </DrawerHeader>
-
-        <div className="overflow-y-auto px-6 pb-safe-nav">
+    <ResponsiveDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={reminder ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
+    >
           <form onSubmit={handleSubmit} className="space-y-5 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider opacity-70">Title</Label>
@@ -241,13 +237,11 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading} className="flex-1 bg-accent hover:bg-accent/90 rounded-2xl h-12 shadow-fab font-bold">
+              <Button type="submit" disabled={loading} className="flex-1 h-12">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : reminder ? 'Update Reminder' : 'Create Reminder'}
               </Button>
             </div>
           </form>
-        </div>
-      </DrawerContent>
-    </Drawer>
+    </ResponsiveDrawer>
   );
 }

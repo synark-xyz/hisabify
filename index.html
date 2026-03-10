@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>Hisabify - Expense Tracker</title>
     <meta name="description" content="Track your expenses and income with ease using Hisabify" />
     <meta name="author" content="Lovable" />
@@ -51,8 +51,6 @@
       }
       body {
         -webkit-touch-callout: none;
-        user-select: none;
-        -webkit-user-select: none;
         overscroll-behavior-y: contain;
       }
       /* Safe area padding for notched devices */
@@ -63,6 +61,7 @@
 
   <body>
     <div id="root"></div>
+    <div id="overlay-root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

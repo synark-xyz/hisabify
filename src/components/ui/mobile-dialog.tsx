@@ -127,7 +127,7 @@ export function MobileDialog({
           {/* Scrollable Content - Prevent drawer drag on this area */}
           <div
             ref={scrollRef}
-            className="flex-1 px-4 pb-4 min-h-0"
+            className="flex-1 px-4 pt-2 pb-5 min-h-0"
             data-vaul-no-drag
             style={{
               overflowY: 'auto',
@@ -161,7 +161,7 @@ export function MobileDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="overflow-x-hidden">
+        <div className="overflow-x-hidden py-1">
           {children}
         </div>
       </DialogContent>

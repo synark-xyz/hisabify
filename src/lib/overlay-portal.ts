@@ -14,6 +14,27 @@ export function getOverlayRoot(): HTMLElement | null {
 }
 
 /**
+ * Resolve the best portal container for overlays.
+ * Prefer the global root mounted next to #root to avoid fixed-position
+ * clipping/misalignment when pages use transformed containers.
+ */
+export function getPreferredOverlayRoot(): HTMLElement | null {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return null;
+  }
+
+  const globalRoot = getOverlayRoot();
+  if (globalRoot) {
+    return globalRoot;
+  }
+
+  const budgetRoot = document.getElementById('budget-overlay-root');
+  const savingsRoot = document.getElementById('savings-overlay-root');
+
+  return budgetRoot || savingsRoot;
+}
+
+/**
  * Hook to get overlay root (safe for React components)
  */
 export function useOverlayRoot(): HTMLElement | null {

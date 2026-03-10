@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
-import { getOverlayRoot } from "@/lib/overlay-portal";
+import { getPreferredOverlayRoot } from "@/lib/overlay-portal";
 
 const Sheet = SheetPrimitive.Root;
 
@@ -58,12 +58,7 @@ const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Con
     const overlayRoot = React.useMemo(() => {
       if (typeof document === 'undefined') return null;
 
-      // Prioritize page-specific overlay root (e.g., budget-overlay-root) over global
-      const budgetRoot = document.getElementById('budget-overlay-root');
-      const savingsRoot = document.getElementById('savings-overlay-root');
-      const pageRoot = budgetRoot || savingsRoot;
-
-      return pageRoot || getOverlayRoot();
+      return getPreferredOverlayRoot();
     }, []);
 
     return (

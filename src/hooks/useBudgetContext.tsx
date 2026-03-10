@@ -26,10 +26,13 @@ export function useBudgetContext() {
   const getBudgetForCategory = useCallback((categoryId: string | null): BudgetWithSpending | null => {
     if (!categoryId) return null;
 
-    // Find active budget for this category (or a general budget with null category_id)
-    return budgets.find(b =>
-      b.category_id === categoryId || b.category_id === null
-    ) || null;
+    // Prefer exact category budget, then fallback to a general budget.
+    const exactMatch = budgets.find((budget) => budget.category_id === categoryId);
+    if (exactMatch) {
+      return exactMatch;
+    }
+
+    return budgets.find((budget) => budget.category_id === null) || null;
   }, [budgets]);
 
   // Check if transaction would exceed budget
@@ -49,7 +52,8 @@ export function useBudgetContext() {
       };
     }
 
-    const remaining = budget.remaining - amount;
+    const currentRemaining = budget.amount - budget.spent;
+    const remaining = currentRemaining - amount;
     const newSpent = budget.spent + amount;
     const newPercentage = (newSpent / budget.amount) * 100;
 
@@ -64,10 +68,10 @@ export function useBudgetContext() {
       wouldExceed: remaining < 0,
       status,
       message: remaining < 0
-        ? `This will exceed your ${budget.name || budget.category?.name || 'budget'} by $${Math.abs(remaining).toFixed(2)}`
-        : `You'll have $${remaining.toFixed(2)} remaining in your ${budget.name || budget.category?.name || 'budget'}`,
+        ? `This will exceed your ${budget.name || budget.category?.name || 'budget'} by ${Math.abs(remaining).toFixed(2)}`
+        : `You will have ${remaining.toFixed(2)} remaining in your ${budget.name || budget.category?.name || 'budget'}`,
     };
-  }, [budgets, getBudgetForCategory]);
+  }, [getBudgetForCategory]);
 
   // Suggest budgets with remaining capacity
   const suggestBudgets = useCallback((): BudgetSuggestion[] => {

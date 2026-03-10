@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-03-10
+
+### Changed
+- **Reminder Date Handling**: Normalized reminder date parsing/storage to calendar-day-safe values (UTC noon) across dashboard, reminders modal, add/edit form, and notifications page to prevent timezone drift.
+- **Analytics Data Integrity**: Removed mock/sample analytics fallback; charts now render only real transaction data and show explicit empty states when data is unavailable.
+- **Analytics Number Formatting**: Replaced hardcoded currency symbol on chart axes with locale-aware compact formatting.
+
+### Fixed
+- **Reminder Payment Flow**: Marking a reminder as paid now updates reminder status only; automatic transaction insertion was removed to prevent duplicates and currency mismatch side effects.
+- **Dashboard Year Filter**: Year dropdown now derives from all transaction years to prevent missing-year selection gaps.
+- **Health Score Copy**: Corrected displayed weight split to `40/30/30` to match scoring logic.
+- **Lint Stability**: Fixed hook-order issue in `overlay-portal`, `useEffect` dependency warning in `ExpensesPage`, and `require()` import usage in `tailwind.config.ts`.
+
+### Removed
+- **Dashboard Daily Quote Block**: Removed from Home dashboard flow to keep release scope focused on finance-critical surfaces.
+- **Client-side Reminder Scheduling**: Disabled `setTimeout`-based reminder scheduling in `notifications.ts`; reminder delivery now requires persistent system/backend scheduling.
+
+---
+
 ## [1.1.0] - 2026-01-30
 
 ### Added

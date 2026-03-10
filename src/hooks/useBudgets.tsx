@@ -471,7 +471,7 @@ export function useBudgets() {
         .update({
           is_template: true,
           template_name: templateName || budget.name || budget.category?.name || 'Budget Template'
-        })
+        } as any)
         .eq('id', budgetId)
         .eq('user_id', user.id);
 

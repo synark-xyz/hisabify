@@ -19,6 +19,7 @@ export function ProfilePage() {
   const navigate = useNavigate();
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const subscriptionStatusLabel = (profile.subscription_status || 'inactive').replace('_', ' ');
 
   const menuItems = [
     { id: 'personal', icon: User, label: 'Personal Information', path: '/profile/personal', color: 'bg-blue-500/10 text-blue-500' },
@@ -55,6 +56,9 @@ export function ProfilePage() {
               )}
             </h2>
             <p className="text-muted-foreground text-sm">{user?.email}</p>
+            <p className="text-xs mt-1 text-muted-foreground capitalize">
+              Subscription: {subscriptionStatusLabel}
+            </p>
           </motion.div>
 
           {/* Premium Card Upsell */}

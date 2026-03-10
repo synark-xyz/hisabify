@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/useCurrency';
 import { PaymentReminder } from '@/types';
 import { format, differenceInDays, isPast, isToday } from 'date-fns';
+import { toReminderDisplayDate } from '@/lib/reminderDate';
 
 interface PaymentReminderCarouselProps {
   reminders: PaymentReminder[];
@@ -26,7 +27,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
   const displayReminders = shouldAnimate ? [...reminders, ...reminders, ...reminders] : reminders;
 
   const getReminderStatus = (reminder: PaymentReminder) => {
-    const dueDate = new Date(reminder.due_date);
+    const dueDate = toReminderDisplayDate(reminder.due_date);
     const diff = differenceInDays(dueDate, new Date());
 
     if (reminder.status === 'paid') {

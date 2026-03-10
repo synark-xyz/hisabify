@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Re-verify imports to fix refresh crash
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
-import { DailyQuote } from '@/components/DailyQuote';
 import { StreamingGreeting } from '@/components/StreamingGreeting';
 import { HealthScoreCard } from '@/features/gamification/components/HealthScoreCard';
 import { TransactionItem } from '@/components/TransactionItem';
@@ -21,7 +20,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useTheme } from '@/hooks/useTheme';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, Transaction, MonthlySpending } from '@/types';
+import { Transaction } from '@/types';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
@@ -31,73 +30,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Sample analytics data for demonstration
-const sampleAnalyticsData: Record<number, MonthlySpending[]> = {
-  2023: [
-    { month: 'Jan', amount: 2850, year: 2023 },
-    { month: 'Feb', amount: 3200, year: 2023 },
-    { month: 'Mar', amount: 2950, year: 2023 },
-    { month: 'Apr', amount: 3400, year: 2023 },
-    { month: 'May', amount: 3100, year: 2023 },
-    { month: 'Jun', amount: 2800, year: 2023 },
-    { month: 'Jul', amount: 3600, year: 2023 },
-    { month: 'Aug', amount: 3300, year: 2023 },
-    { month: 'Sep', amount: 2900, year: 2023 },
-    { month: 'Oct', amount: 3500, year: 2023 },
-    { month: 'Nov', amount: 4200, year: 2023 },
-    { month: 'Dec', amount: 4800, year: 2023 },
-  ],
-  2024: [
-    { month: 'Jan', amount: 3100, year: 2024 },
-    { month: 'Feb', amount: 2950, year: 2024 },
-    { month: 'Mar', amount: 3400, year: 2024 },
-    { month: 'Apr', amount: 3200, year: 2024 },
-    { month: 'May', amount: 3600, year: 2024 },
-    { month: 'Jun', amount: 3100, year: 2024 },
-    { month: 'Jul', amount: 3800, year: 2024 },
-    { month: 'Aug', amount: 3500, year: 2024 },
-    { month: 'Sep', amount: 3200, year: 2024 },
-    { month: 'Oct', amount: 3700, year: 2024 },
-    { month: 'Nov', amount: 4100, year: 2024 },
-    { month: 'Dec', amount: 4500, year: 2024 },
-  ],
-  2025: [
-    { month: 'Jan', amount: 3300, year: 2025 },
-    { month: 'Feb', amount: 3100, year: 2025 },
-    { month: 'Mar', amount: 3500, year: 2025 },
-    { month: 'Apr', amount: 3400, year: 2025 },
-    { month: 'May', amount: 3700, year: 2025 },
-    { month: 'Jun', amount: 3200, year: 2025 },
-    { month: 'Jul', amount: 3900, year: 2025 },
-    { month: 'Aug', amount: 3600, year: 2025 },
-    { month: 'Sep', amount: 3300, year: 2025 },
-    { month: 'Oct', amount: 3800, year: 2025 },
-    { month: 'Nov', amount: 4300, year: 2025 },
-    { month: 'Dec', amount: 4700, year: 2025 },
-  ],
-  2026: [
-    { month: 'Jan', amount: 3500, year: 2026 },
-    { month: 'Feb', amount: 3300, year: 2026 },
-    { month: 'Mar', amount: 3700, year: 2026 },
-    { month: 'Apr', amount: 3600, year: 2026 },
-    { month: 'May', amount: 3900, year: 2026 },
-    { month: 'Jun', amount: 3400, year: 2026 },
-    { month: 'Jul', amount: 4100, year: 2026 },
-    { month: 'Aug', amount: 3800, year: 2026 },
-    { month: 'Sep', amount: 3500, year: 2026 },
-    { month: 'Oct', amount: 4000, year: 2026 },
-    { month: 'Nov', amount: 4500, year: 2026 },
-    { month: 'Dec', amount: 4900, year: 2026 },
-  ],
-};
-
 export function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [monthlyData, setMonthlyData] = useState<MonthlySpending[]>([]);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()]);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
@@ -115,59 +54,7 @@ export function Dashboard() {
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
 
-  // Dynamically calculate available years based on transaction data
-  const availableYears = useMemo(() => {
-    if (transactions.length === 0) {
-      return [new Date().getFullYear()];
-    }
-
-    const years = new Set<number>();
-    transactions.forEach(tx => {
-      const year = new Date(tx.date).getFullYear();
-      if (!isNaN(year)) {
-        years.add(year);
-      }
-    });
-
-    // Add current year if not present
-    const currentYear = new Date().getFullYear();
-    years.add(currentYear);
-
-    // Convert to sorted array (ascending)
-    return Array.from(years).sort((a, b) => a - b);
-  }, [transactions]);
-
-  // Event listener for layout modal updates
-  useEffect(() => {
-    const onTransactionUpdated = () => handleRefresh();
-    window.addEventListener('transaction-updated', onTransactionUpdated);
-    return () => window.removeEventListener('transaction-updated', onTransactionUpdated);
-  }, [user]);
-
-  useEffect(() => {
-    if (user) {
-      fetchTransactions();
-      fetchMonthlySummary();
-      fetchTodayTransactions();
-    }
-  }, [user, currencyVersion]);
-
-  useEffect(() => {
-    generateMonthlyData();
-  }, [transactions, selectedYear]);
-
-  const handleRefresh = async () => {
-    await Promise.all([
-      fetchTransactions(),
-      fetchMonthlySummary(),
-      fetchTodayTransactions(),
-      refetchReminders()
-    ]);
-  };
-
-
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from('transactions')
@@ -197,9 +84,34 @@ export function Dashboard() {
       );
       setTransactions(convertedData as unknown as Transaction[]);
     }
-  };
+  }, [convertAmount, currency, user]);
 
-  const fetchMonthlySummary = async () => {
+  const fetchAvailableYears = useCallback(async () => {
+    const currentYear = new Date().getFullYear();
+    if (!user) {
+      setAvailableYears([currentYear]);
+      return;
+    }
+
+    const { data } = await supabase
+      .from('transactions')
+      .select('date')
+      .eq('user_id', user.id);
+
+    const years = new Set<number>([currentYear]);
+    data?.forEach(({ date }) => {
+      const year = new Date(date).getFullYear();
+      if (!isNaN(year)) {
+        years.add(year);
+      }
+    });
+
+    const sortedYears = Array.from(years).sort((a, b) => a - b);
+    setAvailableYears(sortedYears);
+    setSelectedYear((prev) => (sortedYears.includes(prev) ? prev : sortedYears[sortedYears.length - 1]));
+  }, [user]);
+
+  const fetchMonthlySummary = useCallback(async () => {
     if (!user) return;
     const now = new Date();
     const start = startOfMonth(now).toISOString();
@@ -234,9 +146,9 @@ export function Dashboard() {
       setTotalIncome(income);
       setTotalExpenses(expenses);
     }
-  };
+  }, [convertAmount, currency, user]);
 
-  const fetchTodayTransactions = async () => {
+  const fetchTodayTransactions = useCallback(async () => {
     if (!user) return;
     const now = new Date();
     const start = startOfDay(now).toISOString();
@@ -268,54 +180,33 @@ export function Dashboard() {
       const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
       setTodayNet(income - expenses);
     }
-  };
+  }, [convertAmount, currency, user]);
 
-  const generateMonthlyData = () => {
-    // Use sample data for the selected year
-    const yearData = sampleAnalyticsData[selectedYear];
-    if (yearData) {
-      // Get current month index for years in the past, or show relevant months
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonthIndex = currentDate.getMonth();
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      fetchTransactions(),
+      fetchMonthlySummary(),
+      fetchTodayTransactions(),
+      fetchAvailableYears(),
+      refetchReminders()
+    ]);
+  }, [fetchTransactions, fetchMonthlySummary, fetchTodayTransactions, fetchAvailableYears, refetchReminders]);
 
-      // Show last 7 months of data
-      let dataToShow: MonthlySpending[];
-      if (selectedYear === currentYear) {
-        // For current year, show months up to current month
-        const startIndex = Math.max(0, currentMonthIndex - 6);
-        dataToShow = yearData.slice(startIndex, currentMonthIndex + 1);
-      } else if (selectedYear < currentYear) {
-        // For past years, show last 7 months of the year
-        dataToShow = yearData.slice(5, 12);
-      } else {
-        // For future years, show first 7 months
-        dataToShow = yearData.slice(0, 7);
-      }
+  // Event listener for layout modal updates
+  useEffect(() => {
+    window.addEventListener('transaction-updated', handleRefresh);
+    return () => window.removeEventListener('transaction-updated', handleRefresh);
+  }, [handleRefresh]);
 
-      // Merge with actual transaction data if available
-      const mergedData = dataToShow.map(sample => {
-        const monthTransactions = transactions.filter(t => {
-          const txDate = new Date(t.date);
-          return format(txDate, 'MMM') === sample.month &&
-            txDate.getFullYear() === selectedYear &&
-            t.type === 'expense';
-        });
-        const actualAmount = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-        return {
-          month: sample.month,
-          amount: actualAmount > 0 ? actualAmount : sample.amount,
-          year: selectedYear,
-        };
-      });
-
-      setMonthlyData(mergedData);
+  useEffect(() => {
+    if (user) {
+      void handleRefresh();
     }
-  };
+  }, [user, currencyVersion, handleRefresh]);
 
-  const handleMonthSelect = (month: string) => {
+  const handleMonthSelect = useCallback((month: string) => {
     setSelectedMonth(month);
-  };
+  }, []);
 
   const netBalance = totalIncome - totalExpenses;
 
@@ -435,8 +326,6 @@ export function Dashboard() {
                 </div>
               </div>
             </motion.section>
-
-            <DailyQuote />
 
             <HealthScoreCard />
 
@@ -637,8 +526,7 @@ export function Dashboard() {
         onOpenChange={(open) => !open && setEditingTransaction(null)}
         transaction={editingTransaction}
         onSuccess={() => {
-          fetchTransactions();
-          fetchMonthlySummary();
+          void handleRefresh();
         }}
       />
 
@@ -647,8 +535,7 @@ export function Dashboard() {
         onOpenChange={(open) => !open && setDeletingTransaction(null)}
         transaction={deletingTransaction}
         onSuccess={() => {
-          fetchTransactions();
-          fetchMonthlySummary();
+          void handleRefresh();
         }}
       />
 

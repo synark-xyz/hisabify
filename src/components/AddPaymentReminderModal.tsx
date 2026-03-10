@@ -10,15 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
 import { schedulePaymentReminder, requestNotificationPermission } from '@/lib/notifications';
-import { cn } from '@/lib/utils';
+import { toReminderDateInputValue, toReminderDueDateIso } from '@/lib/reminderDate';
+import { PaymentReminder } from '@/types';
 
 interface AddPaymentReminderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  reminder?: any; // For editing
+  reminder?: PaymentReminder; // For editing
 }
 
 export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminder }: AddPaymentReminderModalProps) {
@@ -37,7 +37,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     if (reminder) {
       setTitle(reminder.title);
       setAmount(reminder.amount.toString());
-      setDueDate(format(new Date(reminder.due_date), 'yyyy-MM-dd'));
+      setDueDate(toReminderDateInputValue(reminder.due_date));
       setNotifyBeforeDays(reminder.notify_before_days.toString());
       setIsRecurring(reminder.is_recurring);
       setRecurringInterval(reminder.recurring_interval || 'monthly');
@@ -67,7 +67,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
         user_id: user.id,
         title,
         amount: parseFloat(amount),
-        due_date: new Date(dueDate).toISOString(),
+        due_date: toReminderDueDateIso(dueDate),
         notify_before_days: parseInt(notifyBeforeDays),
         is_recurring: isRecurring,
         recurring_interval: isRecurring ? recurringInterval : null,
@@ -105,8 +105,9 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
       onSuccess();
       onOpenChange(false);
       resetForm();
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save reminder';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, ShieldCheck, Receipt } from '@phosphor-icons/react';
@@ -13,6 +13,7 @@ import { getNotifications, markNotificationAsRead, clearOldNotifications, AppNot
 import { useHealthScore } from '@/features/gamification/hooks/useHealthScore';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { toReminderDisplayDate } from '@/lib/reminderDate';
 
 interface PaymentReminder {
     id: string;
@@ -32,15 +33,7 @@ export function NotificationsPage() {
     const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (user) {
-            fetchReminders();
-            fetchAppNotifications();
-            clearOldNotifications(); // Clean up old notifications
-        }
-    }, [user]);
-
-    const fetchReminders = async () => {
+    const fetchReminders = useCallback(async () => {
         if (!user) return;
         setLoading(true);
         const { data } = await supabase
@@ -51,12 +44,20 @@ export function NotificationsPage() {
 
         if (data) setReminders(data as PaymentReminder[]);
         setLoading(false);
-    };
+    }, [user]);
 
-    const fetchAppNotifications = () => {
+    const fetchAppNotifications = useCallback(() => {
         const notifications = getNotifications();
         setAppNotifications(notifications);
-    };
+    }, []);
+
+    useEffect(() => {
+        if (user) {
+            void fetchReminders();
+            fetchAppNotifications();
+            clearOldNotifications(); // Clean up old notifications
+        }
+    }, [user, fetchReminders, fetchAppNotifications]);
 
     const handleMarkAsPaid = async (id: string) => {
         // Optimistic update
@@ -70,11 +71,11 @@ export function NotificationsPage() {
             .eq('id', id);
 
         // Re-fetch to confirm
-        fetchReminders();
+        void fetchReminders();
     };
 
     const getStatusInfo = (status: string, dueDate: string) => {
-        const date = new Date(dueDate);
+        const date = toReminderDisplayDate(dueDate);
         const daysUntil = differenceInDays(date, new Date());
 
         if (status === 'paid') {
@@ -89,12 +90,9 @@ export function NotificationsPage() {
         return { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Upcoming' };
     };
 
-    const upcomingCount = reminders.filter(r => {
-        return r.status === 'upcoming' && !isPast(new Date(r.due_date));
-    }).length;
-
     const overdueCount = reminders.filter(r => {
-        return r.status === 'upcoming' && isPast(new Date(r.due_date)) && !isToday(new Date(r.due_date));
+        const dueDate = toReminderDisplayDate(r.due_date);
+        return r.status === 'upcoming' && isPast(dueDate) && !isToday(dueDate);
     }).length;
 
     const getNotificationIcon = (type: AppNotification['type']) => {
@@ -147,7 +145,10 @@ export function NotificationsPage() {
                                 </h3>
                                 <div className="space-y-3">
                                     {reminders
-                                        .filter(r => r.status === 'upcoming' && isPast(new Date(r.due_date)) && !isToday(new Date(r.due_date)))
+                                        .filter(r => {
+                                            const dueDate = toReminderDisplayDate(r.due_date);
+                                            return r.status === 'upcoming' && isPast(dueDate) && !isToday(dueDate);
+                                        })
                                         .map((reminder, idx) => {
                                             const statusInfo = getStatusInfo(reminder.status, reminder.due_date);
                                             const Icon = statusInfo.icon;
@@ -170,7 +171,7 @@ export function NotificationsPage() {
                                                             </div>
                                                             <p className="text-base font-bold text-accent text-glow">{formatAmount(reminder.amount)}</p>
                                                             <p className="text-xs text-destructive mt-1 font-medium">
-                                                                Due: {format(new Date(reminder.due_date), 'MMM d, yyyy')}
+                                                                Due: {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy')}
                                                             </p>
                                                         </div>
                                                         <Button
@@ -381,7 +382,8 @@ export function NotificationsPage() {
                                         // Actually, common pattern is "All" excluding "Attention" if separated. 
                                         // But logically "All" implies All. 
                                         // Let's filter out the ones already shown in Overdue to avoid duplicates if Overdue section exists.
-                                        const isOverdue = reminder.status === 'upcoming' && isPast(new Date(reminder.due_date)) && !isToday(new Date(reminder.due_date));
+                                        const reminderDate = toReminderDisplayDate(reminder.due_date);
+                                        const isOverdue = reminder.status === 'upcoming' && isPast(reminderDate) && !isToday(reminderDate);
                                         if (isOverdue && overdueCount > 0) return null;
 
                                         return (
@@ -405,7 +407,7 @@ export function NotificationsPage() {
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
                                                             <span className="text-xs text-muted-foreground">
-                                                                • {format(new Date(reminder.due_date), 'MMM d, yyyy')}
+                                                                • {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy')}
                                                             </span>
                                                         </div>
                                                     </div>

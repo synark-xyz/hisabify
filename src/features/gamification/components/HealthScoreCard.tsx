@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { ChartPie, Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useHealthScore } from '../hooks/useHealthScore';
@@ -177,7 +176,7 @@ export function HealthScoreCard() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-current" />
                                         </div>
                                         <div>
-                                            <span className="font-bold text-blue-500">Savings Habits (40%)</span>
+                                            <span className="font-bold text-blue-500">Savings Habits (30%)</span>
                                             <p className="text-muted-foreground">Consistently adding to goals.</p>
                                         </div>
                                     </li>
@@ -186,7 +185,7 @@ export function HealthScoreCard() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-current" />
                                         </div>
                                         <div>
-                                            <span className="font-bold text-amber-500">Activity (20%)</span>
+                                            <span className="font-bold text-amber-500">Activity (30%)</span>
                                             <p className="text-muted-foreground">Regularly logging transactions.</p>
                                         </div>
                                     </li>

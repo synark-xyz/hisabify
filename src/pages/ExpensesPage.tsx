@@ -134,10 +134,10 @@ export function ExpensesPage() {
 
   useEffect(() => {
     if (user) {
-      fetchTransactions();
-      fetchBudgets();
+      void fetchTransactions();
+      void fetchBudgets();
     }
-  }, [user, currentDate, viewMode, currency, currencyVersion]);
+  }, [user, currencyVersion, fetchTransactions, fetchBudgets]);
 
 
 

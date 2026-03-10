@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell,
-  Tooltip, CartesianGrid, ReferenceDot, LabelList
+  Tooltip, CartesianGrid, ReferenceDot
 } from 'recharts';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, Lightbulb, PieChart, Info, AlertTriangle, CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { TrendingUp, TrendingDown, Lightbulb, PieChart } from 'lucide-react';
 import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,13 +13,22 @@ import {
   CategorySpending,
   AnalyticsInsight
 } from '@/types';
-import { format, startOfYear, endOfYear, subYears, parseISO } from 'date-fns';
+import { format, startOfYear, endOfYear, subYears } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface EnhancedAnalyticsChartProps {
   selectedYear: number;
   selectedMonth?: string;
   onMonthSelect?: (month: string) => void;
+}
+
+type QuarterFilter = 'All' | 'Q1' | 'Q2' | 'Q3' | 'Q4';
+const QUARTER_OPTIONS: QuarterFilter[] = ['All', 'Q1', 'Q2', 'Q3', 'Q4'];
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: MonthlySpending }>;
+  label?: string;
 }
 
 export function EnhancedAnalyticsChart({
@@ -30,35 +39,23 @@ export function EnhancedAnalyticsChart({
   const { user } = useAuth();
   const { formatAmount } = useCurrency();
   const [loading, setLoading] = useState(true);
-  const [quarterFilter, setQuarterFilter] = useState<'All' | 'Q1' | 'Q2' | 'Q3' | 'Q4'>('All');
+  const [quarterFilter, setQuarterFilter] = useState<QuarterFilter>('All');
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showAllInsights, setShowAllInsights] = useState(false);
   const [fullYearData, setFullYearData] = useState<MonthlySpending[]>([]);
-  const [comparisonData, setComparisonData] = useState<MonthlySpending[]>([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategorySpending[]>([]);
+  const compactNumberFormatter = useMemo(
+    () => new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }),
+    []
+  );
 
-  // Sample data fallback for when DB is empty or for initial look
-  const sampleData: MonthlySpending[] = useMemo(() => [
-    { month: 'Jan', amount: 32000, year: 2024, comparisonAmount: 28000 },
-    { month: 'Feb', amount: 29000, year: 2024, comparisonAmount: 31000 },
-    { month: 'Mar', amount: 35000, year: 2024, comparisonAmount: 33000 },
-    { month: 'Apr', amount: 31000, year: 2024, comparisonAmount: 30000 },
-    { month: 'May', amount: 38000, year: 2024, comparisonAmount: 35000 },
-    { month: 'Jun', amount: 42000, year: 2024, comparisonAmount: 38000 },
-    { month: 'Jul', amount: 45000, year: 2024, comparisonAmount: 40000 },
-    { month: 'Aug', amount: 41000, year: 2024, comparisonAmount: 43000 },
-    { month: 'Sep', amount: 39000, year: 2024, comparisonAmount: 37000 },
-    { month: 'Oct', amount: 44000, year: 2024, comparisonAmount: 41000 },
-    { month: 'Nov', amount: 48000, year: 2024, comparisonAmount: 45000 },
-    { month: 'Dec', amount: 52000, year: 2024, comparisonAmount: 46000 },
-  ], []);
-
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, [selectedYear, user]);
-
-  const fetchAnalyticsData = async () => {
-    if (!user) return;
+  const fetchAnalyticsData = useCallback(async () => {
+    if (!user) {
+      setFullYearData([]);
+      setCategoryBreakdown([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     try {
@@ -120,7 +117,7 @@ export function EnhancedAnalyticsChart({
         comparisonAmount: processedPrev[idx].amount
       }));
 
-      setFullYearData(finalData.length > 0 && currentTx?.length ? finalData : sampleData);
+      setFullYearData(currentTx?.length ? finalData : []);
 
       // Process Category Breakdown (Total for Year)
       const allCats: Record<string, { amount: number, color: string }> = {};
@@ -141,19 +138,20 @@ export function EnhancedAnalyticsChart({
         }))
         .sort((a, b) => b.amount - a.amount);
 
-      setCategoryBreakdown(breakdown.length > 0 ? breakdown : [
-        { name: 'Food & Dining', amount: 91200, percentage: 32, color: '#f97316' },
-        { name: 'Transport', amount: 68400, percentage: 24, color: '#3b82f6' },
-        { name: 'Shopping', amount: 51300, percentage: 18, color: '#a855f7' },
-      ]);
+      setCategoryBreakdown(breakdown);
 
     } catch (err) {
       console.error(err);
-      setFullYearData(sampleData);
+      setFullYearData([]);
+      setCategoryBreakdown([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedYear, user]);
+
+  useEffect(() => {
+    void fetchAnalyticsData();
+  }, [fetchAnalyticsData]);
 
   const filteredData = useMemo(() => {
     switch (quarterFilter) {
@@ -225,7 +223,7 @@ export function EnhancedAnalyticsChart({
     return list.slice(0, 3);
   }, [fullYearData, metrics, formatAmount]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const diff = data.comparisonAmount > 0
@@ -264,6 +262,15 @@ export function EnhancedAnalyticsChart({
           {[1, 2, 3].map(i => <div key={i} className="h-20 bg-muted/50 rounded-2xl" />)}
         </div>
         <div className="h-64 bg-muted/50 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (fullYearData.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-card/60 p-8 text-center">
+        <p className="text-sm font-semibold text-foreground">No expense analytics for {selectedYear}</p>
+        <p className="mt-1 text-xs text-muted-foreground">Add expense transactions to unlock insights and category trends.</p>
       </div>
     );
   }
@@ -321,10 +328,10 @@ export function EnhancedAnalyticsChart({
         {/* Quarter Filter */}
         <div className="flex justify-center mb-6">
           <div className="bg-muted/30 p-1 rounded-full flex gap-1">
-            {['All', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+            {QUARTER_OPTIONS.map((q) => (
               <button
                 key={q}
-                onClick={() => setQuarterFilter(q as any)}
+                onClick={() => setQuarterFilter(q)}
                 className={cn(
                   "px-4 py-1.5 rounded-full text-xs font-bold transition-all",
                   quarterFilter === q
@@ -354,7 +361,7 @@ export function EnhancedAnalyticsChart({
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-                tickFormatter={(val) => `¥${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
+                tickFormatter={(val) => compactNumberFormatter.format(Number(val))}
               />
               <Tooltip
                 content={<CustomTooltip />}
@@ -439,37 +446,43 @@ export function EnhancedAnalyticsChart({
           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
             <PieChart className="w-3.5 h-3.5 text-secondary" /> Category Breakdown
           </h4>
-          <button
-            onClick={() => setShowAllCategories(!showAllCategories)}
-            className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
-          >
-            {showAllCategories ? 'Show Less' : 'View all'}
-          </button>
+          {categoryBreakdown.length > 1 && (
+            <button
+              onClick={() => setShowAllCategories(!showAllCategories)}
+              className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+            >
+              {showAllCategories ? 'Show Less' : 'View all'}
+            </button>
+          )}
         </div>
 
-        <div className="space-y-4">
-          {(showAllCategories ? categoryBreakdown : categoryBreakdown.slice(0, 1)).map((cat, idx) => (
-            <motion.div
-              key={cat.name}
-              className="space-y-1.5 cursor-pointer group"
-              whileHover={{ scale: 1.01 }}
-              layout
-            >
-              <div className="flex justify-between items-end text-sm">
-                <span className="font-bold text-foreground/90 group-hover:text-foreground transition-colors">{cat.name}</span>
-                <span className="font-mono text-muted-foreground">{cat.percentage.toFixed(0)}% • {formatAmount(cat.amount)}</span>
-              </div>
-              <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${cat.percentage}%` }}
-                  style={{ backgroundColor: cat.color }}
-                />
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {categoryBreakdown.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4 italic">No category data available for this year</p>
+        ) : (
+          <div className="space-y-4">
+            {(showAllCategories ? categoryBreakdown : categoryBreakdown.slice(0, 1)).map((cat) => (
+              <motion.div
+                key={cat.name}
+                className="space-y-1.5 cursor-pointer group"
+                whileHover={{ scale: 1.01 }}
+                layout
+              >
+                <div className="flex justify-between items-end text-sm">
+                  <span className="font-bold text-foreground/90 group-hover:text-foreground transition-colors">{cat.name}</span>
+                  <span className="font-mono text-muted-foreground">{cat.percentage.toFixed(0)}% • {formatAmount(cat.amount)}</span>
+                </div>
+                <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${cat.percentage}%` }}
+                    style={{ backgroundColor: cat.color }}
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

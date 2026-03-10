@@ -478,7 +478,7 @@ export function useBudgets() {
 
       if (error) throw error;
 
-      return (data || []) as Budget[];
+      return ((data || []) as unknown as Budget[]);
     } catch (err) {
       console.error('Error fetching templates:', err);
       return [];

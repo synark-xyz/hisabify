@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 /**
  * Get the global overlay root element for portals (dropdowns, popovers, dialogs)
  * This ensures overlays never go off-screen and are properly positioned
@@ -15,11 +17,9 @@ export function getOverlayRoot(): HTMLElement | null {
  * Hook to get overlay root (safe for React components)
  */
 export function useOverlayRoot(): HTMLElement | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const [root, setRoot] = React.useState<HTMLElement | null>(null);
+  const [root, setRoot] = React.useState<HTMLElement | null>(() => (
+    typeof window === 'undefined' ? null : getOverlayRoot()
+  ));
 
   React.useEffect(() => {
     setRoot(getOverlayRoot());
@@ -41,6 +41,3 @@ export function getOrCreateOverlayRoot(): HTMLElement {
 
   return root!;
 }
-
-// Import React for the hook
-import * as React from 'react';

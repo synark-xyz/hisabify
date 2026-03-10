@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, Calendar, DollarSign, Bell, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { X, Plus, Trash2, Calendar, Bell, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format, differenceInDays, isPast, isToday } from 'date-fns';
 import { PaymentReminder } from '@/types';
 import { cn } from '@/lib/utils';
+import { toReminderDisplayDate } from '@/lib/reminderDate';
 import { AddPaymentReminderModal } from './AddPaymentReminderModal';
 
 interface ManageRemindersModalProps {
@@ -22,7 +22,6 @@ interface ManageRemindersModalProps {
 export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh }: ManageRemindersModalProps) {
     const { formatAmount } = useCurrency();
     const { toast } = useToast();
-    const { user } = useAuth();
     const [editingReminder, setEditingReminder] = useState<PaymentReminder | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
 
@@ -55,39 +54,12 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
             return;
         }
 
-        // If marking as paid, optionally create a linked expense transaction
-        if (newStatus === 'paid' && user?.id) {
-            try {
-                await supabase.from('transactions').insert({
-                    user_id: user.id,
-                    merchant: reminder.title,
-                    amount: reminder.amount,
-                    amount_original: reminder.amount,
-                    currency_original: 'USD',
-                    amount_converted: reminder.amount,
-                    currency_base: 'USD',
-                    exchange_rate: 1,
-                    rate_timestamp: new Date().toISOString(),
-                    exchange_source: 'same_currency',
-                    type: 'expense',
-                    date: new Date(reminder.due_date).toISOString(),
-                    note: '[Reminder Paid] Auto-created from payment reminder',
-                    category_id: reminder.category_id || null,
-                    card_id: null,
-                });
-                toast({ title: 'Expense recorded for paid reminder' });
-            } catch (txErr) {
-                console.error('Failed to create transaction from reminder:', txErr);
-                toast({ title: 'Marked as paid, but failed to create transaction', variant: 'destructive' });
-            }
-        }
-
         toast({ title: `Marked as ${newStatus}` });
         onRefresh();
     };
 
     const getStatusInfo = (reminder: PaymentReminder) => {
-        const dueDate = new Date(reminder.due_date);
+        const dueDate = toReminderDisplayDate(reminder.due_date);
         const diff = differenceInDays(dueDate, new Date());
 
         if (reminder.status === 'paid') {
@@ -173,7 +145,7 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                                                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                                             <span className="flex items-center gap-1">
                                                                 <Calendar className="w-3 h-3" />
-                                                                {format(new Date(reminder.due_date), 'MMM dd, yyyy')}
+                                                                {format(toReminderDisplayDate(reminder.due_date), 'MMM dd, yyyy')}
                                                             </span>
                                                             {reminder.is_recurring && (
                                                                 <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">

@@ -30,6 +30,8 @@ import { exportToCSV } from '@/lib/exportUtils';
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PremiumGuard } from '@/components/PremiumGuard';
+import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 export function AnalyticsPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -54,14 +56,9 @@ export function AnalyticsPage() {
     refetch,
   } = useDashboardData(dateRange);
 
-  // Listen for transaction updates
-  useEffect(() => {
-    const handleUpdate = () => {
-      refetch();
-    };
-    window.addEventListener('transaction-updated', handleUpdate);
-    return () => window.removeEventListener('transaction-updated', handleUpdate);
-  }, [refetch]);
+  useTransactionUpdateListener(() => {
+    refetch();
+  });
 
   const { isPremium, loading: subscriptionLoading } = useSubscription();
 
@@ -95,9 +92,10 @@ export function AnalyticsPage() {
 
   return (
     <div className={cn("min-h-screen pb-page-content fade-bottom-overlay", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.header
+      <PullToRefresh onRefresh={async () => { await refetch(); }}>
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <motion.header
           className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 rounded-b-3xl"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -281,6 +279,7 @@ export function AnalyticsPage() {
           </motion.section>
         </motion.main>
       </div>
+      </PullToRefresh>
 
       <UpgradeModal
         open={showUpgradeModal}

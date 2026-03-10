@@ -32,6 +32,7 @@ import { PersonalPage } from "@/pages/profile/PersonalPage";
 import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
 import { initViewportHeight } from "@/lib/viewport";
+import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -174,6 +175,9 @@ const App = () => (
 // Separated component to use hooks inside BrowserRouter
 function RootLogic() {
   const { user } = useAuth();
+
+  // Handle Android back button with exit confirmation
+  useAndroidBackButton();
 
   // Initialize viewport height fix for mobile
   useEffect(() => {

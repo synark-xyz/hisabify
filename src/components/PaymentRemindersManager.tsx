@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,8 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { AddPaymentReminderModal } from './AddPaymentReminderModal';
-import { format, isPast, isToday, addDays } from 'date-fns';
+import { format, isPast, isToday } from 'date-fns';
+import { PaymentReminder } from '@/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,53 +21,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-interface PaymentReminder {
-  id: string;
-  title: string;
-  amount: number;
-  due_date: string;
-  status: 'upcoming' | 'paid' | 'missed';
-  notify_before_days: number;
-  is_recurring: boolean;
-  recurring_interval: string | null;
-  note: string | null;
-}
-
 export function PaymentRemindersManager() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
-  const [reminders, setReminders] = useState<PaymentReminder[]>([]);
+  const { reminders, refetch: fetchReminders, markAsPaid } = usePaymentReminders();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingReminder, setEditingReminder] = useState<PaymentReminder | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'paid' | 'missed'>('all');
 
-  useEffect(() => {
-    if (user) fetchReminders();
-  }, [user]);
-
-  const fetchReminders = async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from('payment_reminders')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('due_date', { ascending: true });
-
-    if (data) setReminders(data as PaymentReminder[]);
-  };
-
-  const handleMarkAsPaid = async (id: string) => {
-    const { error } = await supabase
-      .from('payment_reminders')
-      .update({ status: 'paid' })
-      .eq('id', id);
-
-    if (!error) {
-      toast({ title: 'Marked as paid' });
-      fetchReminders();
-    }
+  const handleMarkAsPaid = async (reminder: PaymentReminder) => {
+    await markAsPaid(reminder);
   };
 
   const handleDelete = async () => {
@@ -149,8 +116,8 @@ export function PaymentRemindersManager() {
                   <div className={`p-2 rounded-lg ${getStatusColor(reminder.status, reminder.due_date)}`}>
                     {getStatusIcon(reminder.status, reminder.due_date)}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{reminder.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground line-clamp-2 break-words">{reminder.title}</h3>
                     <p className="text-lg font-bold text-accent">{formatAmount(reminder.amount)}</p>
                     <p className="text-sm text-muted-foreground">
                       Due: {format(new Date(reminder.due_date), 'MMM dd, yyyy')}
@@ -168,7 +135,7 @@ export function PaymentRemindersManager() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleMarkAsPaid(reminder.id)}
+                      onClick={() => handleMarkAsPaid(reminder)}
                       className="h-8 w-8 text-green-500 hover:text-green-600"
                     >
                       <CheckCircle className="w-4 h-4" />

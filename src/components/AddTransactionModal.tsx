@@ -29,6 +29,7 @@ export function AddTransactionModal({
     >
       {/* Pass initialData to pre-fill the form */}
       <TransactionForm
+        mode="create"
         onSuccess={() => {
           onSuccess();
           onOpenChange(false);

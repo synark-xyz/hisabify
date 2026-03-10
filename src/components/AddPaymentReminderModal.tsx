@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, DollarSign, Bell, RefreshCw, Loader2 } from 'lucide-react';
+import { Calendar, DollarSign, Bell, RefreshCw, Loader2, ChevronDown, ChevronUp, Receipt, Search, X } from 'lucide-react';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { schedulePaymentReminder, requestNotificationPermission } from '@/lib/notifications';
 import { toReminderDateInputValue, toReminderDueDateIso } from '@/lib/reminderDate';
+import { useTransactionsForReminders } from '@/hooks/useTransactionsForReminders';
+import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { PaymentReminder } from '@/types';
+import { format, addMonths } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface AddPaymentReminderModalProps {
   open: boolean;
@@ -24,6 +28,9 @@ interface AddPaymentReminderModalProps {
 export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminder }: AddPaymentReminderModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { currency } = useCurrency();
+  const { transactions, loading: loadingTransactions } = useTransactionsForReminders();
+
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
@@ -32,6 +39,11 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringInterval, setRecurringInterval] = useState<string>('monthly');
   const [note, setNote] = useState('');
+
+  // Quick fill state
+  const [showQuickFill, setShowQuickFill] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (reminder) {
@@ -55,6 +67,42 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     setIsRecurring(false);
     setRecurringInterval('monthly');
     setNote('');
+    setSearchQuery('');
+    setSelectedTransactionId(null);
+    setShowQuickFill(false);
+  };
+
+  // Filter transactions based on search query
+  const filteredTransactions = transactions.filter(tx =>
+    tx.merchant.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    tx.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Auto-fill form from selected transaction
+  const handleSelectTransaction = (transaction: typeof transactions[0]) => {
+    setTitle(transaction.merchant);
+    // Use original amount in original currency, fallback to converted amount
+    setAmount((transaction.amount_original || transaction.amount).toString());
+
+    // Set due date to 1 month from transaction date (common for monthly bills)
+    const txDate = new Date(transaction.date);
+    const nextDueDate = addMonths(txDate, 1);
+    setDueDate(format(nextDueDate, 'yyyy-MM-dd'));
+
+    // Set note with transaction date and currency reference
+    const txCurrency = transaction.currency_original || currency;
+    const txCurrencySymbol = currencyData[txCurrency]?.symbol || '$';
+    const txAmount = (transaction.amount_original || transaction.amount).toFixed(2);
+    setNote(`Based on transaction: ${txCurrencySymbol}${txAmount} on ${format(txDate, 'MMM dd, yyyy')}`);
+
+    // Mark as selected and collapse quick fill
+    setSelectedTransactionId(transaction.id);
+    setShowQuickFill(false);
+
+    toast({
+      title: 'Form auto-filled',
+      description: `Data from "${transaction.merchant}" has been filled. You can edit before saving.`,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,13 +161,132 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     }
   };
 
+  const currencySymbol = currencyData[currency]?.symbol || '$';
+
   return (
     <ResponsiveDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={reminder ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
     >
-          <form onSubmit={handleSubmit} className="space-y-5 py-2">
+      {/* Quick Fill from Transaction Section */}
+      {!reminder && (
+        <div className="mb-4 border-b border-border pb-4">
+          <button
+            type="button"
+            onClick={() => setShowQuickFill(!showQuickFill)}
+            className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-accent" />
+              <span className="text-sm font-semibold">Quick Fill from Transaction</span>
+              {filteredTransactions.length > 0 && (
+                <span className="text-xs text-muted-foreground">({filteredTransactions.length})</span>
+              )}
+            </div>
+            {showQuickFill ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            )}
+          </button>
+
+          <AnimatePresence>
+            {showQuickFill && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-3 space-y-3">
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search transactions..."
+                      className="pl-9 pr-9 rounded-xl h-10 text-sm"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Transaction List */}
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : filteredTransactions.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      {searchQuery ? 'No matching transactions found' : 'No recent transactions without reminders'}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                      {filteredTransactions.slice(0, 10).map((transaction) => (
+                        <motion.button
+                          key={transaction.id}
+                          type="button"
+                          onClick={() => handleSelectTransaction(transaction)}
+                          className={cn(
+                            'w-full p-3 rounded-xl border text-left transition-all hover:border-accent hover:bg-accent/5',
+                            selectedTransactionId === transaction.id
+                              ? 'border-accent bg-accent/10'
+                              : 'border-border bg-card'
+                          )}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm truncate">
+                                  {transaction.merchant}
+                                </span>
+                                {transaction.category && (
+                                  <span
+                                    className="text-[10px] px-1.5 py-0.5 rounded-md"
+                                    style={{
+                                      backgroundColor: `${transaction.category.color}20`,
+                                      color: transaction.category.color
+                                    }}
+                                  >
+                                    {transaction.category.name}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(transaction.date), 'MMM dd, yyyy')}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-sm">
+                                {currencyData[transaction.currency_original || currency]?.symbol || '$'}
+                                {(transaction.amount_original || transaction.amount).toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Main Form */}
+      <form onSubmit={handleSubmit} className="space-y-5 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider opacity-70">Title</Label>
               <Input

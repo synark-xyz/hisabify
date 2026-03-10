@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, format } from 'date-fns';
 import { Category } from '@/types';
 import { showBudgetWarning, showBudgetExceeded } from '@/lib/notificationManager';
+import { emitTransactionUpdated } from '@/lib/transaction-events';
 
 export type PeriodType = 'weekly' | 'monthly' | 'yearly';
 
@@ -74,8 +75,7 @@ export function useBudgets() {
     }
 
     window.dispatchEvent(new Event('budget-updated'));
-    // Compatibility: existing pages already refresh on this event.
-    window.dispatchEvent(new Event('transaction-updated'));
+    emitTransactionUpdated();
   }, []);
 
   // Refs to prevent infinite loops and duplicate fetches

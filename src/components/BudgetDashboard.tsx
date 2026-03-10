@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { useBudgets, BudgetWithSpending, Budget } from '@/hooks/useBudgets';
@@ -8,9 +8,6 @@ import { BudgetHistoryChart } from '@/components/BudgetHistoryChart';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { useSubscription } from '@/hooks/useSubscription';
-import { supabase } from '@/integrations/supabase/client';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Category } from '@/types';
 import { AddBudgetModal } from '@/components/AddBudgetModal';
 import { DeleteBudgetDialog } from '@/components/DeleteBudgetDialog';
 import { Button } from '@/components/ui/button';
@@ -19,42 +16,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { PrivacyMask } from '@/components/ui/privacy-mask';
 
-type BudgetCategoryOption = Pick<Category, 'id' | 'name'>;
-type BudgetCategoryRow = BudgetCategoryOption & { category_type?: string | null };
-
 export function BudgetDashboard() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetWithSpending | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [categories, setCategories] = useState<BudgetCategoryOption[]>([]);
 
   const { budgets, loading, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
   const { isPremium } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('id,name,category_type');
-        if (error) throw error;
-        if (data) {
-          const allowedCategories = (data as BudgetCategoryRow[])
-            .filter((row) => !['lend', 'owe'].includes(row.category_type || ''))
-            .map((row) => ({ id: row.id, name: row.name }));
-          setCategories(allowedCategories);
-        }
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-        // Continue with empty categories - budgets will still work
-      }
-    };
-    fetchCategories();
-  }, []);
 
   // Calculate summary stats
   const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
@@ -205,23 +176,15 @@ export function BudgetDashboard() {
         </motion.div>
       </div>
 
-      {/* Header with Category Filter and Add Budget */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-semibold text-foreground">Active Budgets</h2>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[160px] h-9 text-xs rounded-full border-0 bg-background shadow-sm hover:bg-muted/50 transition-colors">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent align="end" className="rounded-xl shadow-xl border-border/50">
-              <SelectItem value="all" className="rounded-lg text-xs font-medium">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id} className="rounded-lg text-xs">
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {budgets.length > 0 && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium">
+              {budgets.length} {budgets.length === 1 ? 'budget' : 'budgets'}
+            </span>
+          )}
         </div>
         <Button
           onClick={() => {
@@ -241,9 +204,7 @@ export function BudgetDashboard() {
       {/* Budget Cards */}
       {budgets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {budgets
-            .filter((b) => selectedCategory === 'all' ? true : (b.category_id === selectedCategory))
-            .map((budget) => (
+          {budgets.map((budget) => (
             <BudgetProgressCard
               key={budget.id}
               budget={budget}

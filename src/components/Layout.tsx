@@ -6,22 +6,29 @@ import { NexusModal } from '@/components/NexusModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { InputMethodSheet } from '@/components/InputMethodSheet';
 import { VoiceInputFlow } from '@/components/VoiceInputFlow';
+import { ManageRemindersModal } from '@/components/ManageRemindersModal';
 import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
+import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { CyberpunkBackground } from '@/components/CyberpunkBackground';
 import { cn } from '@/lib/utils';
+import { emitTransactionUpdated } from '@/lib/transaction-events';
 
 export function Layout() {
     const [showManual, setShowManual] = useState(false);
     const [showNexus, setShowNexus] = useState(false);
     const [showInputSheet, setShowInputSheet] = useState(false);
     const [showVoiceInput, setShowVoiceInput] = useState(false);
+    const [showManageReminders, setShowManageReminders] = useState(false);
     const [nexusMode, setNexusMode] = useState<'voice' | 'scan'>('voice');
-    const [smartData, setSmartData] = useState<any>(undefined);
+    const [smartData, setSmartData] = useState<
+        { merchant?: string; amount?: number; category?: string } | undefined
+    >(undefined);
 
     const location = useLocation();
     const { variant, theme } = useTheme();
     const navigate = useNavigate();
+    const { reminders, refetch: refetchReminders } = usePaymentReminders();
 
     // Generic Header Logic
     const getPageTitle = (pathname: string) => {
@@ -58,6 +65,11 @@ export function Layout() {
         setShowInputSheet(false);
         setSmartData(undefined);
         setShowManual(true);
+    };
+
+    const handleReminderInput = () => {
+        setShowInputSheet(false);
+        setShowManageReminders(true);
     };
 
     return (
@@ -97,6 +109,7 @@ export function Layout() {
                 onVoice={handleVoiceInput}
                 onReceipt={handleReceiptInput}
                 onManual={handleManualInput}
+                onReminder={handleReminderInput}
             />
 
             {/* Manual Entry Modal */}
@@ -105,7 +118,7 @@ export function Layout() {
                 onOpenChange={setShowManual}
                 initialData={smartData}
                 onSuccess={() => {
-                    window.dispatchEvent(new Event('transaction-updated'));
+                    emitTransactionUpdated();
                 }}
             />
 
@@ -130,6 +143,13 @@ export function Layout() {
                     setShowNexus(false);
                     setShowManual(true);
                 }}
+            />
+
+            <ManageRemindersModal
+                open={showManageReminders}
+                onOpenChange={setShowManageReminders}
+                reminders={reminders}
+                onRefresh={refetchReminders}
             />
         </div>
     );

@@ -131,7 +131,7 @@ export function MobileDialog({
             data-vaul-no-drag
             style={{
               overflowY: 'auto',
-              overflowX: 'visible',
+              overflowX: 'hidden',
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-y'

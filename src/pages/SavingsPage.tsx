@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 
 export default function SavingsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -49,17 +50,9 @@ export default function SavingsPage() {
   const { isPremium } = useSubscription();
   const { variant } = useTheme();
 
-  // Listen for transaction updates from the global modal
-  useEffect(() => {
-    const handleUpdate = () => {
-      refetch();
-    };
-
-    window.addEventListener('transaction-updated', handleUpdate);
-    return () => {
-      window.removeEventListener('transaction-updated', handleUpdate);
-    };
-  }, [refetch]);
+  useTransactionUpdateListener(() => {
+    refetch();
+  });
 
   const handleAddGoal = () => {
     if (!isPremium && goals.length >= 1) {

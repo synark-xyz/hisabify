@@ -17,7 +17,9 @@ export function Layout() {
     const [showInputSheet, setShowInputSheet] = useState(false);
     const [showVoiceInput, setShowVoiceInput] = useState(false);
     const [nexusMode, setNexusMode] = useState<'voice' | 'scan'>('voice');
-    const [smartData, setSmartData] = useState<any>(undefined);
+    const [smartData, setSmartData] = useState<
+        { merchant?: string; amount?: number; category?: string; receiptUrl?: string | null } | undefined
+    >(undefined);
 
     const location = useLocation();
     const { variant, theme } = useTheme();

@@ -10,12 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateSelect } from '@/components/ui/date-select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { supabase } from '@/integrations/supabase/client';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useBudgets, PeriodType, Budget } from '@/hooks/useBudgets';
 import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
-import { Category } from '@/types';
+import { useCategories } from '@/hooks/useCategories';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -42,13 +41,13 @@ interface AddBudgetModalProps {
 }
 
 export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }: AddBudgetModalProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
 
   const { currency } = useCurrency();
   const { isPremium } = useSubscription();
   const { createBudget, updateBudget } = useBudgets();
+  const { categories } = useCategories();
   const currencySymbol = currencyData[currency]?.symbol || '$';
 
   // Handle keyboard on mobile
@@ -71,7 +70,6 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
 
   useEffect(() => {
     if (open) {
-      fetchCategories();
       if (editingBudget) {
         form.reset({
           categoryId: editingBudget.category_id || 'all',
@@ -117,11 +115,6 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
     }
     form.setValue('endDate', newEndDate);
   }, [watchedPeriodType, form]);
-
-  const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('*');
-    if (data) setCategories(data as Category[]);
-  };
 
   const handleStartDateChange = (date: Date | undefined) => {
     if (!date) return;

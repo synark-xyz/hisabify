@@ -8,6 +8,7 @@ import { UpgradeModal } from '@/components/UpgradeModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 
 export function BudgetPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -20,17 +21,9 @@ export function BudgetPage() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
-  // Listen for transaction updates from the global modal
-  useEffect(() => {
-    const handleUpdate = () => {
-      refetch();
-    };
-
-    window.addEventListener('transaction-updated', handleUpdate);
-    return () => {
-      window.removeEventListener('transaction-updated', handleUpdate);
-    };
-  }, [refetch]);
+  useTransactionUpdateListener(() => {
+    refetch();
+  });
 
   const containerVariants = {
     hidden: { opacity: 0 },

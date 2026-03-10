@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +18,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTheme } from '@/hooks/useTheme';
+import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types';
@@ -192,11 +193,9 @@ export function Dashboard() {
     ]);
   }, [fetchTransactions, fetchMonthlySummary, fetchTodayTransactions, fetchAvailableYears, refetchReminders]);
 
-  // Event listener for layout modal updates
-  useEffect(() => {
-    window.addEventListener('transaction-updated', handleRefresh);
-    return () => window.removeEventListener('transaction-updated', handleRefresh);
-  }, [handleRefresh]);
+  useTransactionUpdateListener(() => {
+    void handleRefresh();
+  });
 
   useEffect(() => {
     if (user) {
@@ -207,6 +206,13 @@ export function Dashboard() {
   const handleMonthSelect = useCallback((month: string) => {
     setSelectedMonth(month);
   }, []);
+
+  const activeReminders = useMemo(() => {
+    return paymentReminders.filter((reminder) => {
+      const status = reminder.status as string;
+      return status === 'upcoming' || status === 'pending';
+    });
+  }, [paymentReminders]);
 
   const netBalance = totalIncome - totalExpenses;
 
@@ -381,28 +387,30 @@ export function Dashboard() {
             </AnimatePresence>
 
             {/* Payment Reminders Section */}
-            <motion.section
-              key="reminders-section"
-              initial={{ opacity: 1, y: 0 }}
-              style={{ willChange: 'auto' }}
-            >
-              <div className="flex items-center justify-between mb-3 px-1">
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
-                  <Bell className="w-5 h-5 text-accent" weight="duotone" />
-                  Reminders
-                </h2>
-                <motion.button
-                  onClick={() => setShowAddPaymentReminder(true)}
-                  className="p-2 bg-muted/50 rounded-xl hover:bg-muted text-muted-foreground transition-colors border border-border/50"
-                  whileHover={{ rotate: 90 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  style={{ willChange: 'transform' }}
-                >
-                  <Faders className="w-4 h-4" weight="duotone" />
-                </motion.button>
-              </div>
-              <PaymentReminderCarousel reminders={paymentReminders} />
-            </motion.section>
+            {activeReminders.length > 0 && (
+              <motion.section
+                key="reminders-section"
+                initial={{ opacity: 1, y: 0 }}
+                style={{ willChange: 'auto' }}
+              >
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                    <Bell className="w-5 h-5 text-accent" weight="duotone" />
+                    Reminders
+                  </h2>
+                  <motion.button
+                    onClick={() => setShowAddPaymentReminder(true)}
+                    className="p-2 bg-muted/50 rounded-xl hover:bg-muted text-muted-foreground transition-colors border border-border/50"
+                    whileHover={{ rotate: 90 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    style={{ willChange: 'transform' }}
+                  >
+                    <Faders className="w-4 h-4" weight="duotone" />
+                  </motion.button>
+                </div>
+                <PaymentReminderCarousel reminders={activeReminders} />
+              </motion.section>
+            )}
 
             {/* Analytics Section */}
             <motion.section
@@ -542,7 +550,7 @@ export function Dashboard() {
       <ManageRemindersModal
         open={showAddPaymentReminder}
         onOpenChange={setShowAddPaymentReminder}
-        reminders={paymentReminders}
+        reminders={activeReminders}
         onRefresh={refetchReminders}
       />
 

@@ -13,6 +13,7 @@ import { useReportData } from "@/hooks/useReportData";
 import { useReportTemplates, ReportFilters } from "@/hooks/useReportTemplates";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 export default function ReportsPage() {
   const { variant } = useTheme();
@@ -38,9 +39,15 @@ export default function ReportsPage() {
     deleteTemplate.mutate(id);
   };
 
+  const handleRefresh = async () => {
+    // Trigger re-fetch by updating filters slightly
+    setFilters({ ...filters });
+  };
+
   return (
     <div className={cn("container mx-auto p-4 pb-24 space-y-6", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-      <div className="flex items-center gap-2">
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="flex items-center gap-2">
         <FileBarChart className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">Reports</h1>
       </div>
@@ -86,6 +93,7 @@ export default function ReportsPage() {
           )}
         </div>
       </div>
+      </PullToRefresh>
     </div>
   );
 }

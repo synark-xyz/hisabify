@@ -46,10 +46,10 @@ export function ResponsiveDrawer({
 
         {/* Scrollable Content */}
         <div
-          className="px-6 pb-6 flex-1"
+          className="px-4 pb-6 flex-1"
           style={{
             overflowY: 'auto',
-            overflowX: 'visible',
+            overflowX: 'hidden',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch'
           }}

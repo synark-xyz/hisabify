@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, ShieldCheck, Receipt } from '@phosphor-icons/react';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format, isPast, isToday, differenceInDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,37 +13,18 @@ import { useHealthScore } from '@/features/gamification/hooks/useHealthScore';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
-
-interface PaymentReminder {
-    id: string;
-    title: string;
-    amount: number;
-    due_date: string;
-    status: string;
-    is_recurring: boolean;
-}
+import { usePaymentReminders } from '@/hooks/usePaymentReminders';
+import { PaymentReminder } from '@/types';
+import { useState } from 'react';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 export function NotificationsPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { formatAmount } = useCurrency();
     const { score, loading: healthLoading } = useHealthScore();
-    const [reminders, setReminders] = useState<PaymentReminder[]>([]);
+    const { reminders, loading, markAsPaid } = usePaymentReminders();
     const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const fetchReminders = useCallback(async () => {
-        if (!user) return;
-        setLoading(true);
-        const { data } = await supabase
-            .from('payment_reminders')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('due_date', { ascending: true });
-
-        if (data) setReminders(data as PaymentReminder[]);
-        setLoading(false);
-    }, [user]);
 
     const fetchAppNotifications = useCallback(() => {
         const notifications = getNotifications();
@@ -53,25 +33,18 @@ export function NotificationsPage() {
 
     useEffect(() => {
         if (user) {
-            void fetchReminders();
             fetchAppNotifications();
             clearOldNotifications(); // Clean up old notifications
         }
-    }, [user, fetchReminders, fetchAppNotifications]);
+    }, [user, fetchAppNotifications]);
 
-    const handleMarkAsPaid = async (id: string) => {
-        // Optimistic update
-        setReminders(current => current.map(r =>
-            r.id === id ? { ...r, status: 'paid' } : r
-        ));
+    const handleMarkAsPaid = async (reminder: PaymentReminder) => {
+        await markAsPaid(reminder);
+    };
 
-        await supabase
-            .from('payment_reminders')
-            .update({ status: 'paid' })
-            .eq('id', id);
-
-        // Re-fetch to confirm
-        void fetchReminders();
+    const handleRefresh = async () => {
+        fetchAppNotifications();
+        // Reminders will auto-refresh via hook
     };
 
     const getStatusInfo = (status: string, dueDate: string) => {
@@ -117,7 +90,8 @@ export function NotificationsPage() {
         <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
             <Header title="Notifications" showBack onBack={() => navigate('/')} />
 
-            <main className="px-4 py-6 space-y-6">
+            <PullToRefresh onRefresh={handleRefresh}>
+                <main className="px-4 py-6 space-y-6">
 
                 {loading ? (
                     <div className="space-y-4">
@@ -177,7 +151,7 @@ export function NotificationsPage() {
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
-                                                            onClick={() => handleMarkAsPaid(reminder.id)}
+                                                            onClick={() => handleMarkAsPaid(reminder)}
                                                             className="shrink-0 h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 border-glow"
                                                         >
                                                             Mark Paid
@@ -415,7 +389,7 @@ export function NotificationsPage() {
                                                         <Button
                                                             size="sm"
                                                             variant="ghost"
-                                                            onClick={() => handleMarkAsPaid(reminder.id)}
+                                                            onClick={() => handleMarkAsPaid(reminder)}
                                                             className="shrink-0 h-10 w-10 p-0 rounded-xl"
                                                         >
                                                             <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 hover:border-accent hover:bg-accent/10 transition-all border-glow" />
@@ -431,6 +405,7 @@ export function NotificationsPage() {
                     </div>
                 )}
             </main>
+            </PullToRefresh>
         </div>
     );
 }

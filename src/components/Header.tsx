@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X, CheckCircle, Clock, WarningCircle, List, Pencil, Gear, Lifebuoy, CaretLeft } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useCurrency } from '@/hooks/useCurrency';
-import { supabase } from '@/integrations/supabase/client';
+import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { format, isPast, isToday, differenceInDays } from 'date-fns';
 import {
   DropdownMenu,
@@ -17,16 +17,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-interface PaymentReminder {
-  id: string;
-  title: string;
-  amount: number;
-  due_date: string;
-  status: string;
-  is_recurring: boolean;
-}
+} from "@/components/ui/dropdown-menu";
+import { PaymentReminder } from '@/types';
 
 interface HeaderProps {
   title: string;
@@ -40,28 +32,11 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
   const { user } = useAuth();
   const { profile } = useProfile();
   const { formatAmount } = useCurrency();
-  const [reminders, setReminders] = useState<PaymentReminder[]>([]);
+  const { reminders, markAsPaid } = usePaymentReminders();
   const [open, setOpen] = useState(false);
 
   const userInitial = profile.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
   const avatarUrl = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`;
-
-  useEffect(() => {
-    if (user) {
-      fetchReminders();
-    }
-  }, [user]);
-
-  const fetchReminders = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('payment_reminders')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('due_date', { ascending: true });
-
-    if (data) setReminders(data as PaymentReminder[]);
-  };
 
   const getStatusInfo = (status: string, dueDate: string) => {
     const date = new Date(dueDate);
@@ -91,12 +66,8 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
 
   const notificationCount = upcomingCount + overdueCount;
 
-  const handleMarkAsPaid = async (id: string) => {
-    await supabase
-      .from('payment_reminders')
-      .update({ status: 'paid' })
-      .eq('id', id);
-    fetchReminders();
+  const handleMarkAsPaid = async (reminder: PaymentReminder) => {
+    await markAsPaid(reminder);
   };
 
   return (

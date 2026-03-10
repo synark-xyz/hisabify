@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useCategories } from '@/hooks/useCategories';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types';
 
 interface ChartData {
@@ -20,31 +20,17 @@ export function BudgetHistoryChart() {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [categories, setCategories] = useState<Category[]>([]);
 
   const { getHistoricalBudgets } = useBudgets();
   const { currency } = useCurrency();
+  const { categories: allCategories } = useCategories();
   const currencySymbol = currencyData[currency]?.symbol || '$';
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('*');
-        if (error) throw error;
-        if (data) {
-          const allowedCategories = (data as BudgetHistoryCategory[])
-            .filter((row) => !['lend', 'owe'].includes(row.category_type || ''));
-          setCategories(allowedCategories as Category[]);
-        }
-      } catch (err) {
-        console.error('Error fetching categories for chart:', err);
-        // Continue with empty categories - chart will still work
-      }
-    };
-    fetchCategories();
-  }, []);
+  // Filter out lend/owe categories for budget chart (budgets don't apply to these)
+  const categories = allCategories.filter((cat) => {
+    const catWithType = cat as BudgetHistoryCategory;
+    return !['lend', 'owe'].includes(catWithType.category_type || '');
+  });
 
   useEffect(() => {
     const fetchData = async () => {

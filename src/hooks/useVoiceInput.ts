@@ -136,19 +136,60 @@ export function useVoiceInput() {
         }
     };
 
-    // Simple parser to extract potential amount and merchant
-    // E.g. "Starbucks 5 dollars" -> { merchant: "Starbucks", amount: 5 }
+    // Enhanced parser with multiple patterns to extract amount and merchant
+    // Handles various natural language patterns
     const parseCommand = (text: string) => {
-        const amountRegex = /(\d+(?:[.,]\d{1,2})?)/;
-        const match = text.match(amountRegex);
+        const lowerText = text.toLowerCase().trim();
 
-        // This is very basic; NLP or Regex improvement needed for production
-        if (match) {
-            const amount = parseFloat(match[0].replace(',', '.'));
-            // Assume everything before the number is the merchant
-            const merchant = text.split(match[0])[0].trim();
-            return { amount, merchant, raw: text };
+        // Pattern 1: "spent/paid X at/for Y" → amount first
+        // E.g., "spent 20 at Starbucks", "paid 50 for groceries"
+        const pattern1 = /(?:spent|paid)\s+(\d+(?:[.,]\d{1,2})?)\s+(?:at|for)\s+(.+)/i;
+        const match1 = lowerText.match(pattern1);
+        if (match1) {
+            return {
+                amount: parseFloat(match1[1].replace(',', '.')),
+                merchant: match1[2].trim(),
+                raw: text
+            };
         }
+
+        // Pattern 2: "X dollars/bucks at/for Y"
+        // E.g., "15 dollars at McDonald's", "20 bucks for coffee"
+        const pattern2 = /(\d+(?:[.,]\d{1,2})?)\s+(?:dollars?|bucks?)\s+(?:at|for)\s+(.+)/i;
+        const match2 = lowerText.match(pattern2);
+        if (match2) {
+            return {
+                amount: parseFloat(match2[1].replace(',', '.')),
+                merchant: match2[2].trim(),
+                raw: text
+            };
+        }
+
+        // Pattern 3: "bought Y for X"
+        // E.g., "bought coffee for 5", "bought lunch for 12.50"
+        const pattern3 = /bought\s+(.+?)\s+for\s+(\d+(?:[.,]\d{1,2})?)/i;
+        const match3 = lowerText.match(pattern3);
+        if (match3) {
+            return {
+                amount: parseFloat(match3[2].replace(',', '.')),
+                merchant: match3[1].trim(),
+                raw: text
+            };
+        }
+
+        // Pattern 4: "Merchant Amount" (original pattern, fallback)
+        // E.g., "Starbucks 5 dollars", "Pizza 25"
+        const pattern4 = /(.+?)\s+(\d+(?:[.,]\d{1,2})?)\s*(?:dollars?|bucks?)?$/i;
+        const match4 = lowerText.match(pattern4);
+        if (match4) {
+            return {
+                amount: parseFloat(match4[2].replace(',', '.')),
+                merchant: match4[1].trim(),
+                raw: text
+            };
+        }
+
+        // No match - return raw text only
         return { raw: text };
     };
 

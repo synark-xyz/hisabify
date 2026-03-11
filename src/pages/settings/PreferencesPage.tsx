@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Moon, Sun, Monitor, ArrowLeft, Zap, CheckCircle, Lock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -15,7 +14,6 @@ import { cn } from '@/lib/utils';
 type ThemeOption = 'light' | 'dark' | 'system';
 
 export function PreferencesPage() {
-    const navigate = useNavigate();
     const { user } = useAuth();
     const { profile } = useProfile();
     const { theme, variant, setTheme, setVariant } = useTheme();
@@ -80,7 +78,7 @@ export function PreferencesPage() {
 
     return (
         <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Preferences" showBack onBack={() => navigate('/settings')} />
+            <Header title="Preferences" showBack />
             <main className="px-4 py-6 space-y-6">
 
                 {/* Theme Style Selection */}

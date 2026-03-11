@@ -703,10 +703,9 @@ html {
   contain: layout;
 }
 
-/* Force hardware acceleration on transforms */
+/* Hint compositor usage without overriding transform utilities */
 .transform,
 [style*="transform"] {
-  transform: translateZ(0);
   will-change: transform;
 }
 
@@ -721,10 +720,9 @@ html {
   contain: paint;
 }
 
-/* Optimize fixed positioning for mobile */
+/* Keep fixed elements stable without clobbering positional transforms */
 .fixed {
   will-change: transform;
-  transform: translateZ(0);
 }
 
 /* Exception: Drawer/Dialog containers should NOT create stacking contexts

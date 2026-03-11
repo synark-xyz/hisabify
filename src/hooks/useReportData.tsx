@@ -2,8 +2,10 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useSubscription } from "./useSubscription";
 import { format, eachDayOfInterval, parseISO } from "date-fns";
 import { ReportFilters } from "./useReportTemplates";
+import { enforceHistoryWindowForFilters } from "@/lib/historyLimits";
 
 export interface ReportData {
   summary: {
@@ -48,6 +50,15 @@ export interface ReportData {
 
 export function useReportData(filters: ReportFilters) {
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
+  const effectiveFilters = useMemo(() => {
+    const clamped = enforceHistoryWindowForFilters(filters.dateFrom, filters.dateTo, isPremium);
+    return {
+      ...filters,
+      dateFrom: clamped.dateFrom,
+      dateTo: clamped.dateTo,
+    };
+  }, [filters, isPremium]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -61,7 +72,7 @@ export function useReportData(filters: ReportFilters) {
   });
 
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
-    queryKey: ["report-transactions", user?.id, filters],
+    queryKey: ["report-transactions", user?.id, effectiveFilters],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -69,27 +80,27 @@ export function useReportData(filters: ReportFilters) {
         .from("transactions")
         .select("*, category:categories(*)")
         .eq("user_id", user.id)
-        .gte("date", filters.dateFrom)
-        .lte("date", filters.dateTo + "T23:59:59")
+        .gte("date", effectiveFilters.dateFrom)
+        .lte("date", effectiveFilters.dateTo + "T23:59:59")
         .order("date", { ascending: false });
 
-      if (filters.categoryIds.length > 0) {
-        query = query.in("category_id", filters.categoryIds);
+      if (effectiveFilters.categoryIds.length > 0) {
+        query = query.in("category_id", effectiveFilters.categoryIds);
       }
 
-      if (filters.transactionType !== "all") {
-        query = query.eq("type", filters.transactionType);
+      if (effectiveFilters.transactionType !== "all") {
+        query = query.eq("type", effectiveFilters.transactionType);
       }
 
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id && !!filters.dateFrom && !!filters.dateTo,
+    enabled: !!user?.id && !!effectiveFilters.dateFrom && !!effectiveFilters.dateTo,
   });
 
   const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
-    queryKey: ["report-budgets", user?.id, filters],
+    queryKey: ["report-budgets", user?.id, effectiveFilters],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -98,13 +109,13 @@ export function useReportData(filters: ReportFilters) {
         .select("*, category:categories(*)")
         .eq("user_id", user.id)
         .or(
-          `and(start_date.lte.${filters.dateTo},end_date.gte.${filters.dateFrom}),and(start_date.is.null,end_date.is.null)`
+          `and(start_date.lte.${effectiveFilters.dateTo},end_date.gte.${effectiveFilters.dateFrom}),and(start_date.is.null,end_date.is.null)`
         );
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id && !!filters.dateFrom && !!filters.dateTo,
+    enabled: !!user?.id && !!effectiveFilters.dateFrom && !!effectiveFilters.dateTo,
   });
 
   const reportData = useMemo((): ReportData => {
@@ -159,10 +170,10 @@ export function useReportData(filters: ReportFilters) {
     // Daily expenses
     const dailyMap = new Map<string, { expenses: number; income: number }>();
 
-    if (filters.dateFrom && filters.dateTo) {
+    if (effectiveFilters.dateFrom && effectiveFilters.dateTo) {
       const days = eachDayOfInterval({
-        start: parseISO(filters.dateFrom),
-        end: parseISO(filters.dateTo),
+        start: parseISO(effectiveFilters.dateFrom),
+        end: parseISO(effectiveFilters.dateTo),
       });
 
       days.forEach((day) => {
@@ -223,7 +234,7 @@ export function useReportData(filters: ReportFilters) {
       budgetPerformance,
       transactions: formattedTransactions,
     };
-  }, [transactions, budgets, filters]);
+  }, [transactions, budgets, effectiveFilters]);
 
   return {
     reportData,

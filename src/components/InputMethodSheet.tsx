@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Mic, Camera, Edit, Sparkles } from 'lucide-react';
+import { Mic, Camera, Edit, Sparkles, Bell } from 'lucide-react';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -10,6 +10,7 @@ interface InputMethodSheetProps {
   onVoice: () => void;
   onReceipt: () => void;
   onManual: () => void;
+  onReminder: () => void;
 }
 
 export function InputMethodSheet({
@@ -17,7 +18,8 @@ export function InputMethodSheet({
   onOpenChange,
   onVoice,
   onReceipt,
-  onManual
+  onManual,
+  onReminder
 }: InputMethodSheetProps) {
   const { isPremium } = useSubscription();
 
@@ -31,7 +33,7 @@ export function InputMethodSheet({
         Select how you'd like to add your transaction
       </p>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {/* Voice Memo Card */}
         <ActionCard
           icon={Mic}
@@ -58,6 +60,16 @@ export function InputMethodSheet({
           label="Manual"
           description="Traditional form"
           onClick={onManual}
+          isPremium={isPremium}
+          showPremiumBadge={false}
+        />
+
+        {/* Reminder Setup Card */}
+        <ActionCard
+          icon={Bell}
+          label="Reminder"
+          description="Set payment alert"
+          onClick={onReminder}
           isPremium={isPremium}
           showPremiumBadge={false}
         />

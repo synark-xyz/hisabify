@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, format } from 'date-fns';
 import { Category } from '@/types';
 import { showBudgetWarning, showBudgetExceeded } from '@/lib/notificationManager';
+import { emitTransactionUpdated } from '@/lib/transaction-events';
 
 export type PeriodType = 'weekly' | 'monthly' | 'yearly';
 
@@ -50,6 +51,14 @@ export interface UpdateBudgetInput extends Partial<CreateBudgetInput> {
   id: string;
 }
 
+interface BudgetSpendingRow {
+  amount: number | string;
+  currency_base: string | null;
+  category?: {
+    category_type?: string | null;
+  } | null;
+}
+
 // Notification manager now handles alert deduplication
 
 export function useBudgets() {
@@ -59,6 +68,15 @@ export function useBudgets() {
   const { user } = useAuth();
   const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
+
+  const emitBudgetSyncEvents = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.dispatchEvent(new Event('budget-updated'));
+    emitTransactionUpdated();
+  }, []);
 
   // Refs to prevent infinite loops and duplicate fetches
   const isFetchingRef = useRef(false);
@@ -70,6 +88,8 @@ export function useBudgets() {
     convertAmountRef.current = convertAmount;
   }, [convertAmount]);
 
+  // Returns start/end dates for a given period type and start date
+  // Returns start/end dates for a given period type and start date
   const getPeriodDates = (periodType: PeriodType, startDate?: Date): { start: Date; end: Date } => {
     const now = startDate || new Date();
     switch (periodType) {
@@ -84,6 +104,8 @@ export function useBudgets() {
     }
   };
 
+  // Fetch budgets and compute spending for each
+  // Fetch budgets and compute spending for each
   const fetchBudgets = useCallback(async () => {
     if (!user) return;
 
@@ -109,10 +131,13 @@ export function useBudgets() {
 
       if (budgetsError) throw budgetsError;
 
-      // Filter to current period budgets
+      // Filter to current period budgets (support recurring)
+      // Filter to current period budgets (support recurring)
       const now = new Date();
       const activeBudgets = (budgetsData || []).filter((budget) => {
         if (budget.start_date && budget.end_date) {
+          // Recurring: if is_template, skip; else, check interval
+          // Recurring: if is_template, skip; else, check interval
           return isWithinInterval(now, {
             start: new Date(budget.start_date),
             end: new Date(budget.end_date)
@@ -129,9 +154,10 @@ export function useBudgets() {
           const startDate = budget.start_date || getPeriodDates(periodType).start.toISOString();
           const endDate = budget.end_date || getPeriodDates(periodType).end.toISOString();
 
+          // Query transactions for this budget's period/category
           let query = supabase
             .from('transactions')
-            .select('amount, currency_base')
+            .select('amount, currency_base, category_id, category:categories(category_type)')
             .eq('user_id', user.id)
             .eq('type', 'expense')
             .gte('date', startDate)
@@ -143,10 +169,17 @@ export function useBudgets() {
 
           const { data: transactions } = await query;
 
-          // Convert and sum transactions
+          // Filter out lend/owe system categories from expense budgets
+          // (they're transfers, not true expenses)
+          const filteredTransactions = (transactions as BudgetSpendingRow[] | null)?.filter((t) => {
+            const categoryType = t.category?.category_type;
+            return !['lend', 'owe'].includes(categoryType || '');
+          }) || [];
+
+          // Sum transactions, convert currency if needed
           let spent = 0;
-          if (transactions) {
-            for (const t of transactions) {
+          if (filteredTransactions) {
+            for (const t of filteredTransactions) {
               const storedCurrency = t.currency_base || 'USD';
               if (storedCurrency === currency) {
                 spent += Number(t.amount);
@@ -219,6 +252,8 @@ export function useBudgets() {
       name: input.name || `${input.period_type.charAt(0).toUpperCase() + input.period_type.slice(1)} Budget`,
       month: startDate.getMonth() + 1,
       year: startDate.getFullYear(),
+      is_template: input.is_template || false,
+      template_name: input.template_name || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       spent: 0,
@@ -249,6 +284,7 @@ export function useBudgets() {
 
       // Background fetch to ensure consistency
       fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error creating budget:', err);
@@ -289,6 +325,7 @@ export function useBudgets() {
 
       toast.success('Budget updated successfully');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error updating budget:', err);
@@ -311,6 +348,7 @@ export function useBudgets() {
 
       toast.success('Budget deleted successfully');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error deleting budget:', err);
@@ -319,7 +357,7 @@ export function useBudgets() {
     }
   };
 
-  const getHistoricalBudgets = async (categoryId?: string, months: number = 6): Promise<{ month: string; budget: number; spent: number }[]> => {
+  const getHistoricalBudgets = useCallback(async (categoryId?: string, months: number = 6): Promise<{ month: string; budget: number; spent: number }[]> => {
     if (!user) return [];
 
     try {
@@ -386,7 +424,7 @@ export function useBudgets() {
       console.error('Error fetching historical budgets:', err);
       return [];
     }
-  };
+  }, [user, currency]);
 
   const copyBudgetToNextPeriod = async (budgetId: string): Promise<boolean> => {
     if (!user) return false;
@@ -416,6 +454,7 @@ export function useBudgets() {
 
       toast.success('Budget copied to next period');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error copying budget:', err);
@@ -436,7 +475,7 @@ export function useBudgets() {
         .update({
           is_template: true,
           template_name: templateName || budget.name || budget.category?.name || 'Budget Template'
-        })
+        } as any)
         .eq('id', budgetId)
         .eq('user_id', user.id);
 
@@ -444,6 +483,7 @@ export function useBudgets() {
 
       toast.success('Budget saved as template');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error saving template:', err);
@@ -461,11 +501,12 @@ export function useBudgets() {
         .select('*, category:categories(*)')
         .eq('user_id', user.id)
         .eq('is_template', true)
-        .order('template_name', { ascending: true });
+        .order('template_name', { ascending: true, nullsFirst: true })
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      return (data || []) as Budget[];
+      return ((data || []) as unknown as Budget[]);
     } catch (err) {
       console.error('Error fetching templates:', err);
       return [];
@@ -507,6 +548,7 @@ export function useBudgets() {
 
       toast.success('Budget created from template');
       await fetchBudgets();
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error creating budget from template:', err);
@@ -529,6 +571,7 @@ export function useBudgets() {
       if (error) throw error;
 
       toast.success('Template deleted');
+      emitBudgetSyncEvents();
       return true;
     } catch (err) {
       console.error('Error deleting template:', err);

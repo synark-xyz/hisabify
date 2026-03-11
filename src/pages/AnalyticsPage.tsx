@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, RefreshCw, Lock, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -30,6 +30,11 @@ import { exportToCSV } from '@/lib/exportUtils';
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PremiumGuard } from '@/components/PremiumGuard';
+import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useToast } from '@/hooks/use-toast';
+import { canUseFeature } from '@/lib/entitlements';
+import { enforceHistoryWindow, getFreeHistoryStartDate } from '@/lib/historyLimits';
 
 export function AnalyticsPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -38,8 +43,10 @@ export function AnalyticsPage() {
     to: endOfMonth(new Date()),
   });
   const { user } = useAuth();
+  const { toast } = useToast();
   const { variant } = useTheme();
   const navigate = useNavigate();
+  const hasShownClampToastRef = useRef(false);
 
   const {
     transactions,
@@ -53,17 +60,16 @@ export function AnalyticsPage() {
     loading,
     refetch,
   } = useDashboardData(dateRange);
+  const hasTransactionData = transactions.length > 0;
 
-  // Listen for transaction updates
-  useEffect(() => {
-    const handleUpdate = () => {
-      refetch();
-    };
-    window.addEventListener('transaction-updated', handleUpdate);
-    return () => window.removeEventListener('transaction-updated', handleUpdate);
-  }, [refetch]);
+  useTransactionUpdateListener(() => {
+    refetch();
+  });
 
   const { isPremium, loading: subscriptionLoading } = useSubscription();
+  const canUseCustomRange = canUseFeature({ isPremium }, 'analytics_custom_range');
+  const canExportReports = canUseFeature({ isPremium }, 'report_export');
+  const freeHistoryStartDate = useMemo(() => getFreeHistoryStartDate(), []);
 
   // Advanced analytics hook
   const {
@@ -77,8 +83,44 @@ export function AnalyticsPage() {
   } = useAdvancedAnalytics(transactions);
 
   const handleExportCSV = () => {
+    if (!canExportReports) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     exportToCSV({ transactions, dateRange });
   };
+
+  const handleDateRangeChange = (range: { from: Date; to: Date }) => {
+    const enforced = enforceHistoryWindow(range, isPremium);
+    setDateRange(enforced.range);
+
+    if (enforced.wasClamped && !hasShownClampToastRef.current) {
+      hasShownClampToastRef.current = true;
+      toast({
+        title: 'History limit reached',
+        description: 'Free plan supports the last 30 days. Upgrade for full history.',
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (subscriptionLoading || isPremium) {
+      return;
+    }
+
+    const enforced = enforceHistoryWindow(dateRange, isPremium);
+    if (enforced.wasClamped) {
+      setDateRange(enforced.range);
+      if (!hasShownClampToastRef.current) {
+        hasShownClampToastRef.current = true;
+        toast({
+          title: 'History limit reached',
+          description: 'Free plan supports the last 30 days. Upgrade for full history.',
+        });
+      }
+    }
+  }, [subscriptionLoading, isPremium, dateRange, toast]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -95,16 +137,17 @@ export function AnalyticsPage() {
 
   return (
     <div className={cn("min-h-screen pb-page-content fade-bottom-overlay", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.header
+      <PullToRefresh onRefresh={async () => { await refetch(); }}>
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <motion.header
           className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 rounded-b-3xl"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="flex items-center gap-2">
             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
             </motion.div>
@@ -133,8 +176,12 @@ export function AnalyticsPage() {
           <motion.section variants={itemVariants}>
             <DateRangeSelector
               dateRange={dateRange}
-              onDateRangeChange={setDateRange}
+              onDateRangeChange={handleDateRangeChange}
               onExportCSV={handleExportCSV}
+              minDate={freeHistoryStartDate}
+              onUpgradeRequired={() => setShowUpgradeModal(true)}
+              canUseCustomRange={canUseCustomRange}
+              canExport={canExportReports}
             />
           </motion.section>
 
@@ -146,6 +193,18 @@ export function AnalyticsPage() {
                   <Skeleton key={i} className="h-24 rounded-2xl" />
                 ))}
               </div>
+            ) : !hasTransactionData ? (
+              <motion.div
+                className="bg-card rounded-2xl p-6 border border-border/50 text-center"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <p className="text-base font-semibold text-foreground">No analytics data yet</p>
+                <p className="text-sm text-muted-foreground mt-1 mb-4">
+                  Add transactions first, then your insights and trends will appear here.
+                </p>
+                <Button onClick={() => navigate('/expenses')}>Add Transactions</Button>
+              </motion.div>
             ) : (
               <SummaryCards
                 totalExpenses={totalExpenses}
@@ -157,6 +216,7 @@ export function AnalyticsPage() {
           </motion.section>
 
           {/* Tabs for Overview vs Advanced */}
+          {hasTransactionData && (
           <motion.section variants={itemVariants}>
             <Tabs defaultValue="insights" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12 card-3d">
@@ -279,8 +339,10 @@ export function AnalyticsPage() {
               </TabsContent>
             </Tabs>
           </motion.section>
+          )}
         </motion.main>
       </div>
+      </PullToRefresh>
 
       <UpgradeModal
         open={showUpgradeModal}

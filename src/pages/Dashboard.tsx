@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Re-verify imports to fix refresh crash
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
-import { DailyQuote } from '@/components/DailyQuote';
 import { StreamingGreeting } from '@/components/StreamingGreeting';
 import { HealthScoreCard } from '@/features/gamification/components/HealthScoreCard';
 import { TransactionItem } from '@/components/TransactionItem';
@@ -19,9 +18,11 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTheme } from '@/hooks/useTheme';
+import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
+import { useFirstTimeUser } from '@/hooks/useFirstTimeUser';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, Transaction, MonthlySpending } from '@/types';
+import { Transaction } from '@/types';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
@@ -31,73 +32,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Sample analytics data for demonstration
-const sampleAnalyticsData: Record<number, MonthlySpending[]> = {
-  2023: [
-    { month: 'Jan', amount: 2850, year: 2023 },
-    { month: 'Feb', amount: 3200, year: 2023 },
-    { month: 'Mar', amount: 2950, year: 2023 },
-    { month: 'Apr', amount: 3400, year: 2023 },
-    { month: 'May', amount: 3100, year: 2023 },
-    { month: 'Jun', amount: 2800, year: 2023 },
-    { month: 'Jul', amount: 3600, year: 2023 },
-    { month: 'Aug', amount: 3300, year: 2023 },
-    { month: 'Sep', amount: 2900, year: 2023 },
-    { month: 'Oct', amount: 3500, year: 2023 },
-    { month: 'Nov', amount: 4200, year: 2023 },
-    { month: 'Dec', amount: 4800, year: 2023 },
-  ],
-  2024: [
-    { month: 'Jan', amount: 3100, year: 2024 },
-    { month: 'Feb', amount: 2950, year: 2024 },
-    { month: 'Mar', amount: 3400, year: 2024 },
-    { month: 'Apr', amount: 3200, year: 2024 },
-    { month: 'May', amount: 3600, year: 2024 },
-    { month: 'Jun', amount: 3100, year: 2024 },
-    { month: 'Jul', amount: 3800, year: 2024 },
-    { month: 'Aug', amount: 3500, year: 2024 },
-    { month: 'Sep', amount: 3200, year: 2024 },
-    { month: 'Oct', amount: 3700, year: 2024 },
-    { month: 'Nov', amount: 4100, year: 2024 },
-    { month: 'Dec', amount: 4500, year: 2024 },
-  ],
-  2025: [
-    { month: 'Jan', amount: 3300, year: 2025 },
-    { month: 'Feb', amount: 3100, year: 2025 },
-    { month: 'Mar', amount: 3500, year: 2025 },
-    { month: 'Apr', amount: 3400, year: 2025 },
-    { month: 'May', amount: 3700, year: 2025 },
-    { month: 'Jun', amount: 3200, year: 2025 },
-    { month: 'Jul', amount: 3900, year: 2025 },
-    { month: 'Aug', amount: 3600, year: 2025 },
-    { month: 'Sep', amount: 3300, year: 2025 },
-    { month: 'Oct', amount: 3800, year: 2025 },
-    { month: 'Nov', amount: 4300, year: 2025 },
-    { month: 'Dec', amount: 4700, year: 2025 },
-  ],
-  2026: [
-    { month: 'Jan', amount: 3500, year: 2026 },
-    { month: 'Feb', amount: 3300, year: 2026 },
-    { month: 'Mar', amount: 3700, year: 2026 },
-    { month: 'Apr', amount: 3600, year: 2026 },
-    { month: 'May', amount: 3900, year: 2026 },
-    { month: 'Jun', amount: 3400, year: 2026 },
-    { month: 'Jul', amount: 4100, year: 2026 },
-    { month: 'Aug', amount: 3800, year: 2026 },
-    { month: 'Sep', amount: 3500, year: 2026 },
-    { month: 'Oct', amount: 4000, year: 2026 },
-    { month: 'Nov', amount: 4500, year: 2026 },
-    { month: 'Dec', amount: 4900, year: 2026 },
-  ],
-};
-
 export function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [monthlyData, setMonthlyData] = useState<MonthlySpending[]>([]);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()]);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MMM'));
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
@@ -106,6 +47,7 @@ export function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
+  const { isFirstTimeUser, loading: firstTimeLoading, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
   const { user } = useAuth();
   const { variant, theme } = useTheme();
   const { formatAmount, currencyVersion, currency } = useCurrency();
@@ -115,59 +57,7 @@ export function Dashboard() {
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
 
-  // Dynamically calculate available years based on transaction data
-  const availableYears = useMemo(() => {
-    if (transactions.length === 0) {
-      return [new Date().getFullYear()];
-    }
-
-    const years = new Set<number>();
-    transactions.forEach(tx => {
-      const year = new Date(tx.date).getFullYear();
-      if (!isNaN(year)) {
-        years.add(year);
-      }
-    });
-
-    // Add current year if not present
-    const currentYear = new Date().getFullYear();
-    years.add(currentYear);
-
-    // Convert to sorted array (ascending)
-    return Array.from(years).sort((a, b) => a - b);
-  }, [transactions]);
-
-  // Event listener for layout modal updates
-  useEffect(() => {
-    const onTransactionUpdated = () => handleRefresh();
-    window.addEventListener('transaction-updated', onTransactionUpdated);
-    return () => window.removeEventListener('transaction-updated', onTransactionUpdated);
-  }, [user]);
-
-  useEffect(() => {
-    if (user) {
-      fetchTransactions();
-      fetchMonthlySummary();
-      fetchTodayTransactions();
-    }
-  }, [user, currencyVersion]);
-
-  useEffect(() => {
-    generateMonthlyData();
-  }, [transactions, selectedYear]);
-
-  const handleRefresh = async () => {
-    await Promise.all([
-      fetchTransactions(),
-      fetchMonthlySummary(),
-      fetchTodayTransactions(),
-      refetchReminders()
-    ]);
-  };
-
-
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from('transactions')
@@ -197,9 +87,34 @@ export function Dashboard() {
       );
       setTransactions(convertedData as unknown as Transaction[]);
     }
-  };
+  }, [convertAmount, currency, user]);
 
-  const fetchMonthlySummary = async () => {
+  const fetchAvailableYears = useCallback(async () => {
+    const currentYear = new Date().getFullYear();
+    if (!user) {
+      setAvailableYears([currentYear]);
+      return;
+    }
+
+    const { data } = await supabase
+      .from('transactions')
+      .select('date')
+      .eq('user_id', user.id);
+
+    const years = new Set<number>([currentYear]);
+    data?.forEach(({ date }) => {
+      const year = new Date(date).getFullYear();
+      if (!isNaN(year)) {
+        years.add(year);
+      }
+    });
+
+    const sortedYears = Array.from(years).sort((a, b) => a - b);
+    setAvailableYears(sortedYears);
+    setSelectedYear((prev) => (sortedYears.includes(prev) ? prev : sortedYears[sortedYears.length - 1]));
+  }, [user]);
+
+  const fetchMonthlySummary = useCallback(async () => {
     if (!user) return;
     const now = new Date();
     const start = startOfMonth(now).toISOString();
@@ -234,9 +149,9 @@ export function Dashboard() {
       setTotalIncome(income);
       setTotalExpenses(expenses);
     }
-  };
+  }, [convertAmount, currency, user]);
 
-  const fetchTodayTransactions = async () => {
+  const fetchTodayTransactions = useCallback(async () => {
     if (!user) return;
     const now = new Date();
     const start = startOfDay(now).toISOString();
@@ -268,56 +183,42 @@ export function Dashboard() {
       const expenses = convertedData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.convertedAmount, 0);
       setTodayNet(income - expenses);
     }
-  };
+  }, [convertAmount, currency, user]);
 
-  const generateMonthlyData = () => {
-    // Use sample data for the selected year
-    const yearData = sampleAnalyticsData[selectedYear];
-    if (yearData) {
-      // Get current month index for years in the past, or show relevant months
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonthIndex = currentDate.getMonth();
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      fetchTransactions(),
+      fetchMonthlySummary(),
+      fetchTodayTransactions(),
+      fetchAvailableYears(),
+      refetchReminders(),
+      refetchFirstTimeStatus()
+    ]);
+  }, [fetchTransactions, fetchMonthlySummary, fetchTodayTransactions, fetchAvailableYears, refetchReminders, refetchFirstTimeStatus]);
 
-      // Show last 7 months of data
-      let dataToShow: MonthlySpending[];
-      if (selectedYear === currentYear) {
-        // For current year, show months up to current month
-        const startIndex = Math.max(0, currentMonthIndex - 6);
-        dataToShow = yearData.slice(startIndex, currentMonthIndex + 1);
-      } else if (selectedYear < currentYear) {
-        // For past years, show last 7 months of the year
-        dataToShow = yearData.slice(5, 12);
-      } else {
-        // For future years, show first 7 months
-        dataToShow = yearData.slice(0, 7);
-      }
+  useTransactionUpdateListener(() => {
+    void handleRefresh();
+  });
 
-      // Merge with actual transaction data if available
-      const mergedData = dataToShow.map(sample => {
-        const monthTransactions = transactions.filter(t => {
-          const txDate = new Date(t.date);
-          return format(txDate, 'MMM') === sample.month &&
-            txDate.getFullYear() === selectedYear &&
-            t.type === 'expense';
-        });
-        const actualAmount = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-        return {
-          month: sample.month,
-          amount: actualAmount > 0 ? actualAmount : sample.amount,
-          year: selectedYear,
-        };
-      });
-
-      setMonthlyData(mergedData);
+  useEffect(() => {
+    if (user) {
+      void handleRefresh();
     }
-  };
+  }, [user, currencyVersion, handleRefresh]);
 
-  const handleMonthSelect = (month: string) => {
+  const handleMonthSelect = useCallback((month: string) => {
     setSelectedMonth(month);
-  };
+  }, []);
+
+  const activeReminders = useMemo(() => {
+    return paymentReminders.filter((reminder) => {
+      const status = reminder.status as string;
+      return status === 'upcoming' || status === 'pending';
+    });
+  }, [paymentReminders]);
 
   const netBalance = totalIncome - totalExpenses;
+  const showGettingStarted = !firstTimeLoading && isFirstTimeUser;
 
   return (
     <div className="min-h-screen relative">
@@ -333,7 +234,7 @@ export function Dashboard() {
             transition={{ duration: 0.3, ease: "easeOut" }}
             style={{ willChange: 'opacity' }}
           >
-            <StreamingGreeting />
+            <StreamingGreeting isFirstTimeUser={showGettingStarted} />
             {/* Hero Section - Wallet Overview */}
             <motion.section
               key="hero-section"
@@ -436,14 +337,53 @@ export function Dashboard() {
               </div>
             </motion.section>
 
-            <DailyQuote />
+            {!showGettingStarted && <HealthScoreCard />}
 
-            <HealthScoreCard />
+            {showGettingStarted && (
+              <motion.section
+                key="getting-started-section"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-3xl p-5 border border-border/50 shadow-card"
+              >
+                <h2 className="text-lg font-black tracking-tight text-foreground mb-1">Get Started</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Your account is ready. Add real data with these steps to unlock insights.
+                </p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="text-sm text-foreground">1. Add your first transaction</div>
+                  <div className="text-sm text-foreground">2. Create a budget limit</div>
+                  <div className="text-sm text-foreground">3. Set a savings goal</div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    onClick={() => navigate('/expenses')}
+                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                  >
+                    Add Transaction
+                  </button>
+                  <button
+                    onClick={() => navigate('/budget')}
+                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                  >
+                    Create Budget
+                  </button>
+                  <button
+                    onClick={() => navigate('/savings')}
+                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                  >
+                    Add Savings Goal
+                  </button>
+                </div>
+              </motion.section>
+            )}
 
             {/* Upgrade to Pro Banner - Only for non-premium users */}
             {/* Upgrade to Pro Banner - Compact & Premium */}
             <AnimatePresence mode="wait">
-              {!subscriptionLoading && !isPremium && (
+              {!showGettingStarted && !subscriptionLoading && !isPremium && (
                 <motion.section
                   key="upgrade-banner"
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -492,30 +432,33 @@ export function Dashboard() {
             </AnimatePresence>
 
             {/* Payment Reminders Section */}
-            <motion.section
-              key="reminders-section"
-              initial={{ opacity: 1, y: 0 }}
-              style={{ willChange: 'auto' }}
-            >
-              <div className="flex items-center justify-between mb-3 px-1">
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
-                  <Bell className="w-5 h-5 text-accent" weight="duotone" />
-                  Reminders
-                </h2>
-                <motion.button
-                  onClick={() => setShowAddPaymentReminder(true)}
-                  className="p-2 bg-muted/50 rounded-xl hover:bg-muted text-muted-foreground transition-colors border border-border/50"
-                  whileHover={{ rotate: 90 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  style={{ willChange: 'transform' }}
-                >
-                  <Faders className="w-4 h-4" weight="duotone" />
-                </motion.button>
-              </div>
-              <PaymentReminderCarousel reminders={paymentReminders} />
-            </motion.section>
+            {!showGettingStarted && activeReminders.length > 0 && (
+              <motion.section
+                key="reminders-section"
+                initial={{ opacity: 1, y: 0 }}
+                style={{ willChange: 'auto' }}
+              >
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
+                    <Bell className="w-5 h-5 text-accent" weight="duotone" />
+                    Reminders
+                  </h2>
+                  <motion.button
+                    onClick={() => setShowAddPaymentReminder(true)}
+                    className="p-2 bg-muted/50 rounded-xl hover:bg-muted text-muted-foreground transition-colors border border-border/50"
+                    whileHover={{ rotate: 90 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    style={{ willChange: 'transform' }}
+                  >
+                    <Faders className="w-4 h-4" weight="duotone" />
+                  </motion.button>
+                </div>
+                <PaymentReminderCarousel reminders={activeReminders} />
+              </motion.section>
+            )}
 
             {/* Analytics Section */}
+            {!showGettingStarted && (
             <motion.section
               key="analytics-section"
               initial={{ opacity: 1, y: 0 }}
@@ -582,8 +525,10 @@ export function Dashboard() {
                 />
               </div>
             </motion.section>
+            )}
 
             {/* Monthly Reports Preview */}
+            {!showGettingStarted && (
             <motion.section
               key="transactions-section"
               initial={{ opacity: 1, y: 0 }}
@@ -626,6 +571,7 @@ export function Dashboard() {
                 )}
               </div>
             </motion.section>
+            )}
           </motion.main>
         </div>
       </PullToRefresh>
@@ -637,8 +583,7 @@ export function Dashboard() {
         onOpenChange={(open) => !open && setEditingTransaction(null)}
         transaction={editingTransaction}
         onSuccess={() => {
-          fetchTransactions();
-          fetchMonthlySummary();
+          void handleRefresh();
         }}
       />
 
@@ -647,15 +592,14 @@ export function Dashboard() {
         onOpenChange={(open) => !open && setDeletingTransaction(null)}
         transaction={deletingTransaction}
         onSuccess={() => {
-          fetchTransactions();
-          fetchMonthlySummary();
+          void handleRefresh();
         }}
       />
 
       <ManageRemindersModal
         open={showAddPaymentReminder}
         onOpenChange={setShowAddPaymentReminder}
-        reminders={paymentReminders}
+        reminders={activeReminders}
         onRefresh={refetchReminders}
       />
 

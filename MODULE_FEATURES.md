@@ -2,7 +2,7 @@
 
 **Document Purpose**: High-level view of Hisabify product features organized by modules/pages with happy paths and edge cases for testing.
 
-**Last Updated**: 2026-02-03
+**Last Updated**: 2026-03-10
 
 ---
 
@@ -105,6 +105,7 @@
 - Monthly spending trend chart
 - Category breakdown donut chart
 - Pull-to-refresh on mobile
+- Daily quote widget intentionally excluded from production dashboard
 
 ### Non-Functional Features
 - Load dashboard data within 300ms
@@ -465,9 +466,7 @@
 - Edit reminder
 - Delete reminder (with confirmation)
 - View upcoming reminders (carousel on dashboard)
-- Mark reminder as paid (creates transaction option)
-- Snooze reminder (postpone by X days)
-- Dismiss reminder
+- Mark reminder as paid (status update only, no transaction auto-create)
 - **[PREMIUM]** Calendar sync (export reminders to external calendar)
 - **[PREMIUM]** Email/push notification for reminders
 
@@ -476,6 +475,7 @@
 - Real-time sync
 - Sort by due date
 - Past due highlighting
+- Calendar-day-safe due date handling to reduce timezone drift
 
 ### Happy Paths
 1. **Create Monthly Reminder**
@@ -490,17 +490,8 @@
 2. **Mark as Paid**
    - User sees reminder notification
    - Clicks "Mark as Paid"
-   - Option to create transaction automatically
-   - User confirms
-   - Transaction created
-   - Reminder dismissed
+   - Reminder status updates to "paid"
    - Next recurrence scheduled
-
-3. **Snooze Reminder**
-   - User sees reminder 2 days early
-   - Clicks "Snooze"
-   - Selects snooze duration (1 day)
-   - Reminder reappears tomorrow
 
 ### Edge Cases
 - Create reminder with past due date (show as overdue)
@@ -508,8 +499,7 @@
 - Recurrence "daily" creating too many items (performance)
 - Delete recurring reminder (delete single or all future?)
 - Edit recurring reminder (update single or all future?)
-- Mark as paid but don't create transaction (just dismiss)
-- Snooze multiple times (unlimited or limit?)
+- Mark as paid and confirm no duplicate transaction appears in ledger
 - Reminder notification at exactly midnight (timezone handling)
 - **[PREMIUM]** Calendar sync failure (retry mechanism)
 - Reminder with very long name (truncate in carousel)
@@ -544,6 +534,7 @@
 - **[PREMIUM]** Export report to PDF
 - **[PREMIUM]** Export report to CSV
 - **[PREMIUM]** Share report via link
+- No production fallback to mock/sample analytics data
 
 ### Non-Functional Features
 - Charts load under 300ms

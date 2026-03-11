@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { getPreferredOverlayRoot } from "@/lib/overlay-portal";
 
 const AlertDialog = AlertDialogPrimitive.Root;
 
@@ -32,6 +33,13 @@ const AlertDialogContent = React.forwardRef<
 >(({ className, ...props }, ref) => {
   const isNative = Capacitor.isNativePlatform();
 
+  // Get overlay root synchronously to avoid clipping issues
+  const overlayRoot = React.useMemo(() => {
+    if (typeof document === 'undefined') return null;
+
+    return getPreferredOverlayRoot();
+  }, []);
+
   const content = (
     <>
       <AlertDialogOverlay />
@@ -54,7 +62,7 @@ const AlertDialogContent = React.forwardRef<
   );
 
   // Disable portal on native to avoid viewport issues
-  return isNative ? content : <AlertDialogPortal>{content}</AlertDialogPortal>;
+  return isNative ? content : <AlertDialogPortal container={overlayRoot}>{content}</AlertDialogPortal>;
 });
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 

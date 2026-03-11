@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { useBudgets, BudgetWithSpending, Budget } from '@/hooks/useBudgets';
@@ -8,6 +8,9 @@ import { BudgetHistoryChart } from '@/components/BudgetHistoryChart';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { useSubscription } from '@/hooks/useSubscription';
+import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Category } from '@/types';
 import { AddBudgetModal } from '@/components/AddBudgetModal';
 import { DeleteBudgetDialog } from '@/components/DeleteBudgetDialog';
 import { Button } from '@/components/ui/button';
@@ -20,12 +23,32 @@ export function BudgetDashboard() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetWithSpending | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const { budgets, loading, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
   const { isPremium } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res: any = await (supabase.from('categories') as any)
+          .select('id,name')
+          .eq('is_system_category', false);
+        if (res?.error) throw res.error;
+        if (res?.data) {
+          setCategories((res.data as any[]).map((row) => ({ id: row.id, name: row.name })) as Category[]);
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        // Continue with empty categories - budgets will still work
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Calculate summary stats
   const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
@@ -89,6 +112,8 @@ export function BudgetDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Local overlay container for Budget page dropdowns/sheets */}
+      <div id="budget-overlay-root" className="fixed inset-0 pointer-events-none z-[9999]" />
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <motion.div
@@ -176,9 +201,16 @@ export function BudgetDashboard() {
         </motion.div>
       </div>
 
-      {/* Add Budget Button */}
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-foreground">Active Budgets</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold text-foreground">Active Budgets</h2>
+          {budgets.length > 0 && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium">
+              {budgets.length} {budgets.length === 1 ? 'budget' : 'budgets'}
+            </span>
+          )}
+        </div>
         <Button
           onClick={() => {
             if (!isPremium && budgets.length >= 1) {
@@ -197,7 +229,9 @@ export function BudgetDashboard() {
       {/* Budget Cards */}
       {budgets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {budgets.map((budget) => (
+          {budgets
+            .filter((b) => selectedCategory === 'all' ? true : (b.category_id === selectedCategory))
+            .map((budget) => (
             <BudgetProgressCard
               key={budget.id}
               budget={budget}
@@ -224,6 +258,12 @@ export function BudgetDashboard() {
       )}
 
 
+      {/* Premium-Gated History Chart */}
+      <PremiumGuard featureName="Budget History">
+        <div className="pt-2">
+          <BudgetHistoryChart />
+        </div>
+      </PremiumGuard>
 
       {/* Modals */}
       <AddBudgetModal

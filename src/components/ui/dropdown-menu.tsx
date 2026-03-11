@@ -4,7 +4,7 @@ import { Check, ChevronRight, Circle } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 
 import { cn } from "@/lib/utils";
-import { getOverlayRoot } from "@/lib/overlay-portal";
+import { getPreferredOverlayRoot } from "@/lib/overlay-portal";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
@@ -81,15 +81,11 @@ const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
 >(({ className, sideOffset = 8, collisionPadding = 12, avoidCollisions = true, sticky = "partial", ...props }, ref) => {
-  const [overlayRoot, setOverlayRoot] = React.useState<HTMLElement | null>(null);
+  // Get overlay root synchronously to avoid clipping issues
+  const overlayRoot = React.useMemo(() => {
+    if (typeof document === 'undefined') return null;
 
-  React.useEffect(() => {
-    // Prioritize page-specific overlay root (e.g., planner-overlay-root) over global
-    const plannerRoot = document.getElementById('planner-overlay-root');
-    const savingsRoot = document.getElementById('savings-overlay-root');
-    const pageRoot = plannerRoot || savingsRoot;
-
-    setOverlayRoot(pageRoot || getOverlayRoot());
+    return getPreferredOverlayRoot();
   }, []);
 
   return (

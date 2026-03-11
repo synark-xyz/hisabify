@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 
 import { cn } from "@/lib/utils";
+import { getPreferredOverlayRoot } from "@/lib/overlay-portal";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -41,8 +42,15 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
+  // Get overlay root synchronously to avoid clipping issues
+  const overlayRoot = React.useMemo(() => {
+    if (typeof document === 'undefined') return null;
+
+    return getPreferredOverlayRoot();
+  }, []);
+
   return (
-    <DialogPortal>
+    <DialogPortal container={overlayRoot}>
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useCategories } from '@/hooks/useCategories';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
 import { Category } from '@/types';
 
 interface ChartData {
@@ -14,31 +14,36 @@ interface ChartData {
   spent: number;
 }
 
+type BudgetHistoryCategory = Category & { category_type?: string | null };
+
 export function BudgetHistoryChart() {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [categories, setCategories] = useState<Category[]>([]);
 
   const { getHistoricalBudgets } = useBudgets();
-  const { currency } = useCurrency();
-  const currencySymbol = currencyData[currency]?.symbol || '$';
+  const { currency, formatAmount } = useCurrency();
+  const { categories: allCategories } = useCategories();
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      const { data } = await supabase.from('categories').select('*');
-      if (data) setCategories(data as Category[]);
-    };
-    fetchCategories();
-  }, []);
+  // Filter out lend/owe categories for budget chart (budgets don't apply to these)
+  const categories = allCategories.filter((cat) => {
+    const catWithType = cat as BudgetHistoryCategory;
+    return !['lend', 'owe'].includes(catWithType.category_type || '');
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const categoryId = selectedCategory === 'all' ? undefined : selectedCategory;
-      const history = await getHistoricalBudgets(categoryId, 6);
-      setData(history);
-      setLoading(false);
+      try {
+        const categoryId = selectedCategory === 'all' ? undefined : selectedCategory;
+        const history = await getHistoricalBudgets(categoryId, 6);
+        setData(history);
+      } catch (err) {
+        console.error('Error fetching budget history:', err);
+        setData([]); // Set empty data on error
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, [selectedCategory, getHistoricalBudgets]);
@@ -52,7 +57,7 @@ export function BudgetHistoryChart() {
             <p key={index} className="text-sm">
               <span className="text-muted-foreground">{entry.dataKey === 'budget' ? 'Budget' : 'Spent'}: </span>
               <span className={entry.dataKey === 'spent' ? 'text-primary font-medium' : 'text-foreground'}>
-                {currencySymbol}{entry.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                {formatAmount(entry.value)}
               </span>
             </p>
           ))}
@@ -76,6 +81,22 @@ export function BudgetHistoryChart() {
   }
 
   const hasData = data.some(d => d.budget > 0 || d.spent > 0);
+  const formatYAxisTick = (value: number) => {
+    const locale = currencyData[currency]?.locale || undefined;
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      notation: 'compact',
+      maximumFractionDigits: 1,
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatXAxisTick = (label: string) => {
+    const [month, year] = label.split(' ');
+    if (!month || !year) return label;
+    return `${month} '${year.slice(-2)}`;
+  };
 
   return (
     <Card className="rounded-3xl shadow-none border-none bg-accent/5 overflow-hidden">
@@ -103,40 +124,72 @@ export function BudgetHistoryChart() {
         {hasData ? (
           <div className="h-[280px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barGap={2}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+              <LineChart data={data} margin={{ top: 12, right: 12, left: 10, bottom: 24 }}>
+                <defs>
+                  <filter id="lineGlowPrimary" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <filter id="lineGlowMuted" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.35} />
                 <XAxis
                   dataKey="month"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }}
-                  dy={10}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }}
+                  tickMargin={16}
+                  interval={0}
+                  minTickGap={28}
+                  tickFormatter={formatXAxisTick}
+                  padding={{ left: 14, right: 14 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }}
-                  tickFormatter={(value) => `${currencySymbol}${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 600 }}
+                  width={56}
+                  tickFormatter={formatYAxisTick}
                 />
                 <Tooltip
                   cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
                   content={<CustomTooltip />}
                 />
-                <Bar
+                <Line
                   dataKey="budget"
                   name="Budget"
-                  fill="hsl(var(--muted-foreground)/0.2)"
-                  radius={[4, 4, 4, 4]}
-                  barSize={12}
+                  type="monotone"
+                  stroke="hsl(var(--muted-foreground) / 0.45)"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={{ r: 3, strokeWidth: 0, fill: 'hsl(var(--muted-foreground) / 0.75)' }}
+                  activeDot={{ r: 5, strokeWidth: 0, fill: 'hsl(var(--muted-foreground) / 0.95)' }}
+                  filter="url(#lineGlowMuted)"
                 />
-                <Bar
+                <Line
                   dataKey="spent"
                   name="Spent"
-                  fill="hsl(var(--primary))"
-                  radius={[4, 4, 4, 4]}
-                  barSize={12}
+                  type="monotone"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={4}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={{ r: 3.5, strokeWidth: 0, fill: 'hsl(var(--primary))' }}
+                  activeDot={{ r: 6, strokeWidth: 0, fill: 'hsl(var(--primary))' }}
+                  filter="url(#lineGlowPrimary)"
                 />
-              </BarChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (

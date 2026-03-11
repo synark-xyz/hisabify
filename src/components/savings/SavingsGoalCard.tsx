@@ -32,6 +32,7 @@ export function SavingsGoalCard({
   onAddFunds,
 }: SavingsGoalCardProps) {
   const [showAddFunds, setShowAddFunds] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [fundAmount, setFundAmount] = useState("");
   const { formatAmount, currencySymbol } = useCurrency();
 
@@ -102,7 +103,7 @@ export function SavingsGoalCard({
                   Edit Goal
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => onDelete(goal.id)}
+                  onClick={() => setShowDeleteConfirm(true)}
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -183,6 +184,7 @@ export function SavingsGoalCard({
         open={showAddFunds}
         onOpenChange={setShowAddFunds}
         title={`Top Up "${goal.name}"`}
+        className="z-[10000]"
         maxWidth="max-w-[400px]"
       >
         <div className="space-y-4">
@@ -235,6 +237,39 @@ export function SavingsGoalCard({
               </Button>
             </div>
           </div>
+      </MobileDialog>
+
+      {/* Delete Confirmation Sheet */}
+      <MobileDialog
+        className="z-[10000]"
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={`Delete "${goal.name}"?`}
+        maxWidth="max-w-[400px]"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            This action cannot be undone. This will permanently delete your savings goal and its progress.
+          </p>
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="ghost"
+              className="flex-1 rounded-2xl font-bold"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 rounded-2xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                onDelete(goal.id);
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
       </MobileDialog>
     </>
   );

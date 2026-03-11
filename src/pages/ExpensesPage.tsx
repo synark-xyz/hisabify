@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
@@ -15,181 +15,258 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTheme } from '@/hooks/useTheme';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Transaction, Budget, CategorySpending } from '@/types';
+import { Transaction, CategorySpending, Card, Category } from '@/types';
+import { getViewRange, type TransactionViewMode } from '@/lib/transactionDateRange';
+import { enforceHistoryWindow } from '@/lib/historyLimits';
+import { emitTransactionUpdated } from '@/lib/transaction-events';
+import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  format, startOfMonth, endOfMonth, isSameDay, isSameMonth, addMonths, subMonths,
-  startOfWeek, endOfWeek, addWeeks, subWeeks, setYear, setMonth
+  format,
+  isSameDay,
+  isSameMonth,
+  addMonths,
+  subMonths,
+  addWeeks,
+  subWeeks,
+  setYear,
+  setMonth,
+  addDays,
+  subDays,
+  addYears,
+  subYears,
 } from 'date-fns';
 
 interface ConvertedTransaction extends Transaction {
   convertedAmount: number;
 }
 
+const FILTERABLE_TYPES = ['all', 'expense', 'income', 'lend', 'owe'] as const;
+type FilterType = typeof FILTERABLE_TYPES[number];
+
 export function ExpensesPage() {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month' | 'year'>('week');
+  const [anchorDate, setAnchorDate] = useState(new Date());
+  const [focusedDate, setFocusedDate] = useState<Date | null>(null);
+  const [viewMode, setViewMode] = useState<TransactionViewMode>('week');
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [showAllExpenses, setShowAllExpenses] = useState(false);
+  const [showTransactionList, setShowTransactionList] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<FilterType>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [cardFilter, setCardFilter] = useState<string>('all');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
+  const latestRequestIdRef = useRef(0);
+  const hasShownHistoryClampToastRef = useRef(false);
+
   const { user } = useAuth();
   const { currency, currencyVersion } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const { variant } = useTheme();
+  const { isPremium } = useSubscription();
+  const { toast } = useToast();
 
-  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
-  // Move definitions up
-  const fetchTransactions = useCallback(async () => {
-    if (!user) return;
-
-    // Determine fetch range based on view mode (add buffer)
-    let start, end;
+  useEffect(() => {
     if (viewMode === 'day') {
-      start = new Date(currentDate);
-      start.setHours(0, 0, 0, 0);
-      end = new Date(currentDate);
-      end.setHours(23, 59, 59, 999);
-    } else if (viewMode === 'week') {
-      start = startOfWeek(currentDate, { weekStartsOn: 1 });
-      end = endOfWeek(currentDate, { weekStartsOn: 1 });
-    } else if (viewMode === 'month') {
-      start = startOfMonth(currentDate);
-      end = endOfMonth(currentDate);
-    } else {
-      // year
-      start = new Date(currentDate.getFullYear(), 0, 1);
-      end = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59);
+      setFocusedDate(anchorDate);
+      return;
     }
 
-    // Safe buffer to handle edge cases
-    const bufferStart = viewMode === 'week' ? subWeeks(start, 1).toISOString() : start.toISOString();
-    const bufferEnd = viewMode === 'week' ? addWeeks(end, 1).toISOString() : end.toISOString();
+    setFocusedDate(null);
+  }, [viewMode, anchorDate]);
 
-    const { data } = await supabase
+  const viewRange = useMemo(() => getViewRange(viewMode, anchorDate), [viewMode, anchorDate]);
+
+  const fetchTransactions = useCallback(async () => {
+    const requestId = ++latestRequestIdRef.current;
+
+    if (!user) {
+      if (requestId === latestRequestIdRef.current) {
+        setTransactions([]);
+      }
+      return;
+    }
+
+    const enforcement = enforceHistoryWindow(
+      { from: viewRange.start, to: viewRange.end },
+      isPremium
+    );
+    const effectiveRange = enforcement.range;
+
+    if (enforcement.wasClamped && !hasShownHistoryClampToastRef.current) {
+      hasShownHistoryClampToastRef.current = true;
+      toast({
+        title: 'History limit reached',
+        description: 'Free plan supports the last 30 days. Upgrade for full history.',
+      });
+    }
+
+    const { data, error } = await supabase
       .from('transactions')
-      .select('*, category:categories(*)')
+      .select('*, category:categories(*), card:cards(*)')
       .eq('user_id', user.id)
-      .gte('date', bufferStart)
-      .lte('date', bufferEnd)
+      .gte('date', effectiveRange.from.toISOString())
+      .lte('date', effectiveRange.to.toISOString())
       .order('date', { ascending: false });
 
-    if (data) {
-      // Convert amounts to current currency
-      const convertedData = await Promise.all(
-        (data as unknown as Transaction[]).map(async (tx) => {
-          const storedCurrency = tx.currency_base || 'USD';
-          if (storedCurrency === currency) {
-            return { ...tx, convertedAmount: Number(tx.amount) };
-          }
-          const result = await convertAmount(Number(tx.amount), storedCurrency, currency);
-          return {
-            ...tx,
-            convertedAmount: result ? result.convertedAmount : Number(tx.amount)
-          };
-        })
-      );
+    if (error || !data || requestId !== latestRequestIdRef.current) {
+      return;
+    }
+
+    const convertedData = await Promise.all(
+      (data as Transaction[]).map(async (tx) => {
+        const storedCurrency = tx.currency_base || 'USD';
+        if (storedCurrency === currency) {
+          return { ...tx, convertedAmount: Number(tx.amount) };
+        }
+
+        const result = await convertAmount(Number(tx.amount), storedCurrency, currency);
+        return {
+          ...tx,
+          convertedAmount: result ? result.convertedAmount : Number(tx.amount),
+        };
+      })
+    );
+
+    if (requestId === latestRequestIdRef.current) {
       setTransactions(convertedData);
     }
-  }, [user, currentDate, viewMode, currency, convertAmount]);
-
-  const fetchBudgets = useCallback(async () => {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('budgets')
-      .select('*, category:categories(*)')
-      .eq('user_id', user.id)
-      .eq('month', currentDate.getMonth() + 1)
-      .eq('year', currentDate.getFullYear());
-
-    if (data) setBudgets(data as unknown as Budget[]);
-  }, [user, currentDate]);
+  }, [user, viewRange, currency, convertAmount, isPremium, toast]);
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([fetchTransactions(), fetchBudgets()]);
-  }, [fetchTransactions, fetchBudgets]);
+    await fetchTransactions();
+  }, [fetchTransactions]);
 
-  useEffect(() => {
-    const handleUpdate = () => {
-      fetchTransactions();
-      fetchBudgets();
-    };
-    window.addEventListener('transaction-updated', handleUpdate);
-    return () => window.removeEventListener('transaction-updated', handleUpdate);
-  }, [fetchTransactions, fetchBudgets]);
+  useTransactionUpdateListener(() => {
+    void fetchTransactions();
+  });
 
   useEffect(() => {
     if (user) {
-      fetchTransactions();
-      fetchBudgets();
+      void fetchTransactions();
     }
-  }, [user, currentDate, viewMode, currency, currencyVersion]);
+  }, [user, currencyVersion, fetchTransactions]);
 
+  const effectiveFocusedDate = focusedDate ?? (viewMode === 'day' ? anchorDate : null);
 
+  const hasTransactions = useCallback(
+    (date: Date) => transactions.some((tx) => isSameDay(new Date(tx.date), date)),
+    [transactions]
+  );
 
-  const hasTransactions = (date: Date) => {
-    return transactions.some(tx => isSameDay(new Date(tx.date), date));
-  };
+  const rangeTransactions = useMemo(
+    () =>
+      transactions.filter((tx) => {
+        const txDate = new Date(tx.date);
+        return txDate >= viewRange.start && txDate <= viewRange.end;
+      }),
+    [transactions, viewRange]
+  );
 
-  // Determine the date range for the current view
-  let viewStart, viewEnd;
-  if (viewMode === 'day') {
-    viewStart = new Date(currentDate);
-    viewStart.setHours(0, 0, 0, 0);
-    viewEnd = new Date(currentDate);
-    viewEnd.setHours(23, 59, 59, 999);
-  } else if (viewMode === 'week') {
-    viewStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    viewEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-  } else if (viewMode === 'month') {
-    viewStart = startOfMonth(currentDate);
-    viewEnd = endOfMonth(currentDate);
-  } else {
-    // year
-    viewStart = new Date(currentDate.getFullYear(), 0, 1);
-    viewEnd = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59);
-  }
+  const listBaseTransactions = useMemo(() => {
+    if (effectiveFocusedDate) {
+      return rangeTransactions.filter((tx) => isSameDay(new Date(tx.date), effectiveFocusedDate));
+    }
 
-  // Filter transactions for the current VIEW range (for stats)
-  const rangeTransactions = transactions.filter(tx => {
-    const txDate = new Date(tx.date);
-    return txDate >= viewStart && txDate <= viewEnd;
-  });
+    return rangeTransactions;
+  }, [effectiveFocusedDate, rangeTransactions]);
 
-  // Filter transactions for the LIST (specific date if selected, otherwise whole range)
-  const listTransactions = selectedDate
-    ? transactions.filter(tx => isSameDay(new Date(tx.date), selectedDate))
-    : rangeTransactions;
+  const categoryOptions = useMemo(() => {
+    const map = new Map<string, Category>();
+    for (const tx of rangeTransactions) {
+      if (tx.category?.id && !map.has(tx.category.id)) {
+        map.set(tx.category.id, tx.category);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [rangeTransactions]);
 
-  // Use listTransactions for calculations so chart respects selected date
-  const chartTransactions = listTransactions;
+  const cardOptions = useMemo(() => {
+    const map = new Map<string, Card>();
+    for (const tx of rangeTransactions) {
+      if (tx.card?.id && !map.has(tx.card.id)) {
+        map.set(tx.card.id, tx.card);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.card_holder.localeCompare(b.card_holder));
+  }, [rangeTransactions]);
 
-  const totalIncome = chartTransactions
-    .filter(tx => tx.type === 'income')
+  useEffect(() => {
+    if (categoryFilter === 'all') {
+      return;
+    }
+
+    const categoryExists = categoryOptions.some((category) => category.id === categoryFilter);
+    if (!categoryExists) {
+      setCategoryFilter('all');
+    }
+  }, [categoryFilter, categoryOptions]);
+
+  useEffect(() => {
+    if (cardFilter === 'all') {
+      return;
+    }
+
+    const cardExists = cardOptions.some((card) => card.id === cardFilter);
+    if (!cardExists) {
+      setCardFilter('all');
+    }
+  }, [cardFilter, cardOptions]);
+
+  const filteredTransactions = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return listBaseTransactions.filter((tx) => {
+      if (typeFilter !== 'all' && tx.type !== typeFilter) {
+        return false;
+      }
+
+      if (categoryFilter !== 'all' && tx.category_id !== categoryFilter) {
+        return false;
+      }
+
+      if (cardFilter !== 'all' && tx.card_id !== cardFilter) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      const merchant = tx.merchant.toLowerCase();
+      const note = (tx.note || '').toLowerCase();
+      const categoryName = (tx.category?.name || '').toLowerCase();
+
+      return merchant.includes(query) || note.includes(query) || categoryName.includes(query);
+    });
+  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, cardFilter]);
+
+  const totalIncome = filteredTransactions
+    .filter((tx) => tx.type === 'income')
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
-  const totalExpense = chartTransactions
-    .filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
+  const totalExpense = filteredTransactions
+    .filter((tx) => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
-  // Category data for charts (based on selected date or range)
   const categoryData: CategorySpending[] = Object.values(
-    chartTransactions
-      .filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
+    filteredTransactions
+      .filter((tx) => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
       .reduce((acc, tx) => {
         const catName = getTransactionCategoryName(tx);
         const catColor = getTransactionCategoryColor(tx);
@@ -197,79 +274,138 @@ export function ExpensesPage() {
         if (!acc[catName]) {
           acc[catName] = { name: catName, amount: 0, color: catColor, percentage: 0 };
         }
+
         acc[catName].amount += tx.convertedAmount;
         return acc;
       }, {} as Record<string, CategorySpending>)
-  ).map(cat => ({
-    ...cat,
-    percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
-  })).sort((a, b) => b.amount - a.amount);
+  )
+    .map((cat) => ({
+      ...cat,
+      percentage: totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0,
+    }))
+    .sort((a, b) => b.amount - a.amount);
 
-  // Create timeframe key for chart updates - include selected date so chart re-renders
-  const timeframeKey = selectedDate
-    ? `day-${selectedDate.toISOString().split('T')[0]}`
-    : `${viewMode}-${currentDate.toISOString().split('T')[0]}`;
+  const timeframeKey = effectiveFocusedDate
+    ? `day-${effectiveFocusedDate.toISOString().split('T')[0]}`
+    : `${viewMode}-${anchorDate.toISOString().split('T')[0]}`;
 
-  const expenseTransactions = listTransactions.filter(tx => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe');
+  const availableYears = useMemo(() => {
+    const years = new Set<number>([anchorDate.getFullYear()]);
+    for (const tx of transactions) {
+      years.add(new Date(tx.date).getFullYear());
+    }
+    return Array.from(years).sort((a, b) => b - a);
+  }, [transactions, anchorDate]);
 
-  const handleDateSelect = (date: Date) => {
-    if (selectedDate && isSameDay(date, selectedDate)) {
-      setSelectedDate(null);
-    } else {
-      setSelectedDate(date);
-      // Sync the view (month/year) if the selected date is in a different month
-      if (!isSameMonth(date, currentDate)) {
-        setCurrentDate(date);
+  const handleDateSelect = useCallback(
+    (date: Date) => {
+      if (viewMode !== 'day' && effectiveFocusedDate && isSameDay(date, effectiveFocusedDate)) {
+        setFocusedDate(null);
+        return;
       }
-    }
-  };
 
-  const handleWeekChange = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      setCurrentDate(prev => subWeeks(prev, 1));
-    } else {
-      setCurrentDate(prev => addWeeks(prev, 1));
-    }
-  };
+      setAnchorDate(date);
+      setFocusedDate(date);
+    },
+    [viewMode, effectiveFocusedDate]
+  );
 
-  const handleMonthChange = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      setCurrentDate(prev => subMonths(prev, 1));
-    } else {
-      setCurrentDate(prev => addMonths(prev, 1));
-    }
-  };
+  const handleWeekChange = useCallback(
+    (direction: 'prev' | 'next') => {
+      setAnchorDate((prev) => {
+        const nextDate = direction === 'prev' ? subWeeks(prev, 1) : addWeeks(prev, 1);
+
+        if (viewMode === 'day') {
+          setFocusedDate(nextDate);
+        } else {
+          setFocusedDate(null);
+        }
+
+        return nextDate;
+      });
+    },
+    [viewMode]
+  );
+
+  const handleMonthChange = useCallback((direction: 'prev' | 'next') => {
+    setAnchorDate((prev) => (direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1)));
+    setFocusedDate(null);
+  }, []);
+
+  const handlePeriodChange = useCallback(
+    (direction: 'prev' | 'next') => {
+      if (viewMode === 'day') {
+        setAnchorDate((prev) => {
+          const nextDate = direction === 'prev' ? subDays(prev, 1) : addDays(prev, 1);
+          setFocusedDate(nextDate);
+          return nextDate;
+        });
+        return;
+      }
+
+      if (viewMode === 'week') {
+        handleWeekChange(direction);
+        return;
+      }
+
+      if (viewMode === 'month') {
+        handleMonthChange(direction);
+        return;
+      }
+
+      setAnchorDate((prev) => (direction === 'prev' ? subYears(prev, 1) : addYears(prev, 1)));
+      setFocusedDate(null);
+    },
+    [viewMode, handleWeekChange, handleMonthChange]
+  );
+
+  const handleViewModeChange = useCallback(
+    (nextMode: TransactionViewMode) => {
+      setViewMode(nextMode);
+      if (nextMode !== 'day') {
+        setFocusedDate(null);
+      }
+    },
+    []
+  );
+
+  const handleTransactionMutationSuccess = useCallback(() => {
+    emitTransactionUpdated();
+  }, []);
+
+  const clearFocusedDate = useCallback(() => {
+    setFocusedDate(null);
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+      transition: { staggerChildren: 0.1 },
+    },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+    visible: { opacity: 1, y: 0 },
   };
 
+  const isDateFocused = effectiveFocusedDate !== null;
+
   return (
-    <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+    <div className={cn('min-h-screen', variant === 'cyberpunk' ? 'bg-transparent' : 'bg-background')}>
       <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
-
-
           <motion.main
             className="px-4 space-y-6 pb-24"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
-            {/* Calendar Controls */}
             <motion.div variants={itemVariants} className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <motion.button
-                  onClick={() => handleMonthChange('prev')}
+                  onClick={() => handlePeriodChange('prev')}
                   className="p-2.5 hover:bg-muted rounded-full transition-colors"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -278,7 +414,6 @@ export function ExpensesPage() {
                 </motion.button>
 
                 <div className="flex flex-col items-center gap-3">
-                  {/* Date Selectors */}
                   <div className="flex flex-col items-center -space-y-1">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -288,17 +423,17 @@ export function ExpensesPage() {
                           whileTap={{ scale: 0.95 }}
                         >
                           <span className="text-sm font-semibold text-muted-foreground">
-                            {format(currentDate, 'yyyy')}
+                            {format(anchorDate, 'yyyy')}
                           </span>
                           <ChevronDown className="w-3 h-3 text-muted-foreground" />
                         </motion.button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="center">
-                        {[2023, 2024, 2025, 2026].map((year) => (
+                        {availableYears.map((year) => (
                           <DropdownMenuItem
                             key={year}
-                            onClick={() => setCurrentDate(setYear(currentDate, year))}
-                            className={currentDate.getFullYear() === year ? 'bg-accent/10' : ''}
+                            onClick={() => setAnchorDate(setYear(anchorDate, year))}
+                            className={anchorDate.getFullYear() === year ? 'bg-accent/10' : ''}
                           >
                             {year}
                           </DropdownMenuItem>
@@ -313,22 +448,20 @@ export function ExpensesPage() {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <span className="text-xl font-bold text-foreground">
-                            {format(currentDate, 'MMMM')}
-                          </span>
+                          <span className="text-xl font-bold text-foreground">{format(anchorDate, 'MMMM')}</span>
                           <ChevronDown className="w-4 h-4 text-foreground" />
                         </motion.button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="center" className="max-h-[300px] overflow-y-auto">
                         {Array.from({ length: 12 }, (_, i) => i).map((monthIndex) => {
-                          const date = setMonth(new Date(), monthIndex);
+                          const monthDate = setMonth(new Date(), monthIndex);
                           return (
                             <DropdownMenuItem
                               key={monthIndex}
-                              onClick={() => setCurrentDate(setMonth(currentDate, monthIndex))}
-                              className={currentDate.getMonth() === monthIndex ? 'bg-accent/10' : ''}
+                              onClick={() => setAnchorDate(setMonth(anchorDate, monthIndex))}
+                              className={anchorDate.getMonth() === monthIndex ? 'bg-accent/10' : ''}
                             >
-                              {format(date, 'MMMM')}
+                              {format(monthDate, 'MMMM')}
                             </DropdownMenuItem>
                           );
                         })}
@@ -336,48 +469,47 @@ export function ExpensesPage() {
                     </DropdownMenu>
                   </div>
 
-                  {/* View Toggle */}
                   <div className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-full">
                     <button
-                      onClick={() => setViewMode('day')}
+                      onClick={() => handleViewModeChange('day')}
                       className={cn(
-                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        'px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
                         viewMode === 'day'
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
                       Daily
                     </button>
                     <button
-                      onClick={() => setViewMode('week')}
+                      onClick={() => handleViewModeChange('week')}
                       className={cn(
-                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        'px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
                         viewMode === 'week'
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
                       Weekly
                     </button>
                     <button
-                      onClick={() => setViewMode('month')}
+                      onClick={() => handleViewModeChange('month')}
                       className={cn(
-                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        'px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
                         viewMode === 'month'
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
                       Monthly
                     </button>
                     <button
-                      onClick={() => setViewMode('year')}
+                      onClick={() => handleViewModeChange('year')}
                       className={cn(
-                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                        'px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200',
                         viewMode === 'year'
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
                       Yearly
@@ -386,7 +518,7 @@ export function ExpensesPage() {
                 </div>
 
                 <motion.button
-                  onClick={() => handleMonthChange('next')}
+                  onClick={() => handlePeriodChange('next')}
                   className="p-2.5 hover:bg-muted rounded-full transition-colors"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
@@ -396,7 +528,7 @@ export function ExpensesPage() {
               </div>
 
               <AnimatePresence mode="wait">
-                {(viewMode === 'week' || viewMode === 'day') ? (
+                {viewMode === 'week' || viewMode === 'day' ? (
                   <motion.div
                     key="week-calendar"
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -405,14 +537,14 @@ export function ExpensesPage() {
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                   >
                     <SwipeableWeekCalendar
-                      currentDate={currentDate}
-                      selectedDate={selectedDate}
+                      currentDate={anchorDate}
+                      selectedDate={effectiveFocusedDate}
                       onDateSelect={handleDateSelect}
                       onWeekChange={handleWeekChange}
                       hasTransactions={hasTransactions}
                     />
                   </motion.div>
-                ) : (viewMode === 'month') ? (
+                ) : viewMode === 'month' ? (
                   <motion.div
                     key="month-calendar"
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -421,10 +553,10 @@ export function ExpensesPage() {
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                   >
                     <MonthCalendar
-                      currentDate={currentDate}
-                      selectedDate={selectedDate}
+                      currentDate={anchorDate}
+                      selectedDate={effectiveFocusedDate}
                       onDateSelect={handleDateSelect}
-                      onMonthChange={setCurrentDate}
+                      onMonthChange={setAnchorDate}
                       hasTransactions={hasTransactions}
                     />
                   </motion.div>
@@ -437,33 +569,35 @@ export function ExpensesPage() {
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     className="text-center py-4 text-muted-foreground text-sm"
                   >
-                    Viewing all transactions for {currentDate.getFullYear()}
+                    Viewing all transactions for {anchorDate.getFullYear()}
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
 
-            {/* Summary Cards */}
             <motion.div variants={itemVariants}>
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-muted-foreground">
-                    {selectedDate
+                    {isDateFocused
                       ? 'Daily Overview'
-                      : viewMode === 'day' ? 'Daily Overview'
-                      : viewMode === 'week' ? 'Weekly Overview'
-                      : viewMode === 'month' ? 'Monthly Overview'
-                      : 'Yearly Overview'}
+                      : viewMode === 'day'
+                        ? 'Daily Overview'
+                        : viewMode === 'week'
+                          ? 'Weekly Overview'
+                          : viewMode === 'month'
+                            ? 'Monthly Overview'
+                            : 'Yearly Overview'}
                   </span>
-                  {selectedDate && (
+                  {isDateFocused && effectiveFocusedDate && (
                     <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium">
-                      {format(selectedDate, 'MMM d')}
+                      {format(effectiveFocusedDate, 'MMM d')}
                     </span>
                   )}
                 </div>
-                {selectedDate && (
+                {focusedDate && viewMode !== 'day' && (
                   <motion.button
-                    onClick={() => setSelectedDate(null)}
+                    onClick={clearFocusedDate}
                     className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-destructive bg-muted/30 hover:bg-destructive/10 rounded-full transition-colors"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -476,43 +610,105 @@ export function ExpensesPage() {
                   </motion.button>
                 )}
               </div>
-              <ExpenseOverview
-                totalSalary={totalIncome}
-                totalExpense={totalExpense}
-              />
+              <ExpenseOverview totalSalary={totalIncome} totalExpense={totalExpense} />
             </motion.div>
 
-            {/* Expense Analytics with Pie Chart */}
+            <motion.section variants={itemVariants} className="space-y-3">
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by description, note, or category"
+              />
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Select value={typeFilter} onValueChange={(value: FilterType) => setTypeFilter(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="expense">Expense</SelectItem>
+                    <SelectItem value="income">Income</SelectItem>
+                    <SelectItem value="lend">Lend</SelectItem>
+                    <SelectItem value="owe">Owe</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categoryOptions.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={cardFilter} onValueChange={setCardFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Card" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Cards</SelectItem>
+                    {cardOptions.map((card) => (
+                      <SelectItem key={card.id} value={card.id}>
+                        {card.card_holder} •••• {card.last_four || card.card_number.slice(-4)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setTypeFilter('all');
+                    setCategoryFilter('all');
+                    setCardFilter('all');
+                  }}
+                  className="text-sm rounded-md border border-border px-3 py-2 hover:bg-muted transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </motion.section>
+
             <motion.section variants={itemVariants}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-foreground">
-                  {selectedDate
+                  {isDateFocused
                     ? 'Daily Analytics'
-                    : viewMode === 'day' ? 'Daily Analytics'
-                    : viewMode === 'week' ? 'Weekly Analytics'
-                    : viewMode === 'month' ? 'Monthly Analytics'
-                    : 'Yearly Analytics'}
+                    : viewMode === 'day'
+                      ? 'Daily Analytics'
+                      : viewMode === 'week'
+                        ? 'Weekly Analytics'
+                        : viewMode === 'month'
+                          ? 'Monthly Analytics'
+                          : 'Yearly Analytics'}
                 </h2>
                 <motion.button
-                  onClick={() => setShowAllExpenses(!showAllExpenses)}
+                  onClick={() => setShowTransactionList(!showTransactionList)}
                   className="text-sm text-muted-foreground hover:text-accent transition-colors"
                   whileHover={{ x: 4 }}
                 >
-                  {showAllExpenses ? 'Show Chart' : 'View All'}
+                  {showTransactionList ? 'Show Chart' : 'View All'}
                 </motion.button>
               </div>
 
               <AnimatePresence mode="wait">
-                {showAllExpenses ? (
+                {showTransactionList ? (
                   <motion.div
-                    key="expense-list"
+                    key="transaction-list"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     className="space-y-3"
                   >
-                    {expenseTransactions.length > 0 ? (
-                      expenseTransactions.map((tx, index) => (
+                    {filteredTransactions.length > 0 ? (
+                      filteredTransactions.map((tx, index) => (
                         <motion.div
                           key={tx.id}
                           initial={{ opacity: 0, y: 10 }}
@@ -531,10 +727,8 @@ export function ExpensesPage() {
                     ) : (
                       <div className="bg-card rounded-2xl p-8 text-center shadow-card">
                         <span className="text-5xl">💸</span>
-                        <p className="text-muted-foreground mt-3">No expenses found</p>
-                        <p className="text-sm text-muted-foreground/70 mt-1">
-                          {selectedDate ? 'Try selecting a different date' : 'No expenses in this period'}
-                        </p>
+                        <p className="text-muted-foreground mt-3">No transactions found</p>
+                        <p className="text-sm text-muted-foreground/70 mt-1">Try adjusting your search or filters</p>
                       </div>
                     )}
                   </motion.div>
@@ -562,21 +756,19 @@ export function ExpensesPage() {
         </div>
       </PullToRefresh>
 
-
-
       <EditTransactionModal
         open={!!editingTransaction}
         onOpenChange={(open) => !open && setEditingTransaction(null)}
         transaction={editingTransaction}
-        onSuccess={fetchTransactions}
+        onSuccess={handleTransactionMutationSuccess}
       />
 
       <DeleteTransactionDialog
         open={!!deletingTransaction}
         onOpenChange={(open) => !open && setDeletingTransaction(null)}
         transaction={deletingTransaction}
-        onSuccess={fetchTransactions}
+        onSuccess={handleTransactionMutationSuccess}
       />
-    </div >
+    </div>
   );
 }

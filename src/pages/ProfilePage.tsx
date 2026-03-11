@@ -19,6 +19,7 @@ export function ProfilePage() {
   const navigate = useNavigate();
 
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const subscriptionStatusLabel = (profile.subscription_status || 'inactive').replace('_', ' ');
 
   const menuItems = [
     { id: 'personal', icon: User, label: 'Personal Information', path: '/profile/personal', color: 'bg-blue-500/10 text-blue-500' },
@@ -48,17 +49,20 @@ export function ProfilePage() {
             </div>
             <h2 className="text-xl font-bold text-foreground mt-4 flex items-center justify-center gap-2 text-glow">
               {profile.display_name || user?.email?.split('@')[0]}
-              {(isPremium || profile.referral_credits > 0) && (
+              {isPremium && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[10px] font-black text-accent uppercase tracking-wider">
                   PRO
                 </span>
               )}
             </h2>
             <p className="text-muted-foreground text-sm">{user?.email}</p>
+            <p className="text-xs mt-1 text-muted-foreground capitalize">
+              Subscription: {subscriptionStatusLabel}
+            </p>
           </motion.div>
 
           {/* Premium Card Upsell */}
-          {!subscriptionLoading && !isPremium && profile.referral_credits === 0 && (
+          {!subscriptionLoading && !isPremium && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

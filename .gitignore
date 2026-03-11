@@ -29,3 +29,9 @@ dist-ssr
 .env.production
 
 /bug-evd
+
+# Playwright
+playwright-report/
+test-results/
+e2e/.auth/
+test-report/

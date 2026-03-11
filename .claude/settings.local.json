@@ -13,7 +13,9 @@
       "Bash(bun add:*)",
       "Bash(npx cap sync)",
       "Bash(npm run lint:*)",
-      "Bash(npm run build:dev:*)"
+      "Bash(npm run build:dev:*)",
+      "Bash(npm test:*)",
+      "Bash(npx playwright:*)"
     ]
   },
   "outputStyle": "default"

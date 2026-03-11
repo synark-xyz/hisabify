@@ -18,6 +18,8 @@ export interface Category {
   icon: string;
   color: string;
   created_at: string;
+  is_system_category?: boolean;
+  category_type?: string;
 }
 
 export interface Transaction {
@@ -92,6 +94,7 @@ export interface PaymentReminder {
   user_id: string;
   title: string;
   amount: number;
+  currency: string;
   due_date: string;
   status: 'upcoming' | 'paid' | 'missed';
   notify_before_days: number;

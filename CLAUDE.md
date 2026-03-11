@@ -37,6 +37,9 @@ bun dev
 # or
 npm run dev
 
+# Managed dev server (mobile-friendly)
+npm run dev:managed
+
 # Build for production
 bun run build
 # or
@@ -55,7 +58,42 @@ bun test
 
 # Preview production build
 npm run preview
+
+# Mobile Development (Capacitor 8)
+npm run local-ip        # Find your local IP for device testing
+npm run cap:sync        # Sync web app with native projects
+npm run cap:android     # Build and open Android Studio
+npm run cap:ios         # Build and open Xcode
+npm run dev:android     # Quick run on Android (no rebuild)
+npm run dev:ios         # Quick run on iOS (no rebuild)
+npm run cap:run:android # Build, sync, and run on Android
+npm run cap:run:ios     # Build, sync, and run on iOS
 ```
+
+## Project Structure
+
+```
+src/
+├─ pages/              # Route-level screens (Dashboard, BudgetPage, profile/*, settings/*)
+├─ components/         # Reusable UI and feature components
+│  └─ ui/             # shadcn/Radix primitives (Button, Dialog, etc.)
+├─ hooks/              # Domain/data hooks (useTransactions, useBudgets, useAuth, etc.)
+├─ lib/                # Shared utilities (security, logging, export/report helpers)
+├─ features/           # Scoped feature modules (gamification/, referrals/)
+├─ integrations/
+│  └─ supabase/       # Supabase client and generated types
+├─ types/              # Core TypeScript type definitions
+└─ test/               # Test setup (setup.ts)
+
+supabase/migrations/   # Database schema changes
+android/, ios/         # Native Capacitor projects
+public/, assets/       # Static assets
+```
+
+**Import Pattern:**
+- Use `@/` alias for imports (configured in `tsconfig.json`)
+- Example: `import { useAuth } from '@/hooks/useAuth'`
+- Avoid deep relative paths like `../../../hooks/useAuth`
 
 ## Architecture Overview
 
@@ -275,6 +313,33 @@ if (isFetchingRef.current || (now - lastFetchRef.current) < 500) {
 - `Logger` service in `src/lib/logger.ts` (with Sentry support)
 - Toast notifications for user-facing errors
 
+### 7. Runtime Permission Handling (Mobile)
+
+Use `usePermissions()` hook for native app permission checks:
+```typescript
+const { ensurePermission, isNative } = usePermissions();
+
+// Check and request permission before feature use
+const hasPermission = await ensurePermission('microphone');
+if (!hasPermission) {
+  toast({ title: 'Microphone access denied' });
+  return;
+}
+// Proceed with feature
+```
+
+**Supported Permissions:**
+- `'camera'` - Native camera access
+- `'photos'` - Photo library access
+- `'microphone'` - Audio recording
+- `'location'` - Geolocation
+
+**Best Practices:**
+- Request permissions contextually (when user taps feature button)
+- Handle denials gracefully with clear error messages
+- Provide link to app settings for permanently denied permissions
+- Works across web, iOS, and Android with single API
+
 ## Feature-Specific Guidance
 
 ### Multi-Currency Support
@@ -307,16 +372,20 @@ if (isFetchingRef.current || (now - lastFetchRef.current) < 500) {
 - **Technology:** Tesseract.js for client-side text extraction
 - **Image Processing:** `src/lib/imageProcessor.ts`
 - **Optimization:** Compress to <500KB while preserving text readability
-- **Storage:** Supabase Storage with RLS policies
+- **Storage:** Supabase Storage with RLS policies (bucket: `receipts`)
 - **Features:** Extracts merchant, amount, date; pre-fills transaction form
-- **Documentation:** `docs/RECEIPT_IMAGE_OPTIMIZATION.md`
+- **Mobile Permissions:**
+  - Android: `CAMERA`, `READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`
+  - iOS: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`
+  - Runtime permission flow: `ensurePermission('camera')` and `ensurePermission('photos')`
+- **Documentation:** `docs/UNIFIED_FAB_IMPLEMENTATION.md`
 
 ### Voice Input for Transactions
 
 - **Component:** `VoiceInputFlow.tsx` - Enhanced voice recording interface
 - **Technology:** Web Speech API (browser native)
 - **Hook:** `useVoiceInput.ts` - Web Speech API integration
-- **Hook:** `usePermissions.ts` - Runtime permission handling
+- **Hook:** `usePermissions.ts` - Runtime permission handling for native apps
 - **Features:**
   - Real-time transcription display
   - Automatic merchant/amount parsing (~70-80% accuracy)
@@ -324,10 +393,15 @@ if (isFetchingRef.current || (now - lastFetchRef.current) < 500) {
   - Permission checking and error handling
   - "Use This" button to pre-fill transaction form
   - Tips for better voice input
+  - Native microphone permission requests (iOS/Android)
 - **Limitations:**
   - Requires browser support (Chrome, Safari, Edge - full; Firefox - partial)
   - English only (Phase 2)
   - Regex-based parsing (AI upgrade in Phase 8)
+- **Mobile Permissions:**
+  - Android: `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`
+  - iOS: `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`
+  - Runtime permission flow: `ensurePermission('microphone')` before recording
 
 ### Gamification (Health Score)
 
@@ -354,6 +428,8 @@ if (isFetchingRef.current || (now - lastFetchRef.current) < 500) {
 
 ## Testing
 
+**Framework:** Vitest + Testing Library (with jsdom)
+
 **Run tests:**
 ```bash
 npm test
@@ -361,31 +437,55 @@ npm test
 bun test
 ```
 
-**Test setup:** `src/test/setup.ts`
-**Test pattern:** Unit tests for pure functions (e.g., `healthScoreLogic.test.ts`)
+**Test Setup:** `src/test/setup.ts`
+
+**Test File Naming:**
+- Unit tests: `*.test.ts` or `*.test.tsx`
+- Integration tests: `*.integration.test.tsx`
+- Location: Co-located with source files or in `__tests__/` folders
 
 **When writing tests:**
 - Use Vitest + Testing Library
-- Test pure functions in `__tests__/` folders
+- Test pure functions (e.g., `healthScoreLogic.test.ts`)
 - Mock Supabase client for integration tests
+- Add/update tests for new hooks, utilities, and behavior changes
+- Run `npm run lint` and `npm run test` before opening PRs
+
+**No enforced coverage gate** - focus on testing key logic paths
 
 ## Capacitor Mobile
 
 **Config:** `capacitor.config.ts`
 **App ID:** `io.synark.hisabify`
 
-**Build for mobile:**
+**Localhost Development Workflow:**
+1. Find your local IP: `npm run local-ip`
+2. Update `capacitor.config.ts`:
+   - Set `USE_LOCALHOST = true`
+   - Android Emulator: Use `http://10.0.2.2:8080` (default)
+   - Android Device: Use your computer's IP (e.g., `http://192.168.1.100:8080`)
+   - iOS Simulator: Use `http://localhost:8080`
+3. Start dev server: `npm run dev`
+4. Run on device: `npm run dev:android` or `npm run dev:ios`
+
+**Production Build:**
 ```bash
 npm run build
 npx cap sync
-npx cap open ios
-npx cap open android
+npx cap open ios    # Opens Xcode
+npx cap open android # Opens Android Studio
 ```
 
 **Mobile-specific features:**
 - Pull-to-refresh (`usePullToRefresh.tsx`)
 - Mobile-responsive bottom navigation
 - Geolocation for currency detection
+- Runtime permission handling (`usePermissions.ts`)
+- Localhost support with hot reload (HMR)
+- GPU-accelerated animations (60fps)
+- Platform-specific optimizations (see `src/index.css`)
+
+**Documentation:** See `CAPACITOR_LOCALHOST_SETUP.md` for detailed setup guide
 
 ## Type Safety
 
@@ -403,6 +503,7 @@ npx cap open android
 | `src/hooks/useBudgets.tsx` | Budget management |
 | `src/hooks/useCurrency.tsx` | Multi-currency support |
 | `src/hooks/useVoiceInput.ts` | Voice transcription (Web Speech API) |
+| `src/hooks/usePermissions.ts` | Runtime permission handling (native apps) |
 | `src/types/index.ts` | Core type definitions |
 | `src/integrations/supabase/client.ts` | Supabase singleton |
 | `src/lib/security.ts` | Security utilities |
@@ -415,7 +516,8 @@ npx cap open android
 | `TRD.md` | Technical requirements & architecture |
 | `PRD.md` | Product requirements & roadmap |
 | `docs/UNIFIED_FAB_IMPLEMENTATION.md` | Unified FAB architecture & roadmap |
-| `docs/RECEIPT_IMAGE_OPTIMIZATION.md` | Receipt image optimization spec |
+| `docs/PERMISSIONS_FIX.md` | Complete guide for runtime permissions |
+| `CAPACITOR_LOCALHOST_SETUP.md` | Mobile localhost development setup |
 
 ## Development Workflow
 
@@ -438,6 +540,71 @@ npx cap open android
    - Use Tailwind CSS for styling
    - Add proper loading and error states
 
+## Coding Style & Conventions
+
+### TypeScript & React
+- Use TypeScript with strict mode enabled
+- Functional React components (no class components)
+- Hooks for state and side effects
+
+### Naming Conventions
+- **PascalCase:** Components, pages, types/interfaces
+  - Examples: `Dashboard`, `AddTransactionModal`, `Transaction`
+- **camelCase:** Variables, functions, hooks
+  - Examples: `userId`, `fetchTransactions`, `useAuth`
+- **Hooks:** Always prefix with `use`
+  - Examples: `useTransactions`, `useBudgets`, `usePermissions`
+- **Files:** Match component name
+  - Component: `AddTransactionModal.tsx`
+  - Hook: `useTransactions.tsx`
+  - Utility: `security.ts`
+
+### Code Formatting
+- 2-space indentation
+- Semicolons required
+- Consistent import ordering:
+  1. React/external libraries
+  2. Internal `@/` imports
+  3. Relative imports
+  4. Types
+
+### Component Guidelines
+- Treat `src/components/ui/` as shared primitives (shadcn)
+- Wrap or extend instead of directly editing UI primitives
+- Keep components focused and single-purpose
+- Extract reusable logic into custom hooks
+
+## Commit & Pull Request Guidelines
+
+### Branch Naming
+- `feat/` - New features (e.g., `feat/voice-input`)
+- `fix/` - Bug fixes (e.g., `fix/budget-calculation`)
+- `chore/` - Maintenance tasks (e.g., `chore/update-deps`)
+
+### Commit Messages
+- Use imperative mood (e.g., "Add voice input", "Fix budget overflow", "Refactor useTransactions")
+- Keep first line under 72 characters
+- Add detail in commit body if needed
+
+### Pull Request Requirements
+- **Problem & Solution:** Clear description of what and why
+- **Linked Issue:** Reference related issue/ticket
+- **Screenshots/Recordings:** For UI changes
+- **Testing Notes:** Commands run + key results
+- **Checklist:**
+  - [ ] `npm run lint` passes
+  - [ ] `npm run test` passes
+  - [ ] Manual testing completed
+  - [ ] Documentation updated (if needed)
+
+## Security & Environment Variables
+
+- **Never commit `.env` files** - Use `.env.example` as template
+- **Client-exposed vars:** Must be prefixed with `VITE_`
+  - Example: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- **Secret keys:** Never in client code - use Supabase Edge Functions
+- **Schema changes:** Add migration in `supabase/migrations/` and regenerate types
+
 ## Common Patterns to Follow
 
 - **Always use optimistic updates** for better UX
@@ -449,3 +616,5 @@ npx cap open android
 - **Revert optimistic updates** on error
 - **Prevent duplicate fetches** with refs
 - **Log errors** with Logger service
+- **Request permissions contextually** before using camera/microphone (mobile)
+- **Test on real devices** for mobile-specific features (permissions, camera, voice)

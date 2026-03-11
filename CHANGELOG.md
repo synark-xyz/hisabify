@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Automated Test Runner Script**: Added `scripts/run-automated-tests.sh` to run `unit`, `e2e`, or `all` test suites on demand.
+- **Timestamped Test Artifacts**: Automated runs now write logs, unit coverage reports, Playwright HTML reports, and E2E artifacts to `test-report/<YYYYMMDD-HHMMSS>/`.
+- **NPM Shortcuts for Automation**:
+  - `npm run test:automated`
+  - `npm run test:automated:unit`
+  - `npm run test:automated:e2e`
+
+### Changed
+- **README Cleanup**: Removed placeholder Lovable project URL and documented automated test report workflow.
+- **PRD Update**: Added implementation and non-functional quality notes for timestamped test/coverage artifacts.
+
+---
+
+## [1.1.1] - 2026-03-10
+
+### Changed
+- **Reminder Date Handling**: Normalized reminder date parsing/storage to calendar-day-safe values (UTC noon) across dashboard, reminders modal, add/edit form, and notifications page to prevent timezone drift.
+- **Analytics Data Integrity**: Removed mock/sample analytics fallback; charts now render only real transaction data and show explicit empty states when data is unavailable.
+- **Analytics Number Formatting**: Replaced hardcoded currency symbol on chart axes with locale-aware compact formatting.
+
+### Fixed
+- **Reminder Payment Flow**: Marking a reminder as paid now updates reminder status only; automatic transaction insertion was removed to prevent duplicates and currency mismatch side effects.
+- **Dashboard Year Filter**: Year dropdown now derives from all transaction years to prevent missing-year selection gaps.
+- **Health Score Copy**: Corrected displayed weight split to `40/30/30` to match scoring logic.
+- **Lint Stability**: Fixed hook-order issue in `overlay-portal`, `useEffect` dependency warning in `ExpensesPage`, and `require()` import usage in `tailwind.config.ts`.
+
+### Removed
+- **Dashboard Daily Quote Block**: Removed from Home dashboard flow to keep release scope focused on finance-critical surfaces.
+- **Client-side Reminder Scheduling**: Disabled `setTimeout`-based reminder scheduling in `notifications.ts`; reminder delivery now requires persistent system/backend scheduling.
+
+---
+
 ## [1.1.0] - 2026-01-30
 
 ### Added

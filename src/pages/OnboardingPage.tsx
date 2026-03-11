@@ -452,7 +452,6 @@ export function OnboardingPage() {
                                             boxShadow: "0 8px 16px -4px rgba(0, 0, 0, 0.15)"
                                         }}
                                         whileTap={{ scale: 0.96 }}
-                                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                                     >
                                         <feature.icon className="w-4 h-4" />
                                         <span className="text-sm font-semibold">{feature.text}</span>

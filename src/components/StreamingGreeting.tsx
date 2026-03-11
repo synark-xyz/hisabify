@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { Sun, Moon, CloudSun, Sparkle } from '@phosphor-icons/react';
 
-export function StreamingGreeting() {
+interface StreamingGreetingProps {
+    isFirstTimeUser?: boolean;
+}
+
+export function StreamingGreeting({ isFirstTimeUser = false }: StreamingGreetingProps) {
     const { user } = useAuth();
     const { profile } = useProfile();
     const [greeting, setGreeting] = useState('');
@@ -22,6 +26,11 @@ export function StreamingGreeting() {
 
         setGreeting(`${currentGreeting}, ${userName}`);
     }, [userName]);
+
+    useEffect(() => {
+        setDisplayText('');
+        setIndex(0);
+    }, [greeting]);
 
     useEffect(() => {
         if (index < greeting.length) {
@@ -76,7 +85,7 @@ export function StreamingGreeting() {
                     )}
                 </div>
                 <p className="text-[10px] uppercase tracking-[0.2em] font-black text-foreground">
-                    Welcome back to your money tracker, Hisabify!
+                    {isFirstTimeUser ? 'Welcome to Hisabify. Start by adding your first transaction.' : 'Welcome back to your money tracker, Hisabify!'}
                 </p>
             </div>
         </div>

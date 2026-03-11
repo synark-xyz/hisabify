@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, ShieldCheck, Receipt } from '@phosphor-icons/react';
+import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, ShieldCheck, Receipt, Trash } from '@phosphor-icons/react';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format, isPast, isToday, differenceInDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,68 +12,48 @@ import { getNotifications, markNotificationAsRead, clearOldNotifications, AppNot
 import { useHealthScore } from '@/features/gamification/hooks/useHealthScore';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
-
-interface PaymentReminder {
-    id: string;
-    title: string;
-    amount: number;
-    due_date: string;
-    status: string;
-    is_recurring: boolean;
-}
+import { toReminderDisplayDate } from '@/lib/reminderDate';
+import { usePaymentReminders } from '@/hooks/usePaymentReminders';
+import { PaymentReminder } from '@/types';
+import { useState } from 'react';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { formatReminderAmount } from '@/lib/reminderAmount';
 
 export function NotificationsPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { formatAmount } = useCurrency();
     const { score, loading: healthLoading } = useHealthScore();
-    const [reminders, setReminders] = useState<PaymentReminder[]>([]);
+    const { reminders, loading, markAsPaid, deletePaidReminder } = usePaymentReminders();
     const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    const fetchAppNotifications = useCallback(() => {
+        const notifications = getNotifications();
+        setAppNotifications(notifications);
+    }, []);
 
     useEffect(() => {
         if (user) {
-            fetchReminders();
             fetchAppNotifications();
             clearOldNotifications(); // Clean up old notifications
         }
-    }, [user]);
+    }, [user, fetchAppNotifications]);
 
-    const fetchReminders = async () => {
-        if (!user) return;
-        setLoading(true);
-        const { data } = await supabase
-            .from('payment_reminders')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('due_date', { ascending: true });
-
-        if (data) setReminders(data as PaymentReminder[]);
-        setLoading(false);
+    const handleMarkAsPaid = async (reminder: PaymentReminder) => {
+        await markAsPaid(reminder);
     };
 
-    const fetchAppNotifications = () => {
-        const notifications = getNotifications();
-        setAppNotifications(notifications);
+    const handleDeletePaidReminder = async (reminder: PaymentReminder) => {
+        await deletePaidReminder(reminder);
     };
 
-    const handleMarkAsPaid = async (id: string) => {
-        // Optimistic update
-        setReminders(current => current.map(r =>
-            r.id === id ? { ...r, status: 'paid' } : r
-        ));
-
-        await supabase
-            .from('payment_reminders')
-            .update({ status: 'paid' })
-            .eq('id', id);
-
-        // Re-fetch to confirm
-        fetchReminders();
+    const handleRefresh = async () => {
+        fetchAppNotifications();
+        // Reminders will auto-refresh via hook
     };
 
     const getStatusInfo = (status: string, dueDate: string) => {
-        const date = new Date(dueDate);
+        const date = toReminderDisplayDate(dueDate);
         const daysUntil = differenceInDays(date, new Date());
 
         if (status === 'paid') {
@@ -89,12 +68,9 @@ export function NotificationsPage() {
         return { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Upcoming' };
     };
 
-    const upcomingCount = reminders.filter(r => {
-        return r.status === 'upcoming' && !isPast(new Date(r.due_date));
-    }).length;
-
     const overdueCount = reminders.filter(r => {
-        return r.status === 'upcoming' && isPast(new Date(r.due_date)) && !isToday(new Date(r.due_date));
+        const dueDate = toReminderDisplayDate(r.due_date);
+        return r.status === 'upcoming' && isPast(dueDate) && !isToday(dueDate);
     }).length;
 
     const getNotificationIcon = (type: AppNotification['type']) => {
@@ -117,9 +93,10 @@ export function NotificationsPage() {
 
     return (
         <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Notifications" showBack onBack={() => navigate('/')} />
+            <Header title="Notifications" showBack />
 
-            <main className="px-4 py-6 space-y-6">
+            <PullToRefresh onRefresh={handleRefresh}>
+                <main className="px-4 py-6 space-y-6">
 
                 {loading ? (
                     <div className="space-y-4">
@@ -147,7 +124,10 @@ export function NotificationsPage() {
                                 </h3>
                                 <div className="space-y-3">
                                     {reminders
-                                        .filter(r => r.status === 'upcoming' && isPast(new Date(r.due_date)) && !isToday(new Date(r.due_date)))
+                                        .filter(r => {
+                                            const dueDate = toReminderDisplayDate(r.due_date);
+                                            return r.status === 'upcoming' && isPast(dueDate) && !isToday(dueDate);
+                                        })
                                         .map((reminder, idx) => {
                                             const statusInfo = getStatusInfo(reminder.status, reminder.due_date);
                                             const Icon = statusInfo.icon;
@@ -168,15 +148,17 @@ export function NotificationsPage() {
                                                                 <Receipt className="w-4 h-4 text-destructive/50" />
                                                                 <p className="font-bold text-foreground truncate text-lg text-glow">{reminder.title}</p>
                                                             </div>
-                                                            <p className="text-base font-bold text-accent text-glow">{formatAmount(reminder.amount)}</p>
+                                                            <p className="text-base font-bold text-accent text-glow">
+                                                                {formatReminderAmount(reminder, formatAmount)}
+                                                            </p>
                                                             <p className="text-xs text-destructive mt-1 font-medium">
-                                                                Due: {format(new Date(reminder.due_date), 'MMM d, yyyy')}
+                                                                Due: {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy')}
                                                             </p>
                                                         </div>
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
-                                                            onClick={() => handleMarkAsPaid(reminder.id)}
+                                                            onClick={() => handleMarkAsPaid(reminder)}
                                                             className="shrink-0 h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 border-glow"
                                                         >
                                                             Mark Paid
@@ -381,7 +363,8 @@ export function NotificationsPage() {
                                         // Actually, common pattern is "All" excluding "Attention" if separated. 
                                         // But logically "All" implies All. 
                                         // Let's filter out the ones already shown in Overdue to avoid duplicates if Overdue section exists.
-                                        const isOverdue = reminder.status === 'upcoming' && isPast(new Date(reminder.due_date)) && !isToday(new Date(reminder.due_date));
+                                        const reminderDate = toReminderDisplayDate(reminder.due_date);
+                                        const isOverdue = reminder.status === 'upcoming' && isPast(reminderDate) && !isToday(reminderDate);
                                         if (isOverdue && overdueCount > 0) return null;
 
                                         return (
@@ -401,22 +384,34 @@ export function NotificationsPage() {
                                                             <Receipt className={`w-3.5 h-3.5 ${statusInfo.color} opacity-40`} />
                                                             <p className="font-bold text-foreground truncate">{reminder.title}</p>
                                                         </div>
-                                                        <p className="text-sm font-bold text-accent text-glow">{formatAmount(reminder.amount)}</p>
+                                                        <p className="text-sm font-bold text-accent text-glow">
+                                                            {formatReminderAmount(reminder, formatAmount)}
+                                                        </p>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
                                                             <span className="text-xs text-muted-foreground">
-                                                                • {format(new Date(reminder.due_date), 'MMM d, yyyy')}
+                                                                • {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy')}
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    {reminder.status !== 'paid' && (
+                                                    {reminder.status !== 'paid' ? (
                                                         <Button
                                                             size="sm"
                                                             variant="ghost"
-                                                            onClick={() => handleMarkAsPaid(reminder.id)}
+                                                            onClick={() => handleMarkAsPaid(reminder)}
                                                             className="shrink-0 h-10 w-10 p-0 rounded-xl"
                                                         >
                                                             <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 hover:border-accent hover:bg-accent/10 transition-all border-glow" />
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => handleDeletePaidReminder(reminder)}
+                                                            className="shrink-0 h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-destructive"
+                                                            aria-label={`Delete paid reminder ${reminder.title}`}
+                                                        >
+                                                            <Trash className="w-4 h-4" weight="duotone" />
                                                         </Button>
                                                     )}
                                                 </div>
@@ -429,6 +424,7 @@ export function NotificationsPage() {
                     </div>
                 )}
             </main>
+            </PullToRefresh>
         </div>
     );
 }

@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/useCurrency';
 import { PaymentReminder } from '@/types';
 import { format, differenceInDays, isPast, isToday } from 'date-fns';
+import { toReminderDisplayDate } from '@/lib/reminderDate';
+import { formatReminderAmount } from '@/lib/reminderAmount';
 
 interface PaymentReminderCarouselProps {
   reminders: PaymentReminder[];
@@ -11,8 +13,12 @@ interface PaymentReminderCarouselProps {
 
 export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselProps) {
   const { formatAmount } = useCurrency();
+  const pendingReminders = reminders.filter((reminder) => {
+    const status = reminder.status as string;
+    return status === 'upcoming' || status === 'pending';
+  });
 
-  if (reminders.length === 0) {
+  if (pendingReminders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center bg-card/50 rounded-2xl border border-dashed border-muted-foreground/20">
         <Clock className="w-12 h-12 text-muted-foreground/30 mb-3" weight="duotone" />
@@ -21,12 +27,14 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
     );
   }
 
-  const shouldAnimate = reminders.length > 2;
+  const shouldAnimate = pendingReminders.length > 2;
   // Duplicate reminders only if we are animating for seamless loop
-  const displayReminders = shouldAnimate ? [...reminders, ...reminders, ...reminders] : reminders;
+  const displayReminders = shouldAnimate
+    ? [...pendingReminders, ...pendingReminders, ...pendingReminders]
+    : pendingReminders;
 
   const getReminderStatus = (reminder: PaymentReminder) => {
-    const dueDate = new Date(reminder.due_date);
+    const dueDate = toReminderDisplayDate(reminder.due_date);
     const diff = differenceInDays(dueDate, new Date());
 
     if (reminder.status === 'paid') {
@@ -82,7 +90,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
           x: {
             repeat: Infinity,
             repeatType: 'loop',
-            duration: reminders.length * 10,
+            duration: pendingReminders.length * 10,
             ease: 'linear',
           },
         } : {}}
@@ -112,7 +120,9 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-black text-foreground">{formatAmount(reminder.amount)}</p>
+                <p className="text-sm font-black text-foreground">
+                  {formatReminderAmount(reminder, formatAmount)}
+                </p>
               </div>
             </motion.div>
           );

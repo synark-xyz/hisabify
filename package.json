@@ -6,10 +6,21 @@
   "scripts": {
     "dev": "vite",
     "dev:managed": "node scripts/managed-dev-server.js",
+    "dev:staging": "node scripts/ngrok-staging-server.js --port=8181",
+    "dev:staging:ngrok": "node scripts/ngrok-staging-server.js --port=8181 --ngrok=true",
+    "dev:staging:ngrok:hilton": "node scripts/ngrok-staging-server.js --port=8181 --ngrok=true --url=https://hilton-irate-jovita.ngrok-free.dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test": "vitest",
+    "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "npm run test:unit && npm run test:e2e",
+    "test:automated": "bash scripts/run-automated-tests.sh all",
+    "test:automated:unit": "bash scripts/run-automated-tests.sh unit",
+    "test:automated:e2e": "bash scripts/run-automated-tests.sh e2e",
     "preview": "vite preview",
     "cap:sync": "npx cap sync",
     "cap:android": "npm run build && npx cap sync && npx cap open android",
@@ -26,6 +37,7 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.0.1",
+    "@capacitor/app": "^8.0.1",
     "@capacitor/camera": "^6.0.2",
     "@capacitor/cli": "^8.0.1",
     "@capacitor/core": "^8.0.1",
@@ -95,6 +107,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.16.5",
@@ -114,6 +127,9 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@playwright/test": "^1.49.0",
+    "dotenv": "^16.4.7"
   }
 }

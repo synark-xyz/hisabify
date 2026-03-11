@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { clearProfileMemory, readProfileFromMemory, writeProfileToMemory } from '@/lib/profile-memory';
 
 interface User {
   display_name: string | null;
@@ -12,6 +13,35 @@ interface User {
   referral_code: string | null;
   referral_credits: number;
   last_active_at: string | null;
+  privacy_policy_accepted: boolean;
+}
+
+const defaultProfile: User = {
+  display_name: null,
+  phone: null,
+  avatar_url: null,
+  currency: 'USD',
+  subscription_type: 'base',
+  subscription_status: 'inactive',
+  referral_code: null,
+  referral_credits: 0,
+  last_active_at: null,
+  privacy_policy_accepted: false,
+};
+
+function mapUserRowToProfile(data: Record<string, unknown>): User {
+  return {
+    display_name: (data.display_name as string | null) || null,
+    phone: (data.phone as string | null) || null,
+    avatar_url: (data.avatar_url as string | null) || null,
+    currency: (data.currency as string | null) || 'USD',
+    subscription_type: ((data.subscription_type as 'base' | 'pro' | null) || 'base'),
+    subscription_status: (data.subscription_status as string | null) || 'inactive',
+    referral_code: (data.referral_code as string | null) || null,
+    referral_credits: (data.referral_credits as number | null) || 0,
+    last_active_at: (data.last_active_at as string | null) || null,
+    privacy_policy_accepted: (data.privacy_policy_accepted as boolean | null) ?? false,
+  };
 }
 
 interface ProfileContextType {
@@ -30,36 +60,31 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [privacyMode, setPrivacyMode] = useState(false);
-  const [profile, setProfile] = useState<User>({
-    display_name: null,
-    phone: null,
-    avatar_url: null,
-    currency: 'USD',
-    subscription_type: 'base',
-    subscription_status: 'inactive',
-    referral_code: null,
-    referral_credits: 0,
-    last_active_at: null,
-  });
+  const [profile, setProfileState] = useState<User>({ ...defaultProfile });
 
-  const refreshProfile = async () => {
+  const setProfile = useCallback((nextProfile: User) => {
+    setProfileState(nextProfile);
+    if (user) {
+      writeProfileToMemory(user.id, nextProfile);
+    }
+  }, [user]);
+
+  const refreshProfile = useCallback(async () => {
     if (!user) {
-      setProfile({
-        display_name: null,
-        phone: null,
-        avatar_url: null,
-        currency: 'USD',
-        subscription_type: 'base',
-        subscription_status: 'inactive',
-        referral_code: null,
-        referral_credits: 0,
-        last_active_at: null,
-      });
+      setProfileState({ ...defaultProfile });
+      clearProfileMemory();
       setLoading(false);
       return;
     }
 
-    setLoading(true);
+    const cached = readProfileFromMemory<User>(user.id);
+    if (cached) {
+      setProfile(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     const { data } = await supabase
       .from('users')
       .select('*')
@@ -67,20 +92,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (data) {
-      setProfile({
-        display_name: data.display_name,
-        phone: data.phone,
-        avatar_url: data.avatar_url,
-        currency: data.currency || 'USD',
-        subscription_type: data.subscription_type || 'base',
-        subscription_status: data.subscription_status || 'inactive',
-        referral_code: data.referral_code,
-        referral_credits: data.referral_credits || 0,
-        last_active_at: data.last_active_at,
-      });
+      const nextProfile = mapUserRowToProfile(data as Record<string, unknown>);
+      setProfileState(nextProfile);
+      writeProfileToMemory(user.id, nextProfile);
     }
     setLoading(false);
-  };
+  }, [user, setProfile]);
 
   const updateAvatar = async (url: string) => {
     if (!user) return;
@@ -89,7 +106,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       .from('users')
       .upsert({ user_id: user.id, avatar_url: url }, { onConflict: 'user_id' });
 
-    setProfile(prev => ({ ...prev, avatar_url: url }));
+    setProfileState(prev => {
+      const nextProfile = { ...prev, avatar_url: url };
+      writeProfileToMemory(user.id, nextProfile);
+      return nextProfile;
+    });
   };
 
   const togglePrivacyMode = () => {
@@ -97,7 +118,46 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    refreshProfile();
+    void refreshProfile();
+  }, [refreshProfile]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const statusTriggerSet = new Set(['cancelled', 'canceled', 'expired']);
+
+    const channel = supabase
+      .channel(`profile-subscription-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const next = payload.new as Record<string, unknown>;
+          const prev = payload.old as Record<string, unknown>;
+          const nextStatus = String(next.subscription_status || '').toLowerCase();
+          const prevStatus = String(prev.subscription_status || '').toLowerCase();
+
+          if (!statusTriggerSet.has(nextStatus) || nextStatus === prevStatus) {
+            return;
+          }
+
+          const nextProfile = mapUserRowToProfile(next);
+          setProfileState(nextProfile);
+          writeProfileToMemory(user.id, nextProfile);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   return (

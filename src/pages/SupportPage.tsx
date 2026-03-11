@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Paperclip, Send, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -64,6 +64,23 @@ export function SupportPage() {
     () => ['General', 'Bug Report', 'Feature Request', 'Billing', 'Account'],
     []
   );
+
+  useEffect(() => {
+    if (name.trim()) return;
+
+    const defaultName = profile.display_name || user?.email?.split('@')[0] || '';
+    if (defaultName) {
+      setName(defaultName);
+    }
+  }, [profile.display_name, user?.email, name]);
+
+  useEffect(() => {
+    if (email.trim()) return;
+
+    if (user?.email) {
+      setEmail(user.email);
+    }
+  }, [user?.email, email]);
 
   const handleAttachmentSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files || []);

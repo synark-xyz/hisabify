@@ -1,15 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAuth } from '@/hooks/useAuth';
 
 export function PrivacyPolicyPage() {
     const navigate = useNavigate();
-    const { user } = useAuth();
 
     return (
         <div className="min-h-screen bg-background pb-page-content">
-            <Header title="Privacy Policy" showBack onBack={() => navigate(user ? '/settings' : '/auth')} />
+            <Header title="Privacy Policy" showBack onBack={() => navigate('/settings')} />
             <main className="px-4 py-6">
                 <ScrollArea className="h-[calc(100vh-140px)] pr-4">
                     <div className="space-y-6 text-foreground/80">
@@ -50,7 +48,7 @@ export function PrivacyPolicyPage() {
                         <section>
                             <h2 className="text-lg font-bold text-foreground mb-2">5. Contact Us</h2>
                             <p className="text-sm leading-relaxed">
-                                If you have any questions about this policy, please contact us at support@hisabify.com.
+                                If you have any questions about this policy, please contact us at synarklabs@gmail.com.
                             </p>
                         </section>
 

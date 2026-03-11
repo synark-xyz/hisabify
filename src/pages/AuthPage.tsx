@@ -5,6 +5,7 @@ import { Loader2, Mail, Lock, Wallet, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +29,8 @@ export function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; privacy?: string }>({});
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -87,12 +89,17 @@ export function AuthPage() {
       return;
     }
 
+    if (mode === 'signup' && !agreePrivacy) {
+      setErrors({ privacy: 'You must agree to the Privacy Policy to create an account.' });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { error } = mode === 'login'
         ? await signIn(email, password)
-        : await signUp(email, password);
+        : await signUp(email, password, agreePrivacy);
 
       if (error) {
         if (error.message.includes('User already registered')) {
@@ -377,6 +384,29 @@ export function AuthPage() {
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {mode === 'login' ? 'Sign In' : 'Create Account'}
             </Button>
+
+            {mode === 'signup' && (
+              <div className="space-y-1">
+                <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-background/60 px-3 py-2">
+                  <Checkbox
+                    id="signup-privacy-agreement"
+                    checked={agreePrivacy}
+                    onCheckedChange={(value) => {
+                      setAgreePrivacy(Boolean(value));
+                      setErrors((current) => ({ ...current, privacy: undefined }));
+                    }}
+                  />
+                  <Label htmlFor="signup-privacy-agreement" className="text-xs leading-relaxed text-muted-foreground">
+                    I have read and agree to the{' '}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-accent underline underline-offset-2">
+                      Privacy Policy
+                    </a>
+                    .
+                  </Label>
+                </div>
+                {errors.privacy && <p className="text-sm text-destructive">{errors.privacy}</p>}
+              </div>
+            )}
           </form>
         </div>
 

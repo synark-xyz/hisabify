@@ -11,16 +11,25 @@ interface ReportExportActionsProps {
   reportData: ReportData;
   filters: ReportFilters;
   isLoading: boolean;
+  canExport?: boolean;
+  onUpgradeRequired?: () => void;
 }
 
 export function ReportExportActions({
   reportData,
   filters,
   isLoading,
+  canExport = true,
+  onUpgradeRequired,
 }: ReportExportActionsProps) {
   const { currencySymbol } = useCurrency();
 
   const handleExportCSV = () => {
+    if (!canExport) {
+      onUpgradeRequired?.();
+      return;
+    }
+
     try {
       exportReportToCSV({ reportData, filters, currencySymbol });
       toast.success("CSV report downloaded!");
@@ -30,6 +39,11 @@ export function ReportExportActions({
   };
 
   const handleExportPDF = () => {
+    if (!canExport) {
+      onUpgradeRequired?.();
+      return;
+    }
+
     try {
       exportReportToPDF({ reportData, filters, currencySymbol });
       toast.success("PDF report downloaded!");
@@ -54,7 +68,7 @@ export function ReportExportActions({
           disabled={isLoading || reportData.transactions.length === 0}
         >
           <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Export as CSV
+          {canExport ? 'Export as CSV' : 'Export as CSV (Pro)'}
         </Button>
         <Button
           className="w-full justify-start"
@@ -63,7 +77,7 @@ export function ReportExportActions({
           disabled={isLoading || reportData.transactions.length === 0}
         >
           <FileText className="h-4 w-4 mr-2" />
-          Export as PDF
+          {canExport ? 'Export as PDF' : 'Export as PDF (Pro)'}
         </Button>
         <p className="text-xs text-muted-foreground">
           {reportData.transactions.length} transactions will be included

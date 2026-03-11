@@ -240,6 +240,8 @@ export type Database = {
           referral_code: string | null
           referral_credits: number
           referred_by: string | null
+          referral_used_at: string | null
+          referral_granted_until: string | null
           last_active_at: string
           privacy_policy_accepted: boolean
         }
@@ -263,6 +265,8 @@ export type Database = {
           referral_code?: string | null
           referral_credits?: number
           referred_by?: string | null
+          referral_used_at?: string | null
+          referral_granted_until?: string | null
           last_active_at?: string
           privacy_policy_accepted?: boolean
         }
@@ -286,6 +290,8 @@ export type Database = {
           referral_code?: string | null
           referral_credits?: number
           referred_by?: string | null
+          referral_used_at?: string | null
+          referral_granted_until?: string | null
           last_active_at?: string
           privacy_policy_accepted?: boolean
         }

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, AlertTriangle, Smartphone } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +11,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
 export function NotificationSettingsPage() {
-    const navigate = useNavigate();
     const { user } = useAuth();
     const { toast } = useToast();
     const { variant } = useTheme();
@@ -84,7 +82,7 @@ export function NotificationSettingsPage() {
 
     return (
         <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Notifications" showBack onBack={() => navigate('/settings')} />
+            <Header title="Notifications" showBack />
             <main className="px-4 py-6 space-y-6">
 
                 {/* Budget Alerts */}

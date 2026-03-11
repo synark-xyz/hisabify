@@ -15,6 +15,23 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      include: ['src/lib/**', 'src/hooks/**', 'src/features/**'],
+      exclude: [
+        'src/integrations/**',
+        'src/components/ui/**',
+        'src/**/*.test.*',
+        'src/**/__tests__/**',
+      ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 65,
+      },
+    },
   },
   plugins: [
     react(),

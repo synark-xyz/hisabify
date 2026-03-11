@@ -6,12 +6,13 @@
 
 **Purpose**: Provide a lightweight, privacy-first mobile-first web app to let individual users track cards, expenses, budgets, and recurring payment reminders with simple analytics.
 
-**Implementation Alignment (Current Build - 2026-03-10)**
+**Implementation Alignment (Current Build - 2026-03-11)**
 - Dashboard no longer includes the Daily Quote block.
 - Reminder "Mark Paid" updates reminder status only; it does not auto-create transactions.
 - Client-side `setTimeout` reminder scheduling is intentionally disabled; persistent backend/system scheduling is required for reliable delivery.
 - Analytics uses real transaction data only (no demo/sample fallback) and shows empty states when data is insufficient.
 - Reminder dates are normalized to calendar-day-safe values to avoid timezone day-shift bugs.
+- Automated test runs now generate timestamped artifacts under `test-report/<timestamp>/`, including unit coverage and E2E HTML reports.
 
 **Problem Statement**: Many users lack a single, simple app to track multiple cards/accounts, recurring payments and visualize spending trends without heavy complexity or exposing data to third parties.
 
@@ -125,6 +126,7 @@
 - **Security**: No plaintext secrets in the client; use Supabase auth and RBAC for server functions.
 - **Privacy**: Minimize third-party telemetry by default; provide clear data export/deletion paths.
 - **Accessibility**: Basic WCAG AA support for core flows.
+- **Quality/Observability**: CI and local automated test runs should retain timestamped logs, E2E artifacts, and unit coverage reports for regression tracking.
 
 **Assumptions & Constraints**
 - Supabase is used as the BaaS (present in codebase). Data model is Postgres-backed.

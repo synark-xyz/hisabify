@@ -19,6 +19,7 @@ import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTheme } from '@/hooks/useTheme';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
+import { useFirstTimeUser } from '@/hooks/useFirstTimeUser';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types';
@@ -46,6 +47,7 @@ export function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
+  const { isFirstTimeUser, loading: firstTimeLoading, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
   const { user } = useAuth();
   const { variant, theme } = useTheme();
   const { formatAmount, currencyVersion, currency } = useCurrency();
@@ -189,9 +191,10 @@ export function Dashboard() {
       fetchMonthlySummary(),
       fetchTodayTransactions(),
       fetchAvailableYears(),
-      refetchReminders()
+      refetchReminders(),
+      refetchFirstTimeStatus()
     ]);
-  }, [fetchTransactions, fetchMonthlySummary, fetchTodayTransactions, fetchAvailableYears, refetchReminders]);
+  }, [fetchTransactions, fetchMonthlySummary, fetchTodayTransactions, fetchAvailableYears, refetchReminders, refetchFirstTimeStatus]);
 
   useTransactionUpdateListener(() => {
     void handleRefresh();
@@ -215,6 +218,7 @@ export function Dashboard() {
   }, [paymentReminders]);
 
   const netBalance = totalIncome - totalExpenses;
+  const showGettingStarted = !firstTimeLoading && isFirstTimeUser;
 
   return (
     <div className="min-h-screen relative">
@@ -230,7 +234,7 @@ export function Dashboard() {
             transition={{ duration: 0.3, ease: "easeOut" }}
             style={{ willChange: 'opacity' }}
           >
-            <StreamingGreeting />
+            <StreamingGreeting isFirstTimeUser={showGettingStarted} />
             {/* Hero Section - Wallet Overview */}
             <motion.section
               key="hero-section"
@@ -333,12 +337,53 @@ export function Dashboard() {
               </div>
             </motion.section>
 
-            <HealthScoreCard />
+            {!showGettingStarted && <HealthScoreCard />}
+
+            {showGettingStarted && (
+              <motion.section
+                key="getting-started-section"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-3xl p-5 border border-border/50 shadow-card"
+              >
+                <h2 className="text-lg font-black tracking-tight text-foreground mb-1">Get Started</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Your account is ready. Add real data with these steps to unlock insights.
+                </p>
+
+                <div className="space-y-2 mb-4">
+                  <div className="text-sm text-foreground">1. Add your first transaction</div>
+                  <div className="text-sm text-foreground">2. Create a budget limit</div>
+                  <div className="text-sm text-foreground">3. Set a savings goal</div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    onClick={() => navigate('/expenses')}
+                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                  >
+                    Add Transaction
+                  </button>
+                  <button
+                    onClick={() => navigate('/budget')}
+                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                  >
+                    Create Budget
+                  </button>
+                  <button
+                    onClick={() => navigate('/savings')}
+                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                  >
+                    Add Savings Goal
+                  </button>
+                </div>
+              </motion.section>
+            )}
 
             {/* Upgrade to Pro Banner - Only for non-premium users */}
             {/* Upgrade to Pro Banner - Compact & Premium */}
             <AnimatePresence mode="wait">
-              {!subscriptionLoading && !isPremium && (
+              {!showGettingStarted && !subscriptionLoading && !isPremium && (
                 <motion.section
                   key="upgrade-banner"
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -387,7 +432,7 @@ export function Dashboard() {
             </AnimatePresence>
 
             {/* Payment Reminders Section */}
-            {activeReminders.length > 0 && (
+            {!showGettingStarted && activeReminders.length > 0 && (
               <motion.section
                 key="reminders-section"
                 initial={{ opacity: 1, y: 0 }}
@@ -413,6 +458,7 @@ export function Dashboard() {
             )}
 
             {/* Analytics Section */}
+            {!showGettingStarted && (
             <motion.section
               key="analytics-section"
               initial={{ opacity: 1, y: 0 }}
@@ -479,8 +525,10 @@ export function Dashboard() {
                 />
               </div>
             </motion.section>
+            )}
 
             {/* Monthly Reports Preview */}
+            {!showGettingStarted && (
             <motion.section
               key="transactions-section"
               initial={{ opacity: 1, y: 0 }}
@@ -523,6 +571,7 @@ export function Dashboard() {
                 )}
               </div>
             </motion.section>
+            )}
           </motion.main>
         </div>
       </PullToRefresh>

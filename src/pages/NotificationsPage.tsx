@@ -89,7 +89,7 @@ export function NotificationsPage() {
 
     return (
         <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Notifications" showBack onBack={() => navigate('/')} />
+            <Header title="Notifications" showBack />
 
             <PullToRefresh onRefresh={handleRefresh}>
                 <main className="px-4 py-6 space-y-6">

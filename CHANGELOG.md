@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Automated Test Runner Script**: Added `scripts/run-automated-tests.sh` to run `unit`, `e2e`, or `all` test suites on demand.
+- **Timestamped Test Artifacts**: Automated runs now write logs, unit coverage reports, Playwright HTML reports, and E2E artifacts to `test-report/<YYYYMMDD-HHMMSS>/`.
+- **NPM Shortcuts for Automation**:
+  - `npm run test:automated`
+  - `npm run test:automated:unit`
+  - `npm run test:automated:e2e`
+
+### Changed
+- **README Cleanup**: Removed placeholder Lovable project URL and documented automated test report workflow.
+- **PRD Update**: Added implementation and non-functional quality notes for timestamped test/coverage artifacts.
+
+---
+
 ## [1.1.1] - 2026-03-10
 
 ### Changed

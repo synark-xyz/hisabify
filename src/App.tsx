@@ -28,6 +28,8 @@ import { PreferencesPage } from "@/pages/settings/PreferencesPage";
 import { NotificationSettingsPage } from "@/pages/settings/NotificationSettingsPage";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { SupportPage } from "@/pages/SupportPage";
+import { FaqPage } from "@/pages/FaqPage";
 import { PersonalPage } from "@/pages/profile/PersonalPage";
 import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
@@ -82,7 +84,11 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
-  const [showSplash, setShowSplash] = useState(true);
+  // In E2E test runs, `e2e_skip_splash` is pre-set via addInitScript so
+  // the splash screen is bypassed without affecting production behaviour.
+  const [showSplash, setShowSplash] = useState(
+    localStorage.getItem('e2e_skip_splash') !== 'true'
+  );
   const location = useLocation();
 
   if (showSplash) {
@@ -127,6 +133,8 @@ function AppRoutes() {
       <Route element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} path="/settings/notifications" />
       <Route element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} path="/notifications" />
       <Route element={<ProtectedRoute><PrivacyPolicyPage /></ProtectedRoute>} path="/privacy" />
+      <Route element={<ProtectedRoute><SupportPage /></ProtectedRoute>} path="/support" />
+      <Route element={<ProtectedRoute><FaqPage /></ProtectedRoute>} path="/faq" />
 
       <Route
         path="/auth"

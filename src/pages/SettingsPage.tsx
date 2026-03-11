@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Settings, Bell, ChevronRight, LogOut, Shield, HelpCircle } from 'lucide-react';
+import { User, Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,13 +26,14 @@ export function SettingsPage() {
     ];
 
     const supportItems = [
-        { id: 'help', icon: HelpCircle, label: 'Help & Support', path: '/support', color: 'bg-emerald-500/10 text-emerald-500' },
+        { id: 'help', icon: Headset, label: 'Help & Support', path: '/support', color: 'bg-emerald-500/10 text-emerald-500' },
         { id: 'privacy', icon: Shield, label: 'Privacy Policy', path: '/privacy', color: 'bg-emerald-500/10 text-emerald-500' },
+        { id: 'faq', icon: CircleHelp, label: 'FAQ', path: '/faq', color: 'bg-emerald-500/10 text-emerald-500' },
     ];
 
     return (
         <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Settings" showBack onBack={() => navigate('/')} />
+            <Header title="Settings" showBack />
             <main className="px-4 py-6 space-y-8">
 
                 {/* General Settings */}

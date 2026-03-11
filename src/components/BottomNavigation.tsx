@@ -43,6 +43,8 @@ export function BottomNavigation({ onOpenInputSheet }: BottomNavigationProps) {
               <div key="add-button-container" className="flex justify-center items-center">
                 <motion.button
                   onClick={onOpenInputSheet}
+                  aria-label="Add transaction"
+                  data-testid="fab-button"
                   className="relative -top-4 w-16 h-16 rounded-full bg-accent text-white shadow-fab flex items-center justify-center z-[51]"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.9 }}

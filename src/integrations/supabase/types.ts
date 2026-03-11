@@ -164,6 +164,7 @@ export type Database = {
         Row: {
           amount: number
           category_id: string | null
+          currency: string
           created_at: string
           due_date: string
           id: string
@@ -179,6 +180,7 @@ export type Database = {
         Insert: {
           amount: number
           category_id?: string | null
+          currency?: string
           created_at?: string
           due_date: string
           id?: string
@@ -194,6 +196,7 @@ export type Database = {
         Update: {
           amount?: number
           category_id?: string | null
+          currency?: string
           created_at?: string
           due_date?: string
           id?: string
@@ -238,6 +241,7 @@ export type Database = {
           referral_credits: number
           referred_by: string | null
           last_active_at: string
+          privacy_policy_accepted: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -260,6 +264,7 @@ export type Database = {
           referral_credits?: number
           referred_by?: string | null
           last_active_at?: string
+          privacy_policy_accepted?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -282,6 +287,7 @@ export type Database = {
           referral_credits?: number
           referred_by?: string | null
           last_active_at?: string
+          privacy_policy_accepted?: boolean
         }
         Relationships: []
       }

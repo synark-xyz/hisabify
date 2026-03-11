@@ -10,6 +10,14 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test": "vitest",
+    "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "npm run test:unit && npm run test:e2e",
+    "test:automated": "bash scripts/run-automated-tests.sh all",
+    "test:automated:unit": "bash scripts/run-automated-tests.sh unit",
+    "test:automated:e2e": "bash scripts/run-automated-tests.sh e2e",
     "preview": "vite preview",
     "cap:sync": "npx cap sync",
     "cap:android": "npm run build && npx cap sync && npx cap open android",
@@ -116,6 +124,9 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@playwright/test": "^1.49.0",
+    "dotenv": "^16.4.7"
   }
 }

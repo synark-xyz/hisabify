@@ -13,6 +13,7 @@ interface User {
   referral_code: string | null;
   referral_credits: number;
   last_active_at: string | null;
+  privacy_policy_accepted: boolean;
 }
 
 const defaultProfile: User = {
@@ -25,6 +26,7 @@ const defaultProfile: User = {
   referral_code: null,
   referral_credits: 0,
   last_active_at: null,
+  privacy_policy_accepted: false,
 };
 
 function mapUserRowToProfile(data: Record<string, unknown>): User {
@@ -38,6 +40,7 @@ function mapUserRowToProfile(data: Record<string, unknown>): User {
     referral_code: (data.referral_code as string | null) || null,
     referral_credits: (data.referral_credits as number | null) || 0,
     last_active_at: (data.last_active_at as string | null) || null,
+    privacy_policy_accepted: (data.privacy_policy_accepted as boolean | null) ?? false,
   };
 }
 

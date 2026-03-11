@@ -94,6 +94,7 @@ export interface PaymentReminder {
   user_id: string;
   title: string;
   amount: number;
+  currency: string;
   due_date: string;
   status: 'upcoming' | 'paid' | 'missed';
   notify_before_days: number;

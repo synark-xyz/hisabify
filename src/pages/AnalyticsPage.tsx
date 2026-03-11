@@ -55,6 +55,7 @@ export function AnalyticsPage() {
     loading,
     refetch,
   } = useDashboardData(dateRange);
+  const hasTransactionData = transactions.length > 0;
 
   useTransactionUpdateListener(() => {
     refetch();
@@ -102,7 +103,7 @@ export function AnalyticsPage() {
         >
           <div className="flex items-center gap-2">
             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
             </motion.div>
@@ -144,6 +145,18 @@ export function AnalyticsPage() {
                   <Skeleton key={i} className="h-24 rounded-2xl" />
                 ))}
               </div>
+            ) : !hasTransactionData ? (
+              <motion.div
+                className="bg-card rounded-2xl p-6 border border-border/50 text-center"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <p className="text-base font-semibold text-foreground">No analytics data yet</p>
+                <p className="text-sm text-muted-foreground mt-1 mb-4">
+                  Add transactions first, then your insights and trends will appear here.
+                </p>
+                <Button onClick={() => navigate('/expenses')}>Add Transactions</Button>
+              </motion.div>
             ) : (
               <SummaryCards
                 totalExpenses={totalExpenses}
@@ -155,6 +168,7 @@ export function AnalyticsPage() {
           </motion.section>
 
           {/* Tabs for Overview vs Advanced */}
+          {hasTransactionData && (
           <motion.section variants={itemVariants}>
             <Tabs defaultValue="insights" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12 card-3d">
@@ -277,6 +291,7 @@ export function AnalyticsPage() {
               </TabsContent>
             </Tabs>
           </motion.section>
+          )}
         </motion.main>
       </div>
       </PullToRefresh>

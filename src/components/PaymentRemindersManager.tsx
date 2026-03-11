@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +9,7 @@ import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { AddPaymentReminderModal } from './AddPaymentReminderModal';
 import { format, isPast, isToday } from 'date-fns';
 import { PaymentReminder } from '@/types';
+import { formatReminderAmount } from '@/lib/reminderAmount';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export function PaymentRemindersManager() {
-  const { user } = useAuth();
   const { toast } = useToast();
   const { formatAmount } = useCurrency();
   const { reminders, refetch: fetchReminders, markAsPaid } = usePaymentReminders();
@@ -118,7 +117,9 @@ export function PaymentRemindersManager() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground line-clamp-2 break-words">{reminder.title}</h3>
-                    <p className="text-lg font-bold text-accent">{formatAmount(reminder.amount)}</p>
+                    <p className="text-lg font-bold text-accent">
+                      {formatReminderAmount(reminder, formatAmount)}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       Due: {format(new Date(reminder.due_date), 'MMM dd, yyyy')}
                     </p>

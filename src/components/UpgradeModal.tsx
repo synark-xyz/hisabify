@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Check, Sparkles, X } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 import { Crown } from '@phosphor-icons/react';
-import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface UpgradeModalProps {
     open: boolean;
@@ -18,12 +18,17 @@ const benefits = [
     "Budget vs. Spending History",
 ];
 
-export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) {
-    // Just a visual mockup for now as per "Phase 1: Logic & UI Gating"
+export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
+    const navigate = useNavigate();
+    const { toast } = useToast();
+
     const handleUpgrade = () => {
-        // In future this would redirect to Stripe
-        alert("Payment integration coming soon! This is a demo of the gating.");
         onOpenChange(false);
+        toast({
+            title: 'Pro plan checkout is not enabled yet',
+            description: 'Contact support to activate Pro manually for now.',
+        });
+        navigate('/support');
     };
 
     return (

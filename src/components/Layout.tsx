@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { NexusModal } from '@/components/NexusModal';
@@ -22,8 +22,7 @@ export function Layout() {
     >(undefined);
 
     const location = useLocation();
-    const { variant, theme } = useTheme();
-    const navigate = useNavigate();
+    const { variant } = useTheme();
 
     // Generic Header Logic
     const getPageTitle = (pathname: string) => {
@@ -43,6 +42,8 @@ export function Layout() {
     };
 
     const isProfileSubPage = location.pathname.startsWith('/profile/');
+    const isProfileRootPage = location.pathname === '/profile';
+    const shouldShowBack = isProfileSubPage || isProfileRootPage;
 
     // Input method handlers
     const handleVoiceInput = () => {
@@ -70,8 +71,7 @@ export function Layout() {
             <Header
                 title={getPageTitle(location.pathname)}
                 variant={location.pathname === '/profile' ? 'profile' : 'default'}
-                showBack={isProfileSubPage}
-                onBack={isProfileSubPage ? () => navigate('/profile') : undefined}
+                showBack={shouldShowBack}
             />
 
             <main className="relative z-10 pb-page-content">

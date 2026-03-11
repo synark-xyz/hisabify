@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, DollarSign, Bell, RefreshCw, Loader2, ChevronDown, ChevronUp, Receipt, Search, X } from 'lucide-react';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
@@ -34,6 +34,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
+  const [reminderCurrency, setReminderCurrency] = useState('USD');
   const [dueDate, setDueDate] = useState('');
   const [notifyBeforeDays, setNotifyBeforeDays] = useState('3');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -45,23 +46,10 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (reminder) {
-      setTitle(reminder.title);
-      setAmount(reminder.amount.toString());
-      setDueDate(toReminderDateInputValue(reminder.due_date));
-      setNotifyBeforeDays(reminder.notify_before_days.toString());
-      setIsRecurring(reminder.is_recurring);
-      setRecurringInterval(reminder.recurring_interval || 'monthly');
-      setNote(reminder.note || '');
-    } else {
-      resetForm();
-    }
-  }, [reminder, open]);
-
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setTitle('');
     setAmount('');
+    setReminderCurrency(currency);
     setDueDate('');
     setNotifyBeforeDays('3');
     setIsRecurring(false);
@@ -70,7 +58,22 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     setSearchQuery('');
     setSelectedTransactionId(null);
     setShowQuickFill(false);
-  };
+  }, [currency]);
+
+  useEffect(() => {
+    if (reminder) {
+      setTitle(reminder.title);
+      setAmount(reminder.amount.toString());
+      setReminderCurrency(reminder.currency || currency);
+      setDueDate(toReminderDateInputValue(reminder.due_date));
+      setNotifyBeforeDays(reminder.notify_before_days.toString());
+      setIsRecurring(reminder.is_recurring);
+      setRecurringInterval(reminder.recurring_interval || 'monthly');
+      setNote(reminder.note || '');
+    } else {
+      resetForm();
+    }
+  }, [reminder, open, currency, resetForm]);
 
   // Filter transactions based on search query
   const filteredTransactions = transactions.filter(tx =>
@@ -83,6 +86,8 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     setTitle(transaction.merchant);
     // Use original amount in original currency, fallback to converted amount
     setAmount((transaction.amount_original || transaction.amount).toString());
+    const txCurrency = transaction.currency_original || currency;
+    setReminderCurrency(txCurrency);
 
     // Set due date to 1 month from transaction date (common for monthly bills)
     const txDate = new Date(transaction.date);
@@ -90,7 +95,6 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     setDueDate(format(nextDueDate, 'yyyy-MM-dd'));
 
     // Set note with transaction date and currency reference
-    const txCurrency = transaction.currency_original || currency;
     const txCurrencySymbol = currencyData[txCurrency]?.symbol || '$';
     const txAmount = (transaction.amount_original || transaction.amount).toFixed(2);
     setNote(`Based on transaction [${txCurrency}]: ${txCurrencySymbol}${txAmount} on ${format(txDate, 'MMM dd, yyyy')}`);
@@ -115,6 +119,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
         user_id: user.id,
         title,
         amount: parseFloat(amount),
+        currency: reminderCurrency,
         due_date: toReminderDueDateIso(dueDate),
         notify_before_days: parseInt(notifyBeforeDays),
         is_recurring: isRecurring,
@@ -160,8 +165,6 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
       setLoading(false);
     }
   };
-
-  const currencySymbol = currencyData[currency]?.symbol || '$';
 
   return (
     <ResponsiveDrawer
@@ -302,18 +305,32 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="amount" className="text-xs font-bold uppercase tracking-wider opacity-70">Amount</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    required
-                    className="pl-9 rounded-xl h-12 font-bold"
-                  />
+                <div className="grid grid-cols-[1fr_96px] gap-2">
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      required
+                      className="pl-9 rounded-xl h-12 font-bold"
+                    />
+                  </div>
+                  <Select value={reminderCurrency} onValueChange={setReminderCurrency}>
+                    <SelectTrigger className="rounded-xl h-12 px-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl max-h-64">
+                      {Object.entries(currencyData).map(([code, info]) => (
+                        <SelectItem key={code} value={code} className="rounded-xl">
+                          {info.symbol} {code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

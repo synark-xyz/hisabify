@@ -155,10 +155,8 @@ export function useBudgets() {
           const endDate = budget.end_date || getPeriodDates(periodType).end.toISOString();
 
           // Query transactions for this budget's period/category
-          // Query transactions for this budget's period/category
           let query = supabase
             .from('transactions')
-            .select('amount, currency_base, category_id, category:categories(category_type)')
             .select('amount, currency_base, category_id, category:categories(category_type)')
             .eq('user_id', user.id)
             .eq('type', 'expense')
@@ -179,17 +177,7 @@ export function useBudgets() {
           }) || [];
 
           // Sum transactions, convert currency if needed
-          // Filter out lend/owe system categories from expense budgets
-          // (they're transfers, not true expenses)
-          const filteredTransactions = transactions?.filter((t: any) => {
-            const categoryType = t.category?.category_type;
-            return !['lend', 'owe'].includes(categoryType || '');
-          }) || [];
-
-          // Sum transactions, convert currency if needed
           let spent = 0;
-          if (filteredTransactions) {
-            for (const t of filteredTransactions) {
           if (filteredTransactions) {
             for (const t of filteredTransactions) {
               const storedCurrency = t.currency_base || 'USD';
@@ -264,8 +252,6 @@ export function useBudgets() {
       name: input.name || `${input.period_type.charAt(0).toUpperCase() + input.period_type.slice(1)} Budget`,
       month: startDate.getMonth() + 1,
       year: startDate.getFullYear(),
-      is_template: input.is_template || false,
-      template_name: input.template_name || null,
       is_template: input.is_template || false,
       template_name: input.template_name || null,
       created_at: new Date().toISOString(),
@@ -489,7 +475,6 @@ export function useBudgets() {
         .update({
           is_template: true,
           template_name: templateName || budget.name || budget.category?.name || 'Budget Template'
-        } as any)
         } as any)
         .eq('id', budgetId)
         .eq('user_id', user.id);

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, CheckCircle, Clock, WarningCircle, List, Pencil, Gear, Lifebuoy, CaretLeft } from '@phosphor-icons/react';
-import { useNavigate } from 'react-router-dom';
+import { Bell, X, CheckCircle, Clock, WarningCircle, List, Pencil, Gear, Headset, CaretLeft } from '@phosphor-icons/react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,6 +29,7 @@ interface HeaderProps {
 
 export function Header({ title, showBack, onBack, variant = 'default' }: HeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { profile } = useProfile();
   const { formatAmount } = useCurrency();
@@ -70,6 +71,29 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
     await markAsPaid(reminder);
   };
 
+  const getClosePagePath = (pathname: string) => {
+    if (pathname.startsWith('/profile/')) return '/profile';
+    if (pathname === '/profile') return '/';
+    if (pathname.startsWith('/settings/')) return '/settings';
+    if (pathname === '/settings') return '/';
+    if (pathname === '/privacy' || pathname === '/faq' || pathname === '/support') return '/settings';
+    if (pathname === '/notifications') return '/';
+    return '/';
+  };
+
+  const handleLeftAction = () => {
+    if (showBack) {
+      if (onBack) {
+        onBack();
+        return;
+      }
+      navigate(getClosePagePath(location.pathname));
+      return;
+    }
+
+    navigate('/profile');
+  };
+
   return (
     <motion.header
       className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl transition-all duration-200 flex items-center justify-between px-4 pb-4"
@@ -79,7 +103,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
       transition={{ duration: 0.3 }}
     >
       <motion.button
-        onClick={onBack || (() => navigate('/profile'))}
+        onClick={handleLeftAction}
         className="relative flex items-center justify-center p-1"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -170,8 +194,8 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
                   <span className="font-medium">Settings</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => navigate('/settings')} className="gap-3">
-                  <Lifebuoy className="w-4 h-4" weight="duotone" />
+                <DropdownMenuItem onClick={() => navigate('/support')} className="gap-3">
+                  <Headset className="w-4 h-4" weight="duotone" />
                   <span className="font-medium">Support</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

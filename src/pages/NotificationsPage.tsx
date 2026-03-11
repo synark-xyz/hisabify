@@ -17,6 +17,7 @@ import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { PaymentReminder } from '@/types';
 import { useState } from 'react';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { formatReminderAmount } from '@/lib/reminderAmount';
 
 export function NotificationsPage() {
     const navigate = useNavigate();
@@ -88,7 +89,7 @@ export function NotificationsPage() {
 
     return (
         <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Notifications" showBack onBack={() => navigate('/')} />
+            <Header title="Notifications" showBack />
 
             <PullToRefresh onRefresh={handleRefresh}>
                 <main className="px-4 py-6 space-y-6">
@@ -143,7 +144,9 @@ export function NotificationsPage() {
                                                                 <Receipt className="w-4 h-4 text-destructive/50" />
                                                                 <p className="font-bold text-foreground truncate text-lg text-glow">{reminder.title}</p>
                                                             </div>
-                                                            <p className="text-base font-bold text-accent text-glow">{formatAmount(reminder.amount)}</p>
+                                                            <p className="text-base font-bold text-accent text-glow">
+                                                                {formatReminderAmount(reminder, formatAmount)}
+                                                            </p>
                                                             <p className="text-xs text-destructive mt-1 font-medium">
                                                                 Due: {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy')}
                                                             </p>
@@ -377,7 +380,9 @@ export function NotificationsPage() {
                                                             <Receipt className={`w-3.5 h-3.5 ${statusInfo.color} opacity-40`} />
                                                             <p className="font-bold text-foreground truncate">{reminder.title}</p>
                                                         </div>
-                                                        <p className="text-sm font-bold text-accent text-glow">{formatAmount(reminder.amount)}</p>
+                                                        <p className="text-sm font-bold text-accent text-glow">
+                                                            {formatReminderAmount(reminder, formatAmount)}
+                                                        </p>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
                                                             <span className="text-xs text-muted-foreground">

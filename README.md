@@ -1,9 +1,3 @@
-# Welcome to your Lovable project
-
-## Project info
-
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
-
 # Hisabify — Personal finance made simple
 
 Hisabify helps individuals track cards, expenses, budgets, and recurring payments with an easy, mobile-first web interface. This repository contains the frontend SPA and integration points for the backend.
@@ -137,6 +131,30 @@ npm run build:dev       # Development build
 npm run preview         # Preview production build
 npm run lint            # Run ESLint
 npm run test            # Run Vitest tests
+
+# Automated test runners (timestamped reports under /test-report)
+npm run test:automated       # Unit coverage + E2E (all)
+npm run test:automated:unit  # Unit tests with coverage only
+npm run test:automated:e2e   # E2E only
+```
+
+### Automated Test Reports
+
+Each automated test run creates a timestamped directory:
+
+`test-report/YYYYMMDD-HHMMSS/`
+
+Generated artifacts include:
+- Unit test logs and coverage report (`unit/coverage/index.html`)
+- E2E logs, Playwright HTML report (`e2e/html-report/index.html`), and Playwright artifacts (`e2e/test-results/`)
+- Run summary (`summary.txt`)
+
+You can also run the script directly:
+
+```bash
+bash scripts/run-automated-tests.sh all
+bash scripts/run-automated-tests.sh unit
+bash scripts/run-automated-tests.sh e2e
 ```
 
 ## Performance Optimizations
@@ -166,6 +184,4 @@ Where to look next
 Contact
 -------
 If you need access, onboarding, or project-specific environment variables, open an issue or contact the repo owner.
-
 Contributing guidelines and local scripts can be added to `CONTRIBUTING.md` on request.
-Follow these steps:

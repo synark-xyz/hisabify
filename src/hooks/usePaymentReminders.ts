@@ -151,11 +151,45 @@ export function usePaymentReminders() {
         return true;
     }, [toast, fetchReminders]);
 
+    const deletePaidReminder = useCallback(async (reminder: PaymentReminder) => {
+        if (reminder.status !== 'paid') {
+            toast({
+                title: 'Only paid reminders can be deleted',
+                variant: 'destructive'
+            });
+            return false;
+        }
+
+        const previousReminders = reminders;
+
+        // Optimistic update
+        setReminders(current => current.filter(r => r.id !== reminder.id));
+
+        const { error } = await supabase
+            .from('payment_reminders')
+            .delete()
+            .eq('id', reminder.id);
+
+        if (error) {
+            toast({
+                title: 'Error deleting reminder',
+                description: error.message,
+                variant: 'destructive'
+            });
+            setReminders(previousReminders);
+            return false;
+        }
+
+        toast({ title: 'Paid reminder deleted' });
+        return true;
+    }, [reminders, toast]);
+
     return {
         reminders,
         loading,
         error,
         refetch: fetchReminders,
-        markAsPaid
+        markAsPaid,
+        deletePaidReminder
     };
 }

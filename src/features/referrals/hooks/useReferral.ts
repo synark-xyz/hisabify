@@ -14,54 +14,27 @@ export function useReferral() {
         setLoading(true);
 
         try {
-            // 1. Find the user with this referral code
-            const { data: referrer, error: findError } = await supabase
-                .from('users')
-                .select('user_id, referral_code')
-                .eq('referral_code', code.toUpperCase())
-                .single();
-
-            if (findError || !referrer) {
-                toast.error('Invalid referral code');
-                return false;
-            }
-
-            if (referrer.user_id === user.id) {
-                toast.error('You cannot use your own referral code');
-                return false;
-            }
-
-            // Check if user already has a referrer
-            if (profile.referred_by) {
-                toast.error('You have already redeemed a referral code');
-                return false;
-            }
-
-            // 2. Update current user: set referred_by
-            // 3. Update referrer: increment referral_credits
-            // In a production app, this should be a single transaction (Postgres Function)
-
-            const { error: updateError } = await supabase
-                .from('users')
-                .update({ referred_by: referrer.user_id })
-                .eq('user_id', user.id);
-
-            if (updateError) throw updateError;
-
-            // Award credits to referrer
-            // Note: This is a bit simplified for MVP. In reality, you'd want server-side logic (RPC).
-            const { error: rewardError } = await supabase.rpc('reward_referral', {
-                referrer_id: referrer.user_id,
-                invitee_id: user.id
+            // Call atomic RPC function that handles all validation and updates
+            const { data, error } = await supabase.rpc('redeem_referral_code', {
+                p_referral_code: code.toUpperCase(),
+                p_invitee_id: user.id
             });
 
-            if (rewardError) {
-                // Fallback for MVP if RPC isn't set up yet
-                console.warn('RPC reward_referral failed, falling back to manual increment', rewardError);
-                // This fallback would fail if RLS doesn't allow updating other users.
+            if (error) {
+                console.error('RPC error:', error);
+                toast.error('Failed to redeem code');
+                return false;
             }
 
-            toast.success('Referral code redeemed! Enjoy your Pro features.');
+            // Parse RPC response
+            const result = data as { success: boolean; error?: string };
+
+            if (!result.success) {
+                toast.error(result.error || 'Failed to redeem code');
+                return false;
+            }
+
+            toast.success('Referral code redeemed! You both get 30 days of Pro features.');
             await refreshProfile();
             return true;
         } catch (err) {
@@ -71,11 +44,19 @@ export function useReferral() {
         } finally {
             setLoading(false);
         }
-    }, [user, profile, refreshProfile]);
+    }, [user, refreshProfile]);
+
+    // Calculate days remaining for referral Pro access
+    const daysRemaining = profile.referral_granted_until
+        ? Math.max(0, Math.ceil((new Date(profile.referral_granted_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+        : 0;
+
+    const hasUsedReferral = !!profile.referred_by || !!profile.referral_used_at;
 
     return {
         referralCode: profile.referral_code,
-        credits: profile.referral_credits,
+        daysRemaining,
+        hasUsedReferral,
         redeemCode,
         loading,
     };

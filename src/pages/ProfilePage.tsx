@@ -49,7 +49,7 @@ export function ProfilePage() {
             </div>
             <h2 className="text-xl font-bold text-foreground mt-4 flex items-center justify-center gap-2 text-glow">
               {profile.display_name || user?.email?.split('@')[0]}
-              {(isPremium || profile.referral_credits > 0) && (
+              {isPremium && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[10px] font-black text-accent uppercase tracking-wider">
                   PRO
                 </span>
@@ -62,7 +62,7 @@ export function ProfilePage() {
           </motion.div>
 
           {/* Premium Card Upsell */}
-          {!subscriptionLoading && !isPremium && profile.referral_credits === 0 && (
+          {!subscriptionLoading && !isPremium && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

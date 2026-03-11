@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Copy, Check, Gift, Ticket } from 'lucide-react';
 import { useReferral } from '../hooks/useReferral';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 
+type TabMode = 'share' | 'redeem';
+
 export function ReferralCard() {
-    const { referralCode, credits, redeemCode, loading } = useReferral();
+    const { referralCode, daysRemaining, hasUsedReferral, redeemCode, loading } = useReferral();
+    const [activeTab, setActiveTab] = useState<TabMode>('share');
     const [redeemInput, setRedeemInput] = useState('');
     const [copied, setCopied] = useState(false);
 
@@ -30,6 +33,7 @@ export function ReferralCard() {
                 });
             } catch (err) {
                 console.error('Error sharing:', err);
+                handleCopy();
             }
         } else {
             handleCopy();
@@ -43,78 +47,107 @@ export function ReferralCard() {
     };
 
     return (
-        <div className="space-y-4">
-            {/* Invite Section */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden"
-            >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
-
-                <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Gift className="w-5 h-5 text-yellow-300" />
-                        <span className="text-xs font-black uppercase tracking-widest text-white/80">Affiliate Program</span>
-                    </div>
-
-                    <h3 className="text-xl font-black mb-1">Give 30, Get 30</h3>
-                    <p className="text-sm text-white/80 mb-6">
-                        Invite a friend. When they join, you both get 30 days of Pro features.
-                    </p>
-
-                    <div className="flex items-center gap-3">
-                        <div
-                            onClick={handleCopy}
-                            className="flex-1 bg-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between border border-white/20 cursor-pointer hover:bg-white/30 transition-colors"
-                        >
-                            <div>
-                                <p className="text-[10px] font-bold text-white/60 uppercase tracking-wider">Your Code</p>
-                                <p className="text-lg font-black tracking-widest">{referralCode || '------'}</p>
-                            </div>
-                            {copied ? <Check className="w-5 h-5 text-emerald-300" /> : <Copy className="w-5 h-5 opacity-50" />}
-                        </div>
-
-                        <Button
-                            size="icon"
-                            onClick={handleShare}
-                            className="w-14 h-14 rounded-2xl bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg"
-                        >
-                            <Share2 className="w-6 h-6" />
-                        </Button>
-                    </div>
-
-                    {credits > 0 && (
-                        <div className="mt-4 flex items-center gap-2 bg-black/20 rounded-xl px-3 py-2 w-fit">
-                            <Ticket className="w-4 h-4 text-yellow-300" />
-                            <span className="text-xs font-bold">{credits} Months Pro Earned</span>
-                        </div>
-                    )}
-                </div>
-            </motion.div>
-
-            {/* Redeem Section */}
-            <div className="bg-card rounded-3xl p-6 border border-border/50">
-                <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
-                    <Ticket className="w-4 h-4 text-accent" />
-                    Have a referral code?
-                </h4>
-                <div className="flex gap-2">
-                    <Input
-                        placeholder="ENTER CODE"
-                        value={redeemInput}
-                        onChange={(e) => setRedeemInput(e.target.value.toUpperCase())}
-                        className="rounded-2xl h-12 bg-muted/50 border-none font-black tracking-widest focus-visible:ring-accent"
-                    />
-                    <Button
-                        onClick={handleRedeem}
-                        disabled={loading || !redeemInput}
-                        className="rounded-2xl h-12 px-6 font-bold"
-                    >
-                        {loading ? '...' : 'Redeem'}
-                    </Button>
-                </div>
+        <Card className="rounded-3xl overflow-hidden">
+            {/* Tab Toggle */}
+            <div className="flex border-b border-border">
+                <button
+                    onClick={() => setActiveTab('share')}
+                    className={`flex-1 py-4 px-6 font-bold text-sm transition-colors ${
+                        activeTab === 'share'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-card text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                    Share Code
+                </button>
+                <button
+                    onClick={() => setActiveTab('redeem')}
+                    disabled={hasUsedReferral}
+                    className={`flex-1 py-4 px-6 font-bold text-sm transition-colors ${
+                        activeTab === 'redeem'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-card text-muted-foreground hover:text-foreground'
+                    } ${hasUsedReferral ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                    Redeem Code
+                </button>
             </div>
-        </div>
+
+            {/* Tab Content */}
+            <div className="p-6">
+                {activeTab === 'share' ? (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-accent">
+                            <Gift className="w-5 h-5" />
+                            <h3 className="font-bold text-sm">Invite friends. You both get 30 days Pro.</h3>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <div
+                                onClick={handleCopy}
+                                className="flex-1 bg-muted rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-muted/70 transition-colors"
+                            >
+                                <div>
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                        Your Code
+                                    </p>
+                                    <p className="text-lg font-black tracking-widest">{referralCode || '--------'}</p>
+                                </div>
+                                {copied ? (
+                                    <Check className="w-5 h-5 text-green-500" />
+                                ) : (
+                                    <Copy className="w-5 h-5 text-muted-foreground" />
+                                )}
+                            </div>
+
+                            <Button
+                                size="icon"
+                                onClick={handleShare}
+                                className="w-12 h-12 rounded-2xl"
+                            >
+                                <Share2 className="w-5 h-5" />
+                            </Button>
+                        </div>
+
+                        {daysRemaining > 0 && (
+                            <div className="flex items-center gap-2 bg-accent/10 text-accent rounded-xl px-3 py-2 w-fit">
+                                <Ticket className="w-4 h-4" />
+                                <span className="text-xs font-bold">{daysRemaining} days Pro remaining</span>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Ticket className="w-5 h-5 text-accent" />
+                            <h3 className="font-bold text-sm">Enter friend's code to unlock Pro features</h3>
+                        </div>
+
+                        {hasUsedReferral ? (
+                            <p className="text-sm text-muted-foreground">
+                                You have already redeemed a referral code.
+                            </p>
+                        ) : (
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="ENTER CODE"
+                                    value={redeemInput}
+                                    onChange={(e) => setRedeemInput(e.target.value.toUpperCase())}
+                                    maxLength={8}
+                                    className="rounded-2xl h-12 bg-muted/50 border-none font-black tracking-widest focus-visible:ring-accent"
+                                />
+                                <Button
+                                    onClick={handleRedeem}
+                                    disabled={loading || !redeemInput || redeemInput.length < 8}
+                                    className="rounded-2xl h-12 px-6 font-bold"
+                                >
+                                    {loading ? '...' : 'Redeem'}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </Card>
     );
 }

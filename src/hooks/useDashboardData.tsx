@@ -3,9 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Transaction, CategorySpending, MonthlySpending } from '@/types';
 import { format, startOfMonth, endOfMonth, subMonths, parseISO } from 'date-fns';
 import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
+import { enforceHistoryWindow } from '@/lib/historyLimits';
 
 interface ConvertedTransaction extends Transaction {
   convertedAmount: number;
@@ -61,6 +63,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
   const { user } = useAuth();
   const { currency, currencyVersion } = useCurrency();
   const { convertAmount } = useExchangeRate();
+  const { isPremium } = useSubscription();
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -68,13 +71,15 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
     setError(null);
 
     try {
+      const effectiveRange = enforceHistoryWindow(dateRange, isPremium).range;
+
       // Fetch transactions for the date range
       const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select('*, category:categories(*)')
         .eq('user_id', user.id)
-        .gte('date', dateRange.from.toISOString())
-        .lte('date', dateRange.to.toISOString())
+        .gte('date', effectiveRange.from.toISOString())
+        .lte('date', effectiveRange.to.toISOString())
         .order('date', { ascending: false });
 
       if (txError) throw txError;
@@ -108,7 +113,16 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
       if (budgetError) throw budgetError;
 
       // Calculate spent for each budget
-      const budgetsWithSpending = (budgetData || []).map((budget: any) => {
+      const budgetsWithSpending = (budgetData || []).map((budget: {
+        id: string;
+        name: string | null;
+        category_id: string | null;
+        amount: number;
+        period_type: string;
+        start_date: string | null;
+        end_date: string | null;
+        category?: { name?: string; color?: string } | null;
+      }) => {
         const spent = convertedTransactions
           .filter(tx =>
             (tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe') &&
@@ -139,7 +153,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
     } finally {
       setLoading(false);
     }
-  }, [user, dateRange.from, dateRange.to, currency, currencyVersion, convertAmount]);
+  }, [user, dateRange, currency, currencyVersion, convertAmount, isPremium]);
 
   useEffect(() => {
     fetchData();

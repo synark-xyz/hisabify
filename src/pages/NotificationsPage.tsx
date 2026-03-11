@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, ShieldCheck, Receipt } from '@phosphor-icons/react';
+import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, ShieldCheck, Receipt, Trash } from '@phosphor-icons/react';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export function NotificationsPage() {
     const { user } = useAuth();
     const { formatAmount } = useCurrency();
     const { score, loading: healthLoading } = useHealthScore();
-    const { reminders, loading, markAsPaid } = usePaymentReminders();
+    const { reminders, loading, markAsPaid, deletePaidReminder } = usePaymentReminders();
     const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
 
     const fetchAppNotifications = useCallback(() => {
@@ -41,6 +41,10 @@ export function NotificationsPage() {
 
     const handleMarkAsPaid = async (reminder: PaymentReminder) => {
         await markAsPaid(reminder);
+    };
+
+    const handleDeletePaidReminder = async (reminder: PaymentReminder) => {
+        await deletePaidReminder(reminder);
     };
 
     const handleRefresh = async () => {
@@ -390,7 +394,7 @@ export function NotificationsPage() {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    {reminder.status !== 'paid' && (
+                                                    {reminder.status !== 'paid' ? (
                                                         <Button
                                                             size="sm"
                                                             variant="ghost"
@@ -398,6 +402,16 @@ export function NotificationsPage() {
                                                             className="shrink-0 h-10 w-10 p-0 rounded-xl"
                                                         >
                                                             <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 hover:border-accent hover:bg-accent/10 transition-all border-glow" />
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => handleDeletePaidReminder(reminder)}
+                                                            className="shrink-0 h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-destructive"
+                                                            aria-label={`Delete paid reminder ${reminder.title}`}
+                                                        >
+                                                            <Trash className="w-4 h-4" weight="duotone" />
                                                         </Button>
                                                     )}
                                                 </div>

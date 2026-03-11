@@ -1,49 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
-import { supabase } from '@/integrations/supabase/client';
 
 export function PrivacyPolicyPage() {
+    const navigate = useNavigate();
     const { user } = useAuth();
-    const { profile, setProfile } = useProfile();
-    const { toast } = useToast();
-    const [accepted, setAccepted] = useState(profile.privacy_policy_accepted);
-    const [saving, setSaving] = useState(false);
-
-    useEffect(() => {
-        setAccepted(profile.privacy_policy_accepted);
-    }, [profile.privacy_policy_accepted]);
-
-    const handleAgreementChange = async (checked: boolean) => {
-        if (!user) return;
-        const previous = accepted;
-        setAccepted(checked);
-        setSaving(true);
-
-        const { error } = await supabase
-            .from('users')
-            .update({ privacy_policy_accepted: checked })
-            .eq('user_id', user.id);
-
-        if (error) {
-            setAccepted(previous);
-            toast({ title: 'Could not update agreement', description: error.message, variant: 'destructive' });
-        } else {
-            setProfile({ ...profile, privacy_policy_accepted: checked });
-            toast({ title: checked ? 'Privacy policy accepted' : 'Privacy policy agreement removed' });
-        }
-
-        setSaving(false);
-    };
 
     return (
         <div className="min-h-screen bg-background pb-page-content">
-            <Header title="Privacy Policy" showBack />
+            <Header title="Privacy Policy" showBack onBack={() => navigate(user ? '/settings' : '/auth')} />
             <main className="px-4 py-6">
                 <ScrollArea className="h-[calc(100vh-140px)] pr-4">
                     <div className="space-y-6 text-foreground/80">
@@ -84,32 +50,13 @@ export function PrivacyPolicyPage() {
                         <section>
                             <h2 className="text-lg font-bold text-foreground mb-2">5. Contact Us</h2>
                             <p className="text-sm leading-relaxed">
-                                If you have any questions about this policy, please contact us at support@hisabify.com.
+                                If you have any questions about this policy, please contact us at synarklabs@gmail.com.
                             </p>
                         </section>
 
                         <div className="pt-8 text-center text-xs text-muted-foreground">
                             Last updated: January 2026
                         </div>
-
-                        <section className="rounded-xl border border-border/60 bg-card p-4">
-                            <div className="flex items-start gap-3">
-                                <Checkbox
-                                    id="privacy-policy-agreement"
-                                    checked={accepted}
-                                    onCheckedChange={(value) => handleAgreementChange(Boolean(value))}
-                                    disabled={saving}
-                                />
-                                <div className="space-y-1">
-                                    <Label htmlFor="privacy-policy-agreement" className="font-semibold text-foreground">
-                                        I have read and agree to the Privacy Policy
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        Your agreement is saved to your account and can be changed later.
-                                    </p>
-                                </div>
-                            </div>
-                        </section>
                     </div>
                 </ScrollArea>
             </main>

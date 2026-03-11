@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -54,6 +54,14 @@ export function ReportFiltersPanel({
   const [dateTo, setDateTo] = useState<Date | undefined>(
     filters.dateTo ? new Date(filters.dateTo) : new Date()
   );
+
+  useEffect(() => {
+    setDateFrom(filters.dateFrom ? new Date(filters.dateFrom) : undefined);
+  }, [filters.dateFrom]);
+
+  useEffect(() => {
+    setDateTo(filters.dateTo ? new Date(filters.dateTo) : undefined);
+  }, [filters.dateTo]);
 
   const handleDateFromChange = (date: Date | undefined) => {
     setDateFrom(date);

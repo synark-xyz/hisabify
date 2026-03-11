@@ -132,7 +132,6 @@ function AppRoutes() {
       <Route element={<ProtectedRoute><PreferencesPage /></ProtectedRoute>} path="/settings/preferences" />
       <Route element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} path="/settings/notifications" />
       <Route element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} path="/notifications" />
-      <Route element={<ProtectedRoute><PrivacyPolicyPage /></ProtectedRoute>} path="/privacy" />
       <Route element={<ProtectedRoute><SupportPage /></ProtectedRoute>} path="/support" />
       <Route element={<ProtectedRoute><FaqPage /></ProtectedRoute>} path="/faq" />
 
@@ -153,6 +152,7 @@ function AppRoutes() {
         path="/install"
         element={<InstallPage />}
       />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

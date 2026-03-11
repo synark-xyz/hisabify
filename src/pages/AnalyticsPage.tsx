@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, RefreshCw, Lock, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +32,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { useToast } from '@/hooks/use-toast';
+import { canUseFeature } from '@/lib/entitlements';
+import { enforceHistoryWindow, getFreeHistoryStartDate } from '@/lib/historyLimits';
 
 export function AnalyticsPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -40,8 +43,10 @@ export function AnalyticsPage() {
     to: endOfMonth(new Date()),
   });
   const { user } = useAuth();
+  const { toast } = useToast();
   const { variant } = useTheme();
   const navigate = useNavigate();
+  const hasShownClampToastRef = useRef(false);
 
   const {
     transactions,
@@ -62,6 +67,9 @@ export function AnalyticsPage() {
   });
 
   const { isPremium, loading: subscriptionLoading } = useSubscription();
+  const canUseCustomRange = canUseFeature({ isPremium }, 'analytics_custom_range');
+  const canExportReports = canUseFeature({ isPremium }, 'report_export');
+  const freeHistoryStartDate = useMemo(() => getFreeHistoryStartDate(), []);
 
   // Advanced analytics hook
   const {
@@ -75,8 +83,44 @@ export function AnalyticsPage() {
   } = useAdvancedAnalytics(transactions);
 
   const handleExportCSV = () => {
+    if (!canExportReports) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     exportToCSV({ transactions, dateRange });
   };
+
+  const handleDateRangeChange = (range: { from: Date; to: Date }) => {
+    const enforced = enforceHistoryWindow(range, isPremium);
+    setDateRange(enforced.range);
+
+    if (enforced.wasClamped && !hasShownClampToastRef.current) {
+      hasShownClampToastRef.current = true;
+      toast({
+        title: 'History limit reached',
+        description: 'Free plan supports the last 30 days. Upgrade for full history.',
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (subscriptionLoading || isPremium) {
+      return;
+    }
+
+    const enforced = enforceHistoryWindow(dateRange, isPremium);
+    if (enforced.wasClamped) {
+      setDateRange(enforced.range);
+      if (!hasShownClampToastRef.current) {
+        hasShownClampToastRef.current = true;
+        toast({
+          title: 'History limit reached',
+          description: 'Free plan supports the last 30 days. Upgrade for full history.',
+        });
+      }
+    }
+  }, [subscriptionLoading, isPremium, dateRange, toast]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -132,8 +176,12 @@ export function AnalyticsPage() {
           <motion.section variants={itemVariants}>
             <DateRangeSelector
               dateRange={dateRange}
-              onDateRangeChange={setDateRange}
+              onDateRangeChange={handleDateRangeChange}
               onExportCSV={handleExportCSV}
+              minDate={freeHistoryStartDate}
+              onUpgradeRequired={() => setShowUpgradeModal(true)}
+              canUseCustomRange={canUseCustomRange}
+              canExport={canExportReports}
             />
           </motion.section>
 

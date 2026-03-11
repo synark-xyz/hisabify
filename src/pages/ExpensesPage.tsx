@@ -15,9 +15,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTheme } from '@/hooks/useTheme';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, CategorySpending, Card, Category } from '@/types';
 import { getViewRange, type TransactionViewMode } from '@/lib/transactionDateRange';
+import { enforceHistoryWindow } from '@/lib/historyLimits';
 import { emitTransactionUpdated } from '@/lib/transaction-events';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import {
@@ -65,11 +68,14 @@ export function ExpensesPage() {
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const latestRequestIdRef = useRef(0);
+  const hasShownHistoryClampToastRef = useRef(false);
 
   const { user } = useAuth();
   const { currency, currencyVersion } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const { variant } = useTheme();
+  const { isPremium } = useSubscription();
+  const { toast } = useToast();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -96,12 +102,26 @@ export function ExpensesPage() {
       return;
     }
 
+    const enforcement = enforceHistoryWindow(
+      { from: viewRange.start, to: viewRange.end },
+      isPremium
+    );
+    const effectiveRange = enforcement.range;
+
+    if (enforcement.wasClamped && !hasShownHistoryClampToastRef.current) {
+      hasShownHistoryClampToastRef.current = true;
+      toast({
+        title: 'History limit reached',
+        description: 'Free plan supports the last 30 days. Upgrade for full history.',
+      });
+    }
+
     const { data, error } = await supabase
       .from('transactions')
       .select('*, category:categories(*), card:cards(*)')
       .eq('user_id', user.id)
-      .gte('date', viewRange.start.toISOString())
-      .lte('date', viewRange.end.toISOString())
+      .gte('date', effectiveRange.from.toISOString())
+      .lte('date', effectiveRange.to.toISOString())
       .order('date', { ascending: false });
 
     if (error || !data || requestId !== latestRequestIdRef.current) {
@@ -126,7 +146,7 @@ export function ExpensesPage() {
     if (requestId === latestRequestIdRef.current) {
       setTransactions(convertedData);
     }
-  }, [user, viewRange, currency, convertAmount]);
+  }, [user, viewRange, currency, convertAmount, isPremium, toast]);
 
   const handleRefresh = useCallback(async () => {
     await fetchTransactions();

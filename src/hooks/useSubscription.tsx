@@ -8,8 +8,17 @@ export function useSubscription() {
     // specific override for sam103043
     const isSpecialUser = user?.email === 'sam103043@gmail.com';
 
+    // Time-based referral Pro access check
+    const hasActiveReferralGrant = profile.referral_granted_until
+        ? new Date(profile.referral_granted_until) > new Date()
+        : false;
+
     return {
-        isPremium: (profile.subscription_type === 'pro' && profile.subscription_status === 'active') || profile.referral_credits > 0 || isSpecialUser,
+        isPremium: (
+            (profile.subscription_type === 'pro' && profile.subscription_status === 'active') ||
+            hasActiveReferralGrant ||
+            isSpecialUser
+        ),
         loading
     };
 }

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { useCurrency } from '@/hooks/useCurrency';
 import { CategorySpending } from '@/types';
+import type { Props as TooltipProps, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
 interface SpendingByCategoryChartProps {
   data: CategorySpending[];
@@ -24,6 +25,11 @@ const getChartColors = () => {
 
 const COLORS = getChartColors();
 
+type ChartCategoryDatum = CategorySpending & {
+  category: string;
+  color: string;
+};
+
 export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) {
   const { formatAmount } = useCurrency();
 
@@ -32,17 +38,18 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
     .slice(0, 8)
     .map((item, index) => ({
       ...item,
+      category: item.name,
       color: item.color || COLORS[index % COLORS.length],
     }));
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const tooltipData = payload[0].payload as ChartCategoryDatum;
       return (
         <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg">
-          <p className="text-sm font-semibold text-foreground">{data.category}</p>
-          <p className="text-sm text-muted-foreground">{formatAmount(data.amount)}</p>
-          <p className="text-xs text-muted-foreground">{data.percentage.toFixed(1)}% of total</p>
+          <p className="text-sm font-semibold text-foreground">{tooltipData.category}</p>
+          <p className="text-sm text-muted-foreground">{formatAmount(tooltipData.amount)}</p>
+          <p className="text-xs text-muted-foreground">{tooltipData.percentage.toFixed(1)}% of total</p>
         </div>
       );
     }

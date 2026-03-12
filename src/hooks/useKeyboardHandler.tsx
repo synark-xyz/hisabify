@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Keyboard } from '@capacitor/keyboard';
+import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
+import { Keyboard, type KeyboardInfo } from '@capacitor/keyboard';
 
 /**
  * Hook to handle Capacitor Keyboard events for mobile devices
@@ -13,11 +13,11 @@ export function useKeyboardHandler(isOpen: boolean) {
       return;
     }
 
-    let keyboardShowListener: any;
-    let keyboardHideListener: any;
+    let keyboardShowListener: PluginListenerHandle | undefined;
+    let keyboardHideListener: PluginListenerHandle | undefined;
 
     if (isOpen) {
-      keyboardShowListener = Keyboard.addListener('keyboardWillShow', (info) => {
+      void Keyboard.addListener('keyboardWillShow', (info: KeyboardInfo) => {
         // Adjust the body to accommodate keyboard
         const keyboardHeight = info.keyboardHeight;
         document.body.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
@@ -29,19 +29,23 @@ export function useKeyboardHandler(isOpen: boolean) {
             activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }, 100);
+      }).then((listener) => {
+        keyboardShowListener = listener;
       });
 
-      keyboardHideListener = Keyboard.addListener('keyboardWillHide', () => {
+      void Keyboard.addListener('keyboardWillHide', () => {
         document.body.style.setProperty('--keyboard-height', '0px');
+      }).then((listener) => {
+        keyboardHideListener = listener;
       });
     }
 
     return () => {
       if (keyboardShowListener) {
-        keyboardShowListener.remove();
+        void keyboardShowListener.remove();
       }
       if (keyboardHideListener) {
-        keyboardHideListener.remove();
+        void keyboardHideListener.remove();
       }
       // Reset keyboard height
       document.body.style.setProperty('--keyboard-height', '0px');

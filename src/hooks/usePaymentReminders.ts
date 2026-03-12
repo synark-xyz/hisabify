@@ -70,13 +70,13 @@ export function usePaymentReminders() {
         if (reminders.length > 0) {
             void syncOverdueReminders();
         }
-    }, [reminders.length]); // Only depend on count to avoid infinite loop
+    }, [reminders.length, syncOverdueReminders]);
 
     /**
      * Find the best matching active budget for a given user + category.
      * Returns exact category match first, then total budget fallback.
      */
-    const findMatchingBudgetId = async (userId: string, categoryId: string | null): Promise<string | null> => {
+    const findMatchingBudgetId = useCallback(async (userId: string, categoryId: string | null): Promise<string | null> => {
         const now = new Date().toISOString();
 
         if (categoryId) {
@@ -103,13 +103,13 @@ export function usePaymentReminders() {
             .gte('end_date', now)
             .limit(1);
         return (data?.[0]?.id as string) ?? null;
-    };
+    }, []);
 
     /**
      * Create an expense transaction for a paid reminder so it counts toward budgets.
      * Failure is non-fatal — the reminder update is not reverted.
      */
-    const recordReminderTransaction = async (reminder: PaymentReminder) => {
+    const recordReminderTransaction = useCallback(async (reminder: PaymentReminder) => {
         const budgetId = await findMatchingBudgetId(reminder.user_id, reminder.category_id ?? null);
 
         const { error } = await supabase.from('transactions').insert({
@@ -128,7 +128,7 @@ export function usePaymentReminders() {
         } else {
             emitTransactionUpdated();
         }
-    };
+    }, [findMatchingBudgetId]);
 
     /**
      * Mark a reminder as paid
@@ -210,7 +210,7 @@ export function usePaymentReminders() {
         }
 
         return true;
-    }, [toast, fetchReminders]);
+    }, [toast, fetchReminders, recordReminderTransaction]);
 
     const deletePaidReminder = useCallback(async (reminder: PaymentReminder) => {
         if (reminder.status !== 'paid') {

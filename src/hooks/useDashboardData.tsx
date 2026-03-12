@@ -61,7 +61,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { currency, currencyVersion } = useCurrency();
+  const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const { isPremium } = useSubscription();
 
@@ -153,7 +153,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
     } finally {
       setLoading(false);
     }
-  }, [user, dateRange, currency, currencyVersion, convertAmount, isPremium]);
+  }, [user, dateRange, currency, convertAmount, isPremium]);
 
   useEffect(() => {
     fetchData();

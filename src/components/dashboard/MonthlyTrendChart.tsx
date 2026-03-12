@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend, Area, AreaChart } from 'recharts';
 import { useCurrency } from '@/hooks/useCurrency';
+import type { Props as TooltipProps, Payload, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
 interface MonthlyTrendData {
   month: string;
@@ -15,12 +16,12 @@ interface MonthlyTrendChartProps {
 export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
   const { formatAmount } = useCurrency();
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-4 py-3 shadow-lg">
           <p className="text-sm font-semibold text-foreground mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: Payload<ValueType, NameType>, index: number) => (
             <div key={index} className="flex items-center gap-2">
               <div 
                 className="w-2 h-2 rounded-full" 
@@ -28,7 +29,7 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
               />
               <span className="text-sm text-muted-foreground capitalize">{entry.name}:</span>
               <span className="text-sm font-semibold text-foreground">
-                {formatAmount(entry.value)}
+                {formatAmount(Number(entry.value || 0))}
               </span>
             </div>
           ))}

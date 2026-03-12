@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Camera, X, Sparkles, ChevronRight } from 'lucide-react';
+import { Mic, Camera, X, Sparkles, ChevronRight, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PrivacyMask } from '@/components/ui/privacy-mask';
@@ -11,10 +11,16 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 
 type NexusMode = 'voice' | 'scan';
 
+type SmartCapturePayload = {
+    merchant?: string;
+    amount?: number;
+    raw?: string;
+};
+
 interface NexusModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSmartCapture: (data: any) => void;
+    onSmartCapture: (data: SmartCapturePayload) => void;
     initialMode?: 'voice' | 'scan';
 }
 
@@ -136,7 +142,7 @@ export function NexusModal({ open, onOpenChange, onSmartCapture, initialMode = '
     );
 }
 
-function InputModeButton({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: any, label: string }) {
+function InputModeButton({ active, onClick, icon: Icon, label }: { active: boolean, onClick: () => void, icon: LucideIcon, label: string }) {
     return (
         <button
             onClick={onClick}
@@ -153,7 +159,7 @@ function InputModeButton({ active, onClick, icon: Icon, label }: { active: boole
     );
 }
 
-function VoiceModeContent({ onCommand }: { onCommand: (data: any) => void }) {
+function VoiceModeContent({ onCommand }: { onCommand: (data: SmartCapturePayload) => void }) {
     const { isListening, transcript, toggleListening, parseCommand, error } = useVoiceInput();
     const parsed = parseCommand(transcript);
 

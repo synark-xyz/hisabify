@@ -21,12 +21,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { PrivacyMask } from '@/components/ui/privacy-mask';
 
+interface BudgetCategoryOption {
+  id: string;
+  name: string;
+}
+
 export function BudgetDashboard() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetWithSpending | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<BudgetCategoryOption[]>([]);
   const [drillDownBudget, setDrillDownBudget] = useState<BudgetWithSpending | null>(null);
   const [payingBudget, setPayingBudget] = useState<BudgetWithSpending | null>(null);
 
@@ -39,12 +44,13 @@ export function BudgetDashboard() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res: any = await (supabase.from('categories') as any)
+        const { data, error } = await supabase
+          .from('categories')
           .select('id,name')
           .eq('is_system_category', false);
-        if (res?.error) throw res.error;
-        if (res?.data) {
-          setCategories((res.data as any[]).map((row) => ({ id: row.id, name: row.name })) as Category[]);
+        if (error) throw error;
+        if (data) {
+          setCategories(data.map((row) => ({ id: row.id, name: row.name })));
         }
       } catch (err) {
         console.error('Error fetching categories:', err);

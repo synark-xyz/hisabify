@@ -8,6 +8,7 @@ import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYea
 import { Category } from '@/types';
 import { showBudgetWarning, showBudgetExceeded } from '@/lib/notificationManager';
 import { emitTransactionUpdated } from '@/lib/transaction-events';
+import type { Database } from '@/integrations/supabase/types';
 
 export type PeriodType = 'weekly' | 'monthly' | 'yearly';
 
@@ -169,7 +170,7 @@ export function useBudgets() {
                 is_recurring: true,
               });
               if (!rolloverError) {
-                const budgetName = budget.name || (budget as any).category?.name || 'Budget Payment';
+                const budgetName = budget.name || budget.category?.name || 'Budget Payment';
                 await supabase.from('payment_reminders').insert({
                   user_id: user.id,
                   title: budgetName,
@@ -591,7 +592,10 @@ export function useBudgets() {
         .update({
           is_template: true,
           template_name: templateName || budget.name || budget.category?.name || 'Budget Template'
-        } as any)
+        } as Database['public']['Tables']['budgets']['Update'] & {
+          is_template: boolean;
+          template_name: string;
+        })
         .eq('id', budgetId)
         .eq('user_id', user.id);
 

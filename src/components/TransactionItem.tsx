@@ -33,7 +33,9 @@ interface TransactionItemProps {
   onReveal?: (id: string | null) => void;
 }
 
-const iconMap: Record<string, React.ComponentType<{ className?: string, weight?: any }>> = {
+type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+
+const iconMap: Record<string, React.ComponentType<{ className?: string, weight?: IconWeight }>> = {
   'utensils': ForkKnife,
   'shopping-bag': ShoppingBag,
   'heart-pulse': Heartbeat,

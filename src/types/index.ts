@@ -47,6 +47,7 @@ export interface Transaction {
   receipt_url?: string | null;
   // Budget linkage
   budget_id?: string | null;
+  savings_goal_id?: string | null;
 }
 
 export interface Budget {
@@ -103,6 +104,8 @@ export interface PaymentReminder {
   is_recurring: boolean;
   recurring_interval: string | null;
   category_id: string | null;
+  savings_goal_id?: string | null;
   note: string | null;
   created_at: string;
+  updated_at?: string;
 }

@@ -6,13 +6,15 @@
 
 **Purpose**: Provide a lightweight, privacy-first mobile-first web app to let individual users track cards, expenses, budgets, and recurring payment reminders with simple analytics.
 
-**Implementation Alignment (Current Build - 2026-03-11)**
+**Implementation Alignment (Current Build - 2026-03-12)**
 - Dashboard no longer includes the Daily Quote block.
-- Reminder "Mark Paid" updates reminder status only; it does not auto-create transactions.
+- Reminder "Mark Paid" updates reminder status only for regular bill reminders; savings-linked reminders intentionally create savings contribution transactions so savings progress remains transaction-derived.
 - Client-side `setTimeout` reminder scheduling is intentionally disabled; persistent backend/system scheduling is required for reliable delivery.
 - Analytics uses real transaction data only (no demo/sample fallback) and shows empty states when data is insufficient.
 - Reminder dates are normalized to calendar-day-safe values to avoid timezone day-shift bugs.
 - Automated test runs now generate timestamped artifacts under `test-report/<timestamp>/`, including unit coverage and E2E HTML reports.
+- Savings plans are now schedule-based and live-derived from transactions using `plan_frequency`, `plan_start_date`, and `auto_remind` on savings goals; no computed pace values are stored.
+- Budget and savings now operate as a connected flow: savings contributions create tagged transactions, budget leftover can be transferred into savings, and all related dashboard, analytics, and health-score views recalculate live.
 
 **Problem Statement**: Many users lack a single, simple app to track multiple cards/accounts, recurring payments and visualize spending trends without heavy complexity or exposing data to third parties.
 
@@ -65,7 +67,13 @@
 	- Create monthly budgets per category
 	- Track progress vs budget
 	- Create savings goals (single goal free)
+	- Transfer leftover budget funds into an active savings goal with paired tagged transactions
+	- Link a savings goal to a budget reserve and reflect savings reservations in budget context
+	- Configure a savings plan schedule (daily / weekly / monthly) with live pace tracking
+	- Free auto-remind for scheduled savings goals
 	- More than one savings goal (premium) **[PREMIUM]**
+	- Savings history tab with running-total chart and missed-period highlights **[PREMIUM]**
+	- Auto-contribute for savings goals **[PREMIUM]**
 	- Alerts when nearing or exceeding budget (push/email) **[PREMIUM]**
 
 
@@ -77,11 +85,14 @@
 	- Create recurring reminders (daily/weekly/monthly)
 	- Upcoming reminders carousel
 	- Snooze or dismiss reminders
+	- Auto-generated savings reminders that deep-link into savings funding flow
 	- Payment scheduling with calendar sync (premium) **[PREMIUM]**
 
 - **Analytics & Reporting**
 	- Monthly spend overview (line chart)
 	- Category distribution (donut chart)
+	- Savings category permanently represented in analytics
+	- Savings rate insight and expense/savings combined trend view
 	- Export reports to CSV/PDF (premium) **[PREMIUM]**
 	- Custom date range comparisons (premium) **[PREMIUM]**
 
@@ -177,6 +188,8 @@ The goal of this initiative is to transition Hisabify from a free utility to a s
 - **Unlimited Transactions**: Basic logging remains free.
 - **Budgeting**: Up to **1 active budget category** (The "Planner").
 - **Savings Goals**: Up to **1 active savings goal**.
+- **Savings Planning**: Manual schedules and auto-remind for that one goal are included.
+- **Budget Leftover Transfer**: Moving remaining budget funds into savings is included.
 - **Analytics**: Basic monthly summary only.
 - **Currency**: Single primary currency only.
 - **History**: Last **30 days** of transaction history.
@@ -186,7 +199,9 @@ The goal of this initiative is to transition Hisabify from a free utility to a s
 - **Unlimited Budgets**: Remove the cap on budget categories.
 - **Unlimited Savings Goals**: Create as many savings goals as you focus on.
 - **Infinite History**: Access to all-time data and the **Budget vs Spending History Chart** (Existing: `BudgetHistoryChart`).
+- **Savings History**: Full per-goal contribution history, running chart, and missed-period timeline.
 - **Automation**: Use of the **"Copy to Next Month"** feature (Existing: `copyBudgetToNextPeriod`).
+- **Savings Automation**: Auto-contribute scheduled savings goals.
 - **Multi-Currency**: Access to the **Currency Selector** and live conversions (Existing: `useCurrency`).
 - **Data Export**: Generate PDF/CSV reports (Planned).
 - **Advanced Insights**: Period-over-period comparisons in the **Financial Summary** (Existing: `FinancialSummary`).

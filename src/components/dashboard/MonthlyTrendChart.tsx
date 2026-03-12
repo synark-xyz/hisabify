@@ -7,6 +7,7 @@ interface MonthlyTrendData {
   month: string;
   income: number;
   expenses: number;
+  savings: number;
 }
 
 interface MonthlyTrendChartProps {
@@ -58,6 +59,10 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
                 <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
                 <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
               </linearGradient>
+              <linearGradient id="savingsGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+              </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
@@ -95,6 +100,15 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
               fill="url(#expenseGradient)"
               dot={{ r: 4, fill: 'hsl(var(--accent))' }}
               activeDot={{ r: 6, fill: 'hsl(var(--accent))' }}
+            />
+            <Area
+              type="monotone"
+              dataKey="savings"
+              stroke="#10B981"
+              strokeWidth={2}
+              fill="url(#savingsGradient)"
+              dot={{ r: 4, fill: '#10B981' }}
+              activeDot={{ r: 6, fill: '#10B981' }}
             />
           </AreaChart>
         </ResponsiveContainer>

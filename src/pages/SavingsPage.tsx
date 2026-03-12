@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Plus, HandCoins, Sparkles, ChevronRight } from "lucide-react";
@@ -10,16 +10,6 @@ import {
   AddSavingsGoalModal,
   SavingsGoalsSummary,
 } from "@/components/savings";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
@@ -27,12 +17,17 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useBudgetContext } from '@/hooks/useBudgetContext';
+import { useSearchParams } from 'react-router-dom';
 
 export default function SavingsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [mainBalance, setMainBalance] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     goals,
@@ -40,22 +35,56 @@ export default function SavingsPage() {
     createGoal,
     updateGoal,
     addToGoal,
+    archiveGoal,
+    redeployToBalance,
+    redeployToGoal,
+    transferBudgetLeftover,
     deleteGoal,
     totalSaved,
     totalTarget,
     completedGoals,
+    activeGoals,
     refetch,
   } = useSavingsGoals();
 
   const { isPremium } = useSubscription();
   const { variant } = useTheme();
+  const { user } = useAuth();
+  const { budgets } = useBudgetContext();
+
+  const fetchMainBalance = useCallback(async () => {
+    if (!user?.id) {
+      setMainBalance(0);
+      return;
+    }
+
+    const { data } = await supabase
+      .from('transactions')
+      .select('amount, type')
+      .eq('user_id', user.id);
+
+    if (!data) {
+      setMainBalance(0);
+      return;
+    }
+
+    const balance = data.reduce((sum, tx) => (
+      tx.type === 'income' ? sum + Number(tx.amount) : sum - Number(tx.amount)
+    ), 0);
+    setMainBalance(balance);
+  }, [user?.id]);
 
   useTransactionUpdateListener(() => {
     refetch();
+    void fetchMainBalance();
   });
 
+  useEffect(() => {
+    void fetchMainBalance();
+  }, [fetchMainBalance]);
+
   const handleAddGoal = () => {
-    if (!isPremium && goals.length >= 1) {
+    if (!isPremium && activeGoals.length >= 1) {
       setShowUpgradeModal(true);
     } else {
       setShowAddModal(true);
@@ -68,14 +97,31 @@ export default function SavingsPage() {
     current_amount: number;
     deadline?: Date;
     color: string;
+    linked_budget_id?: string;
+    reserve_amount: number;
+    auto_contribute_enabled: boolean;
+    auto_contribute_amount: number | null;
+    auto_contribute_frequency: 'weekly' | 'monthly' | null;
+    plan_frequency: 'daily' | 'weekly' | 'monthly' | null;
+    auto_remind: boolean;
   }) => {
     const goalData = {
       name: data.name,
       target_amount: data.target_amount,
-      current_amount: data.current_amount,
+      initial_amount: data.current_amount,
       deadline: data.deadline ? format(data.deadline, "yyyy-MM-dd") : null,
       color: data.color,
       icon: "piggy-bank",
+      linked_budget_id: data.linked_budget_id ?? null,
+      reserve_amount: data.reserve_amount,
+      auto_contribute_enabled: isPremium ? data.auto_contribute_enabled : false,
+      auto_contribute_amount: isPremium ? data.auto_contribute_amount : null,
+      auto_contribute_frequency: isPremium ? data.auto_contribute_frequency : null,
+      plan_frequency: data.plan_frequency,
+      plan_start_date: data.plan_frequency
+        ? (editingGoal?.plan_start_date || editingGoal?.created_at || new Date().toISOString())
+        : null,
+      auto_remind: data.plan_frequency ? data.auto_remind : false,
     };
 
     try {
@@ -98,20 +144,19 @@ export default function SavingsPage() {
     setShowAddModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    setDeleteId(id);
-  };
-
-  const confirmDelete = () => {
-    if (deleteId) {
-      deleteGoal.mutate(deleteId);
-      setDeleteId(null);
-    }
-  };
-
   const handleAddFunds = (id: string, amount: number) => {
     addToGoal.mutate({ id, amount });
   };
+
+  const pendingGoalId = searchParams.get('goal');
+  const pendingTab = (searchParams.get('tab') as 'manual' | 'budget' | null) || 'manual';
+  const pendingBudgetId = searchParams.get('budget');
+
+  useEffect(() => {
+    if (pendingGoalId && goals.some((goal) => goal.id === pendingGoalId)) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [goals, pendingGoalId, setSearchParams]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -191,7 +236,7 @@ export default function SavingsPage() {
               <SavingsGoalsSummary
                 totalSaved={totalSaved}
                 totalTarget={totalTarget}
-                goalsCount={goals.length}
+                goalsCount={activeGoals.length}
                 completedGoals={completedGoals}
               />
             </motion.div>
@@ -217,10 +262,17 @@ export default function SavingsPage() {
 
             <motion.div variants={itemVariants} className="flex items-center justify-between pt-2">
               <h2 className="text-lg font-semibold">My Goals</h2>
-              <Button onClick={handleAddGoal} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                New Goal
-              </Button>
+              <div className="flex items-center gap-2">
+                {!isPremium && activeGoals.length >= 1 && (
+                  <span className="rounded-full bg-purple-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-500">
+                    1/1 Free
+                  </span>
+                )}
+                <Button onClick={handleAddGoal} size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Goal
+                </Button>
+              </div>
             </motion.div>
 
             {goals.length === 0 ? (
@@ -243,9 +295,30 @@ export default function SavingsPage() {
                   <SavingsGoalCard
                     key={goal.id}
                     goal={goal}
+                    mainBalance={mainBalance}
+                    otherActiveGoals={goals.filter((entry) => entry.id !== goal.id && !entry.isArchived)}
                     onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onDelete={(id) => deleteGoal.mutate(id)}
                     onAddFunds={handleAddFunds}
+                    onArchive={(id) => archiveGoal.mutate(id)}
+                    onRedeployToBalance={(id, amount) => redeployToBalance.mutate({ id, amount })}
+                    onRedeployToGoal={(sourceGoalId, destinationGoalId, amount) => redeployToGoal.mutate({ sourceGoalId, destinationGoalId, amount })}
+                    onUpdateDeadline={(goalId, deadline) => updateGoal.mutate({ id: goalId, deadline: format(new Date(deadline), "yyyy-MM-dd") })}
+                    onBudgetTransfer={(budgetId, goalId, amount) => {
+                      const budget = budgets.find((entry) => entry.id === budgetId);
+                      const goalEntry = goals.find((entry) => entry.id === goalId);
+                      transferBudgetLeftover.mutate({
+                        budgetId,
+                        budgetName: budget?.category?.name || budget?.name || 'Budget',
+                        budgetCategoryId: budget?.category_id || null,
+                        goalId,
+                        amount,
+                      });
+                      setSearchParams({});
+                    }}
+                    defaultFundingTab={pendingGoalId === goal.id ? pendingTab : 'manual'}
+                    defaultBudgetId={pendingGoalId === goal.id ? pendingBudgetId : null}
+                    autoOpenFunding={pendingGoalId === goal.id}
                   />
                 ))}
               </motion.div>
@@ -264,28 +337,7 @@ export default function SavingsPage() {
         editingGoal={editingGoal}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Savings Goal?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your
-              savings goal and all its progress.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} source="savings_goals_limit" />
     </div>
   );
 }

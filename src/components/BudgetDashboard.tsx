@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useBudgets, BudgetWithSpending, Budget } from '@/hooks/useBudgets';
+import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { BudgetProgressCard } from '@/components/BudgetProgressCard';
 import { BudgetTransactionsSheet } from '@/components/BudgetTransactionsSheet';
@@ -36,10 +38,12 @@ export function BudgetDashboard() {
   const [payingBudget, setPayingBudget] = useState<BudgetWithSpending | null>(null);
 
   const { budgets, loading, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
+  const { activeGoals } = useSavingsGoals();
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
   const { isPremium } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -100,6 +104,25 @@ export function BudgetDashboard() {
     }
     refetch();
   };
+
+  const handleMoveLeftoverToSavings = (budget: BudgetWithSpending, goalId?: string) => {
+    if (activeGoals.length === 0) {
+      navigate('/savings');
+      return;
+    }
+
+    navigate(`/savings?goal=${goalId || activeGoals[0].id}&tab=budget&budget=${budget.id}`);
+  };
+
+  const endedBudgetWithRemaining = budgets.find((budget) => budget.remaining > 0 && !!budget.end_date && new Date(budget.end_date) < new Date());
+  const savingsReservedByBudget = activeGoals.reduce<Record<string, number>>((accumulator, goal) => {
+    if (!goal.linked_budget_id || !goal.reserve_amount) {
+      return accumulator;
+    }
+
+    accumulator[goal.linked_budget_id] = (accumulator[goal.linked_budget_id] || 0) + goal.reserve_amount;
+    return accumulator;
+  }, {});
 
 
   if (loading) {
@@ -240,6 +263,38 @@ export function BudgetDashboard() {
         </Button>
       </div>
 
+      {endedBudgetWithRemaining && (
+        <Card className="border-border/50">
+          <CardContent className="flex flex-col gap-3 p-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                You have {currencySymbol}{endedBudgetWithRemaining.remaining.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} unspent in {endedBudgetWithRemaining.category?.name || endedBudgetWithRemaining.name || 'this budget'}.
+              </p>
+              <p className="text-xs text-muted-foreground">Move to savings?</p>
+            </div>
+            {activeGoals.length === 0 ? (
+              <Button variant="outline" size="sm" className="w-fit rounded-full" onClick={() => navigate('/savings')}>
+                Create a savings goal to move funds →
+              </Button>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {activeGoals.slice(0, 3).map((goal) => (
+                  <Button
+                    key={goal.id}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => handleMoveLeftoverToSavings(endedBudgetWithRemaining, goal.id)}
+                  >
+                    {goal.name}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Budget Cards */}
       {budgets.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -253,6 +308,8 @@ export function BudgetDashboard() {
               onDelete={handleDelete}
               onViewTransactions={setDrillDownBudget}
               onPayNow={handlePayNow}
+              onMoveLeftoverToSavings={handleMoveLeftoverToSavings}
+              savingsReserved={savingsReservedByBudget[budget.id] || 0}
             />
           ))}
         </div>
@@ -317,7 +374,7 @@ export function BudgetDashboard() {
         initialBudgetId={payingBudget?.id ?? null}
       />
 
-      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} source="budget_limit" />
     </div>
   );
 }

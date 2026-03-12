@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Sparkles, Target } from 'lucide-react';
+import { ArrowRight, Crown, Sparkles, Target } from 'lucide-react';
 import { BudgetDashboard } from '@/components/BudgetDashboard';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -79,18 +79,34 @@ export function BudgetPage() {
               <motion.div
                 variants={itemVariants}
                 onClick={() => setShowUpgradeModal(true)}
-                className="bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border border-violet-500/20 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-violet-600/5 transition-colors"
+                className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-600/10 via-indigo-600/10 to-fuchsia-600/10 p-4 cursor-pointer transition-colors hover:bg-violet-600/5"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
+                <div className="absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.16),transparent_70%)]" />
+                <div className="relative flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-500/20">
+                      <Crown className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-violet-400">
+                          Pro
+                        </span>
+                        <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-400">
+                          Budget Planning
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-foreground">Unlimited Budgets</p>
+                      <p className="text-xs text-muted-foreground">
+                        Create more than one budget and unlock budget history.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-foreground">Unlimited Budgets</p>
-                    <p className="text-xs text-muted-foreground">Upgrade to Pro to create more than 1 budget</p>
+                  <div className="flex items-center gap-2 text-violet-400">
+                    <span className="hidden text-xs font-bold uppercase tracking-wider sm:inline">See Pro</span>
+                    <ArrowRight className="h-4 w-4" />
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </motion.div>
             )}
 
@@ -101,7 +117,7 @@ export function BudgetPage() {
         </div>
       </PullToRefresh>
 
-      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} source="budget_limit" />
 
     </div>
   );

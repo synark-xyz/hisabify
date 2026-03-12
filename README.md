@@ -13,6 +13,8 @@ For non-technical information about features, roadmap, and priorities see `PRD.m
 
 If you want to contribute code or run the project locally, see `CONTRIBUTING.md` (or open an issue requesting setup guidance).
 
+For Supabase local, staging, and production migration workflows, see `SUPABASE_SETUP.md`.
+
 This README intentionally focuses on product description rather than technical setup.
  
 About the project
@@ -173,6 +175,7 @@ See `src/index.css` for mobile-specific performance optimizations.
 Where to look next
 ------------------
 - Product & requirements: `PRD.md`
+- Supabase local/staging/prod setup: `SUPABASE_SETUP.md`
 - Architecture & tech guidance: `TRD.md`
 - AI development guidance: `CLAUDE.md`
 - Mobile app setup: `CAPACITOR_LOCALHOST_SETUP.md`

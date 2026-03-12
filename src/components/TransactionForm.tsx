@@ -222,6 +222,7 @@ export function TransactionForm({
       date: data.date.toISOString(),
       category_id: type === 'expense' ? data.categoryId : null,
       budget_id: type === 'expense' ? (selectedBudgetId ?? null) : null,
+      savings_goal_id: initialTransaction?.savings_goal_id ?? null,
       card_id: null,
       note: data.note.trim() || null,
       receipt_url: initialData?.receiptUrl || null,

@@ -121,6 +121,8 @@ npm run lint         # Check code quality
 
 ## 🗄️ Database Setup (Supabase)
 
+For the full Supabase runbook, including local reset/push, staging deploys, production deploys, linking, and type generation, see `SUPABASE_SETUP.md`.
+
 Your Supabase project needs the following tables. The app will guide you through setup, but here's what you need:
 
 ### Required Tables:
@@ -136,13 +138,22 @@ Your Supabase project needs the following tables. The app will guide you through
 Database migrations are in the `supabase/migrations/` directory. You can run them using:
 
 ```bash
-# If you have Supabase CLI installed
-supabase db push
+# Start local Supabase
+npx supabase start
+
+# Rebuild local DB and apply all migrations
+npx supabase db reset --local
+
+# Or apply only pending local migrations
+npx supabase db push --local
+
+# For a linked hosted project
+npx supabase db push
 
 # Or import them manually through Supabase Dashboard
 ```
 
-**Tip:** Check the Supabase Dashboard → SQL Editor to run migrations manually if needed.
+**Tip:** Prefer `npx supabase db push --dry-run` before staging or production pushes. Check `SUPABASE_SETUP.md` for the environment-specific workflow.
 
 ---
 

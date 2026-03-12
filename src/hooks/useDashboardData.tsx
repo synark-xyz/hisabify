@@ -31,6 +31,7 @@ interface MonthlyTrendData {
   month: string;
   income: number;
   expenses: number;
+  savings: number;
 }
 
 interface BudgetVsActualData {
@@ -193,6 +194,15 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
         categoryMap[catName].amount += tx.convertedAmount;
       });
 
+    if (!categoryMap.Savings) {
+      categoryMap.Savings = {
+        name: 'Savings',
+        amount: 0,
+        color: '#10B981',
+        percentage: 0,
+      };
+    }
+
     return Object.values(categoryMap).map(cat => ({
       ...cat,
       percentage: totalExpenses > 0 ? (cat.amount / totalExpenses) * 100 : 0,
@@ -222,6 +232,9 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
           .reduce((sum, t) => sum + t.convertedAmount, 0),
         expenses: monthTransactions
           .filter(t => t.type === 'expense' || t.type === 'lend' || t.type === 'owe')
+          .reduce((sum, t) => sum + t.convertedAmount, 0),
+        savings: monthTransactions
+          .filter(t => t.savings_goal_id && t.category?.name === 'Savings')
           .reduce((sum, t) => sum + t.convertedAmount, 0),
       });
     }

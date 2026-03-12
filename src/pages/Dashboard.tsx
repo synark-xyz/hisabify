@@ -7,6 +7,7 @@ import { HealthScoreCard } from '@/features/gamification/components/HealthScoreC
 import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
 import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
+import { SavingsSnapshotCard } from '@/components/dashboard/SavingsSnapshotCard';
 import { ParticlesBackground } from '@/components/ParticlesBackground';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { ManageRemindersModal } from '@/components/ManageRemindersModal';
@@ -454,6 +455,19 @@ export function Dashboard() {
                   </motion.button>
                 </div>
                 <PaymentReminderCarousel reminders={activeReminders} />
+              </motion.section>
+            )}
+
+            {!showGettingStarted && (
+              <motion.section
+                key="savings-snapshot-section"
+                initial={{ opacity: 1, y: 0 }}
+                style={{ willChange: 'auto' }}
+              >
+                <SavingsSnapshotCard
+                  onViewAll={() => navigate('/savings')}
+                  onCreateFirst={() => navigate('/savings')}
+                />
               </motion.section>
             )}
 

@@ -12,6 +12,10 @@ interface Transaction {
   date: string;
   currency_base?: string;
   convertedAmount?: number;
+  savings_goal_id?: string | null;
+  category?: {
+    name?: string;
+  } | null;
 }
 
 interface FinancialSummaryProps {
@@ -254,10 +258,20 @@ export function FinancialSummary({
             <span className="text-muted-foreground">Monthly Savings Rate</span>
             <span className={cn(
               'font-medium',
-              summaries.thisMonth.net >= 0 ? 'text-emerald-500' : 'text-destructive'
+              summaries.thisMonth.income > 0 ? 'text-emerald-500' : 'text-muted-foreground'
             )}>
               {summaries.thisMonth.income > 0
-                ? `${((summaries.thisMonth.net / summaries.thisMonth.income) * 100).toFixed(1)}%`
+                ? `${(
+                  transactions
+                    .filter((tx) => {
+                      const txDate = new Date(tx.date);
+                      return txDate >= startOfMonth(selectedDate)
+                        && txDate <= endOfMonth(selectedDate)
+                        && tx.savings_goal_id
+                        && tx.category?.name === 'Savings';
+                    })
+                    .reduce((sum, tx) => sum + (tx.convertedAmount || tx.amount), 0) / summaries.thisMonth.income
+                * 100).toFixed(1)}%`
                 : 'N/A'}
             </span>
           </div>

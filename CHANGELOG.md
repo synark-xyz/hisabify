@@ -16,10 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `npm run test:automated`
   - `npm run test:automated:unit`
   - `npm run test:automated:e2e`
+- **Savings Plan Scheduling**: Savings goals now support optional daily, weekly, or monthly schedules with live pace calculation, required-per-period guidance, suggested deadline recovery, free auto-remind, and compact contribution sparklines.
+- **Savings Reminder Integration**: Scheduled savings reminders now support `daily` recurrence, use savings-specific labels, deep-link into the top-up flow, and create savings contribution transactions when marked paid.
+- **Budget to Savings Transfer Loop**: Users can move leftover budget funds into savings goals through the shared funding flow while keeping main balance neutral and updating both budget and savings live views.
 
 ### Changed
 - **README Cleanup**: Removed placeholder Lovable project URL and documented automated test report workflow.
 - **PRD Update**: Added implementation and non-functional quality notes for timestamped test/coverage artifacts.
+- **Savings Goal Cards and Dashboard Snapshot**: Goal cards now surface pace status, required-this-period, suggested deadline actions, and history pacing context; dashboard snapshot rows now show pace/urgency and aggregate savings progress.
+- **Financial Health and Insights**: Health score now rewards active savings planning, on-pace behavior, completed goals, and budget-to-savings transfers while penalizing behind-plan and overdue inactivity.
+- **Analytics Savings Visibility**: Analytics now treats `Savings` as a permanent category, adds expense/savings/both chart modes, shows savings milestone markers, and surfaces monthly savings-rate insight.
 
 ---
 

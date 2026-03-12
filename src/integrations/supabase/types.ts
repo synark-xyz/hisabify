@@ -172,6 +172,7 @@ export type Database = {
           note: string | null
           notify_before_days: number
           recurring_interval: string | null
+          savings_goal_id: string | null
           status: string
           title: string
           updated_at: string
@@ -188,6 +189,7 @@ export type Database = {
           note?: string | null
           notify_before_days?: number
           recurring_interval?: string | null
+          savings_goal_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -204,6 +206,7 @@ export type Database = {
           note?: string | null
           notify_before_days?: number
           recurring_interval?: string | null
+          savings_goal_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -215,6 +218,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reminders_savings_goal_id_fkey"
+            columns: ["savings_goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
             referencedColumns: ["id"]
           },
         ]
@@ -457,48 +467,87 @@ export type Database = {
       }
       savings_goals: {
         Row: {
+          archived_at: string | null
+          auto_contribute_amount: number | null
+          auto_contribute_enabled: boolean
+          auto_contribute_frequency: string | null
+          auto_remind: boolean
           color: string | null
+          completed_at: string | null
           created_at: string
           current_amount: number
           deadline: string | null
           icon: string | null
           id: string
+          linked_budget_id: string | null
           name: string
+          plan_frequency: string | null
+          plan_start_date: string | null
+          reserve_amount: number
           target_amount: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
+          auto_contribute_amount?: number | null
+          auto_contribute_enabled?: boolean
+          auto_contribute_frequency?: string | null
+          auto_remind?: boolean
           color?: string | null
+          completed_at?: string | null
           created_at?: string
           current_amount?: number
           deadline?: string | null
           icon?: string | null
           id?: string
+          linked_budget_id?: string | null
           name: string
+          plan_frequency?: string | null
+          plan_start_date?: string | null
+          reserve_amount?: number
           target_amount: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          archived_at?: string | null
+          auto_contribute_amount?: number | null
+          auto_contribute_enabled?: boolean
+          auto_contribute_frequency?: string | null
+          auto_remind?: boolean
           color?: string | null
+          completed_at?: string | null
           created_at?: string
           current_amount?: number
           deadline?: string | null
           icon?: string | null
           id?: string
+          linked_budget_id?: string | null
           name?: string
+          plan_frequency?: string | null
+          plan_start_date?: string | null
+          reserve_amount?: number
           target_amount?: number
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "savings_goals_linked_budget_id_fkey"
+            columns: ["linked_budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
           amount: number
           amount_converted: number | null
           amount_original: number | null
+          budget_id: string | null
           card_id: string | null
           category_id: string | null
           created_at: string
@@ -512,6 +561,7 @@ export type Database = {
           note: string | null
           rate_timestamp: string | null
           receipt_url: string | null
+          savings_goal_id: string | null
           type: string
           user_id: string
         }
@@ -519,6 +569,7 @@ export type Database = {
           amount: number
           amount_converted?: number | null
           amount_original?: number | null
+          budget_id?: string | null
           card_id?: string | null
           category_id?: string | null
           created_at?: string
@@ -532,6 +583,7 @@ export type Database = {
           note?: string | null
           rate_timestamp?: string | null
           receipt_url?: string | null
+          savings_goal_id?: string | null
           type?: string
           user_id: string
         }
@@ -539,6 +591,7 @@ export type Database = {
           amount?: number
           amount_converted?: number | null
           amount_original?: number | null
+          budget_id?: string | null
           card_id?: string | null
           category_id?: string | null
           created_at?: string
@@ -552,10 +605,18 @@ export type Database = {
           note?: string | null
           rate_timestamp?: string | null
           receipt_url?: string | null
+          savings_goal_id?: string | null
           type?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budgets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_card_id_fkey"
             columns: ["card_id"]
@@ -568,6 +629,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_savings_goal_id_fkey"
+            columns: ["savings_goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
             referencedColumns: ["id"]
           },
         ]

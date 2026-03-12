@@ -117,7 +117,7 @@ chmod +x scripts/managed-dev-server.js
 | `npm run dev` | Regular Vite dev server (no limit) |
 | `npm run dev:managed` | Managed dev server (max 2) |
 | `npm run dev:staging:ngrok` | Clean old servers, run Vite on `8181` (strict), and start ngrok tunnel |
-| `npm run dev:staging:ngrok:hilton` | Run on `8181` and bind ngrok to `https://hilton-irate-jovita.ngrok-free.dev` |
+| `npm run dev:staging:ngrok:hilton` | Run on `8181`, bind ngrok to `https://hilton-irate-jovita.ngrok-free.dev`, and load Vite `production` env files (`.env.production` / `.env.production.local`) |
 | `npm run cap:dev:android` | **Managed dev + Android (max 2)** ⭐ Default |
 | `npm run cap:dev:ios` | **Managed dev + iOS (max 2)** ⭐ Default |
 | `npm run cap:dev:android:unmanaged` | Regular dev + Android (no limit) |

@@ -116,8 +116,13 @@ async function hasNgrok() {
   }
 }
 
-function startVite(port) {
-  const vite = spawn('npx', ['vite', '--host', '0.0.0.0', '--port', String(port), '--strictPort'], {
+function startVite(port, mode) {
+  const viteArgs = ['vite', '--host', '0.0.0.0', '--port', String(port), '--strictPort'];
+  if (mode) {
+    viteArgs.push('--mode', mode);
+  }
+
+  const vite = spawn('npx', viteArgs, {
     stdio: 'inherit',
     shell: false,
     env: {
@@ -158,6 +163,7 @@ async function main() {
   const port = Number.parseInt(args.port || String(DEFAULT_PORT), 10);
   const enableNgrok = parseBoolean(args.ngrok, false);
   const ngrokUrl = typeof args.url === 'string' ? args.url.trim() : '';
+  const mode = typeof args.mode === 'string' ? args.mode.trim() : '';
 
   if (!Number.isInteger(port) || port <= 0) {
     throw new Error(`Invalid port: ${args.port}`);
@@ -167,8 +173,8 @@ async function main() {
   await cleanupManagedLockFile();
   await cleanupPorts();
 
-  console.log(`🚀 Starting Vite on port ${port}...`);
-  const vite = startVite(port);
+  console.log(`🚀 Starting Vite on port ${port}${mode ? ` using Vite mode "${mode}"` : ''}...`);
+  const vite = startVite(port, mode || undefined);
   const viteReady = await waitForPort(port);
 
   if (!viteReady) {

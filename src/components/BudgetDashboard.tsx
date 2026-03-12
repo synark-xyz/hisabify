@@ -374,7 +374,7 @@ export function BudgetDashboard() {
         initialBudgetId={payingBudget?.id ?? null}
       />
 
-      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} source="budget_limit" />
     </div>
   );
 }

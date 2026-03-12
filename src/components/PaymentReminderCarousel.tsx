@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle, WarningCircle, Calendar } from '@phosphor-icons/react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/useCurrency';
 import { PaymentReminder } from '@/types';
 import { format, differenceInDays, isPast, isToday } from 'date-fns';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
 import { formatReminderAmount } from '@/lib/reminderAmount';
+import { getSavingsReminderLabel, isSavingsReminder } from '@/lib/savings';
 
 interface PaymentReminderCarouselProps {
   reminders: PaymentReminder[];
@@ -13,6 +15,7 @@ interface PaymentReminderCarouselProps {
 
 export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselProps) {
   const { formatAmount } = useCurrency();
+  const navigate = useNavigate();
   const pendingReminders = reminders.filter((reminder) => {
     const status = reminder.status as string;
     return status === 'upcoming' || status === 'pending';
@@ -98,23 +101,40 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
         {displayReminders.map((reminder, index) => {
           const status = getReminderStatus(reminder);
           const Icon = status.icon;
+          const savingsReminder = isSavingsReminder(reminder);
+          const reminderTitle = savingsReminder
+            ? getSavingsReminderLabel(reminder, formatAmount)
+            : reminder.title;
 
           return (
             <motion.div
               key={`${reminder.id}-${index}`}
+              role="button"
+              tabIndex={0}
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-2xl border bg-card/50 backdrop-blur-md shadow-sm min-w-[180px]',
-                status.borderColor
+                savingsReminder ? 'border-emerald-500/20 bg-emerald-500/5' : status.borderColor
               )}
               whileHover={{ scale: 1.02 }}
+              onClick={() => {
+                if (reminder.savings_goal_id) {
+                  navigate(`/savings?goal=${reminder.savings_goal_id}&tab=manual`);
+                }
+              }}
+              onKeyDown={(event) => {
+                if ((event.key === 'Enter' || event.key === ' ') && reminder.savings_goal_id) {
+                  event.preventDefault();
+                  navigate(`/savings?goal=${reminder.savings_goal_id}&tab=manual`);
+                }
+              }}
             >
-              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', status.bgColor)}>
-                <Icon className={cn('w-5 h-5', status.color)} weight="duotone" />
+              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', savingsReminder ? 'bg-emerald-500/15' : status.bgColor)}>
+                <Icon className={cn('w-5 h-5', savingsReminder ? 'text-emerald-600' : status.color)} weight="duotone" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground truncate">{reminder.title}</p>
+                <p className="text-sm font-bold text-foreground truncate">{reminderTitle}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={cn('text-[10px] font-bold tracking-wider', status.color)}>
+                  <span className={cn('text-[10px] font-bold tracking-wider', savingsReminder ? 'text-emerald-600' : status.color)}>
                     {status.label}
                   </span>
                 </div>

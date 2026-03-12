@@ -1,4 +1,4 @@
-import { addWeeks, addMonths, addYears } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears } from 'date-fns';
 import { toReminderDisplayDate, toReminderDueDateIso } from './reminderDate';
 
 /**
@@ -6,12 +6,12 @@ import { toReminderDisplayDate, toReminderDueDateIso } from './reminderDate';
  * Uses reminderDate utilities to avoid timezone issues
  *
  * @param currentDueDate - ISO string of current due date
- * @param interval - Recurring interval (weekly, monthly, yearly)
+ * @param interval - Recurring interval (daily, weekly, monthly, yearly)
  * @returns ISO string of next due date
  */
 export function calculateNextDueDate(
   currentDueDate: string,
-  interval: 'weekly' | 'monthly' | 'yearly'
+  interval: 'daily' | 'weekly' | 'monthly' | 'yearly'
 ): string {
   // Convert to local date (calendar day)
   const currentDate = toReminderDisplayDate(currentDueDate);
@@ -19,6 +19,9 @@ export function calculateNextDueDate(
   // Calculate next occurrence based on interval
   let nextDate: Date;
   switch (interval) {
+    case 'daily':
+      nextDate = addDays(currentDate, 1);
+      break;
     case 'weekly':
       nextDate = addWeeks(currentDate, 1);
       break;

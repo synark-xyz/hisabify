@@ -471,6 +471,7 @@ export type Database = {
           auto_contribute_amount: number | null
           auto_contribute_enabled: boolean
           auto_contribute_frequency: string | null
+          auto_remind: boolean
           color: string | null
           completed_at: string | null
           created_at: string
@@ -480,6 +481,8 @@ export type Database = {
           id: string
           linked_budget_id: string | null
           name: string
+          plan_frequency: string | null
+          plan_start_date: string | null
           reserve_amount: number
           target_amount: number
           updated_at: string
@@ -490,6 +493,7 @@ export type Database = {
           auto_contribute_amount?: number | null
           auto_contribute_enabled?: boolean
           auto_contribute_frequency?: string | null
+          auto_remind?: boolean
           color?: string | null
           completed_at?: string | null
           created_at?: string
@@ -499,6 +503,8 @@ export type Database = {
           id?: string
           linked_budget_id?: string | null
           name: string
+          plan_frequency?: string | null
+          plan_start_date?: string | null
           reserve_amount?: number
           target_amount: number
           updated_at?: string
@@ -509,6 +515,7 @@ export type Database = {
           auto_contribute_amount?: number | null
           auto_contribute_enabled?: boolean
           auto_contribute_frequency?: string | null
+          auto_remind?: boolean
           color?: string | null
           completed_at?: string | null
           created_at?: string
@@ -518,6 +525,8 @@ export type Database = {
           id?: string
           linked_budget_id?: string | null
           name?: string
+          plan_frequency?: string | null
+          plan_start_date?: string | null
           reserve_amount?: number
           target_amount?: number
           updated_at?: string

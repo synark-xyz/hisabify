@@ -2,6 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { calculateNextDueDate } from '../recurringReminders';
 
 describe('calculateNextDueDate', () => {
+  it('should add 1 day for daily interval', () => {
+    const current = '2026-01-15T12:00:00.000Z';
+    const next = calculateNextDueDate(current, 'daily');
+    expect(next).toBe('2026-01-16T12:00:00.000Z');
+  });
+
   it('should add 7 days for weekly interval', () => {
     const current = '2026-01-15T12:00:00.000Z';
     const next = calculateNextDueDate(current, 'weekly');

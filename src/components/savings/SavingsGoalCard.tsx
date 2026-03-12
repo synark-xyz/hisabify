@@ -1,4 +1,5 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -23,8 +24,9 @@ import {
   Target,
   Trash2,
   Wallet,
+  PartyPopper,
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
 import { useCurrency } from '@/hooks/useCurrency';
 import { PremiumGuard } from '@/components/PremiumGuard';
@@ -44,6 +46,7 @@ interface SavingsGoalCardProps {
   onRedeployToBalance: (id: string, amount: number) => void;
   onRedeployToGoal: (sourceGoalId: string, destinationGoalId: string, amount: number) => void;
   onBudgetTransfer: (budgetId: string, goalId: string, amount: number) => void;
+  onUpdateDeadline: (goalId: string, deadline: string) => void;
   defaultFundingTab?: 'manual' | 'budget';
   defaultBudgetId?: string | null;
   autoOpenFunding?: boolean;
@@ -60,6 +63,7 @@ export function SavingsGoalCard({
   onRedeployToBalance,
   onRedeployToGoal,
   onBudgetTransfer,
+  onUpdateDeadline,
   defaultFundingTab,
   defaultBudgetId,
   autoOpenFunding = false,
@@ -67,22 +71,27 @@ export function SavingsGoalCard({
   const [showFunding, setShowFunding] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRedeploy, setShowRedeploy] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [redeployTargetId, setRedeployTargetId] = useState<string>('');
   const [redeployAmount, setRedeployAmount] = useState(goal.availableToRedeploy.toString());
   const { formatAmount } = useCurrency();
+  const previousStatusRef = useRef(goal.status);
+  const celebrationTimerRef = useRef<number | null>(null);
 
   const statusColors = {
     completed: 'text-green-500',
-    on_track: 'text-accent',
-    at_risk: 'text-amber-500',
-    behind: 'text-rose-500',
+    on_track: 'text-green-600',
+    ahead: 'text-green-600',
+    behind: 'text-amber-600',
+    no_plan: 'text-muted-foreground',
   };
 
   const statusLabels = {
     completed: 'Completed',
     on_track: 'On Track',
-    at_risk: 'At Risk',
+    ahead: 'Ahead',
     behind: 'Behind',
+    no_plan: 'No Plan',
   };
 
   const chartData = goal.contributionHistory
@@ -90,13 +99,44 @@ export function SavingsGoalCard({
     .map((entry) => ({
       date: format(new Date(entry.date), 'MMM d'),
       total: entry.runningTotal,
+      target: goal.requiredPerPeriod,
     }));
+
+  const sparklineData = goal.sparkline.map((entry) => ({
+    label: entry.label,
+    amount: entry.amount,
+    target: entry.target,
+  }));
+
+  const paceToneClass = goal.paceStatus === 'behind'
+    ? 'text-amber-600 bg-amber-500/10 border-amber-500/20'
+    : 'text-green-600 bg-emerald-500/10 border-emerald-500/20';
 
   useEffect(() => {
     if (autoOpenFunding) {
       setShowFunding(true);
     }
   }, [autoOpenFunding]);
+
+  useEffect(() => {
+    if (previousStatusRef.current !== 'completed' && goal.status === 'completed') {
+      setShowCelebration(true);
+      if (celebrationTimerRef.current) {
+        window.clearTimeout(celebrationTimerRef.current);
+      }
+      celebrationTimerRef.current = window.setTimeout(() => {
+        setShowCelebration(false);
+      }, 2200);
+    }
+
+    previousStatusRef.current = goal.status;
+
+    return () => {
+      if (celebrationTimerRef.current) {
+        window.clearTimeout(celebrationTimerRef.current);
+      }
+    };
+  }, [goal.status]);
 
   return (
     <>
@@ -113,9 +153,11 @@ export function SavingsGoalCard({
               <div>
                 <CardTitle className="text-sm font-black uppercase tracking-tight">{goal.name}</CardTitle>
                 <div className="flex items-center gap-2">
-                  <span className={cn('text-[10px] font-black uppercase tracking-widest', statusColors[goal.status])}>
-                    {statusLabels[goal.status]}
-                  </span>
+                  {goal.status !== 'no_plan' && (
+                    <span className={cn('text-[10px] font-black uppercase tracking-widest', statusColors[goal.status])}>
+                      {statusLabels[goal.status]}
+                    </span>
+                  )}
                   {goal.isUrgent && (
                     <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600">
                       Due Soon
@@ -240,20 +282,97 @@ export function SavingsGoalCard({
                     )}
                   </div>
 
-                  <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Projected completion</span>
-                      <span className="font-semibold text-foreground">{goal.projectedCompletionLabel || 'Needs more data'}</span>
+                  {goal.status === 'completed' ? (
+                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Ready to redeploy</span>
+                        <span className="font-semibold text-foreground">{formatAmount(goal.availableToRedeploy)}</span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between">
+                        <span className="text-muted-foreground">Completed</span>
+                        <span className="font-semibold text-foreground">
+                          {format(new Date(goal.completed_at || goal.updated_at), 'MMM d, yyyy')}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-1 flex items-center justify-between">
-                      <span className="text-muted-foreground">Auto-contribute</span>
-                      <span className="font-semibold text-foreground">
-                        {goal.auto_contribute_enabled
-                          ? `${formatAmount(goal.auto_contribute_amount || 0)} / ${goal.auto_contribute_frequency}`
-                          : 'Off'}
-                      </span>
+                  ) : (
+                    <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Projected completion</span>
+                        <span className="font-semibold text-foreground">
+                          {goal.suggestedDeadline
+                            ? format(new Date(goal.suggestedDeadline), 'MMM d, yyyy')
+                            : goal.projectedCompletionLabel || 'Needs more data'}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between">
+                        <span className="text-muted-foreground">Auto-contribute</span>
+                        <span className="font-semibold text-foreground">
+                          {goal.auto_contribute_enabled
+                            ? `${formatAmount(goal.auto_contribute_amount || 0)} / ${goal.auto_contribute_frequency}`
+                            : 'Off'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {goal.planEnabled && goal.status !== 'completed' && (
+                    <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/10 p-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Required this {goal.periodLabel}</span>
+                        <span className="font-semibold text-foreground">{formatAmount(goal.requiredPerPeriod)}</span>
+                      </div>
+
+                      {goal.paceStatus !== 'completed' && (
+                        <div className={cn('rounded-xl border px-3 py-2', paceToneClass)}>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold">
+                              {goal.paceStatus === 'ahead' ? 'Ahead of schedule' : goal.paceStatus === 'behind' ? 'Behind pace' : 'On track'}
+                            </span>
+                            <span>{formatAmount(goal.currentPeriodAmount)}</span>
+                          </div>
+                          <p className="mt-1 text-[11px]">
+                            {goal.paceStatus === 'behind'
+                              ? `${formatAmount(goal.requiredPerPeriod)} needed this ${goal.periodLabel}.`
+                              : `${formatAmount(goal.requiredPerPeriod)} due this ${goal.periodLabel}.`}
+                          </p>
+                        </div>
+                      )}
+
+                      {sparklineData.length > 0 && (
+                        <div className="h-20">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={sparklineData}>
+                              <XAxis dataKey="label" hide />
+                              <YAxis hide />
+                              <Tooltip
+                                formatter={(value: number, name: string) => [formatAmount(value), name === 'target' ? 'Required' : 'Saved']}
+                                labelFormatter={(label) => label}
+                              />
+                              <ReferenceLine y={goal.requiredPerPeriod} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
+                              <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} />
+                              <Line type="monotone" dataKey="amount" stroke={goal.color} strokeWidth={2} dot={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+
+                      {goal.paceStatus === 'behind' && goal.suggestedDeadline && (
+                        <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-amber-700">
+                          <span>At this pace: {format(new Date(goal.suggestedDeadline), 'MMM d, yyyy')}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 rounded-lg px-2 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                            onClick={() => onUpdateDeadline(goal.id, goal.suggestedDeadline!)}
+                          >
+                            Update Deadline
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -267,6 +386,12 @@ export function SavingsGoalCard({
                         <XAxis dataKey="date" hide />
                         <YAxis hide />
                         <Tooltip />
+                        {goal.planEnabled && goal.requiredPerPeriod > 0 && (
+                          <ReferenceLine y={goal.requiredPerPeriod} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
+                        )}
+                        {goal.planEnabled && goal.requiredPerPeriod > 0 && (
+                          <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} />
+                        )}
                         <Line type="monotone" dataKey="total" stroke={goal.color} strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
@@ -295,7 +420,7 @@ export function SavingsGoalCard({
 
                   {goal.missedMonths.length > 0 && (
                     <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700">
-                      Missed months: {goal.missedMonths.join(', ')}
+                      Missed {goal.periodLabelPlural}: {goal.missedMonths.join(', ')}
                     </div>
                   )}
                 </div>
@@ -304,6 +429,56 @@ export function SavingsGoalCard({
           </Tabs>
         </CardContent>
       </Card>
+
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            className="pointer-events-none fixed inset-0 z-[10050] flex items-center justify-center overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px]" />
+            {[...Array(14)].map((_, index) => (
+              <motion.span
+                key={index}
+                className="absolute h-3 w-3 rounded-full"
+                style={{
+                  backgroundColor: index % 3 === 0 ? goal.color : index % 2 === 0 ? '#10B981' : '#60A5FA',
+                  left: `${8 + (index * 6)}%`,
+                  top: `${18 + (index % 5) * 8}%`,
+                }}
+                initial={{ y: -40, opacity: 0, scale: 0.4 }}
+                animate={{
+                  y: [0, 220 + (index % 3) * 40],
+                  x: [0, index % 2 === 0 ? 40 : -40],
+                  opacity: [0, 1, 1, 0],
+                  scale: [0.4, 1, 0.8],
+                  rotate: [0, 180, 320],
+                }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.8, ease: 'easeOut', delay: index * 0.03 }}
+              />
+            ))}
+            <motion.div
+              className="relative z-10 rounded-3xl border border-emerald-500/30 bg-card/90 px-8 py-7 text-center shadow-2xl"
+              initial={{ scale: 0.88, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: -12 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+            >
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+                <PartyPopper className="h-8 w-8" />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-emerald-500">Goal Completed</p>
+              <h3 className="mt-2 text-2xl font-black text-foreground">{goal.name}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {formatAmount(goal.current_amount)} saved. Archive it or redeploy the funds.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <SavingsFundingDialog
         open={showFunding}

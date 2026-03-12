@@ -104,6 +104,15 @@ npm run build
 
 Use staging after local validation passes.
 
+### Special case: Hilton ngrok staging run uses production app env
+
+For `npm run dev:staging:ngrok:hilton` only, the frontend now starts Vite in `production` mode. That means Supabase client env values come from:
+
+- `.env.production`
+- `.env.production.local`
+
+This only affects that Hilton ngrok command. Regular local dev and other staging commands still use their normal env files.
+
 ### Link the staging project
 
 If not already linked:

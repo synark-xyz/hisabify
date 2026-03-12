@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronDown } from "lucide-react";
+import { format, isBefore, startOfDay } from "date-fns";
 import { MobileDialog } from "@/components/ui/mobile-dialog";
 import {
   Form,
@@ -17,6 +18,9 @@ import { Button } from "@/components/ui/button";
 import { DateSelect } from "@/components/ui/date-select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
 import { useCurrency, currencyData } from "@/hooks/useCurrency";
@@ -24,6 +28,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 import { useBudgetContext } from "@/hooks/useBudgetContext";
 import { PremiumGuard } from "@/components/PremiumGuard";
+import { calculateSavingsPace, type SavingsPlanFrequency } from "@/lib/savings";
 
 const goalSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -37,6 +42,9 @@ const goalSchema = z.object({
   auto_contribute_enabled: z.boolean().default(false),
   auto_contribute_amount: z.coerce.number().min(0, "Cannot be negative").nullable().default(null),
   auto_contribute_frequency: z.enum(["weekly", "monthly"]).nullable().default(null),
+  plan_enabled: z.boolean().default(false),
+  plan_frequency: z.enum(["daily", "weekly", "monthly"]).nullable().default(null),
+  auto_remind: z.boolean().default(false),
 });
 
 type GoalFormValues = z.infer<typeof goalSchema>;
@@ -69,6 +77,7 @@ export function AddSavingsGoalModal({
   const { isPremium } = useSubscription();
   const { budgets } = useBudgetContext();
   const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
 
   // Handle keyboard on mobile
   useKeyboardHandler(open);
@@ -86,11 +95,46 @@ export function AddSavingsGoalModal({
       auto_contribute_enabled: false,
       auto_contribute_amount: null,
       auto_contribute_frequency: null,
+      plan_enabled: false,
+      plan_frequency: null,
+      auto_remind: false,
     },
   });
 
+  const planEnabled = form.watch("plan_enabled");
+  const planFrequency = form.watch("plan_frequency");
+  const deadline = form.watch("deadline");
+  const targetAmount = form.watch("target_amount");
+  const currentAmount = form.watch("current_amount");
+  const autoContributeEnabled = form.watch("auto_contribute_enabled");
+  const goalName = form.watch("name");
+  const amountRemaining = Math.max(Number(targetAmount || 0) - Number(editingGoal?.current_amount ?? currentAmount ?? 0), 0);
+  const deadlineInPast = Boolean(deadline && isBefore(startOfDay(deadline), startOfDay(new Date())));
+
+  const pacePreview = useMemo(() => {
+    if (!planEnabled || !planFrequency || !deadline || deadlineInPast) {
+      return null;
+    }
+
+    return calculateSavingsPace({
+      target_amount: Number(targetAmount || 0),
+      current_saved: Number(editingGoal?.current_amount ?? currentAmount ?? 0),
+      deadline: deadline.toISOString(),
+      created_at: editingGoal?.created_at || new Date().toISOString(),
+      completed_at: editingGoal?.completed_at || null,
+      plan_frequency: planFrequency,
+      plan_start_date: editingGoal?.plan_start_date || editingGoal?.created_at || new Date().toISOString(),
+      contribution_history: editingGoal
+        ? editingGoal.contributionHistory
+            .filter((entry) => entry.type === "contribution")
+            .map((entry) => ({ amount: entry.amount, date: entry.date }))
+        : [],
+    });
+  }, [currentAmount, deadline, deadlineInPast, editingGoal, planEnabled, planFrequency, targetAmount]);
+
   useEffect(() => {
     if (editingGoal) {
+      const editingPlanEnabled = Boolean(editingGoal.plan_frequency);
       form.reset({
         name: editingGoal.name,
         target_amount: editingGoal.target_amount,
@@ -103,7 +147,11 @@ export function AddSavingsGoalModal({
         auto_contribute_enabled: editingGoal.auto_contribute_enabled,
         auto_contribute_amount: editingGoal.auto_contribute_amount,
         auto_contribute_frequency: editingGoal.auto_contribute_frequency,
+        plan_enabled: editingPlanEnabled,
+        plan_frequency: editingGoal.plan_frequency,
+        auto_remind: editingGoal.auto_remind,
       });
+      setPlanOpen(editingPlanEnabled);
     } else {
       form.reset({
         name: "",
@@ -116,12 +164,58 @@ export function AddSavingsGoalModal({
         auto_contribute_enabled: false,
         auto_contribute_amount: null,
         auto_contribute_frequency: null,
+        plan_enabled: false,
+        plan_frequency: null,
+        auto_remind: false,
       });
+      setPlanOpen(false);
     }
   }, [editingGoal, form, currency]);
 
+  useEffect(() => {
+    if (!planEnabled) {
+      form.setValue("plan_frequency", null);
+      form.setValue("auto_remind", false);
+    } else if (!planFrequency) {
+      form.setValue("plan_frequency", "monthly");
+    }
+  }, [form, planEnabled, planFrequency]);
+
+  useEffect(() => {
+    if (!autoContributeEnabled || !pacePreview || pacePreview.required_per_period <= 0) {
+      return;
+    }
+
+    const currentAutoAmount = form.getValues("auto_contribute_amount");
+    const currentAutoFrequency = form.getValues("auto_contribute_frequency");
+
+    if (!currentAutoAmount || currentAutoAmount <= 0) {
+      form.setValue("auto_contribute_amount", pacePreview.required_per_period);
+    }
+
+    if (!currentAutoFrequency && (planFrequency === "weekly" || planFrequency === "monthly")) {
+      form.setValue("auto_contribute_frequency", planFrequency);
+    }
+  }, [autoContributeEnabled, form, pacePreview, planFrequency]);
+
   const handleSubmit = (data: GoalFormValues) => {
-    onSubmit(data);
+    if (data.plan_enabled && !data.deadline) {
+      form.setError("deadline", { type: "manual", message: "Target date is required for a savings schedule" });
+      setPlanOpen(true);
+      return;
+    }
+
+    if (data.plan_enabled && data.deadline && isBefore(startOfDay(data.deadline), startOfDay(new Date()))) {
+      form.setError("deadline", { type: "manual", message: "Choose a future target date for the savings schedule" });
+      setPlanOpen(true);
+      return;
+    }
+
+    onSubmit({
+      ...data,
+      plan_frequency: data.plan_enabled ? data.plan_frequency : null,
+      auto_remind: data.plan_enabled ? data.auto_remind : false,
+    });
     onOpenChange(false);
     form.reset();
   };
@@ -264,9 +358,14 @@ export function AddSavingsGoalModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Target Date (Optional)
+                      {planEnabled ? "Target Date" : "Target Date (Optional)"}
                     </FormLabel>
                     <DateSelect value={field.value} onChange={field.onChange} />
+                    {planEnabled && (
+                      <p className="text-xs text-muted-foreground">
+                        Required to calculate the savings schedule.
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -323,6 +422,167 @@ export function AddSavingsGoalModal({
                 )}
               />
 
+              <Collapsible open={planOpen} onOpenChange={setPlanOpen}>
+                <div className="rounded-2xl border border-border/50 p-4">
+                  <CollapsibleTrigger asChild>
+                    <button type="button" className="flex w-full items-center justify-between text-left">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          Savings Plan
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Set a savings schedule
+                        </p>
+                      </div>
+                      <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", planOpen && "rotate-180")} />
+                    </button>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent className="space-y-4 pt-4">
+                    <FormField
+                      control={form.control}
+                      name="plan_enabled"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-xl bg-muted/30 px-3 py-2">
+                          <div>
+                            <FormLabel className="text-sm font-medium text-foreground">
+                              Set a savings schedule
+                            </FormLabel>
+                            <p className="text-xs text-muted-foreground">
+                              Track the required amount per period from your target date.
+                            </p>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {planEnabled && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="plan_frequency"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                                Frequency
+                              </FormLabel>
+                              <FormControl>
+                                <ToggleGroup
+                                  type="single"
+                                  value={field.value || ""}
+                                  onValueChange={(value) => field.onChange((value || null) as SavingsPlanFrequency | null)}
+                                  className="grid grid-cols-3 rounded-xl bg-muted/30 p-1"
+                                >
+                                  <ToggleGroupItem value="daily" className="rounded-lg text-xs font-bold uppercase tracking-wider">
+                                    Daily
+                                  </ToggleGroupItem>
+                                  <ToggleGroupItem value="weekly" className="rounded-lg text-xs font-bold uppercase tracking-wider">
+                                    Weekly
+                                  </ToggleGroupItem>
+                                  <ToggleGroupItem value="monthly" className="rounded-lg text-xs font-bold uppercase tracking-wider">
+                                    Monthly
+                                  </ToggleGroupItem>
+                                </ToggleGroup>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="rounded-xl bg-muted/20 p-3 text-sm">
+                          {!deadline ? (
+                            <p className="text-muted-foreground">
+                              Set a target date to enable scheduling.
+                            </p>
+                          ) : deadlineInPast ? (
+                            <p className="text-amber-600">
+                              Choose a future target date to calculate a valid savings plan.
+                            </p>
+                          ) : pacePreview ? (
+                            <div className="space-y-2">
+                              <p className="font-medium text-foreground">
+                                Save <span className="font-semibold">
+                                  {(currencyData[currency]?.symbol || "$")}{pacePreview.required_per_period.toFixed(2)}
+                                </span>{' '}
+                                every {pacePreview.period_label} to reach {goalName || "this goal"} by {format(deadline, "MMM d, yyyy")}.
+                              </p>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="rounded-lg bg-background/70 px-3 py-2">
+                                  <p className="text-muted-foreground">Remaining to save</p>
+                                  <p className="font-semibold text-foreground">
+                                    {(currencyData[currency]?.symbol || "$")}{amountRemaining.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg bg-background/70 px-3 py-2">
+                                  <p className="text-muted-foreground">Periods remaining</p>
+                                  <p className="font-semibold text-foreground">
+                                    {pacePreview.periods_remaining} {pacePreview.period_label_plural}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {editingGoal && (
+                                <div className="rounded-lg bg-background/70 px-3 py-2 text-xs">
+                                  <p className="text-muted-foreground">
+                                    Current pace
+                                  </p>
+                                  <p className="font-semibold text-foreground">
+                                    {(currencyData[currency]?.symbol || "$")}{pacePreview.current_pace.toFixed(2)} per {pacePreview.period_label}
+                                  </p>
+                                  {pacePreview.status === "behind" && pacePreview.suggested_deadline && (
+                                    <p className="mt-1 text-amber-600">
+                                      At this pace, you would finish around {format(new Date(pacePreview.suggested_deadline), "MMM d, yyyy")}.
+                                    </p>
+                                  )}
+                                  {pacePreview.status === "on_track" && (
+                                    <p className="mt-1 text-emerald-600">
+                                      This goal is currently on track.
+                                    </p>
+                                  )}
+                                  {pacePreview.status === "ahead" && (
+                                    <p className="mt-1 text-emerald-600">
+                                      This goal is ahead of schedule.
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <FormField
+                          control={form.control}
+                          name="auto_remind"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-xl bg-muted/30 px-3 py-2">
+                              <div>
+                                <FormLabel className="text-sm font-medium text-foreground">
+                                  Auto-remind
+                                </FormLabel>
+                                <p className="text-xs text-muted-foreground">
+                                  Create a recurring reminder for the required amount.
+                                </p>
+                              </div>
+                              <FormControl>
+                                <Switch checked={field.value} onCheckedChange={field.onChange} disabled={!deadline || !planFrequency || deadlineInPast} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        {pacePreview && (
+                          <p className="text-xs text-muted-foreground">
+                            Reminder label: <span className="font-medium text-foreground">Savings: {goalName || "Goal Name"}</span>
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+
               <PremiumGuard featureName="Savings Automation">
                 <div className="space-y-4 rounded-2xl border border-border/50 p-4">
                   <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -338,11 +598,9 @@ export function AddSavingsGoalModal({
                           Contribute automatically
                         </FormLabel>
                         <FormControl>
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4"
+                          <Switch
                             checked={field.value}
-                            onChange={(event) => field.onChange(event.target.checked)}
+                            onCheckedChange={field.onChange}
                           />
                         </FormControl>
                       </FormItem>

@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { differenceInDays, startOfMonth } from 'date-fns';
 import { toast } from 'sonner';
@@ -7,17 +8,19 @@ import { useCurrency } from './useCurrency';
 import type { Transaction } from '@/types';
 import {
   buildMissedSavingsMonths,
+  buildMissedSavingsPeriods,
+  calculateSavingsPace,
   getAverageMonthlyContribution,
   getCompletionLabel,
   getGoalProjectedMonthlyPace,
   getMonthsToTarget,
   getSavingsNetAmount,
-  getSavingsPaceStatus,
-  projectSavingsCompletionDate,
   recordBudgetLeftoverTransfer,
   recordSavingsContribution,
   recordSavingsReturn,
   redeploySavingsBetweenGoals,
+  type SavingsPaceStatus,
+  type SavingsPlanFrequency,
 } from '@/lib/savings';
 
 export interface SavingsGoal {
@@ -38,6 +41,9 @@ export interface SavingsGoal {
   auto_contribute_enabled: boolean;
   auto_contribute_amount: number | null;
   auto_contribute_frequency: 'weekly' | 'monthly' | null;
+  plan_frequency: SavingsPlanFrequency | null;
+  plan_start_date: string | null;
+  auto_remind: boolean;
 }
 
 export interface SavingsContribution {
@@ -53,9 +59,11 @@ export interface SavingsGoalWithProgress extends SavingsGoal {
   percentage: number;
   remaining: number;
   daysLeft: number | null;
-  status: 'on_track' | 'behind' | 'completed' | 'at_risk';
+  status: SavingsPaceStatus;
+  paceStatus: SavingsPaceStatus;
   isArchived: boolean;
   isUrgent: boolean;
+  planEnabled: boolean;
   contributionHistory: SavingsContribution[];
   thisMonthContribution: number;
   projectedCompletionDate: string | null;
@@ -66,57 +74,25 @@ export interface SavingsGoalWithProgress extends SavingsGoal {
   missedMonths: string[];
   hasContributedThisMonth: boolean;
   availableToRedeploy: number;
-}
-
-async function upsertAutoContributionReminder(params: {
-  userId: string;
-  goal: Pick<SavingsGoal, 'id' | 'name'>;
-  amount: number | null;
-  frequency: 'weekly' | 'monthly' | null;
-  enabled: boolean;
-  currency: string;
-}) {
-  const existing = await supabase
-    .from('payment_reminders')
-    .select('id')
-    .eq('user_id', params.userId)
-    .eq('savings_goal_id', params.goal.id)
-    .limit(1)
-    .maybeSingle();
-
-  if (!params.enabled || !params.amount || !params.frequency) {
-    if (existing.data?.id) {
-      await supabase.from('payment_reminders').delete().eq('id', existing.data.id);
-    }
-    return;
-  }
-
-  const payload = {
-    user_id: params.userId,
-    title: `Savings: ${params.goal.name}`,
-    amount: params.amount,
-    currency: params.currency,
-    due_date: new Date().toISOString(),
-    is_recurring: true,
-    recurring_interval: params.frequency,
-    notify_before_days: 0,
-    status: 'upcoming',
-    savings_goal_id: params.goal.id,
-    note: `Auto-contribute for ${params.goal.name}`,
-  };
-
-  if (existing.data?.id) {
-    const { error } = await supabase.from('payment_reminders').update(payload).eq('id', existing.data.id);
-    if (error) {
-      throw error;
-    }
-    return;
-  }
-
-  const { error } = await supabase.from('payment_reminders').insert(payload);
-  if (error) {
-    throw error;
-  }
+  requiredPerPeriod: number;
+  periodsRemaining: number;
+  currentPace: number;
+  currentPeriodAmount: number;
+  periodLabel: 'day' | 'week' | 'month';
+  periodLabelPlural: 'days' | 'weeks' | 'months';
+  requiredThisPeriodLabel: string | null;
+  suggestedDeadline: string | null;
+  suggestedDeadlineLabel: string | null;
+  sparkline: Array<{
+    key: string;
+    label: string;
+    amount: number;
+    target: number;
+    isCurrent: boolean;
+    isMissed: boolean;
+  }>;
+  isOnPaceThisPeriod: boolean;
+  isBehindThisPeriod: boolean;
 }
 
 async function markGoalCompleted(goalId: string): Promise<void> {
@@ -135,6 +111,136 @@ export function useSavingsGoals() {
   const { user } = useAuth();
   const { currency } = useCurrency();
   const queryClient = useQueryClient();
+
+  const syncGoalReminderById = useCallback(async (goalId: string, options?: { removeOnly?: boolean }) => {
+    if (!user?.id) {
+      return;
+    }
+
+    const existingReminder = await supabase
+      .from('payment_reminders')
+      .select('id, due_date')
+      .eq('user_id', user.id)
+      .eq('savings_goal_id', goalId)
+      .limit(1)
+      .maybeSingle();
+
+    if (options?.removeOnly) {
+      if (existingReminder.data?.id) {
+        await supabase.from('payment_reminders').delete().eq('id', existingReminder.data.id);
+      }
+      return;
+    }
+
+    const goalResult = await supabase
+      .from('savings_goals')
+      .select('*')
+      .eq('id', goalId)
+      .maybeSingle();
+
+    if (goalResult.error) {
+      throw goalResult.error;
+    }
+
+    const goal = goalResult.data as SavingsGoal | null;
+    if (!goal) {
+      if (existingReminder.data?.id) {
+        await supabase.from('payment_reminders').delete().eq('id', existingReminder.data.id);
+      }
+      return;
+    }
+
+    const shouldHaveReminder = !goal.archived_at && (
+      (goal.plan_frequency && goal.auto_remind) ||
+      (goal.auto_contribute_enabled && goal.auto_contribute_frequency)
+    );
+
+    if (!shouldHaveReminder) {
+      if (existingReminder.data?.id) {
+        await supabase.from('payment_reminders').delete().eq('id', existingReminder.data.id);
+      }
+      return;
+    }
+
+    const transactionsResult = await supabase
+      .from('transactions')
+      .select('amount, amount_converted, date, category:categories(name)')
+      .eq('user_id', user.id)
+      .eq('savings_goal_id', goal.id)
+      .order('date', { ascending: true });
+
+    if (transactionsResult.error) {
+      throw transactionsResult.error;
+    }
+
+    const contributionHistory = ((transactionsResult.data || []) as Array<{
+      amount: number;
+      amount_converted: number | null;
+      date: string;
+      category?: { name?: string } | null;
+    }>)
+      .filter((entry) => entry.category?.name === 'Savings')
+      .map((entry) => ({
+        amount: Number(entry.amount_converted || entry.amount),
+        date: entry.date,
+      }));
+
+    const currentSaved = contributionHistory.reduce((sum, entry) => sum + entry.amount, 0);
+    const pace = calculateSavingsPace({
+      target_amount: goal.target_amount,
+      current_saved: currentSaved,
+      deadline: goal.deadline,
+      created_at: goal.created_at,
+      completed_at: goal.completed_at,
+      plan_frequency: goal.plan_frequency,
+      plan_start_date: goal.plan_start_date,
+      contribution_history: contributionHistory,
+    });
+
+    const reminderAmount = goal.auto_contribute_enabled
+      ? Number(goal.auto_contribute_amount ?? pace.required_per_period)
+      : Number(pace.required_per_period);
+    const recurringInterval = goal.auto_contribute_enabled
+      ? (goal.auto_contribute_frequency || goal.plan_frequency)
+      : goal.plan_frequency;
+
+    if (!recurringInterval || reminderAmount <= 0) {
+      if (existingReminder.data?.id) {
+        await supabase.from('payment_reminders').delete().eq('id', existingReminder.data.id);
+      }
+      return;
+    }
+
+    const dueDate = existingReminder.data?.due_date
+      || new Date(goal.plan_start_date || goal.created_at).toISOString();
+
+    const payload = {
+      user_id: user.id,
+      title: `Savings: ${goal.name}`,
+      amount: reminderAmount,
+      currency,
+      due_date: dueDate,
+      is_recurring: true,
+      recurring_interval: recurringInterval,
+      notify_before_days: 0,
+      status: 'upcoming',
+      savings_goal_id: goal.id,
+      note: `Savings plan reminder for ${goal.name}`,
+    };
+
+    if (existingReminder.data?.id) {
+      const { error } = await supabase.from('payment_reminders').update(payload).eq('id', existingReminder.data.id);
+      if (error) {
+        throw error;
+      }
+      return;
+    }
+
+    const { error } = await supabase.from('payment_reminders').insert(payload);
+    if (error) {
+      throw error;
+    }
+  }, [currency, user?.id]);
 
   const { data: goals = [], isLoading, refetch } = useQuery({
     queryKey: ['savings-goals', user?.id],
@@ -174,13 +280,6 @@ export function useSavingsGoals() {
         const percentage = Math.min(Math.round((currentAmount / goal.target_amount) * 100), 100);
         const remaining = Math.max(goal.target_amount - currentAmount, 0);
         const daysLeft = goal.deadline ? differenceInDays(new Date(goal.deadline), new Date()) : null;
-        const status = getSavingsPaceStatus({
-          savedAmount: currentAmount,
-          targetAmount: goal.target_amount,
-          createdAt: goal.created_at,
-          deadline: goal.deadline,
-          completedAt: goal.completed_at,
-        });
 
         let runningTotal = 0;
         const contributionHistory = goalTransactions
@@ -200,31 +299,47 @@ export function useSavingsGoals() {
             } satisfies SavingsContribution;
           });
 
+        const savingsOnlyHistory = contributionHistory
+          .filter((entry) => entry.type === 'contribution')
+          .map((entry) => ({ amount: entry.amount, date: entry.date }));
+
+        const pace = calculateSavingsPace({
+          target_amount: goal.target_amount,
+          current_saved: currentAmount,
+          deadline: goal.deadline,
+          created_at: goal.created_at,
+          completed_at: goal.completed_at,
+          plan_frequency: goal.plan_frequency,
+          plan_start_date: goal.plan_start_date,
+          contribution_history: savingsOnlyHistory,
+        });
+
         const monthStart = startOfMonth(new Date());
-        const thisMonthContribution = contributionHistory
-          .filter((entry) => entry.type === 'contribution' && new Date(entry.date) >= monthStart)
+        const thisMonthContribution = savingsOnlyHistory
+          .filter((entry) => new Date(entry.date) >= monthStart)
           .reduce((sum, entry) => sum + entry.amount, 0);
-        const monthlyPace = getGoalProjectedMonthlyPace(
-          contributionHistory
-            .filter((entry) => entry.type === 'contribution')
-            .map((entry) => ({ amount: entry.amount, date: entry.date }))
-        );
-        const projectedCompletionDate = projectSavingsCompletionDate({
-          savedAmount: currentAmount,
-          targetAmount: goal.target_amount,
-          contributionHistory: contributionHistory
-            .filter((entry) => entry.type === 'contribution')
-            .map((entry) => ({ amount: entry.amount, date: entry.date })),
-          fallbackDate: goal.deadline,
-        });
-        const missedMonths = buildMissedSavingsMonths({
-          contributionHistory: contributionHistory
-            .filter((entry) => entry.type === 'contribution')
-            .map((entry) => ({ amount: entry.amount, date: entry.date })),
-          autoContributeEnabled: goal.auto_contribute_enabled,
-          autoContributeFrequency: goal.auto_contribute_frequency,
-          createdAt: goal.created_at,
-        });
+
+        const monthlyPace = getGoalProjectedMonthlyPace(savingsOnlyHistory);
+        const missedMonths = goal.plan_frequency
+          ? buildMissedSavingsPeriods({
+              contributionHistory: savingsOnlyHistory,
+              frequency: goal.plan_frequency,
+              startDate: goal.plan_start_date || goal.created_at,
+            })
+          : buildMissedSavingsMonths({
+              contributionHistory: savingsOnlyHistory,
+              autoContributeEnabled: goal.auto_contribute_enabled,
+              autoContributeFrequency: goal.auto_contribute_frequency,
+              createdAt: goal.created_at,
+            });
+
+        const planEnabled = Boolean(goal.plan_frequency);
+        const isOnPaceThisPeriod = planEnabled && pace.required_per_period > 0
+          ? pace.current_period_amount >= pace.required_per_period * 0.95
+          : false;
+        const isBehindThisPeriod = planEnabled && pace.required_per_period > 0
+          ? pace.current_period_amount < pace.required_per_period * 0.95
+          : false;
 
         return {
           ...goal,
@@ -232,25 +347,35 @@ export function useSavingsGoals() {
           percentage,
           remaining,
           daysLeft,
-          status,
+          status: pace.status,
+          paceStatus: pace.status,
           isArchived: goal.archived_at !== null,
           isUrgent: daysLeft !== null && daysLeft <= 7 && daysLeft >= 0,
+          planEnabled,
           contributionHistory,
           thisMonthContribution,
-          projectedCompletionDate,
-          projectedCompletionLabel: getCompletionLabel(projectedCompletionDate),
+          projectedCompletionDate: pace.suggested_deadline,
+          projectedCompletionLabel: getCompletionLabel(pace.suggested_deadline),
           monthlyPace,
-          averageMonthlyContribution: getAverageMonthlyContribution(
-            contributionHistory.filter((entry) => entry.type === 'contribution').map((entry) => ({
-              amount: entry.amount,
-              date: entry.date,
-            })),
-            goal.created_at
-          ),
+          averageMonthlyContribution: getAverageMonthlyContribution(savingsOnlyHistory, goal.created_at),
           monthsToTarget: getMonthsToTarget(currentAmount, goal.target_amount, monthlyPace),
           missedMonths,
           hasContributedThisMonth: thisMonthContribution > 0,
           availableToRedeploy: currentAmount,
+          requiredPerPeriod: pace.required_per_period,
+          periodsRemaining: pace.periods_remaining,
+          currentPace: pace.current_pace,
+          currentPeriodAmount: pace.current_period_amount,
+          periodLabel: pace.period_label,
+          periodLabelPlural: pace.period_label_plural,
+          requiredThisPeriodLabel: planEnabled && pace.required_per_period > 0
+            ? `${pace.required_per_period.toFixed(2)} due this ${pace.period_label}`
+            : null,
+          suggestedDeadline: pace.suggested_deadline,
+          suggestedDeadlineLabel: getCompletionLabel(pace.suggested_deadline),
+          sparkline: pace.sparkline,
+          isOnPaceThisPeriod,
+          isBehindThisPeriod,
         };
       });
     },
@@ -278,6 +403,9 @@ export function useSavingsGoals() {
           auto_contribute_enabled: goal.auto_contribute_enabled ?? false,
           auto_contribute_amount: goal.auto_contribute_amount ?? null,
           auto_contribute_frequency: goal.auto_contribute_frequency ?? null,
+          plan_frequency: goal.plan_frequency ?? null,
+          plan_start_date: goal.plan_start_date ?? null,
+          auto_remind: goal.auto_remind ?? false,
         })
         .select()
         .single();
@@ -297,15 +425,7 @@ export function useSavingsGoals() {
         });
       }
 
-      await upsertAutoContributionReminder({
-        userId: user.id,
-        goal: { id: data.id, name: data.name },
-        amount: goal.auto_contribute_amount ?? null,
-        frequency: goal.auto_contribute_frequency ?? null,
-        enabled: goal.auto_contribute_enabled ?? false,
-        currency,
-      });
-
+      await syncGoalReminderById(data.id);
       return data;
     },
     onSuccess: () => {
@@ -330,19 +450,7 @@ export function useSavingsGoals() {
         throw error;
       }
 
-      if (!user?.id) {
-        throw new Error('Not authenticated');
-      }
-
-      await upsertAutoContributionReminder({
-        userId: user.id,
-        goal: { id: data.id, name: data.name },
-        amount: data.auto_contribute_amount,
-        frequency: data.auto_contribute_frequency as 'weekly' | 'monthly' | null,
-        enabled: data.auto_contribute_enabled,
-        currency,
-      });
-
+      await syncGoalReminderById(id);
       return data;
     },
     onSuccess: () => {
@@ -374,10 +482,11 @@ export function useSavingsGoals() {
         budgetId: budgetId ?? goal.linked_budget_id ?? null,
       });
 
-      const projectedTotal = goal.current_amount + amount;
-      if (projectedTotal >= goal.target_amount && !goal.completed_at) {
+      if (goal.current_amount + amount >= goal.target_amount && !goal.completed_at) {
         await markGoalCompleted(goal.id);
       }
+
+      await syncGoalReminderById(goal.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
@@ -397,6 +506,8 @@ export function useSavingsGoals() {
       if (error) {
         throw error;
       }
+
+      await syncGoalReminderById(id, { removeOnly: true });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
@@ -426,10 +537,8 @@ export function useSavingsGoals() {
         currency,
       });
 
-      await supabase
-        .from('savings_goals')
-        .update({ archived_at: new Date().toISOString() })
-        .eq('id', goal.id);
+      await supabase.from('savings_goals').update({ archived_at: new Date().toISOString() }).eq('id', goal.id);
+      await syncGoalReminderById(goal.id, { removeOnly: true });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
@@ -462,14 +571,16 @@ export function useSavingsGoals() {
         currency,
       });
 
-      await supabase
-        .from('savings_goals')
-        .update({ archived_at: new Date().toISOString() })
-        .eq('id', sourceGoalId);
+      await supabase.from('savings_goals').update({ archived_at: new Date().toISOString() }).eq('id', sourceGoalId);
 
       if (destinationGoal.current_amount + amount >= destinationGoal.target_amount && !destinationGoal.completed_at) {
         await markGoalCompleted(destinationGoal.id);
       }
+
+      await Promise.all([
+        syncGoalReminderById(sourceGoalId, { removeOnly: true }),
+        syncGoalReminderById(destinationGoalId),
+      ]);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
@@ -517,6 +628,8 @@ export function useSavingsGoals() {
       if (goal.current_amount + amount >= goal.target_amount && !goal.completed_at) {
         await markGoalCompleted(goal.id);
       }
+
+      await syncGoalReminderById(goal.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savings-goals'] });
@@ -529,6 +642,7 @@ export function useSavingsGoals() {
 
   const deleteGoal = useMutation({
     mutationFn: async (id: string) => {
+      await syncGoalReminderById(id, { removeOnly: true });
       const { error } = await supabase.from('savings_goals').delete().eq('id', id);
       if (error) {
         throw error;
@@ -546,13 +660,25 @@ export function useSavingsGoals() {
   const activeGoals = goals.filter((goal) => !goal.isArchived);
   const topActiveGoals = activeGoals
     .filter((goal) => goal.status !== 'completed')
-    .sort((a, b) => b.current_amount - a.current_amount)
+    .sort((a, b) => {
+      if (a.deadline && b.deadline) {
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      }
+      if (a.deadline) return -1;
+      if (b.deadline) return 1;
+      return a.created_at.localeCompare(b.created_at);
+    })
     .slice(0, 2);
   const totalSaved = activeGoals.reduce((sum, goal) => sum + goal.current_amount, 0);
   const totalTarget = activeGoals.reduce((sum, goal) => sum + goal.target_amount, 0);
-  const completedGoals = goals.filter((goal) => goal.completed_at !== null || goal.current_amount >= goal.target_amount).length;
-  const anyGoalOnTrack = activeGoals.some((goal) => goal.status === 'on_track');
+  const completedGoalEntries = goals.filter((goal) => goal.completed_at !== null || goal.current_amount >= goal.target_amount);
+  const completedGoals = completedGoalEntries.length;
+  const anyGoalOnTrack = activeGoals.some((goal) => goal.paceStatus === 'on_track' || goal.paceStatus === 'ahead');
   const anyAutoContributeEnabled = activeGoals.some((goal) => goal.auto_contribute_enabled);
+  const anyPlanEnabled = activeGoals.some((goal) => goal.planEnabled);
+  const anyOnPaceThisPeriod = activeGoals.some((goal) => goal.isOnPaceThisPeriod);
+  const anyBehindThisPeriod = activeGoals.some((goal) => goal.isBehindThisPeriod);
+  const behindGoal = activeGoals.find((goal) => goal.isBehindThisPeriod) || null;
   const overdueWithoutContribution = activeGoals.some((goal) => {
     if (!goal.deadline) {
       return false;
@@ -560,6 +686,8 @@ export function useSavingsGoals() {
 
     return new Date(goal.deadline) < new Date() && !goal.hasContributedThisMonth;
   });
+  const latestCompletedGoal = completedGoalEntries
+    .sort((a, b) => new Date(b.completed_at || b.updated_at).getTime() - new Date(a.completed_at || a.updated_at).getTime())[0] || null;
 
   return {
     goals,
@@ -580,6 +708,11 @@ export function useSavingsGoals() {
     completedGoals,
     anyGoalOnTrack,
     anyAutoContributeEnabled,
+    anyPlanEnabled,
+    anyOnPaceThisPeriod,
+    anyBehindThisPeriod,
+    behindGoal,
+    latestCompletedGoal,
     overdueWithoutContribution,
   };
 }

@@ -13,7 +13,19 @@ export function useHealthScore(): { score: HealthScoreResult | null; loading: bo
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { budgets, loading: budgetsLoading } = useBudgets();
-  const { activeGoals, goals, isLoading: goalsLoading, anyGoalOnTrack, anyAutoContributeEnabled, overdueWithoutContribution } = useSavingsGoals();
+  const {
+    activeGoals,
+    goals,
+    isLoading: goalsLoading,
+    anyGoalOnTrack,
+    anyAutoContributeEnabled,
+    anyPlanEnabled,
+    anyOnPaceThisPeriod,
+    anyBehindThisPeriod,
+    behindGoal,
+    latestCompletedGoal,
+    overdueWithoutContribution,
+  } = useSavingsGoals();
   const { profile, loading: profileLoading } = useProfile();
 
   const { data: transferredBudgetLeftoverThisMonth = false, isLoading: transferLoading } = useQuery({
@@ -53,8 +65,7 @@ export function useHealthScore(): { score: HealthScoreResult | null; loading: bo
     const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
     const totalSpent = budgets.reduce((sum, budget) => sum + budget.spent, 0);
     const hasSavingsContributionThisMonth = goals.some((goal) => goal.hasContributedThisMonth);
-    const atRiskGoal = activeGoals.find((goal) => goal.status === 'behind' || goal.status === 'at_risk') || null;
-    const onTrackGoal = activeGoals.find((goal) => goal.status === 'on_track') || null;
+    const onTrackGoal = activeGoals.find((goal) => goal.status === 'on_track' || goal.status === 'ahead') || null;
 
     return calculateHealthScore({
       totalSpent,
@@ -64,20 +75,30 @@ export function useHealthScore(): { score: HealthScoreResult | null; loading: bo
       hasSavingsContributionThisMonth,
       completedGoalsCount: goals.filter((goal) => goal.completed_at || goal.current_amount >= goal.target_amount).length,
       anyAutoContributeEnabled,
+      anyPlanEnabled,
+      anyOnPaceThisPeriod,
+      anyBehindThisPeriod,
       overdueWithoutContribution,
       transferredBudgetLeftoverThisMonth,
-      atRiskGoalName: atRiskGoal?.name || null,
+      atRiskGoalName: behindGoal?.name || null,
+      atRiskGoalRequiredLabel: behindGoal ? `${behindGoal.requiredPerPeriod.toFixed(0)} needed this ${behindGoal.periodLabel}.` : null,
       onTrackGoalName: onTrackGoal?.name || null,
+      latestCompletedGoalName: latestCompletedGoal?.name || null,
       lastActiveAt: profile.last_active_at,
     });
   }, [
     activeGoals,
     anyAutoContributeEnabled,
+    anyBehindThisPeriod,
     anyGoalOnTrack,
+    anyOnPaceThisPeriod,
+    anyPlanEnabled,
+    behindGoal,
     budgets,
     budgetsLoading,
     goals,
     goalsLoading,
+    latestCompletedGoal,
     overdueWithoutContribution,
     profile.last_active_at,
     profileLoading,

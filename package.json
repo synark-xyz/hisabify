@@ -8,7 +8,7 @@
     "dev:managed": "node scripts/managed-dev-server.js",
     "dev:staging": "node scripts/ngrok-staging-server.js --port=8181",
     "dev:staging:ngrok": "node scripts/ngrok-staging-server.js --port=8181 --ngrok=true",
-    "dev:staging:ngrok:hilton": "node scripts/ngrok-staging-server.js --port=8181 --ngrok=true --url=https://hilton-irate-jovita.ngrok-free.dev",
+    "dev:staging:ngrok:hilton": "node scripts/ngrok-staging-server.js --port=8181 --ngrok=true --url=https://hilton-irate-jovita.ngrok-free.dev --mode=production",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

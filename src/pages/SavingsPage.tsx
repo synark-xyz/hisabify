@@ -102,6 +102,8 @@ export default function SavingsPage() {
     auto_contribute_enabled: boolean;
     auto_contribute_amount: number | null;
     auto_contribute_frequency: 'weekly' | 'monthly' | null;
+    plan_frequency: 'daily' | 'weekly' | 'monthly' | null;
+    auto_remind: boolean;
   }) => {
     const goalData = {
       name: data.name,
@@ -115,6 +117,11 @@ export default function SavingsPage() {
       auto_contribute_enabled: isPremium ? data.auto_contribute_enabled : false,
       auto_contribute_amount: isPremium ? data.auto_contribute_amount : null,
       auto_contribute_frequency: isPremium ? data.auto_contribute_frequency : null,
+      plan_frequency: data.plan_frequency,
+      plan_start_date: data.plan_frequency
+        ? (editingGoal?.plan_start_date || editingGoal?.created_at || new Date().toISOString())
+        : null,
+      auto_remind: data.plan_frequency ? data.auto_remind : false,
     };
 
     try {
@@ -255,10 +262,17 @@ export default function SavingsPage() {
 
             <motion.div variants={itemVariants} className="flex items-center justify-between pt-2">
               <h2 className="text-lg font-semibold">My Goals</h2>
-              <Button onClick={handleAddGoal} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                New Goal
-              </Button>
+              <div className="flex items-center gap-2">
+                {!isPremium && activeGoals.length >= 1 && (
+                  <span className="rounded-full bg-purple-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-500">
+                    1/1 Free
+                  </span>
+                )}
+                <Button onClick={handleAddGoal} size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Goal
+                </Button>
+              </div>
             </motion.div>
 
             {goals.length === 0 ? (
@@ -289,6 +303,7 @@ export default function SavingsPage() {
                     onArchive={(id) => archiveGoal.mutate(id)}
                     onRedeployToBalance={(id, amount) => redeployToBalance.mutate({ id, amount })}
                     onRedeployToGoal={(sourceGoalId, destinationGoalId, amount) => redeployToGoal.mutate({ sourceGoalId, destinationGoalId, amount })}
+                    onUpdateDeadline={(goalId, deadline) => updateGoal.mutate({ id: goalId, deadline: format(new Date(deadline), "yyyy-MM-dd") })}
                     onBudgetTransfer={(budgetId, goalId, amount) => {
                       const budget = budgets.find((entry) => entry.id === budgetId);
                       const goalEntry = goals.find((entry) => entry.id === goalId);
@@ -322,7 +337,7 @@ export default function SavingsPage() {
         editingGoal={editingGoal}
       />
 
-      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} source="savings_goals_limit" />
     </div>
   );
 }

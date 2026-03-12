@@ -155,7 +155,7 @@ export function usePaymentReminders() {
             // Recurring: Calculate next due date and reset to "upcoming"
             const nextDueDate = calculateNextDueDate(
                 reminder.due_date,
-                reminder.recurring_interval as 'weekly' | 'monthly' | 'yearly'
+                reminder.recurring_interval as 'daily' | 'weekly' | 'monthly' | 'yearly'
             );
 
             updateData = {

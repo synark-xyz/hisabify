@@ -11,6 +11,7 @@ interface AddTransactionModalProps {
     amount?: number;
     category?: string;
   };
+  initialBudgetId?: string | null;
 }
 
 export function AddTransactionModal({
@@ -18,7 +19,8 @@ export function AddTransactionModal({
   onOpenChange,
   onSuccess,
   initialType,
-  initialData
+  initialData,
+  initialBudgetId,
 }: AddTransactionModalProps) {
   return (
     <ResponsiveDrawer
@@ -27,7 +29,6 @@ export function AddTransactionModal({
       title="New Transaction"
       className="max-h-[90vh]"
     >
-      {/* Pass initialData to pre-fill the form */}
       <TransactionForm
         mode="create"
         onSuccess={() => {
@@ -37,6 +38,7 @@ export function AddTransactionModal({
         onCancel={() => onOpenChange(false)}
         initialType={initialType}
         initialData={initialData}
+        initialBudgetId={initialBudgetId}
       />
     </ResponsiveDrawer>
   );

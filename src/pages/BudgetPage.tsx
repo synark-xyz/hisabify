@@ -22,7 +22,7 @@ export function BudgetPage() {
   }, []);
 
   useTransactionUpdateListener(() => {
-    refetch();
+    refetch({ fireAlerts: true });
   });
 
   const containerVariants = {

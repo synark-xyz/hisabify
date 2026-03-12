@@ -24,6 +24,7 @@ export interface Budget {
   end_date: string | null;
   name: string | null;
   is_template: boolean;
+  is_recurring: boolean;
   template_name: string | null;
   created_at: string;
   updated_at: string;
@@ -33,7 +34,7 @@ export interface BudgetWithSpending extends Budget {
   spent: number;
   remaining: number;
   percentage: number;
-  status: 'safe' | 'warning' | 'exceeded';
+  status: 'safe' | 'warning' | 'utilized' | 'exceeded';
 }
 
 export interface CreateBudgetInput {
@@ -41,9 +42,10 @@ export interface CreateBudgetInput {
   amount: number;
   period_type: PeriodType;
   start_date?: Date;
-  end_date?: Date;
+  end_date?: Date | null; // null = continuous (no end date)
   name?: string;
   is_template?: boolean;
+  is_recurring?: boolean;
   template_name?: string;
 }
 
@@ -54,9 +56,6 @@ export interface UpdateBudgetInput extends Partial<CreateBudgetInput> {
 interface BudgetSpendingRow {
   amount: number | string;
   currency_base: string | null;
-  category?: {
-    category_type?: string | null;
-  } | null;
 }
 
 // Notification manager now handles alert deduplication
@@ -105,8 +104,7 @@ export function useBudgets() {
   };
 
   // Fetch budgets and compute spending for each
-  // Fetch budgets and compute spending for each
-  const fetchBudgets = useCallback(async () => {
+  const fetchBudgets = useCallback(async (options?: { fireAlerts?: boolean; skipRollover?: boolean }) => {
     if (!user) return;
 
     // Prevent duplicate fetches within 500ms
@@ -131,50 +129,115 @@ export function useBudgets() {
 
       if (budgetsError) throw budgetsError;
 
-      // Filter to current period budgets (support recurring)
-      // Filter to current period budgets (support recurring)
-      const now = new Date();
-      const activeBudgets = (budgetsData || []).filter((budget) => {
-        if (budget.start_date && budget.end_date) {
-          // Recurring: if is_template, skip; else, check interval
-          // Recurring: if is_template, skip; else, check interval
-          return isWithinInterval(now, {
-            start: new Date(budget.start_date),
-            end: new Date(budget.end_date)
+      // Auto-rollover: for each expired recurring budget that has no successor,
+      // create the next period's budget automatically.
+      if (!options?.skipRollover) {
+        const checkTime = new Date();
+        const expiredRecurring = (budgetsData || []).filter((b) => {
+          if (!b.is_recurring || !b.end_date) return false;
+          if (new Date(b.end_date) >= checkTime) return false;
+          // Check if a successor already exists (same category, starts after this one)
+          const hasSuccessor = (budgetsData || []).some((other) => {
+            if (other.id === b.id || !other.is_recurring) return false;
+            const sameCategory =
+              b.category_id === null
+                ? other.category_id === null
+                : other.category_id === b.category_id;
+            return sameCategory && other.start_date && new Date(other.start_date) > new Date(b.start_date || 0);
           });
+          return !hasSuccessor;
+        });
+
+        if (expiredRecurring.length > 0) {
+          await Promise.all(
+            expiredRecurring.map(async (budget) => {
+              const prevEnd = new Date(budget.end_date!);
+              const nextStart = new Date(prevEnd);
+              nextStart.setDate(nextStart.getDate() + 1);
+              const { end: nextEnd } = getPeriodDates(budget.period_type as PeriodType, nextStart);
+              const { error: rolloverError } = await supabase.from('budgets').insert({
+                user_id: user.id,
+                category_id: budget.category_id,
+                amount: budget.amount,
+                period_type: budget.period_type,
+                start_date: nextStart.toISOString(),
+                end_date: nextEnd.toISOString(),
+                name: budget.name,
+                month: nextStart.getMonth() + 1,
+                year: nextStart.getFullYear(),
+                is_template: false,
+                is_recurring: true,
+              });
+              if (!rolloverError) {
+                const budgetName = budget.name || (budget as any).category?.name || 'Budget Payment';
+                await supabase.from('payment_reminders').insert({
+                  user_id: user.id,
+                  title: budgetName,
+                  amount: budget.amount,
+                  currency,
+                  due_date: nextStart.toISOString(),
+                  is_recurring: true,
+                  recurring_interval: budget.period_type,
+                  notify_before_days: 3,
+                  status: 'upcoming',
+                  category_id: budget.category_id,
+                  note: `Auto-created for ${format(nextStart, 'MMMM yyyy')} budget`,
+                });
+              }
+            })
+          );
+          // Re-fetch once to pick up the newly created budgets
+          isFetchingRef.current = false;
+          lastFetchRef.current = 0;
+          await fetchBudgets({ fireAlerts: false, skipRollover: true });
+          return;
         }
-        // Legacy support: check month/year
-        return budget.month === now.getMonth() + 1 && budget.year === now.getFullYear();
+      }
+
+      const now = new Date();
+
+      // Candidate budgets: current period + continuous (no end_date) + upcoming recurring (starts ≤60 days)
+      const activeBudgets = (budgetsData || []).filter((budget) => {
+        if (!budget.start_date) {
+          return budget.month === now.getMonth() + 1 && budget.year === now.getFullYear();
+        }
+        const start = new Date(budget.start_date);
+        // Continuous budget: no end_date, active as long as start_date <= now
+        if (!budget.end_date) return start <= now;
+        const end = new Date(budget.end_date);
+        // Current period
+        if (isWithinInterval(now, { start, end })) return true;
+        // Upcoming recurring: starts within next 60 days (for next-period preview after payment)
+        if (budget.is_recurring && start > now) {
+          return (start.getTime() - now.getTime()) / 86400000 <= 60;
+        }
+        return false;
       });
 
       // Get spending for each budget
       const budgetsWithSpending = await Promise.all(
         activeBudgets.map(async (budget) => {
-          const periodType = budget.period_type as PeriodType;
-          const startDate = budget.start_date || getPeriodDates(periodType).start.toISOString();
-          const endDate = budget.end_date || getPeriodDates(periodType).end.toISOString();
 
-          // Query transactions for this budget's period/category
-          let query = supabase
+          // Query transactions for this budget
+          // For continuous budgets (no end_date), scope to the current period window
+          // so all-time spending from previous periods isn't counted
+          let spendQuery = supabase
             .from('transactions')
-            .select('amount, currency_base, category_id, category:categories(category_type)')
+            .select('amount, currency_base')
             .eq('user_id', user.id)
             .eq('type', 'expense')
-            .gte('date', startDate)
-            .lte('date', endDate);
+            .eq('budget_id', budget.id);
 
-          if (budget.category_id) {
-            query = query.eq('category_id', budget.category_id);
+          if (!budget.end_date) {
+            const periodWindow = getPeriodDates(budget.period_type as PeriodType);
+            spendQuery = spendQuery
+              .gte('date', periodWindow.start.toISOString())
+              .lte('date', periodWindow.end.toISOString());
           }
 
-          const { data: transactions } = await query;
+          const { data: transactions } = await spendQuery;
 
-          // Filter out lend/owe system categories from expense budgets
-          // (they're transfers, not true expenses)
-          const filteredTransactions = (transactions as BudgetSpendingRow[] | null)?.filter((t) => {
-            const categoryType = t.category?.category_type;
-            return !['lend', 'owe'].includes(categoryType || '');
-          }) || [];
+          const filteredTransactions = (transactions as BudgetSpendingRow[] | null) || [];
 
           // Sum transactions, convert currency if needed
           let spent = 0;
@@ -193,11 +256,13 @@ export function useBudgets() {
           const remaining = Math.max(0, budget.amount - spent);
           const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 
-          let status: 'safe' | 'warning' | 'exceeded' = 'safe';
-          if (percentage >= 100) {
-            status = 'exceeded';
-          } else if (percentage >= 80) {
-            status = 'warning';
+          let status: 'safe' | 'warning' | 'utilized' | 'exceeded' = 'safe';
+          if (spent > budget.amount) {
+            status = 'exceeded';       // spent MORE than budget → red
+          } else if (spent >= budget.amount) {
+            status = 'utilized';       // spent exactly the budget → green "Paid"
+          } else if (percentage >= 75) {
+            status = 'warning';        // 75–99% → amber "At Risk"
           }
 
           return {
@@ -210,18 +275,45 @@ export function useBudgets() {
         })
       );
 
-      setBudgets(budgetsWithSpending);
+      // Smart de-dup: for each category, if the current period is fully utilized/exceeded
+      // AND an upcoming period exists (created by Pay Now / auto-rollover), show the upcoming one.
+      const catMap = new Map<string, BudgetWithSpending[]>();
+      for (const b of budgetsWithSpending) {
+        const key = b.category_id ?? '__total__';
+        if (!catMap.has(key)) catMap.set(key, []);
+        catMap.get(key)!.push(b);
+      }
+      const dedupedBudgets: BudgetWithSpending[] = [];
+      for (const group of catMap.values()) {
+        if (group.length === 1) { dedupedBudgets.push(group[0]); continue; }
+        const current = group.filter(b => {
+          const s = b.start_date ? new Date(b.start_date) : null;
+          const e = b.end_date ? new Date(b.end_date) : null;
+          if (!s) return true;
+          return s <= now && (e === null || e >= now);
+        });
+        const upcoming = group.filter(b => b.start_date && new Date(b.start_date) > now);
+        if (current.length > 0) {
+          const allDone = current.every(b => b.status === 'utilized' || b.status === 'exceeded');
+          dedupedBudgets.push(...(allDone && upcoming.length > 0 ? upcoming : current));
+        } else {
+          dedupedBudgets.push(...(upcoming.length > 0 ? upcoming : group));
+        }
+      }
+      setBudgets(dedupedBudgets);
 
-      // Show alerts for budgets at warning or exceeded levels
-      // Alerts disabled per user request to avoid spam on tab open
-      // budgetsWithSpending.forEach((budget) => {
-      //   const budgetName = budget.category?.name || budget.name || 'Budget';
-      //   if (budget.status === 'exceeded') {
-      //     showBudgetExceeded(budgetName, budget.percentage, budget.period_type);
-      //   } else if (budget.status === 'warning') {
-      //     showBudgetWarning(budgetName, budget.percentage, budget.period_type);
-      //   }
-      // });
+      // Show alerts only when triggered by a real transaction change event,
+      // not on page load, to prevent spam on tab open.
+      if (options?.fireAlerts) {
+        budgetsWithSpending.forEach((budget) => {
+          const budgetName = budget.category?.name || budget.name || 'Budget';
+          if (budget.status === 'exceeded') {
+            showBudgetExceeded(budgetName, budget.percentage, budget.period_type);
+          } else if (budget.status === 'warning') {
+            showBudgetWarning(budgetName, budget.percentage, budget.period_type);
+          }
+        });
+      }
 
     } catch (err) {
       console.error('Error fetching budgets:', err);
@@ -237,7 +329,8 @@ export function useBudgets() {
 
     const { start, end } = getPeriodDates(input.period_type, input.start_date);
     const startDate = input.start_date || start;
-    const endDate = input.end_date || end;
+    // end_date === null → continuous (no end); undefined → auto-calculate
+    const endDate = input.end_date === null ? null : (input.end_date || end);
 
     // Optimistic Update
     const tempId = `temp-${Date.now()}`;
@@ -248,18 +341,19 @@ export function useBudgets() {
       amount: input.amount,
       period_type: input.period_type,
       start_date: startDate.toISOString(),
-      end_date: endDate.toISOString(),
+      end_date: endDate ? endDate.toISOString() : null,
       name: input.name || `${input.period_type.charAt(0).toUpperCase() + input.period_type.slice(1)} Budget`,
       month: startDate.getMonth() + 1,
       year: startDate.getFullYear(),
       is_template: input.is_template || false,
+      is_recurring: input.is_recurring || false,
       template_name: input.template_name || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       spent: 0,
       remaining: input.amount,
       percentage: 0,
-      status: 'safe'
+      status: 'safe' as const,
     };
 
     setBudgets(current => [newBudget, ...current]);
@@ -272,11 +366,12 @@ export function useBudgets() {
         amount: input.amount,
         period_type: input.period_type,
         start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
+        end_date: endDate ? endDate.toISOString() : null,
         name: newBudget.name,
         month: newBudget.month,
         year: newBudget.year,
         is_template: input.is_template || false,
+        is_recurring: input.is_recurring || false,
         template_name: input.template_name || null
       });
 
@@ -305,14 +400,15 @@ export function useBudgets() {
       if (input.amount !== undefined) updateData.amount = input.amount;
       if (input.period_type !== undefined) updateData.period_type = input.period_type;
       if (input.name !== undefined) updateData.name = input.name;
+      if (input.is_recurring !== undefined) updateData.is_recurring = input.is_recurring;
 
       if (input.start_date) {
         updateData.start_date = input.start_date.toISOString();
         updateData.month = input.start_date.getMonth() + 1;
         updateData.year = input.start_date.getFullYear();
       }
-      if (input.end_date) {
-        updateData.end_date = input.end_date.toISOString();
+      if (input.end_date !== undefined) {
+        updateData.end_date = input.end_date ? input.end_date.toISOString() : null;
       }
 
       const { error } = await supabase
@@ -433,8 +529,11 @@ export function useBudgets() {
       const budget = budgets.find(b => b.id === budgetId);
       if (!budget) return false;
 
-      const { start, end } = getPeriodDates(budget.period_type);
-      const nextStart = new Date(end);
+      // Derive next period from the budget's own end_date for accuracy
+      const baseEnd = budget.end_date
+        ? new Date(budget.end_date)
+        : getPeriodDates(budget.period_type).end;
+      const nextStart = new Date(baseEnd);
       nextStart.setDate(nextStart.getDate() + 1);
       const nextEnd = getPeriodDates(budget.period_type, nextStart).end;
 
@@ -447,12 +546,29 @@ export function useBudgets() {
         end_date: nextEnd.toISOString(),
         name: budget.name,
         month: nextStart.getMonth() + 1,
-        year: nextStart.getFullYear()
+        year: nextStart.getFullYear(),
+        is_recurring: true,
       });
 
       if (error) throw error;
 
-      toast.success('Budget copied to next period');
+      // Create a payment reminder for the upcoming period
+      const budgetName = budget.name || budget.category?.name || 'Budget Payment';
+      await supabase.from('payment_reminders').insert({
+        user_id: user.id,
+        title: budgetName,
+        amount: budget.amount,
+        currency,
+        due_date: nextStart.toISOString(),
+        is_recurring: true,
+        recurring_interval: budget.period_type,
+        notify_before_days: 3,
+        status: 'upcoming',
+        category_id: budget.category_id,
+        note: `Auto-created for ${format(nextStart, 'MMMM yyyy')} budget`,
+      });
+
+      toast.success('Budget renewed — reminder added for next period');
       await fetchBudgets();
       emitBudgetSyncEvents();
       return true;
@@ -593,7 +709,7 @@ export function useBudgets() {
     const debouncedFetch = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        fetchBudgets();
+        fetchBudgets({ fireAlerts: true });
       }, 1000);
     };
 

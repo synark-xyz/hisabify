@@ -45,6 +45,8 @@ export interface Transaction {
   exchange_source?: string;
   // Receipt field
   receipt_url?: string | null;
+  // Budget linkage
+  budget_id?: string | null;
 }
 
 export interface Budget {
@@ -100,6 +102,7 @@ export interface PaymentReminder {
   notify_before_days: number;
   is_recurring: boolean;
   recurring_interval: string | null;
+  category_id: string | null;
   note: string | null;
   created_at: string;
 }

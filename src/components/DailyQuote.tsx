@@ -5,11 +5,23 @@ import quotesData from '../../quotes/fintech-learders-quotes.json';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
+interface QuoteEntry {
+    quote: string;
+    author: string;
+}
+
+interface QuotesImport {
+    quotes?: QuoteEntry[];
+    default?: {
+        quotes?: QuoteEntry[];
+    };
+}
+
 export function DailyQuote() {
     const { variant } = useTheme();
     const quote = useMemo(() => {
         // Handle potential different import behaviors (default vs named)
-        const data = quotesData as any;
+        const data = quotesData as QuotesImport;
         const quotesArray = data.quotes || data.default?.quotes || [];
 
         if (!Array.isArray(quotesArray) || quotesArray.length === 0) return null;

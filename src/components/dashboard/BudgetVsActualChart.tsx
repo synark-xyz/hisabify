@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, Cell } from 'recharts';
 import { useCurrency } from '@/hooks/useCurrency';
+import type { Props as TooltipProps, Payload, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
 interface BudgetVsActualData {
   category: string;
@@ -16,10 +17,10 @@ interface BudgetVsActualChartProps {
 export function BudgetVsActualChart({ data }: BudgetVsActualChartProps) {
   const { formatAmount } = useCurrency();
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
     if (active && payload && payload.length) {
-      const budget = payload.find((p: any) => p.dataKey === 'budget')?.value || 0;
-      const actual = payload.find((p: any) => p.dataKey === 'actual')?.value || 0;
+      const budget = Number(payload.find((p: Payload<ValueType, NameType>) => p.dataKey === 'budget')?.value || 0);
+      const actual = Number(payload.find((p: Payload<ValueType, NameType>) => p.dataKey === 'actual')?.value || 0);
       const diff = budget - actual;
       const isOver = diff < 0;
 

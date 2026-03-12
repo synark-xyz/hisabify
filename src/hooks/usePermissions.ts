@@ -1,26 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-
-// Dynamic imports to handle missing plugins gracefully
-let Camera: any = null;
-let Geolocation: any = null;
-
-// Try to import Capacitor plugins (they may not be installed yet)
-try {
-  Camera = require('@capacitor/camera').Camera;
-} catch (e) {
-  console.warn('Camera plugin not installed. Install with: npm install @capacitor/camera');
-}
-
-try {
-  Geolocation = require('@capacitor/geolocation').Geolocation;
-} catch (e) {
-  console.warn('Geolocation plugin not installed. Install with: npm install @capacitor/geolocation');
-}
+import { Capacitor, type PermissionState as CapacitorPermissionState } from '@capacitor/core';
+import { Camera, type CameraPermissionState } from '@capacitor/camera';
+import { Geolocation } from '@capacitor/geolocation';
 
 export type PermissionType = 'camera' | 'microphone' | 'photos' | 'location';
 
-export type PermissionStatus = 'granted' | 'denied' | 'prompt' | 'limited' | 'unknown';
+export type PermissionStatus = CapacitorPermissionState | 'limited' | 'unknown';
 
 interface PermissionResult {
   status: PermissionStatus;
@@ -48,7 +33,7 @@ export function usePermissions() {
 
     try {
       const result = await Camera.checkPermissions();
-      const status = result.camera as PermissionStatus;
+      const status = result.camera as CameraPermissionState;
 
       return {
         status,
@@ -78,7 +63,7 @@ export function usePermissions() {
     setChecking(true);
     try {
       const result = await Camera.requestPermissions({ permissions: ['camera'] });
-      const status = result.camera as PermissionStatus;
+      const status = result.camera as CameraPermissionState;
 
       return {
         status,
@@ -109,7 +94,7 @@ export function usePermissions() {
 
     try {
       const result = await Camera.checkPermissions();
-      const status = result.photos as PermissionStatus;
+      const status = result.photos as CameraPermissionState;
 
       return {
         status,
@@ -139,7 +124,7 @@ export function usePermissions() {
     setChecking(true);
     try {
       const result = await Camera.requestPermissions({ permissions: ['photos'] });
-      const status = result.photos as PermissionStatus;
+      const status = result.photos as CameraPermissionState;
 
       return {
         status,
@@ -217,10 +202,12 @@ export function usePermissions() {
         status: 'granted',
         canRequest: true
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error requesting microphone permission:', error);
 
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      const errorName = error instanceof Error ? error.name : '';
+
+      if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
         return {
           status: 'denied',
           canRequest: false,

@@ -11,16 +11,14 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     const { variant } = useTheme();
-
-    if (variant === 'cyberpunk') {
-        return <CyberpunkSplash onComplete={onComplete} />;
-    }
-
     const [progress, setProgress] = useState(0);
     const [message, setMessage] = useState('Initializing secure vault...');
 
-    // Progress simulation
     useEffect(() => {
+        if (variant === 'cyberpunk') {
+            return;
+        }
+
         const duration = 2500; // 2.5s total
         const interval = 20;
         const steps = duration / interval;
@@ -46,7 +44,11 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         }, interval);
 
         return () => clearInterval(timer);
-    }, [onComplete]);
+    }, [onComplete, variant]);
+
+    if (variant === 'cyberpunk') {
+        return <CyberpunkSplash onComplete={onComplete} />;
+    }
 
     return (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-background">

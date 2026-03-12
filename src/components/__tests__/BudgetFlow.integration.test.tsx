@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 
+interface SystemCategory {
+  id: string;
+  category_type: string;
+}
+
 /**
  * Budget System Enhancement Integration Tests
  *
@@ -37,7 +42,7 @@ describe('Budget System Integration Tests', () => {
     });
 
     it('should return null for unmapped payment types', () => {
-      const systemCategories: any[] = [];
+      const systemCategories: SystemCategory[] = [];
 
       const mapping: Record<string, string | undefined> = {
         'credit_card': systemCategories.find(c => c.category_type === 'credit_card')?.id,
@@ -350,7 +355,7 @@ describe('Budget System Integration Tests', () => {
 
     it('should handle missing system categories gracefully', () => {
       const paymentType = 'utility';
-      const systemCategories: any[] = []; // Empty - migration not run
+      const systemCategories: SystemCategory[] = []; // Empty - migration not run
       const fallbackCategoryId = 'cat-misc';
 
       const categoryId = paymentType

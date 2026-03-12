@@ -22,6 +22,16 @@ interface BudgetSuggestion {
 export function useBudgetContext() {
   const { budgets, loading } = useBudgets();
 
+  // Return all active budgets relevant to a category:
+  // exact-category budgets first, then total-budget (category_id = null) entries.
+  const getBudgetsForCategory = useCallback((categoryId: string | null | undefined): BudgetWithSpending[] => {
+    if (!categoryId) return budgets.filter(b => b.category_id === null);
+    return [
+      ...budgets.filter(b => b.category_id === categoryId),
+      ...budgets.filter(b => b.category_id === null),
+    ];
+  }, [budgets]);
+
   // Find budget matching category
   const getBudgetForCategory = useCallback((categoryId: string | null): BudgetWithSpending | null => {
     if (!categoryId) return null;
@@ -93,6 +103,7 @@ export function useBudgetContext() {
     budgets,
     loading,
     getBudgetForCategory,
+    getBudgetsForCategory,
     getBudgetStatus,
     suggestBudgets,
   };

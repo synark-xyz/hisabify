@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Check, X, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,14 +20,7 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
   const { toast } = useToast();
   const [permissionStatus, setPermissionStatus] = useState<'checking' | 'granted' | 'denied'>('checking');
 
-  // Check permission on mount
-  useEffect(() => {
-    if (open) {
-      checkPermission();
-    }
-  }, [open]);
-
-  const checkPermission = async () => {
+  const checkPermission = useCallback(async () => {
     setPermissionStatus('checking');
     const result = await checkMicrophonePermission();
 
@@ -43,7 +36,14 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
     } else {
       setPermissionStatus('granted'); // Prompt will show when user taps mic
     }
-  };
+  }, [checkMicrophonePermission, toast]);
+
+  // Check permission on mount
+  useEffect(() => {
+    if (open) {
+      void checkPermission();
+    }
+  }, [open, checkPermission]);
 
   const handleClose = () => {
     if (isListening) {

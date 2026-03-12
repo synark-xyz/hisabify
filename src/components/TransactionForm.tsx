@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useCategories } from '@/hooks/useCategories';
+import { useBudgetContext } from '@/hooks/useBudgetContext';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ interface TransactionFormProps {
     category?: string;
     receiptUrl?: string | null;
   };
+  initialBudgetId?: string | null;
 }
 
 interface TransactionFormValues {
@@ -54,6 +56,7 @@ export function TransactionForm({
   initialTransaction,
   initialType,
   initialData,
+  initialBudgetId,
 }: TransactionFormProps) {
   const [type, setType] = useState<'expense' | 'income'>(
     initialType === 'income' ? 'income' : 'expense'
@@ -61,6 +64,9 @@ export function TransactionForm({
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [convertedPreview, setConvertedPreview] = useState<{ amount: number; rate: number } | null>(null);
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(
+    initialBudgetId ?? (initialTransaction?.budget_id ?? null)
+  );
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -68,6 +74,7 @@ export function TransactionForm({
   const { convertAmount } = useExchangeRate();
   const { isPremium } = useSubscription();
   const { categories } = useCategories();
+  const { getBudgetsForCategory } = useBudgetContext();
 
   const isEditMode = mode === 'edit' && !!initialTransaction;
 
@@ -84,6 +91,12 @@ export function TransactionForm({
 
   const watchedAmount = form.watch('amount');
   const watchedCurrency = form.watch('currency');
+  const watchedCategoryId = form.watch('categoryId');
+
+  const matchingBudgets = useMemo(() => {
+    if (type !== 'expense' || !watchedCategoryId) return [];
+    return getBudgetsForCategory(watchedCategoryId);
+  }, [type, watchedCategoryId, getBudgetsForCategory]);
 
   const initializeCreateState = useCallback(() => {
     setType(initialType === 'income' ? 'income' : 'expense');
@@ -95,7 +108,8 @@ export function TransactionForm({
       note: '',
       currency,
     });
-  }, [currency, form, initialData, initialType]);
+    setSelectedBudgetId(initialBudgetId ?? null);
+  }, [currency, form, initialData, initialType, initialBudgetId]);
 
   const initializeEditState = useCallback(() => {
     if (!initialTransaction) {
@@ -111,6 +125,7 @@ export function TransactionForm({
       note: stripLegacyNoteTag(initialTransaction.note),
       currency: initialTransaction.currency_original || currency,
     });
+    setSelectedBudgetId(initialTransaction.budget_id ?? null);
   }, [currency, form, initialTransaction]);
 
   useEffect(() => {
@@ -206,6 +221,7 @@ export function TransactionForm({
       type,
       date: data.date.toISOString(),
       category_id: type === 'expense' ? data.categoryId : null,
+      budget_id: type === 'expense' ? (selectedBudgetId ?? null) : null,
       card_id: null,
       note: data.note.trim() || null,
       receipt_url: initialData?.receiptUrl || null,
@@ -360,7 +376,13 @@ export function TransactionForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Category</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => {
+                      field.onChange(val);
+                      setSelectedBudgetId(null); // reset budget chip on category change
+                    }}
+                  >
                     <FormControl>
                       <SelectTrigger className="rounded-xl">
                         <SelectValue placeholder="Select category" />
@@ -378,6 +400,57 @@ export function TransactionForm({
                 </FormItem>
               )}
             />
+          )}
+
+          {/* Budget chip suggestions — Feature 1 & 4 */}
+          {type === 'expense' && matchingBudgets.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-70">Apply to Budget</p>
+              <div className="flex flex-wrap gap-2">
+                {matchingBudgets.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => {
+                      const selecting = selectedBudgetId !== b.id;
+                      setSelectedBudgetId(selecting ? b.id : null);
+
+                      if (selecting) {
+                        // Auto-fill amount if field is currently empty
+                        if (!form.getValues('amount')) {
+                          const fill = b.remaining > 0 ? b.remaining : b.amount;
+                          if (fill > 0) form.setValue('amount', fill.toFixed(2));
+                        }
+                        // Auto-fill merchant/description if field is currently empty
+                        if (!form.getValues('merchant')) {
+                          const name = b.category?.name || b.name || '';
+                          if (name) form.setValue('merchant', name);
+                        }
+                      }
+                    }}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                      selectedBudgetId === b.id
+                        ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
+                        : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                    )}
+                  >
+                    <span>{b.category?.name || b.name || 'Total Budget'}</span>
+                    <span className={cn(
+                      'tabular-nums text-[10px]',
+                      b.remaining <= 0 ? 'text-destructive' : 'opacity-60'
+                    )}>
+                      {baseCurrencySymbol}{b.remaining.toLocaleString(undefined, { maximumFractionDigits: 0 })} left
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {!selectedBudgetId && (
+                <p className="text-[10px] text-muted-foreground">
+                  No budget selected — expense will be unbudgeted
+                </p>
+              )}
+            </div>
           )}
 
           <FormField

@@ -4,6 +4,7 @@ import { CategorySpending } from '@/types';
 import { useState, useEffect } from 'react';
 import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
+import type { PieSectorDataItem } from 'recharts/types/polar/Pie';
 
 interface ExpenseDonutChartProps {
   data: CategorySpending[];
@@ -25,7 +26,19 @@ const getChartColors = () => {
 
 const COLORS = getChartColors();
 
-const renderActiveShape = (props: any) => {
+type ActiveShapeProps = PieSectorDataItem & {
+  cx: number;
+  cy: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload: CategorySpending;
+  percent: number;
+};
+
+const renderActiveShape = (props: ActiveShapeProps) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
 
   return (
@@ -77,11 +90,11 @@ export function ExpenseDonutChart({ data, timeframeKey }: ExpenseDonutChartProps
     setActiveIndex(0);
   }, [timeframeKey, data?.length]);
 
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
 
-  const onPieClick = (_: any, index: number) => {
+  const onPieClick = (_: unknown, index: number) => {
     setActiveIndex(index);
     // Trigger click animation
     setClickAnimation(true);

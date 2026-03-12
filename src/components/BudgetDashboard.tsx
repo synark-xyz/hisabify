@@ -4,6 +4,7 @@ import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { useBudgets, BudgetWithSpending, Budget } from '@/hooks/useBudgets';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { BudgetProgressCard } from '@/components/BudgetProgressCard';
+import { BudgetTransactionsSheet } from '@/components/BudgetTransactionsSheet';
 import { BudgetHistoryChart } from '@/components/BudgetHistoryChart';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { UpgradeModal } from '@/components/UpgradeModal';
@@ -12,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Category } from '@/types';
 import { AddBudgetModal } from '@/components/AddBudgetModal';
+import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { DeleteBudgetDialog } from '@/components/DeleteBudgetDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,12 +21,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { PrivacyMask } from '@/components/ui/privacy-mask';
 
+interface BudgetCategoryOption {
+  id: string;
+  name: string;
+}
+
 export function BudgetDashboard() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetWithSpending | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<BudgetCategoryOption[]>([]);
+  const [drillDownBudget, setDrillDownBudget] = useState<BudgetWithSpending | null>(null);
+  const [payingBudget, setPayingBudget] = useState<BudgetWithSpending | null>(null);
 
   const { budgets, loading, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
   const { currency } = useCurrency();
@@ -35,12 +44,13 @@ export function BudgetDashboard() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res: any = await (supabase.from('categories') as any)
+        const { data, error } = await supabase
+          .from('categories')
           .select('id,name')
           .eq('is_system_category', false);
-        if (res?.error) throw res.error;
-        if (res?.data) {
-          setCategories((res.data as any[]).map((row) => ({ id: row.id, name: row.name })) as Category[]);
+        if (error) throw error;
+        if (data) {
+          setCategories(data.map((row) => ({ id: row.id, name: row.name })));
         }
       } catch (err) {
         console.error('Error fetching categories:', err);
@@ -61,8 +71,6 @@ export function BudgetDashboard() {
     setShowAddBudget(true);
   };
 
-
-
   const handleDelete = (budget: BudgetWithSpending) => {
     setDeletingBudget(budget);
   };
@@ -74,17 +82,23 @@ export function BudgetDashboard() {
     }
   };
 
-  const handleCopyToNext = async (budgetId: string) => {
-    if (!isPremium) {
-      setShowUpgradeModal(true);
-      return;
-    }
-    await copyBudgetToNextPeriod(budgetId);
-  };
-
   const closeAddModal = () => {
     setShowAddBudget(false);
     setEditingBudget(null);
+  };
+
+  const handlePayNow = (budget: BudgetWithSpending) => {
+    setPayingBudget(budget);
+  };
+
+  const handlePayNowSuccess = async () => {
+    const budget = payingBudget;
+    setPayingBudget(null);
+    // For recurring budgets, immediately create the next period so it's ready
+    if (budget?.is_recurring) {
+      await copyBudgetToNextPeriod(budget.id);
+    }
+    refetch();
   };
 
 
@@ -237,7 +251,8 @@ export function BudgetDashboard() {
               budget={budget}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onCopyToNext={handleCopyToNext}
+              onViewTransactions={setDrillDownBudget}
+              onPayNow={handlePayNow}
             />
           ))}
         </div>
@@ -278,6 +293,28 @@ export function BudgetDashboard() {
         open={!!deletingBudget}
         onOpenChange={(open) => !open && setDeletingBudget(null)}
         onConfirm={confirmDelete}
+      />
+
+      <BudgetTransactionsSheet
+        budget={drillDownBudget}
+        open={!!drillDownBudget}
+        onOpenChange={(open) => !open && setDrillDownBudget(null)}
+      />
+
+      {/* Pay Now — pre-filled transaction modal for quick budget payment */}
+      <AddTransactionModal
+        open={!!payingBudget}
+        onOpenChange={(open) => !open && setPayingBudget(null)}
+        onSuccess={handlePayNowSuccess}
+        initialType="expense"
+        initialData={{
+          merchant: payingBudget?.category?.name || payingBudget?.name || '',
+          amount: payingBudget
+            ? (payingBudget.remaining > 0 ? payingBudget.remaining : payingBudget.amount)
+            : undefined,
+          category: payingBudget?.category_id || undefined,
+        }}
+        initialBudgetId={payingBudget?.id ?? null}
       />
 
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />

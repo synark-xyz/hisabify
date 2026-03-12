@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { PostgrestError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { logger } from './logger';
 import { 
@@ -27,6 +28,11 @@ interface ApiOptions {
   retryCount?: number;
   retryDelay?: number;
 }
+
+type QueryResult<T> = {
+  data: T | null;
+  error: PostgrestError | null;
+};
 
 const defaultOptions: ApiOptions = {
   showErrorToast: true,
@@ -93,7 +99,7 @@ export async function withErrorHandling<T>(
  * Supabase query wrapper with error handling
  */
 export async function safeQuery<T>(
-  queryFn: () => Promise<{ data: T | null; error: any }>,
+  queryFn: () => Promise<QueryResult<T>>,
   context: string,
   options: ApiOptions = {}
 ): Promise<T> {
@@ -130,7 +136,7 @@ export async function safeQuery<T>(
  * Supabase mutation wrapper (insert, update, delete)
  */
 export async function safeMutation<T>(
-  mutationFn: () => Promise<{ data: T | null; error: any }>,
+  mutationFn: () => Promise<QueryResult<T>>,
   context: string,
   options: ApiOptions = {}
 ): Promise<T> {

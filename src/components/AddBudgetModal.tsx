@@ -1,20 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { Loader2, ChevronDown, AlertTriangle } from 'lucide-react';
 import { MobileDialog } from '@/components/ui/mobile-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { DateSelect } from '@/components/ui/date-select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useBudgets, PeriodType, Budget } from '@/hooks/useBudgets';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
 import { useCategories } from '@/hooks/useCategories';
+import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -26,9 +30,15 @@ const budgetFormSchema = z.object({
   }, 'Amount must be a positive number'),
   periodType: z.enum(['weekly', 'monthly', 'yearly']),
   startDate: z.date(),
-  endDate: z.date(),
+  endDate: z.date().optional(),
   name: z.string().optional(),
   currency: z.string().default('USD'),
+  isRecurring: z.boolean().default(false),
+  isContinuous: z.boolean().default(false),
+}).superRefine((data, ctx) => {
+  if (!data.isContinuous && !data.endDate) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'End date is required', path: ['endDate'] });
+  }
 });
 
 type BudgetFormData = z.infer<typeof budgetFormSchema>;
@@ -43,10 +53,14 @@ interface AddBudgetModalProps {
 export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }: AddBudgetModalProps) {
   const [loading, setLoading] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [incomeWarning, setIncomeWarning] = useState<string | null>(null);
+  const incomeCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { currency } = useCurrency();
+  const { user } = useAuth();
+  const { convertAmount } = useExchangeRate();
   const { isPremium } = useSubscription();
-  const { createBudget, updateBudget } = useBudgets();
+  const { createBudget, updateBudget, budgets } = useBudgets();
   const { categories } = useCategories();
   const currencySymbol = currencyData[currency]?.symbol || '$';
 
@@ -63,10 +77,12 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
       endDate: endOfMonth(new Date()),
       name: '',
       currency: currency,
+      isRecurring: false,
     },
   });
 
   const watchedPeriodType = form.watch('periodType');
+  const watchedIsContinuous = form.watch('isContinuous');
 
   useEffect(() => {
     if (open) {
@@ -79,6 +95,8 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
           endDate: editingBudget.end_date ? new Date(editingBudget.end_date) : endOfMonth(new Date()),
           name: editingBudget.name || '',
           currency: currency,
+          isRecurring: editingBudget.is_recurring || false,
+          isContinuous: !editingBudget.end_date,
         });
       } else {
         form.reset({
@@ -89,13 +107,17 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
           endDate: endOfMonth(new Date()),
           name: '',
           currency: currency,
+          isRecurring: false,
+          isContinuous: false,
         });
       }
+      setIncomeWarning(null);
     }
   }, [open, editingBudget, form, currency]);
 
-  // Auto-calculate end date when period type changes
+  // Auto-calculate end date when period type changes (skip for continuous budgets)
   useEffect(() => {
+    if (watchedIsContinuous) return;
     const startDate = form.getValues('startDate');
     if (!startDate) return;
 
@@ -114,12 +136,69 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
         newEndDate = endOfMonth(startDate);
     }
     form.setValue('endDate', newEndDate);
-  }, [watchedPeriodType, form]);
+  }, [watchedPeriodType, watchedIsContinuous, form]);
+
+  // Watch amount to trigger income validation
+  const watchedAmount = form.watch('amount');
+  const watchedStartDate = form.watch('startDate');
+  const watchedEndDate = form.watch('endDate');
+
+  useEffect(() => {
+    if (incomeCheckTimer.current) clearTimeout(incomeCheckTimer.current);
+    const amountNum = parseFloat(watchedAmount);
+    if (!user || !watchedStartDate || !watchedEndDate || isNaN(amountNum) || amountNum <= 0) {
+      setIncomeWarning(null);
+      return;
+    }
+
+    incomeCheckTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await supabase
+          .from('transactions')
+          .select('amount, currency_base')
+          .eq('user_id', user.id)
+          .eq('type', 'income')
+          .gte('date', watchedStartDate.toISOString())
+          .lte('date', watchedEndDate.toISOString());
+
+        let totalIncome = 0;
+        for (const t of data || []) {
+          const stored = t.currency_base || 'USD';
+          if (stored === currency) {
+            totalIncome += Number(t.amount);
+          } else {
+            const result = await convertAmount(Number(t.amount), stored, currency);
+            totalIncome += result ? result.convertedAmount : Number(t.amount);
+          }
+        }
+
+        // Sum of existing budgets for this period (excluding the one being edited)
+        const existingTotal = budgets
+          .filter((b) => b.id !== editingBudget?.id)
+          .reduce((sum, b) => sum + b.amount, 0);
+
+        const symbol = currencyData[currency]?.symbol || '$';
+        if (totalIncome > 0 && existingTotal + amountNum > totalIncome) {
+          setIncomeWarning(
+            `Total budgeted (${symbol}${(existingTotal + amountNum).toLocaleString(undefined, { maximumFractionDigits: 0 })}) exceeds your income for this period (${symbol}${totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}).`
+          );
+        } else {
+          setIncomeWarning(null);
+        }
+      } catch {
+        setIncomeWarning(null);
+      }
+    }, 400);
+
+    return () => {
+      if (incomeCheckTimer.current) clearTimeout(incomeCheckTimer.current);
+    };
+  }, [watchedAmount, watchedStartDate, watchedEndDate, user, currency, convertAmount, budgets, editingBudget]);
 
   const handleStartDateChange = (date: Date | undefined) => {
     if (!date) return;
-
     form.setValue('startDate', date);
+    if (watchedIsContinuous) return;
 
     // Auto-calculate end date based on period type
     let newEndDate: Date;
@@ -150,8 +229,9 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
           amount: parseFloat(data.amount),
           period_type: data.periodType,
           start_date: data.startDate,
-          end_date: data.endDate,
+          end_date: data.isContinuous ? null : data.endDate,
           name: data.name,
+          is_recurring: data.isRecurring,
         });
       } else {
         await createBudget({
@@ -159,8 +239,9 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
           amount: parseFloat(data.amount),
           period_type: data.periodType,
           start_date: data.startDate,
-          end_date: data.endDate,
+          end_date: data.isContinuous ? null : data.endDate,
           name: data.name,
+          is_recurring: data.isRecurring,
         });
       }
 
@@ -351,15 +432,76 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                 )}
               />
 
+              {/* Continuous toggle — hides End Date */}
               <FormField
                 control={form.control}
-                name="endDate"
+                name="isContinuous"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      End Date
-                    </FormLabel>
-                    <DateSelect value={field.value} onChange={field.onChange} />
+                    <div className="flex items-center justify-between rounded-xl border border-border px-3 py-3">
+                      <div>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                          Continuous
+                        </FormLabel>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          No end date — budget runs indefinitely
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* End Date — hidden when Continuous is on */}
+              {!watchedIsContinuous && (
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                        End Date
+                      </FormLabel>
+                      <DateSelect value={field.value} onChange={field.onChange} />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Income warning */}
+              {incomeWarning && (
+                <div className="flex items-start gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-700 dark:text-yellow-400">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                  <span>{incomeWarning}</span>
+                </div>
+              )}
+
+              {/* Auto-renew toggle */}
+              <FormField
+                control={form.control}
+                name="isRecurring"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between rounded-xl border border-border px-3 py-3">
+                      <div>
+                        <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                          Auto-renew each period
+                        </FormLabel>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Automatically create the next period's budget on expiry
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

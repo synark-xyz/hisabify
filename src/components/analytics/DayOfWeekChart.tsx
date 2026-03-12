@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrency } from '@/hooks/useCurrency';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { DayOfWeekAnalysis } from '@/hooks/useAdvancedAnalytics';
+import type { Payload } from 'recharts/types/component/DefaultTooltipContent';
 
 interface DayOfWeekChartProps {
   data: DayOfWeekAnalysis[];
@@ -77,7 +78,7 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip 
-                formatter={(value: number, name: string, props: any) => [
+                formatter={(value: number, _name: string, _props: Payload<number, string>) => [
                   formatAmount(value),
                   'Total Spent'
                 ]}

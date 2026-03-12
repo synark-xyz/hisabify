@@ -16,11 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DateSelect } from "@/components/ui/date-select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
 import { useCurrency, currencyData } from "@/hooks/useCurrency";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
+import { useBudgetContext } from "@/hooks/useBudgetContext";
+import { PremiumGuard } from "@/components/PremiumGuard";
 
 const goalSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -29,6 +32,11 @@ const goalSchema = z.object({
   deadline: z.date().optional(),
   color: z.string().default("#10B981"),
   currency: z.string().default("USD"),
+  linked_budget_id: z.string().optional(),
+  reserve_amount: z.coerce.number().min(0, "Cannot be negative").default(0),
+  auto_contribute_enabled: z.boolean().default(false),
+  auto_contribute_amount: z.coerce.number().min(0, "Cannot be negative").nullable().default(null),
+  auto_contribute_frequency: z.enum(["weekly", "monthly"]).nullable().default(null),
 });
 
 type GoalFormValues = z.infer<typeof goalSchema>;
@@ -59,6 +67,7 @@ export function AddSavingsGoalModal({
 }: AddSavingsGoalModalProps) {
   const { currency } = useCurrency();
   const { isPremium } = useSubscription();
+  const { budgets } = useBudgetContext();
   const [currencyOpen, setCurrencyOpen] = useState(false);
 
   // Handle keyboard on mobile
@@ -72,6 +81,11 @@ export function AddSavingsGoalModal({
       current_amount: 0,
       color: "#10B981",
       currency: currency,
+      linked_budget_id: undefined,
+      reserve_amount: 0,
+      auto_contribute_enabled: false,
+      auto_contribute_amount: null,
+      auto_contribute_frequency: null,
     },
   });
 
@@ -84,6 +98,11 @@ export function AddSavingsGoalModal({
         deadline: editingGoal.deadline ? new Date(editingGoal.deadline) : undefined,
         color: editingGoal.color,
         currency: currency,
+        linked_budget_id: editingGoal.linked_budget_id || undefined,
+        reserve_amount: editingGoal.reserve_amount || 0,
+        auto_contribute_enabled: editingGoal.auto_contribute_enabled,
+        auto_contribute_amount: editingGoal.auto_contribute_amount,
+        auto_contribute_frequency: editingGoal.auto_contribute_frequency,
       });
     } else {
       form.reset({
@@ -92,6 +111,11 @@ export function AddSavingsGoalModal({
         current_amount: 0,
         color: "#10B981",
         currency: currency,
+        linked_budget_id: undefined,
+        reserve_amount: 0,
+        auto_contribute_enabled: false,
+        auto_contribute_amount: null,
+        auto_contribute_frequency: null,
       });
     }
   }, [editingGoal, form, currency]);
@@ -211,7 +235,7 @@ export function AddSavingsGoalModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Starting Amount
+                      {editingGoal ? "Current Saved" : "Starting Amount"}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -221,8 +245,14 @@ export function AddSavingsGoalModal({
                         {...field}
                         min="0"
                         step="0.01"
+                        disabled={!!editingGoal}
                       />
                     </FormControl>
+                    {editingGoal && (
+                      <p className="text-xs text-muted-foreground">
+                        Saved progress is derived from transactions and cannot be edited directly.
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -241,6 +271,139 @@ export function AddSavingsGoalModal({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="linked_budget_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      Reserve From Budget
+                    </FormLabel>
+                    <Select value={field.value || "none"} onValueChange={(value) => field.onChange(value === "none" ? undefined : value)}>
+                      <FormControl>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Optional budget link" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">No linked budget</SelectItem>
+                        {budgets.map((budget) => (
+                          <SelectItem key={budget.id} value={budget.id}>
+                            {budget.category?.name || budget.name || "Budget"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="reserve_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      Savings Reserved
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        className="rounded-xl"
+                        {...field}
+                        min="0"
+                        step="0.01"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <PremiumGuard featureName="Savings Automation">
+                <div className="space-y-4 rounded-2xl border border-border/50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Auto-contribute
+                  </p>
+
+                  <FormField
+                    control={form.control}
+                    name="auto_contribute_enabled"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-xl bg-muted/30 px-3 py-2">
+                        <FormLabel className="text-sm font-medium text-foreground">
+                          Contribute automatically
+                        </FormLabel>
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4"
+                            checked={field.value}
+                            onChange={(event) => field.onChange(event.target.checked)}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="auto_contribute_amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                            Amount
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              className="rounded-xl"
+                              value={field.value ?? ""}
+                              onChange={(event) => field.onChange(event.target.value ? Number(event.target.value) : null)}
+                              min="0"
+                              step="0.01"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="auto_contribute_frequency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                            Frequency
+                          </FormLabel>
+                          <Select value={field.value || "monthly"} onValueChange={(value) => field.onChange(value as "weekly" | "monthly")}>
+                            <FormControl>
+                              <SelectTrigger className="rounded-xl">
+                                <SelectValue placeholder="Frequency" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {!isPremium && (
+                    <p className="text-xs text-muted-foreground">
+                      Automate your savings with Hisabify Pro
+                    </p>
+                  )}
+                </div>
+              </PremiumGuard>
 
               <FormField
                 control={form.control}

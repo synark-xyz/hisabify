@@ -26,16 +26,6 @@ export function HealthScoreCard() {
         return '#f43f5e'; // rose-500
     };
 
-    const getTip = () => {
-        const { budget, savings, activity } = score.breakdown;
-        const lowest = Math.min(budget, savings, activity);
-
-        if (lowest === budget) return "Stay within your budgets to boost your score.";
-        if (lowest === savings) return "Consistent savings will improve your health.";
-        if (lowest === activity) return "Log daily activity for maximum points.";
-        return "Excellent financial discipline!";
-    };
-
     // Circular gauge calculations
     const radius = 58;
     const circumference = 2 * Math.PI * radius;
@@ -148,7 +138,7 @@ export function HealthScoreCard() {
                                     Smart Insight
                                 </p>
                                 <p className="text-sm font-medium text-foreground leading-relaxed pr-2">
-                                    "{getTip()}"
+                                    "{score.insight}"
                                 </p>
                             </div>
                         </PopoverTrigger>
@@ -167,7 +157,7 @@ export function HealthScoreCard() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-current" />
                                         </div>
                                         <div>
-                                            <span className="font-bold text-emerald-500">Budget Adherence (40%)</span>
+                                            <span className="font-bold text-emerald-500">Budget Control</span>
                                             <p className="text-muted-foreground">Staying within your set budgets.</p>
                                         </div>
                                     </li>
@@ -176,8 +166,8 @@ export function HealthScoreCard() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-current" />
                                         </div>
                                         <div>
-                                            <span className="font-bold text-blue-500">Savings Habits (30%)</span>
-                                            <p className="text-muted-foreground">Consistently adding to goals.</p>
+                                            <span className="font-bold text-blue-500">Savings Signals</span>
+                                            <p className="text-muted-foreground">Goals, pace, contributions, completions, and automation.</p>
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-2 text-xs">
@@ -185,7 +175,7 @@ export function HealthScoreCard() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-current" />
                                         </div>
                                         <div>
-                                            <span className="font-bold text-amber-500">Activity (30%)</span>
+                                            <span className="font-bold text-amber-500">Activity</span>
                                             <p className="text-muted-foreground">Regularly logging transactions.</p>
                                         </div>
                                     </li>

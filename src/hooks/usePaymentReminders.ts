@@ -7,6 +7,7 @@ import { PaymentReminder } from '@/types';
 import { calculateNextDueDate } from '@/lib/recurringReminders';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
 import { emitTransactionUpdated } from '@/lib/transaction-events';
+import { recordSavingsContribution } from '@/lib/savings';
 
 export function usePaymentReminders() {
     const { user } = useAuth();
@@ -110,6 +111,18 @@ export function usePaymentReminders() {
      * Failure is non-fatal — the reminder update is not reverted.
      */
     const recordReminderTransaction = useCallback(async (reminder: PaymentReminder) => {
+        if (reminder.savings_goal_id) {
+            await recordSavingsContribution({
+                userId: reminder.user_id,
+                goalId: reminder.savings_goal_id,
+                goalName: reminder.title.replace(/^Savings:\s*/, ''),
+                amount: reminder.amount,
+                currency: reminder.currency || 'USD',
+                note: reminder.title.replace(/^Savings:\s*/, ''),
+            });
+            return;
+        }
+
         const budgetId = await findMatchingBudgetId(reminder.user_id, reminder.category_id ?? null);
 
         const { error } = await supabase.from('transactions').insert({

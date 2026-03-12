@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard } from 'lucide-react';
+import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard, PiggyBank } from 'lucide-react';
 import { BudgetSpendingChart } from '@/components/BudgetSpendingChart';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -20,6 +20,8 @@ interface BudgetProgressCardProps {
   onViewTransactions?: (budget: BudgetWithSpending) => void;
   onPayNow?: (budget: BudgetWithSpending) => void;
   onSaveAsTemplate?: (budgetId: string) => void;
+  onMoveLeftoverToSavings?: (budget: BudgetWithSpending) => void;
+  savingsReserved?: number;
 }
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -66,7 +68,7 @@ const getStatusLabel = (status: BudgetStatus): string => {
   }
 };
 
-export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransactions, onPayNow, onSaveAsTemplate }: BudgetProgressCardProps) {
+export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransactions, onPayNow, onSaveAsTemplate, onMoveLeftoverToSavings, savingsReserved = 0 }: BudgetProgressCardProps) {
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
 
@@ -141,6 +143,13 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
                   </DropdownMenuItem>
                 )}
 
+                {onMoveLeftoverToSavings && budget.remaining > 0 && (
+                  <DropdownMenuItem onClick={() => onMoveLeftoverToSavings(budget)}>
+                    <PiggyBank className="mr-2 h-4 w-4" />
+                    Move Leftover to Savings
+                  </DropdownMenuItem>
+                )}
+
                 <DropdownMenuItem onClick={() => onEdit(budget)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
@@ -186,6 +195,17 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
             </p>
           </div>
         </div>
+
+        {savingsReserved > 0 && (
+          <div className="mb-4 rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Savings Reserved</span>
+              <span className="font-semibold text-foreground">
+                {currencySymbol}{savingsReserved.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Progress Bar */}
         <div className="relative">

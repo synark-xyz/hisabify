@@ -3,6 +3,10 @@ import { Transaction } from "@/types";
 export const getTransactionCategoryName = (tx: Transaction): string => {
     if (tx.category?.name) return tx.category.name;
 
+    if (tx.savings_goal_id) {
+        return tx.type === 'income' ? 'Savings Return' : 'Savings';
+    }
+
     const note = tx.note || '';
     if (note.includes('[credit_card]')) return 'Credit Card Bill';
     if (note.includes('[utility]')) return 'Utility Bill';
@@ -18,6 +22,10 @@ export const getTransactionCategoryName = (tx: Transaction): string => {
 
 export const getTransactionCategoryColor = (tx: Transaction): string => {
     if (tx.category?.color) return tx.category.color;
+
+    if (tx.savings_goal_id) {
+        return tx.type === 'income' ? '#3B82F6' : '#10B981';
+    }
 
     const note = tx.note || '';
     if (note.includes('[credit_card]')) return '#F43F5E'; // Rose

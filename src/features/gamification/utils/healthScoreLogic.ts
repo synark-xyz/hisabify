@@ -1,69 +1,71 @@
 import { differenceInDays, parseISO } from 'date-fns';
 
 interface HealthScoreParams {
-    totalSpent: number;
-    totalBudget: number;
-    currentSavings: number;
-    targetSavings: number;
-    lastActiveAt: string | null;
+  totalSpent: number;
+  totalBudget: number;
+  hasActiveGoal: boolean;
+  anyGoalOnTrack: boolean;
+  hasSavingsContributionThisMonth: boolean;
+  completedGoalsCount: number;
+  anyAutoContributeEnabled: boolean;
+  overdueWithoutContribution: boolean;
+  transferredBudgetLeftoverThisMonth: boolean;
+  atRiskGoalName?: string | null;
+  onTrackGoalName?: string | null;
+  lastActiveAt: string | null;
 }
 
 export interface HealthScoreResult {
-    total: number;
-    breakdown: {
-        budget: number;
-        savings: number;
-        activity: number;
-    };
+  total: number;
+  breakdown: {
+    budget: number;
+    savings: number;
+    activity: number;
+  };
+  insight: string;
 }
 
-export function calculateHealthScore({
-    totalSpent,
-    totalBudget,
-    currentSavings,
-    targetSavings,
-    lastActiveAt,
-}: HealthScoreParams): HealthScoreResult {
-    // 1. Budget Adherence Score (40%)
-    // Logic: 100 - (spent/budget * 100)
-    let budgetScore = 0;
-    if (totalBudget > 0) {
-        budgetScore = Math.max(0, 100 - (totalSpent / totalBudget) * 100);
-    } else if (totalSpent === 0) {
-        budgetScore = 100; // No budget and no spending is perfect control
-    } else {
-        budgetScore = 0; // Spending without a budget is 0 control
-    }
+export function calculateHealthScore(params: HealthScoreParams): HealthScoreResult {
+  let budgetScore = 0;
+  if (params.totalBudget > 0) {
+    const adherence = Math.max(0, 1 - params.totalSpent / params.totalBudget);
+    budgetScore = Math.round(adherence * 35);
+  } else if (params.totalSpent === 0) {
+    budgetScore = 35;
+  }
 
-    // 2. Savings Progress Score (30%)
-    // Logic: (current/target) * 100
-    let savingsScore = 0;
-    if (targetSavings > 0) {
-        savingsScore = Math.min(100, (currentSavings / targetSavings) * 100);
-    } else {
-        savingsScore = 100; // No goals means you "completed" your non-existent goals or it's neutral. 
-        // Let's assume 100 to not penalize people without goals in this specific metric.
-    }
+  let savingsScore = 0;
+  if (params.hasActiveGoal) savingsScore += 10;
+  if (params.anyGoalOnTrack) savingsScore += 10;
+  if (params.hasSavingsContributionThisMonth) savingsScore += 10;
+  if (params.completedGoalsCount > 0) savingsScore += 15;
+  if (params.anyAutoContributeEnabled) savingsScore += 5;
+  if (params.transferredBudgetLeftoverThisMonth) savingsScore += 5;
+  if (params.overdueWithoutContribution) savingsScore -= 10;
+  savingsScore = Math.max(0, Math.min(50, savingsScore));
 
-    // 3. Activity Score (30%)
-    // Logic: 100 - (days_inactive * 10)
-    let activityScore = 0;
-    if (lastActiveAt) {
-        const lastActiveDate = parseISO(lastActiveAt);
-        const daysInactive = Math.abs(differenceInDays(new Date(), lastActiveDate));
-        activityScore = Math.max(0, 100 - daysInactive * 10);
-    }
+  let activityScore = 0;
+  if (params.lastActiveAt) {
+    const daysInactive = Math.abs(differenceInDays(new Date(), parseISO(params.lastActiveAt)));
+    activityScore = Math.max(0, 15 - daysInactive * 2);
+  }
 
-    const weightedBudget = budgetScore * 0.4;
-    const weightedSavings = savingsScore * 0.3;
-    const weightedActivity = activityScore * 0.3;
+  let insight = 'Set a savings goal to boost your score.';
+  if (params.hasActiveGoal && params.overdueWithoutContribution && params.atRiskGoalName) {
+    insight = `You're behind on ${params.atRiskGoalName}. Contribute today.`;
+  } else if (params.anyGoalOnTrack && params.onTrackGoalName) {
+    insight = `Great discipline - ${params.onTrackGoalName} is on track!`;
+  } else if (params.hasActiveGoal) {
+    insight = 'Keep contributing to maintain your momentum.';
+  }
 
-    return {
-        total: Math.round(weightedBudget + weightedSavings + weightedActivity),
-        breakdown: {
-            budget: Math.round(budgetScore),
-            savings: Math.round(savingsScore),
-            activity: Math.round(activityScore),
-        },
-    };
+  return {
+    total: Math.max(0, Math.min(100, budgetScore + savingsScore + activityScore)),
+    breakdown: {
+      budget: budgetScore,
+      savings: savingsScore,
+      activity: activityScore,
+    },
+    insight,
+  };
 }

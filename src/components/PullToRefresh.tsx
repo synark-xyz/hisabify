@@ -34,8 +34,7 @@ export function PullToRefresh({ onRefresh, children, className = '' }: PullToRef
   return (
     <div
       ref={containerRef}
-      className={cn('relative overflow-y-auto', className)}
-      style={{ WebkitOverflowScrolling: 'touch' }}
+      className={cn('relative', className)}
     >
       {/* Material Design Pull-to-Refresh Indicator */}
       <AnimatePresence>

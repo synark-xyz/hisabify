@@ -10,8 +10,10 @@ interface User {
   currency: string;
   subscription_type: 'base' | 'pro';
   subscription_status: string;
+  pro_access_override: boolean | null;
   referral_code: string | null;
   referral_credits: number;
+  referral_granted_until: string | null;
   last_active_at: string | null;
   privacy_policy_accepted: boolean;
 }
@@ -23,8 +25,10 @@ const defaultProfile: User = {
   currency: 'USD',
   subscription_type: 'base',
   subscription_status: 'inactive',
+  pro_access_override: null,
   referral_code: null,
   referral_credits: 0,
+  referral_granted_until: null,
   last_active_at: null,
   privacy_policy_accepted: false,
 };
@@ -37,8 +41,10 @@ function mapUserRowToProfile(data: Record<string, unknown>): User {
     currency: (data.currency as string | null) || 'USD',
     subscription_type: ((data.subscription_type as 'base' | 'pro' | null) || 'base'),
     subscription_status: (data.subscription_status as string | null) || 'inactive',
+    pro_access_override: (data.pro_access_override as boolean | null) ?? null,
     referral_code: (data.referral_code as string | null) || null,
     referral_credits: (data.referral_credits as number | null) || 0,
+    referral_granted_until: (data.referral_granted_until as string | null) || null,
     last_active_at: (data.last_active_at as string | null) || null,
     privacy_policy_accepted: (data.privacy_policy_accepted as boolean | null) ?? false,
   };
@@ -126,8 +132,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const statusTriggerSet = new Set(['cancelled', 'canceled', 'expired']);
-
     const channel = supabase
       .channel(`profile-subscription-${user.id}`)
       .on(
@@ -140,13 +144,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         },
         (payload) => {
           const next = payload.new as Record<string, unknown>;
-          const prev = payload.old as Record<string, unknown>;
-          const nextStatus = String(next.subscription_status || '').toLowerCase();
-          const prevStatus = String(prev.subscription_status || '').toLowerCase();
-
-          if (!statusTriggerSet.has(nextStatus) || nextStatus === prevStatus) {
-            return;
-          }
 
           const nextProfile = mapUserRowToProfile(next);
           setProfileState(nextProfile);

@@ -67,6 +67,27 @@ export type Database = {
           },
         ]
       }
+      app_config: {
+        Row: {
+          created_at: string
+          disable_subscription_gating: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          disable_subscription_gating?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          disable_subscription_gating?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cards: {
         Row: {
           balance: number
@@ -247,6 +268,7 @@ export type Database = {
           week_start_day: string
           subscription_type: 'base' | 'pro'
           subscription_status: string
+          pro_access_override: boolean | null
           referral_code: string | null
           referral_credits: number
           referred_by: string | null
@@ -272,6 +294,7 @@ export type Database = {
           week_start_day?: string
           subscription_type?: 'base' | 'pro'
           subscription_status?: string
+          pro_access_override?: boolean | null
           referral_code?: string | null
           referral_credits?: number
           referred_by?: string | null
@@ -297,6 +320,7 @@ export type Database = {
           week_start_day?: string
           subscription_type?: 'base' | 'pro'
           subscription_status?: string
+          pro_access_override?: boolean | null
           referral_code?: string | null
           referral_credits?: number
           referred_by?: string | null

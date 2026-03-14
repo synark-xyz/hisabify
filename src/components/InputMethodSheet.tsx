@@ -10,7 +10,7 @@ interface InputMethodSheetProps {
   onVoice: () => void;
   onReceipt: () => void;
   onManual: () => void;
-  onReminder: () => void;
+  onReminder?: () => void;
 }
 
 export function InputMethodSheet({
@@ -82,7 +82,7 @@ interface ActionCardProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   description: string;
-  onClick: () => void;
+  onClick?: () => void;
   isPremium: boolean;
   showPremiumBadge?: boolean;
 }

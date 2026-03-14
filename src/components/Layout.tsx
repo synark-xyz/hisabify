@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BottomNavigation } from '@/components/BottomNavigation';
@@ -23,6 +23,12 @@ export function Layout() {
 
     const location = useLocation();
     const { variant } = useTheme();
+
+    useEffect(() => {
+        const handleOpenInputSheet = () => setShowInputSheet(true);
+        window.addEventListener('open-input-sheet', handleOpenInputSheet);
+        return () => window.removeEventListener('open-input-sheet', handleOpenInputSheet);
+    }, []);
 
     // Generic Header Logic
     const getPageTitle = (pathname: string) => {

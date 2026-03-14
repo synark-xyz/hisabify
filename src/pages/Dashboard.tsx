@@ -360,7 +360,7 @@ export function Dashboard() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
-                    onClick={() => navigate('/expenses')}
+                    onClick={() => window.dispatchEvent(new Event('open-input-sheet'))}
                     className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
                   >
                     Add Transaction

@@ -18,6 +18,7 @@ import {
 } from 'date-fns';
 
 import { Transaction } from '@/types';
+import { isRealExpense } from '@/lib/transactionUtils';
 
 interface ConvertedTransaction extends Transaction {
   convertedAmount: number;
@@ -98,7 +99,7 @@ export interface DayOfWeekAnalysis {
 export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
   // Spending patterns analysis
   const spendingPatterns = useMemo<SpendingPattern>(() => {
-    const expenses = transactions.filter(t => t.type === 'expense');
+    const expenses = transactions.filter(isRealExpense);
 
     if (expenses.length === 0) {
       return {
@@ -201,7 +202,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
   // Generate insights
   const insights = useMemo<Insight[]>(() => {
     const insightsList: Insight[] = [];
-    const expenses = transactions.filter(t => t.type === 'expense');
+    const expenses = transactions.filter(isRealExpense);
     const now = new Date();
 
     // Month comparison insight
@@ -315,7 +316,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.convertedAmount, 0);
       const expenses = periodTx
-        .filter(t => t.type === 'expense')
+        .filter(isRealExpense)
         .reduce((sum, t) => sum + t.convertedAmount, 0);
 
       return { income, expenses, net: income - expenses };
@@ -358,7 +359,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.convertedAmount, 0);
       const expenses = periodTx
-        .filter(t => t.type === 'expense')
+        .filter(isRealExpense)
         .reduce((sum, t) => sum + t.convertedAmount, 0);
 
       return { income, expenses, net: income - expenses };
@@ -397,7 +398,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
       const monthExpenses = transactions
         .filter(t => {
           const date = new Date(t.date);
-          return t.type === 'expense' && date >= monthStart && date <= monthEnd;
+          return isRealExpense(t) && date >= monthStart && date <= monthEnd;
         })
         .reduce((sum, t) => sum + t.convertedAmount, 0);
 
@@ -443,7 +444,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
     const endDate = endOfMonth(now);
 
     const days = eachDayOfInterval({ start: startDate, end: endDate });
-    const expenses = transactions.filter(t => t.type === 'expense');
+    const expenses = transactions.filter(isRealExpense);
 
     // Calculate daily amounts
     const dayMap: Record<string, { amount: number; count: number }> = {};
@@ -486,7 +487,7 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
   // Day of week analysis
   const dayOfWeekAnalysis = useMemo<DayOfWeekAnalysis[]>(() => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const expenses = transactions.filter(t => t.type === 'expense');
+    const expenses = transactions.filter(isRealExpense);
 
     // Group by day of week
     const dayData: Record<number, { total: number; count: number; days: Set<string> }> = {};

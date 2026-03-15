@@ -120,7 +120,7 @@ export function useReportData(filters: ReportFilters) {
 
   const reportData = useMemo((): ReportData => {
     // Summary calculations
-    const expenses = transactions.filter((t) => t.type === "expense");
+    const expenses = transactions.filter((t) => t.type === "expense" && !t.savings_goal_id);
     const income = transactions.filter((t) => t.type === "income");
 
     const totalExpenses = expenses.reduce((sum, t) => sum + Number(t.amount), 0);
@@ -184,7 +184,7 @@ export function useReportData(filters: ReportFilters) {
     transactions.forEach((t) => {
       const dateKey = format(new Date(t.date), "yyyy-MM-dd");
       const existing = dailyMap.get(dateKey) || { expenses: 0, income: 0 };
-      if (t.type === "expense") {
+      if (t.type === "expense" && !t.savings_goal_id) {
         existing.expenses += Number(t.amount);
       } else {
         existing.income += Number(t.amount);

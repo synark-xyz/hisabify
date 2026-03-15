@@ -147,17 +147,22 @@ interface InputMethodSheetProps {
 
 **Location:** `src/components/VoiceInputFlow.tsx`
 
-**Purpose:** Voice recording interface with real-time transcription
+**Purpose:** Voice recording interface with promise-based "Record Once" architecture
 
-**Technology:** Web Speech API (browser native)
+**Technology:** Capacitor Speech Recognition (native) + Web Speech API (browser fallback)
+
+**Hook:** `useVoiceInput.ts` returns `{ listen, stop, parseCommand }`
+- `listen(): Promise<string>` — starts recognition, blocks until speech ends, returns final text
+- `stop(): Promise<void>` — stops early; recognition finalizes and `listen()` promise resolves
+- `parseCommand(text)` — regex-based merchant/amount/type extraction
 
 **Features:**
 - Large pulsing microphone button
-- Real-time transcript display
-- Visual feedback (waveform animation)
+- Android auto-silence-detection (~2-3s)
 - Parse merchant + amount from transcript
 - "Use This" button → pre-fills AddTransactionModal
 - Error handling (browser not supported, permission denied)
+- No event listeners, no race conditions
 
 **Parsing Logic:**
 ```typescript
@@ -168,12 +173,25 @@ Input: "Taxi fifteen dollars"
 Output: { merchant: "Taxi", amount: 15 }
 ```
 
-**UI States:**
-- **Idle:** "Tap to Speak" prompt
-- **Listening:** Animated mic, "Listening..." text
-- **Processing:** Shows recognized text
-- **Result:** Preview card with parsed data
-- **Error:** Red text with retry button
+**UI Phases (3 phases, zero useEffects for transitions):**
+- **Idle:** "Tap to Record" prompt with tips
+- **Recording:** Pulsing animation, "Listening..." text, tap to stop early
+- **Result:** Preview card with parsed data, "Try Again" / "Use This" buttons
+
+**Core Flow:**
+```typescript
+const handleRecord = async () => {
+  setPhase('recording');
+  try {
+    const text = await listen();   // blocks until speech ends
+    setTranscript(text);
+    setPhase(text ? 'result' : 'idle');
+  } catch (e) {
+    setError(e.message);
+    setPhase('idle');
+  }
+};
+```
 
 **Limitations:**
 - Requires browser support (Chrome, Safari, Edge)

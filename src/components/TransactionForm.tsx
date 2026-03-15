@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +31,7 @@ interface TransactionFormProps {
     amount?: number;
     category?: string;
     receiptUrl?: string | null;
+    date?: Date;
   };
   initialBudgetId?: string | null;
 }
@@ -58,8 +59,8 @@ export function TransactionForm({
   initialData,
   initialBudgetId,
 }: TransactionFormProps) {
-  const [type, setType] = useState<'expense' | 'income'>(
-    initialType === 'income' ? 'income' : 'expense'
+  const [type, setType] = useState<'expense' | 'income' | 'lend' | 'owe'>(
+    initialType || 'expense'
   );
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
@@ -83,7 +84,7 @@ export function TransactionForm({
       merchant: initialData?.merchant || '',
       amount: initialData?.amount ? String(initialData.amount) : '',
       categoryId: initialData?.category || '',
-      date: new Date(),
+      date: initialData?.date || new Date(),
       note: '',
       currency,
     },
@@ -94,17 +95,17 @@ export function TransactionForm({
   const watchedCategoryId = form.watch('categoryId');
 
   const matchingBudgets = useMemo(() => {
-    if (type !== 'expense' || !watchedCategoryId) return [];
+    if ((type !== 'expense' && type !== 'lend' && type !== 'owe') || !watchedCategoryId) return [];
     return getBudgetsForCategory(watchedCategoryId);
   }, [type, watchedCategoryId, getBudgetsForCategory]);
 
   const initializeCreateState = useCallback(() => {
-    setType(initialType === 'income' ? 'income' : 'expense');
+    setType(initialType || 'expense');
     form.reset({
       merchant: initialData?.merchant || '',
       amount: initialData?.amount ? String(initialData.amount) : '',
       categoryId: initialData?.category || '',
-      date: new Date(),
+      date: initialData?.date || new Date(),
       note: '',
       currency,
     });
@@ -116,7 +117,7 @@ export function TransactionForm({
       return;
     }
 
-    setType(initialTransaction.type === 'income' ? 'income' : 'expense');
+    setType((initialTransaction.type as 'expense' | 'income' | 'lend' | 'owe') || 'expense');
     form.reset({
       merchant: initialTransaction.merchant,
       amount: String(initialTransaction.amount_original || initialTransaction.amount),
@@ -187,7 +188,7 @@ export function TransactionForm({
       return;
     }
 
-    if (type === 'expense' && !data.categoryId) {
+    if ((type === 'expense' || type === 'lend' || type === 'owe') && !data.categoryId) {
       form.setError('categoryId', { type: 'manual', message: 'Category is required.' });
       return;
     }
@@ -220,8 +221,8 @@ export function TransactionForm({
       exchange_source: exchangeSource,
       type,
       date: data.date.toISOString(),
-      category_id: type === 'expense' ? data.categoryId : null,
-      budget_id: type === 'expense' ? (selectedBudgetId ?? null) : null,
+      category_id: (type === 'expense' || type === 'lend' || type === 'owe') ? data.categoryId : null,
+      budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? (selectedBudgetId ?? null) : null,
       savings_goal_id: initialTransaction?.savings_goal_id ?? null,
       card_id: null,
       note: data.note.trim() || null,
@@ -240,7 +241,8 @@ export function TransactionForm({
         if (error) {
           throw error;
         }
-        toast({ title: `${type === 'expense' ? 'Expense' : 'Income'} added!` });
+        const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow' };
+        toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
       }
 
       onSuccess();
@@ -265,17 +267,19 @@ export function TransactionForm({
 
   return (
     <div className="overflow-y-auto px-4 pb-safe-nav h-full">
-      <div className="flex gap-2 mb-6">
+      <div className="grid grid-cols-4 gap-2 mb-6">
         {[
           { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
           { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-        ].map((opt: { id: 'expense' | 'income'; name: string; icon: typeof ArrowUpRight; color: string; bg: string }) => (
+          { id: 'lend', name: 'Lend', icon: Handshake, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+          { id: 'owe', name: 'Borrow', icon: Landmark, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+        ].map((opt: { id: 'expense' | 'income' | 'lend' | 'owe'; name: string; icon: typeof ArrowUpRight; color: string; bg: string }) => (
           <button
             key={opt.id}
             type="button"
             onClick={() => setType(opt.id)}
             className={cn(
-              'flex-1 flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all card-3d',
+              'flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all card-3d',
               type === opt.id ? 'border-accent bg-accent/5 ring-1 ring-accent/20 border-glow' : 'border-border bg-card hover:bg-muted'
             )}
           >
@@ -370,7 +374,7 @@ export function TransactionForm({
             )}
           />
 
-          {type === 'expense' && (
+          {(type === 'expense' || type === 'lend' || type === 'owe') && (
             <FormField
               control={form.control}
               name="categoryId"
@@ -404,7 +408,7 @@ export function TransactionForm({
           )}
 
           {/* Budget chip suggestions — Feature 1 & 4 */}
-          {type === 'expense' && matchingBudgets.length > 0 && (
+          {(type === 'expense' || type === 'lend' || type === 'owe') && matchingBudgets.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-bold uppercase tracking-wider opacity-70">Apply to Budget</p>
               <div className="flex flex-wrap gap-2">

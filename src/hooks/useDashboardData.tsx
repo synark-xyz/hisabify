@@ -6,7 +6,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Transaction, CategorySpending, MonthlySpending } from '@/types';
 import { format, startOfMonth, endOfMonth, subMonths, parseISO } from 'date-fns';
-import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
+import { getTransactionCategoryName, getTransactionCategoryColor, isRealExpense } from '@/lib/transactionUtils';
 import { enforceHistoryWindow } from '@/lib/historyLimits';
 
 interface ConvertedTransaction extends Transaction {
@@ -126,7 +126,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
       }) => {
         const spent = convertedTransactions
           .filter(tx =>
-            (tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe') &&
+            isRealExpense(tx) &&
             tx.category_id === budget.category_id &&
             new Date(tx.date).getMonth() === now.getMonth() &&
             new Date(tx.date).getFullYear() === now.getFullYear()
@@ -162,7 +162,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
 
   // Calculate totals
   const totalExpenses = useMemo(() =>
-    transactions.filter(t => t.type === 'expense' || t.type === 'lend' || t.type === 'owe').reduce((sum, t) => sum + t.convertedAmount, 0),
+    transactions.filter(isRealExpense).reduce((sum, t) => sum + t.convertedAmount, 0),
     [transactions]
   );
 
@@ -183,7 +183,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
     const categoryMap: Record<string, CategorySpending> = {};
 
     transactions
-      .filter(t => t.type === 'expense' || t.type === 'lend' || t.type === 'owe')
+      .filter(isRealExpense)
       .forEach(tx => {
         const catName = getTransactionCategoryName(tx);
         const catColor = getTransactionCategoryColor(tx);
@@ -231,7 +231,7 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
           .filter(t => t.type === 'income')
           .reduce((sum, t) => sum + t.convertedAmount, 0),
         expenses: monthTransactions
-          .filter(t => t.type === 'expense' || t.type === 'lend' || t.type === 'owe')
+          .filter(isRealExpense)
           .reduce((sum, t) => sum + t.convertedAmount, 0),
         savings: monthTransactions
           .filter(t => t.savings_goal_id && t.category?.name === 'Savings')

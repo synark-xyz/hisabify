@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,7 +11,7 @@ import { TransactionItem } from '@/components/TransactionItem';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { PullToRefresh } from '@/components/PullToRefresh';
-import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
+import { getTransactionCategoryName, getTransactionCategoryColor, isRealExpense } from '@/lib/transactionUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -55,6 +56,7 @@ const FILTERABLE_TYPES = ['all', 'expense', 'income', 'lend', 'owe'] as const;
 type FilterType = typeof FILTERABLE_TYPES[number];
 
 export function ExpensesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [anchorDate, setAnchorDate] = useState(new Date());
   const [focusedDate, setFocusedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<TransactionViewMode>('week');
@@ -69,6 +71,8 @@ export function ExpensesPage() {
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const latestRequestIdRef = useRef(0);
   const hasShownHistoryClampToastRef = useRef(false);
+  // Deferred category name filter — applied once categories are loaded
+  const pendingCategoryNameRef = useRef<string | null>(null);
 
   const { user } = useAuth();
   const { currency, currencyVersion } = useCurrency();
@@ -76,6 +80,56 @@ export function ExpensesPage() {
   const { variant } = useTheme();
   const { isPremium } = useSubscription();
   const { toast } = useToast();
+
+  // ── Apply URL search params on mount ────────────────────────────────────
+  useEffect(() => {
+    const category = searchParams.get('category');
+    const categoryName = searchParams.get('categoryName');
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
+    const mode = searchParams.get('viewMode') as TransactionViewMode | null;
+
+    let hasParams = false;
+
+    if (category) {
+      setCategoryFilter(category);
+      hasParams = true;
+    }
+
+    if (categoryName) {
+      // Defer until categories are loaded from transactions
+      pendingCategoryNameRef.current = categoryName;
+      hasParams = true;
+    }
+
+    if (from) {
+      const fromDate = new Date(from);
+      if (!isNaN(fromDate.getTime())) {
+        setAnchorDate(fromDate);
+        hasParams = true;
+      }
+    }
+
+    if (mode && ['day', 'week', 'month', 'year'].includes(mode)) {
+      setViewMode(mode);
+      hasParams = true;
+    } else if (from && to) {
+      // Infer view mode from date range
+      const fromDate = new Date(from);
+      const toDate = new Date(to);
+      const diffDays = Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 1) setViewMode('day');
+      else if (diffDays <= 7) setViewMode('week');
+      else if (diffDays <= 31) setViewMode('month');
+      else setViewMode('year');
+      hasParams = true;
+    }
+
+    // Clear params after applying to avoid stale state on refresh
+    if (hasParams) {
+      setSearchParams({}, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -206,13 +260,25 @@ export function ExpensesPage() {
     return Array.from(map.values()).sort((a, b) => a.card_holder.localeCompare(b.card_holder));
   }, [rangeTransactions]);
 
+  // Resolve deferred categoryName filter once categories are loaded
+  useEffect(() => {
+    if (pendingCategoryNameRef.current && categoryOptions.length > 0) {
+      const name = pendingCategoryNameRef.current.toLowerCase();
+      const match = categoryOptions.find((c) => c.name.toLowerCase() === name);
+      if (match) {
+        setCategoryFilter(match.id);
+      }
+      pendingCategoryNameRef.current = null;
+    }
+  }, [categoryOptions]);
+
   useEffect(() => {
     if (categoryFilter === 'all') {
       return;
     }
 
     const categoryExists = categoryOptions.some((category) => category.id === categoryFilter);
-    if (!categoryExists) {
+    if (!categoryExists && !pendingCategoryNameRef.current) {
       setCategoryFilter('all');
     }
   }, [categoryFilter, categoryOptions]);
@@ -261,12 +327,12 @@ export function ExpensesPage() {
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
   const totalExpense = filteredTransactions
-    .filter((tx) => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
+    .filter(isRealExpense)
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
   const categoryData: CategorySpending[] = Object.values(
     filteredTransactions
-      .filter((tx) => tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe')
+      .filter(isRealExpense)
       .reduce((acc, tx) => {
         const catName = getTransactionCategoryName(tx);
         const catColor = getTransactionCategoryColor(tx);

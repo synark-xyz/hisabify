@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { NexusModal } from '@/components/NexusModal';
+import { ReceiptScannerModal, type ScannedReceiptData } from '@/components/ReceiptScannerModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { InputMethodSheet } from '@/components/InputMethodSheet';
 import { VoiceInputFlow } from '@/components/VoiceInputFlow';
@@ -13,12 +13,11 @@ import { cn } from '@/lib/utils';
 
 export function Layout() {
     const [showManual, setShowManual] = useState(false);
-    const [showNexus, setShowNexus] = useState(false);
+    const [showScanner, setShowScanner] = useState(false);
     const [showInputSheet, setShowInputSheet] = useState(false);
     const [showVoiceInput, setShowVoiceInput] = useState(false);
-    const [nexusMode, setNexusMode] = useState<'voice' | 'scan'>('voice');
     const [smartData, setSmartData] = useState<
-        { merchant?: string; amount?: number; category?: string; receiptUrl?: string | null; type?: 'expense' | 'income' } | undefined
+        { merchant?: string; amount?: number; category?: string; receiptUrl?: string | null; date?: Date; type?: 'expense' | 'income' } | undefined
     >(undefined);
 
     const location = useLocation();
@@ -59,8 +58,7 @@ export function Layout() {
 
     const handleReceiptInput = () => {
         setShowInputSheet(false);
-        setNexusMode('scan');
-        setShowNexus(true);
+        setShowScanner(true);
     };
 
     const handleManualInput = () => {
@@ -133,14 +131,19 @@ export function Layout() {
                 }}
             />
 
-            {/* The Nexus (Receipt Scanner) Modal */}
-            <NexusModal
-                open={showNexus}
-                onOpenChange={setShowNexus}
-                initialMode={nexusMode}
-                onSmartCapture={(data) => {
-                    setSmartData(data);
-                    setShowNexus(false);
+            {/* Receipt Scanner Modal */}
+            <ReceiptScannerModal
+                open={showScanner}
+                onOpenChange={setShowScanner}
+                onScanComplete={(data: ScannedReceiptData) => {
+                    setSmartData({
+                        merchant: data.merchant,
+                        amount: data.amount,
+                        date: data.date,
+                        receiptUrl: data.receiptUrl,
+                        type: 'expense'
+                    });
+                    setShowScanner(false);
                     setShowManual(true);
                 }}
             />

@@ -91,6 +91,14 @@ export function BudgetDashboard() {
     setEditingBudget(null);
   };
 
+  const handleViewInExpenses = (budget: BudgetWithSpending) => {
+    const params = new URLSearchParams();
+    if (budget.category_id) params.set('category', budget.category_id);
+    if (budget.start_date) params.set('from', budget.start_date);
+    if (budget.end_date) params.set('to', budget.end_date);
+    navigate(`/expenses?${params.toString()}`);
+  };
+
   const handlePayNow = (budget: BudgetWithSpending) => {
     setPayingBudget(budget);
   };
@@ -307,6 +315,7 @@ export function BudgetDashboard() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onViewTransactions={setDrillDownBudget}
+              onViewInExpenses={handleViewInExpenses}
               onPayNow={handlePayNow}
               onMoveLeftoverToSavings={handleMoveLeftoverToSavings}
               savingsReserved={savingsReservedByBudget[budget.id] || 0}

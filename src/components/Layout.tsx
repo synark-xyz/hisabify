@@ -18,7 +18,7 @@ export function Layout() {
     const [showVoiceInput, setShowVoiceInput] = useState(false);
     const [nexusMode, setNexusMode] = useState<'voice' | 'scan'>('voice');
     const [smartData, setSmartData] = useState<
-        { merchant?: string; amount?: number; category?: string; receiptUrl?: string | null } | undefined
+        { merchant?: string; amount?: number; category?: string; receiptUrl?: string | null; type?: 'expense' | 'income' } | undefined
     >(undefined);
 
     const location = useLocation();
@@ -111,6 +111,7 @@ export function Layout() {
             <AddTransactionModal
                 open={showManual}
                 onOpenChange={setShowManual}
+                initialType={smartData?.type}
                 initialData={smartData}
                 onSuccess={() => {
                     window.dispatchEvent(new Event('transaction-updated'));
@@ -122,7 +123,11 @@ export function Layout() {
                 open={showVoiceInput}
                 onOpenChange={setShowVoiceInput}
                 onComplete={(data) => {
-                    setSmartData(data);
+                    setSmartData({
+                        merchant: data.merchant,
+                        amount: data.amount,
+                        type: data.type
+                    });
                     setShowVoiceInput(false);
                     setShowManual(true);
                 }}

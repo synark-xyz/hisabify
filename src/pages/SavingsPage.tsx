@@ -297,6 +297,12 @@ export default function SavingsPage() {
                     goal={goal}
                     mainBalance={mainBalance}
                     otherActiveGoals={goals.filter((entry) => entry.id !== goal.id && !entry.isArchived)}
+                    linkedBudgetName={
+                      goal.linked_budget_id
+                        ? (budgets.find((b) => b.id === goal.linked_budget_id)?.category?.name
+                          || budgets.find((b) => b.id === goal.linked_budget_id)?.name)
+                        : undefined
+                    }
                     onEdit={handleEdit}
                     onDelete={(id) => deleteGoal.mutate(id)}
                     onAddFunds={handleAddFunds}

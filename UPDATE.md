@@ -1,5 +1,77 @@
 # UPDATE.md
 
+## Recent Changes (March 16, 2026)
+
+### 1. **Voice Input "Record Once" Architecture**
+**Status:** ✅ Complete
+**Location:** `src/hooks/useVoiceInput.ts`, `src/components/VoiceInputFlow.tsx`, `src/components/NexusModal.tsx`
+
+#### What Changed:
+- Replaced event-listener + partial-results architecture with promise-based blocking calls
+- `useVoiceInput` now returns `{ listen, stop, parseCommand }` instead of 9 separate state/action values
+- `VoiceInputFlow` reduced from ~430 to ~290 lines; single async `handleRecord` drives all phase transitions
+- Eliminated all race conditions: no `isListening` state, no refs, no useEffects for phase management
+
+#### Technical Details:
+- **Native (Capacitor):** `SpeechRecognition.start({ partialResults: false })` returns a blocking promise that resolves with final text when Android auto-detects silence (~2-3s)
+- **Web fallback:** `new SpeechRecognition()` with `continuous: false, interimResults: false` wrapped in a Promise
+- Calling `stop()` while `listen()` is pending triggers finalization and resolves the promise with whatever was captured
+
+---
+
+### 2. **Scrollbar Visibility Fix**
+**Status:** ✅ Complete
+**Location:** `src/index.css`, `android/app/src/main/java/io/synark/hisabify/MainActivity.java`
+
+#### What Changed:
+- Hidden scrollbars globally across all pages and platforms
+- CSS uses `!important` to override cross-layer cascade issues (`@layer base` vs `@layer utilities`)
+- Added explicit `#root` scrollbar hiding rules
+- `.custom-scrollbar` class available for opt-in visible scrollbars
+- Android WebView overlay scrollbars disabled natively in `MainActivity.java`
+
+---
+
+### 3. **Feature Connectivity Improvements**
+**Status:** ✅ Complete (High Priority)
+
+#### Budget → Expenses Navigation
+**Location:** `src/components/BudgetProgressCard.tsx`, `src/components/BudgetDashboard.tsx`
+- Added "View in Expenses" dropdown action on budget cards
+- Navigates to `/expenses` pre-filtered by category and budget date range
+
+#### Analytics → Expenses Drill-Down
+**Location:** `src/components/dashboard/CategoryBreakdownChart.tsx`, `src/pages/AnalyticsPage.tsx`
+- Pie chart slices and legend items are clickable
+- Navigates to `/expenses?categoryName=X&from=Y&to=Z`
+
+#### Notification Action Links
+**Location:** `src/pages/NotificationsPage.tsx`
+- Budget notification cards now have "View Budget →" and "View Spending →" buttons
+- Links navigate to `/budget` and `/expenses` respectively
+
+#### Savings → Budget Visibility
+**Location:** `src/components/savings/SavingsGoalCard.tsx`, `src/pages/SavingsPage.tsx`
+- Savings goal cards display a badge with linked budget name
+- Uses `Wallet` icon for visual consistency
+
+#### Expenses Page URL Param Support (Prerequisite)
+**Location:** `src/pages/ExpensesPage.tsx`
+- Accepts `category`, `categoryName`, `from`, `to`, `viewMode` search params
+- Auto-infers viewMode from date range if not specified
+- Deferred category name resolution via `pendingCategoryNameRef` for async matching
+
+---
+
+### 4. **Test Fixes**
+**Status:** ✅ Complete
+**Location:** `src/hooks/__tests__/useVoiceInput.test.ts`
+
+- Changed all `toEqual` to `toMatchObject` to fix pre-existing failures
+- `parseCommand` returns extra fields (`confidence`, `currency`, `type`) that exact matching rejected
+
+---
+
 ## Recent Changes (January 23, 2026)
 
 ### 1. **Expenses Page Overhaul**

@@ -272,7 +272,16 @@ export function AnalyticsPage() {
                   <>
                     {/* Charts Row 1 - Category Breakdown & Monthly Trend */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <CategoryBreakdownChart data={categoryData} />
+                      <CategoryBreakdownChart
+                        data={categoryData}
+                        onCategoryClick={(name) => {
+                          const params = new URLSearchParams();
+                          params.set('categoryName', name);
+                          params.set('from', dateRange.from.toISOString());
+                          params.set('to', dateRange.to.toISOString());
+                          navigate(`/expenses?${params.toString()}`);
+                        }}
+                      />
                       <MonthlyTrendChart data={monthlyTrendData} />
                     </div>
 

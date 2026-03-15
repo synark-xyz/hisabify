@@ -247,6 +247,24 @@ export function NotificationsPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <p className="font-bold text-foreground truncate">{notification.title}</p>
                                                             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{notification.description}</p>
+                                                            <div className="flex gap-2 mt-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    className="h-7 px-2 text-xs font-semibold text-accent"
+                                                                    onClick={(e) => { e.stopPropagation(); navigate('/budget'); }}
+                                                                >
+                                                                    View Budget →
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    className="h-7 px-2 text-xs font-semibold text-muted-foreground"
+                                                                    onClick={(e) => { e.stopPropagation(); navigate('/expenses'); }}
+                                                                >
+                                                                    View Spending →
+                                                                </Button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </motion.div>

@@ -14,7 +14,7 @@ export function TopExpensesTable({ transactions }: TopExpensesTableProps) {
 
   // Get top 5 expenses sorted by amount
   const topExpenses = [...transactions]
-    .filter(t => t.type === 'expense')
+    .filter(t => (t.type === 'expense' || t.type === 'lend' || t.type === 'owe') && !t.savings_goal_id)
     .sort((a, b) => Number(b.amount) - Number(a.amount))
     .slice(0, 5);
 

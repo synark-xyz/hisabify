@@ -1,5 +1,13 @@
 import { Transaction } from "@/types";
 
+/**
+ * Returns true if the transaction is a real expense (not a savings contribution).
+ * Savings contributions are stored as type 'expense' but have a savings_goal_id set.
+ */
+export function isRealExpense(tx: { type: string; savings_goal_id?: string | null }): boolean {
+  return (tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe') && !tx.savings_goal_id;
+}
+
 export const getTransactionCategoryName = (tx: Transaction): string => {
     if (tx.category?.name) return tx.category.name;
 

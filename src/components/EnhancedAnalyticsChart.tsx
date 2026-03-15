@@ -134,8 +134,8 @@ export function EnhancedAnalyticsChart({
       );
       const completedGoals = completedGoalsResult.data || [];
 
-      const expenseTransactions = currentTransactions.filter((tx) => tx.type === 'expense');
-      const savingsTransactions = expenseTransactions.filter((tx) => tx.category?.name === 'Savings');
+      const expenseTransactions = currentTransactions.filter((tx) => tx.type === 'expense' && !tx.savings_goal_id);
+      const savingsTransactions = currentTransactions.filter((tx) => tx.type === 'expense' && tx.category?.name === 'Savings');
       const incomeTransactions = currentTransactions.filter((tx) => tx.type === 'income');
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -163,7 +163,7 @@ export function EnhancedAnalyticsChart({
           year: selectedYear,
           topCategory: Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0],
           comparisonAmount: previousTransactions
-            .filter((tx) => tx.type === 'expense' && new Date(tx.date).getMonth() === monthIndex)
+            .filter((tx) => tx.type === 'expense' && !tx.savings_goal_id && new Date(tx.date).getMonth() === monthIndex)
             .reduce((sum, tx) => sum + Number(tx.amount), 0),
           completedGoals: completedGoals
             .filter((goal) => new Date(goal.completed_at as string).getMonth() === monthIndex)

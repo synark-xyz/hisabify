@@ -11,6 +11,7 @@ All work performed by the AI agent must adhere to the following safety and quali
 4. **Zero Placeholders:** Deliver complete, typed, and production-ready code.
 5. **Ask for Clarification:** If any business logic or requirement is unclear, STOP and ask the user.
 6. **Detailed Rules:** Refer to `.agent/rules.md` for the full instruction set.
+7. **Update Documentation:** Whenever you change code, logic, features, or fix bugs, update the relevant documentation files (`docs/`, `README.md`, `PRD.md`, `UPDATE.md`, `CHANGELOG.md`) to reflect those changes. Keep docs in sync with the codebase at all times.
 
 ## Project Overview
 
@@ -382,14 +383,20 @@ if (!hasPermission) {
 
 ### Voice Input for Transactions
 
-- **Component:** `VoiceInputFlow.tsx` - Enhanced voice recording interface
-- **Technology:** Web Speech API (browser native)
-- **Hook:** `useVoiceInput.ts` - Web Speech API integration
+- **Component:** `VoiceInputFlow.tsx` - Simplified voice recording interface with 3 phases (idle/recording/result)
+- **Technology:** Capacitor Speech Recognition (native) + Web Speech API (browser fallback)
+- **Hook:** `useVoiceInput.ts` - Promise-based "Record Once" architecture
 - **Hook:** `usePermissions.ts` - Runtime permission handling for native apps
+- **Architecture:** Promise-based blocking calls — no event listeners, no partial results, no race conditions
+  - `listen(): Promise<string>` — starts recognition, blocks until speech ends, returns final text
+  - `stop(): Promise<void>` — stops early; recognition finalizes and `listen()` promise resolves
+  - `parseCommand(text)` — regex-based merchant/amount extraction (unchanged)
+  - Native path: `SpeechRecognition.start({ partialResults: false })` returns blocking promise
+  - Web path: `new SpeechRecognition()` with `continuous: false, interimResults: false` wrapped in Promise
 - **Features:**
-  - Real-time transcription display
   - Automatic merchant/amount parsing (~70-80% accuracy)
   - Pulsing animation during recording
+  - Android auto-silence-detection (~2-3s)
   - Permission checking and error handling
   - "Use This" button to pre-fill transaction form
   - Tips for better voice input

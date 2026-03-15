@@ -9,6 +9,7 @@ import type { Props as TooltipProps, Payload, ValueType, NameType } from 'rechar
 interface CategoryBreakdownChartProps {
   data: CategorySpending[];
   title?: string;
+  onCategoryClick?: (categoryName: string) => void;
 }
 
 // Get theme-aware colors from CSS variables
@@ -71,7 +72,7 @@ const renderActiveShape = (props: ActiveShapeProps) => {
   );
 };
 
-export function CategoryBreakdownChart({ data, title = "Category Breakdown" }: CategoryBreakdownChartProps) {
+export function CategoryBreakdownChart({ data, title = "Category Breakdown", onCategoryClick }: CategoryBreakdownChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const { formatAmount } = useCurrency();
 
@@ -84,6 +85,12 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown" }: C
     category: item.name,
     color: item.color || COLORS[index % COLORS.length],
   }));
+
+  const onPieClick = (_: unknown, index: number) => {
+    if (onCategoryClick && chartData[index]) {
+      onCategoryClick(chartData[index].category);
+    }
+  };
 
   const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
     if (active && payload && payload.length) {
@@ -121,6 +128,7 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown" }: C
               dataKey="amount"
               nameKey="category"
               onMouseEnter={onPieEnter}
+              onClick={onPieClick}
             >
               {chartData.map((entry, index) => (
                 <Cell 
@@ -140,7 +148,10 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown" }: C
           <motion.div
             key={item.category}
             className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
-            onClick={() => setActiveIndex(index)}
+            onClick={() => {
+              setActiveIndex(index);
+              onCategoryClick?.(item.category);
+            }}
             whileHover={{ scale: 1.02 }}
           >
             <div

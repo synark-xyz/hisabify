@@ -47,6 +47,7 @@ interface SavingsGoalCardProps {
   onRedeployToGoal: (sourceGoalId: string, destinationGoalId: string, amount: number) => void;
   onBudgetTransfer: (budgetId: string, goalId: string, amount: number) => void;
   onUpdateDeadline: (goalId: string, deadline: string) => void;
+  linkedBudgetName?: string;
   defaultFundingTab?: 'manual' | 'budget';
   defaultBudgetId?: string | null;
   autoOpenFunding?: boolean;
@@ -64,6 +65,7 @@ export function SavingsGoalCard({
   onRedeployToGoal,
   onBudgetTransfer,
   onUpdateDeadline,
+  linkedBudgetName,
   defaultFundingTab,
   defaultBudgetId,
   autoOpenFunding = false,
@@ -161,6 +163,12 @@ export function SavingsGoalCard({
                   {goal.isUrgent && (
                     <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600">
                       Due Soon
+                    </span>
+                  )}
+                  {linkedBudgetName && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-1">
+                      <Wallet className="w-2.5 h-2.5" />
+                      {linkedBudgetName}
                     </span>
                   )}
                 </div>

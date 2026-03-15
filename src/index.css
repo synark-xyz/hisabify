@@ -338,6 +338,14 @@
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior-y: contain;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  #root::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
 
   /* Ensure portal containers are positioned correctly */
@@ -388,18 +396,18 @@
     outline-offset: 2px;
   }
 
-  /* Robust scrollbar hiding */
+  /* Robust scrollbar hiding — use !important to prevent layer overrides */
   ::-webkit-scrollbar {
-    width: 0px;
-    height: 0px;
-    background: transparent;
-    display: none;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    display: none !important;
   }
 
   /* Hide scrollbar for IE, Edge and Firefox */
   * {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none !important; /* IE and Edge */
+    scrollbar-width: none !important; /* Firefox */
   }
 
   /* Utilities for hiding scrollbar while keeping functionality */
@@ -481,15 +489,19 @@
     -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
   }
 
+  .custom-scrollbar {
+    scrollbar-width: thin !important;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    display: block !important;
+    width: 4px !important;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  /* Custom Scrollbar */
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.2);
     border-radius: 10px;

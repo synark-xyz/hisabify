@@ -25,7 +25,7 @@ export function ExpenseOverview({ totalSalary, totalExpense }: ExpenseOverviewPr
 
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-white/80 text-xs font-bold uppercase tracking-wider">Total Salary</span>
+            <span className="text-white/80 text-xs font-bold uppercase tracking-wider">Total Income</span>
             <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
           </div>
           <motion.p
@@ -56,7 +56,7 @@ export function ExpenseOverview({ totalSalary, totalExpense }: ExpenseOverviewPr
 
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-white/80 text-xs font-bold uppercase tracking-wider">Total Outgoings</span>
+            <span className="text-white/80 text-xs font-bold uppercase tracking-wider">Total Expenses</span>
             <div className="w-2 h-2 rounded-full bg-red-300 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
           </div>
           <motion.p

@@ -8,7 +8,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 interface Transaction {
   id: string;
   amount: number;
-  type: 'income' | 'expense';
+  type: string;
   date: string;
   currency_base?: string;
   convertedAmount?: number;
@@ -58,7 +58,7 @@ export function FinancialSummary({
         .reduce((sum, tx) => sum + (tx.convertedAmount || tx.amount), 0);
 
       const expense = periodTransactions
-        .filter((tx) => tx.type === 'expense')
+        .filter((tx) => (tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe') && !tx.savings_goal_id)
         .reduce((sum, tx) => sum + (tx.convertedAmount || tx.amount), 0);
 
       return {

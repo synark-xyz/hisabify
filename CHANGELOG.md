@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Feature Connectivity — Budget to Expenses**: Budget cards now have a "View in Expenses" action that navigates to the Expenses page pre-filtered by category and date range.
+- **Feature Connectivity — Analytics to Expenses**: Clicking a category slice in the Analytics pie chart navigates to Expenses pre-filtered by that category and date range.
+- **Feature Connectivity — Notification Action Links**: Budget notification cards now have "View Budget" and "View Spending" action buttons linking to relevant pages.
+- **Feature Connectivity — Savings Budget Visibility**: Savings goal cards now display a badge showing the linked budget name when one is configured.
+- **Expenses Page URL Param Support**: ExpensesPage accepts `category`, `categoryName`, `from`, `to`, and `viewMode` search params for cross-feature deep-linking.
 - **Automated Test Runner Script**: Added `scripts/run-automated-tests.sh` to run `unit`, `e2e`, or `all` test suites on demand.
 - **Timestamped Test Artifacts**: Automated runs now write logs, unit coverage reports, Playwright HTML reports, and E2E artifacts to `test-report/<YYYYMMDD-HHMMSS>/`.
 - **NPM Shortcuts for Automation**:
@@ -21,11 +26,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Budget to Savings Transfer Loop**: Users can move leftover budget funds into savings goals through the shared funding flow while keeping main balance neutral and updating both budget and savings live views.
 
 ### Changed
+- **Voice Input "Record Once" Architecture**: Rewrote `useVoiceInput.ts` from event-listener pattern (6 states, 5 refs, 3 useEffects) to promise-based `listen()`/`stop()` API (~433→265 lines). Eliminates all race conditions.
+- **VoiceInputFlow Simplification**: Simplified `VoiceInputFlow.tsx` from ~430 to ~290 lines. Single async `handleRecord` drives all phase transitions; removed 4 useEffects.
+- **NexusModal Voice Mode**: Updated VoiceModeContent to use new promise-based hook with phase-based rendering (idle/recording/result).
 - **README Cleanup**: Removed placeholder Lovable project URL and documented automated test report workflow.
 - **PRD Update**: Added implementation and non-functional quality notes for timestamped test/coverage artifacts.
 - **Savings Goal Cards and Dashboard Snapshot**: Goal cards now surface pace status, required-this-period, suggested deadline actions, and history pacing context; dashboard snapshot rows now show pace/urgency and aggregate savings progress.
 - **Financial Health and Insights**: Health score now rewards active savings planning, on-pace behavior, completed goals, and budget-to-savings transfers while penalizing behind-plan and overdue inactivity.
 - **Analytics Savings Visibility**: Analytics now treats `Savings` as a permanent category, adds expense/savings/both chart modes, shows savings milestone markers, and surfaces monthly savings-rate insight.
+
+### Fixed
+- **Scrollbar Visibility**: Hidden scrollbars across all pages using multi-layered CSS fix with `!important` for cross-layer cascade, explicit `#root` rules, and `.custom-scrollbar` opt-in class for intentional scrollbars.
+- **Android WebView Scrollbars**: Disabled native overlay scrollbars in `MainActivity.java` via `setVerticalScrollBarEnabled(false)`.
+- **Voice Input Test Failures**: Fixed pre-existing test failures in `useVoiceInput.test.ts` by changing `toEqual` to `toMatchObject` (parseCommand returns extra fields).
 
 ---
 

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard, PiggyBank } from 'lucide-react';
+import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard, PiggyBank, ArrowUpRight } from 'lucide-react';
 import { BudgetSpendingChart } from '@/components/BudgetSpendingChart';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -18,6 +18,7 @@ interface BudgetProgressCardProps {
   onEdit: (budget: BudgetWithSpending) => void;
   onDelete: (budget: BudgetWithSpending) => void;
   onViewTransactions?: (budget: BudgetWithSpending) => void;
+  onViewInExpenses?: (budget: BudgetWithSpending) => void;
   onPayNow?: (budget: BudgetWithSpending) => void;
   onSaveAsTemplate?: (budgetId: string) => void;
   onMoveLeftoverToSavings?: (budget: BudgetWithSpending) => void;
@@ -68,7 +69,7 @@ const getStatusLabel = (status: BudgetStatus): string => {
   }
 };
 
-export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransactions, onPayNow, onSaveAsTemplate, onMoveLeftoverToSavings, savingsReserved = 0 }: BudgetProgressCardProps) {
+export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransactions, onViewInExpenses, onPayNow, onSaveAsTemplate, onMoveLeftoverToSavings, savingsReserved = 0 }: BudgetProgressCardProps) {
   const { currency } = useCurrency();
   const currencySymbol = currencyData[currency]?.symbol || '$';
 
@@ -136,6 +137,13 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                {onViewInExpenses && (
+                  <DropdownMenuItem onClick={() => onViewInExpenses(budget)}>
+                    <ArrowUpRight className="mr-2 h-4 w-4" />
+                    View in Expenses
+                  </DropdownMenuItem>
+                )}
+
                 {onPayNow && (
                   <DropdownMenuItem onClick={() => onPayNow(budget)}>
                     <CreditCard className="mr-2 h-4 w-4" />

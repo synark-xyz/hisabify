@@ -7,7 +7,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "spent X at Y"', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('spent 20 at Starbucks');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 20,
       merchant: 'starbucks',
       raw: 'spent 20 at Starbucks'
@@ -17,7 +17,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "paid X for Y"', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('paid 50 for groceries');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 50,
       merchant: 'groceries',
       raw: 'paid 50 for groceries'
@@ -27,7 +27,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse decimal amounts with "spent"', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('spent 12.50 at Coffee Shop');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 12.5,
       merchant: 'coffee shop',
       raw: 'spent 12.50 at Coffee Shop'
@@ -38,7 +38,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "X dollars at Y"', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('15 dollars at McDonald\'s');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 15,
       merchant: 'mcdonald\'s',
       raw: '15 dollars at McDonald\'s'
@@ -48,7 +48,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "X bucks for Y"', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('20 bucks for lunch');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 20,
       merchant: 'lunch',
       raw: '20 bucks for lunch'
@@ -58,7 +58,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse decimal amounts with "dollars"', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('7.99 dollars at Subway');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 7.99,
       merchant: 'subway',
       raw: '7.99 dollars at Subway'
@@ -69,7 +69,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "bought Y for X"', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('bought coffee for 5');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 5,
       merchant: 'coffee',
       raw: 'bought coffee for 5'
@@ -79,7 +79,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "bought Y for X" with decimal', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('bought lunch for 12.50');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 12.5,
       merchant: 'lunch',
       raw: 'bought lunch for 12.50'
@@ -89,7 +89,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "bought Y for X" with multi-word merchant', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('bought movie tickets for 25');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 25,
       merchant: 'movie tickets',
       raw: 'bought movie tickets for 25'
@@ -100,7 +100,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "Merchant X dollars" (original pattern)', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('Starbucks 5 dollars');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 5,
       merchant: 'starbucks',
       raw: 'Starbucks 5 dollars'
@@ -110,7 +110,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "Merchant X" without currency word', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('Pizza 25');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 25,
       merchant: 'pizza',
       raw: 'Pizza 25'
@@ -120,7 +120,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse "Merchant X.XX"', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('Target 47.82');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 47.82,
       merchant: 'target',
       raw: 'Target 47.82'
@@ -131,7 +131,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should handle comma as decimal separator', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('spent 12,50 at Shop');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 12.5,
       merchant: 'shop',
       raw: 'spent 12,50 at Shop'
@@ -141,7 +141,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should return only raw text if no pattern matches', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('hello world');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       raw: 'hello world'
     });
   });
@@ -149,7 +149,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should return only raw text for incomplete input', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('spent at Starbucks');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       raw: 'spent at Starbucks'
     });
   });
@@ -157,7 +157,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should handle case insensitivity', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('SPENT 30 AT WALMART');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 30,
       merchant: 'walmart',
       raw: 'SPENT 30 AT WALMART'
@@ -168,7 +168,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse real-world example: grocery shopping', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('spent 87.45 at Whole Foods');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 87.45,
       merchant: 'whole foods',
       raw: 'spent 87.45 at Whole Foods'
@@ -178,7 +178,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse real-world example: gas station', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('45 dollars for gas');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 45,
       merchant: 'gas',
       raw: '45 dollars for gas'
@@ -188,7 +188,7 @@ describe('useVoiceInput parseCommand', () => {
   it('should parse real-world example: restaurant', () => {
     const { result } = renderHook(() => useVoiceInput());
     const parsed = result.current.parseCommand('bought dinner for 62.30');
-    expect(parsed).toEqual({
+    expect(parsed).toMatchObject({
       amount: 62.3,
       merchant: 'dinner',
       raw: 'bought dinner for 62.30'

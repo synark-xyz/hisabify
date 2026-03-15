@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Camera, X, Sparkles, ChevronRight, type LucideIcon } from 'lucide-react';
+import { Mic, Camera, X, Sparkles, ChevronRight, Square, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PrivacyMask } from '@/components/ui/privacy-mask';
@@ -160,8 +160,35 @@ function InputModeButton({ active, onClick, icon: Icon, label }: { active: boole
 }
 
 function VoiceModeContent({ onCommand }: { onCommand: (data: SmartCapturePayload) => void }) {
-    const { isListening, transcript, toggleListening, parseCommand, error } = useVoiceInput();
-    const parsed = parseCommand(transcript);
+    const { listen, stop, parseCommand } = useVoiceInput();
+    const [phase, setPhase] = useState<'idle' | 'recording' | 'result'>('idle');
+    const [transcript, setTranscript] = useState('');
+    const [error, setError] = useState<string | null>(null);
+
+    const parsed = transcript ? parseCommand(transcript) : {};
+
+    const handleRecord = async () => {
+        setError(null);
+        setTranscript('');
+        setPhase('recording');
+        try {
+            const text = await listen();
+            setTranscript(text);
+            setPhase(text ? 'result' : 'idle');
+            if (!text) setError('No speech detected. Please try again.');
+        } catch (e) {
+            setError(e instanceof Error ? e.message : String(e));
+            setPhase('idle');
+        }
+    };
+
+    const handleMicTap = () => {
+        if (phase === 'idle') {
+            void handleRecord();
+        } else if (phase === 'recording') {
+            void stop();
+        }
+    };
 
     return (
         <motion.div
@@ -172,57 +199,67 @@ function VoiceModeContent({ onCommand }: { onCommand: (data: SmartCapturePayload
             className="flex-1 flex flex-col items-center justify-center gap-6"
         >
             <button
-                onClick={toggleListening}
+                onClick={handleMicTap}
+                disabled={phase === 'result'}
                 className={cn(
                     "w-24 h-24 rounded-full flex items-center justify-center relative transition-all duration-300",
-                    isListening ? "bg-red-500/10" : "bg-accent/10 hover:bg-accent/20"
+                    "disabled:opacity-40 disabled:cursor-not-allowed",
+                    phase === 'recording' ? "bg-red-500/10" : "bg-accent/10 hover:bg-accent/20"
                 )}
             >
-                {isListening && (
+                {phase === 'recording' && (
                     <motion.div
                         animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
                         transition={{ repeat: Infinity, duration: 1.5 }}
                         className="absolute inset-0 rounded-full bg-red-500/20"
                     />
                 )}
-                <Mic className={cn("w-10 h-10 transition-colors", isListening ? "text-red-500" : "text-accent")} />
+                {phase === 'recording'
+                    ? <Square className="w-10 h-10 text-red-500" />
+                    : <Mic className={cn("w-10 h-10 transition-colors", "text-accent")} />
+                }
             </button>
 
             <div className="text-center space-y-4 max-w-xs">
-                {isListening ? (
+                {phase === 'recording' ? (
                     <div className="space-y-2">
                         <p className="text-xl font-medium animate-pulse">Listening...</p>
-                        {transcript ? (
-                            <p className="text-lg text-foreground/80 font-mono">"{transcript}"</p>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">Say "Grocery $50" or "Taxi $15"</p>
-                        )}
+                        <p className="text-sm text-muted-foreground">Say "Grocery $50" or "Taxi $15"</p>
+                    </div>
+                ) : phase === 'result' && transcript ? (
+                    <div className="space-y-2">
+                        <div className="bg-muted p-3 rounded-xl border border-border">
+                            <p className="text-sm mb-1 text-muted-foreground">Recognized:</p>
+                            <p className="text-lg font-bold">
+                                {parsed.merchant || "Unknown"} • ${parsed.amount || "0.00"}
+                            </p>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-2">
                         <h3 className="text-xl font-bold">Tap to Speak</h3>
-                        {transcript ? (
-                            <div className="bg-muted p-3 rounded-xl border border-border">
-                                <p className="text-sm mb-1 text-muted-foreground">Recognized:</p>
-                                <p className="text-lg font-bold">
-                                    {parsed.merchant || "Unknown"} • ${parsed.amount || "0.00"}
-                                </p>
-                            </div>
-                        ) : (
-                            <p className="text-muted-foreground text-sm">Tap the mic and say your expense.</p>
-                        )}
+                        <p className="text-muted-foreground text-sm">Tap the mic and say your expense.</p>
                     </div>
                 )}
 
                 {error && <p className="text-red-500 text-xs">{error}</p>}
 
-                {transcript && !isListening && (
-                    <Button
-                        className="w-full mt-2"
-                        onClick={() => onCommand(parsed)}
-                    >
-                        Use This <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
+                {phase === 'result' && transcript && (
+                    <div className="flex gap-2 w-full">
+                        <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => { setTranscript(''); setError(null); setPhase('idle'); }}
+                        >
+                            Retry
+                        </Button>
+                        <Button
+                            className="flex-1"
+                            onClick={() => onCommand(parsed)}
+                        >
+                            Use This <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                    </div>
                 )}
             </div>
         </motion.div>

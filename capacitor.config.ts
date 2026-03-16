@@ -14,11 +14,17 @@ function getLocalIP(): string {
   return 'localhost';
 }
 
-// Configuration switches
-const USE_LOCALHOST = false; // Toggle between localhost and ngrok - SET TO FALSE FOR PRODUCTION BUILD
+// APP_ENV controls where Capacitor loads the web app from:
+// 'production' → no server config; uses bundled dist assets (for App Store/Play Store builds)
+// 'staging'    → server.url points to Vercel deployment; accessible on any device without ngrok
+// 'local'      → server.url points to local dev server (same network required)
+const APP_ENV: 'production' | 'staging' | 'local' = 'production';
+
+const STAGING_URL = 'https://hisabify-pi.vercel.app'; // update to preview URL when testing a branch
+
 const DEVICE_TYPE: 'android-emulator' | 'android-physical' | 'ios-simulator' | 'ios-physical' = 'android-physical';
 
-// Server URLs
+// Server URLs (used only when APP_ENV === 'local')
 const LOCAL_IP = getLocalIP();
 const PORT = 8080;
 
@@ -29,13 +35,17 @@ const DEVICE_URLS = {
   'ios-physical': `http://${LOCAL_IP}:${PORT}`,
 };
 
-const NGROK_URL = 'https://leticia-flavorsome-hooly.ngrok-free.dev';
-
 const config: CapacitorConfig = {
   appId: 'io.synark.hisabify',
   appName: 'Hisabify',
   webDir: 'dist',
-  // No server config - will use built assets from dist folder
+  ...(APP_ENV === 'staging' && {
+    server: { url: STAGING_URL },
+  }),
+  ...(APP_ENV === 'local' && {
+    server: { url: DEVICE_URLS[DEVICE_TYPE], cleartext: true },
+  }),
+  // APP_ENV === 'production': no server block — Capacitor loads from dist/
   android: {
     allowMixedContent: true,
     captureInput: true,
@@ -64,7 +74,7 @@ const config: CapacitorConfig = {
 
 // Log the active configuration
 console.log(`\n🔧 Capacitor Config:`);
-console.log(`   Mode: Production Build (using bundled assets)`);
+console.log(`   APP_ENV: ${APP_ENV}`);
 console.log(`   Device: ${DEVICE_TYPE}\n`);
 
 export default config;

@@ -9,8 +9,8 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(({ mode }) => ({
   server: {
     host: true, // Listen on all local IPs
-    // Hostnames only (no protocol). Allow ngrok domains for remote dev.
-    allowedHosts: ['hilton-irate-jovita.ngrok-free.dev', '.ngrok-free.app', '.ngrok-free.dev', 'localhost', '127.0.0.1'],
+    // Hostnames only (no protocol). Wildcard patterns allow any ngrok tunnel without code changes.
+    allowedHosts: ['.ngrok-free.app', '.ngrok-free.dev', 'localhost', '127.0.0.1'],
     port: Number(process.env.VITE_DEV_PORT || 8080),
     // Keep port stable for tunnels like ngrok instead of auto-switching.
     strictPort: true,

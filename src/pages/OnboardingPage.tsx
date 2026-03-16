@@ -5,9 +5,18 @@ import {
     ArrowRight, Check, Sparkles, TrendingUp, Shield, Zap,
     PieChart, Target, Wallet, Bell, Gift, Star, CreditCard, BarChart3
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { HisabifyLogo } from '@/components/HisabifyLogo';
+
+function useSmallScreen() {
+    const [isSmall, setIsSmall] = useState(() => window.innerHeight < 700);
+    useEffect(() => {
+        const handler = () => setIsSmall(window.innerHeight < 700);
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, []);
+    return isSmall;
+}
 
 const slides = [
     {
@@ -78,6 +87,7 @@ export function OnboardingPage() {
     const [direction, setDirection] = useState(0);
     const navigate = useNavigate();
     const controls = useAnimation();
+    const isSmall = useSmallScreen();
 
     useEffect(() => {
         controls.start({
@@ -128,7 +138,7 @@ export function OnboardingPage() {
     const currentSlide = slides[currentIndex];
 
     return (
-        <div className="min-h-screen bg-background flex flex-col relative overflow-hidden pt-safe pb-safe">
+        <div className="min-h-screen-dynamic bg-background flex flex-col relative overflow-hidden overflow-y-auto pt-safe pb-safe">
             {/* Animated Background Gradient */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
@@ -224,12 +234,12 @@ export function OnboardingPage() {
                     whileTap={{ scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                 >
-                    <HisabifyLogo size={40} showText={true} />
+                    <HisabifyLogo size={isSmall ? 32 : 40} showText={true} />
                 </motion.div>
             </motion.div>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 relative z-10">
+            <div className={cn("flex-1 flex flex-col items-center justify-center px-6 relative z-10", isSmall ? "py-3" : "py-8")}>
                 <div className="w-full max-w-md">
                     <AnimatePresence mode="wait" custom={direction}>
                         <motion.div
@@ -247,14 +257,20 @@ export function OnboardingPage() {
                             className="flex flex-col items-center text-center"
                         >
                             {/* Floating Icons Background */}
-                            <div className="relative w-full h-48 mb-8">
+                            <div className={cn("relative w-full mb-8", isSmall ? "h-32" : "h-48")}>
                                 {currentSlide.floatingIcons.map((Icon, index) => {
                                     // Different positions for each icon (more spread out)
-                                    const positions = [
-                                        { left: '8%', top: '15%' },
-                                        { left: '75%', top: '20%' },
-                                        { left: '15%', top: '65%' }
-                                    ];
+                                    const positions = isSmall
+                                        ? [
+                                            { left: '6%', top: '10%' },
+                                            { left: '72%', top: '15%' },
+                                            { left: '12%', top: '60%' }
+                                          ]
+                                        : [
+                                            { left: '8%', top: '15%' },
+                                            { left: '75%', top: '20%' },
+                                            { left: '15%', top: '65%' }
+                                          ];
 
                                     // Ultra-smooth floating animations
                                     const animations = [
@@ -335,7 +351,8 @@ export function OnboardingPage() {
                                 {/* Main Icon with subtle pulse */}
                                 <motion.div
                                     className={cn(
-                                        "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-3xl flex items-center justify-center shadow-2xl bg-gradient-to-br z-10",
+                                        "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center shadow-2xl bg-gradient-to-br z-10",
+                                        isSmall ? "w-20 h-20 rounded-2xl" : "w-28 h-28 rounded-3xl",
                                         currentSlide.color
                                     )}
                                     key={`main-icon-${currentIndex}`}
@@ -364,7 +381,7 @@ export function OnboardingPage() {
                                             repeatType: "reverse"
                                         }}
                                     >
-                                        <currentSlide.icon className="w-14 h-14 text-white" />
+                                        <currentSlide.icon className={cn("text-white", isSmall ? "w-10 h-10" : "w-14 h-14")} />
                                     </motion.div>
                                 </motion.div>
                             </div>
@@ -380,7 +397,7 @@ export function OnboardingPage() {
                                 }}
                                 className="mb-2"
                             >
-                                <h2 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">
+                                <h2 className={cn("font-black tracking-tight text-foreground", isSmall ? "text-2xl" : "text-3xl md:text-4xl")}>
                                     {currentSlide.title}
                                 </h2>
                             </motion.div>
@@ -412,7 +429,7 @@ export function OnboardingPage() {
                                     duration: 0.5,
                                     ease: [0.4, 0, 0.2, 1]
                                 }}
-                                className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-sm mb-8"
+                                className={cn("text-muted-foreground leading-relaxed max-w-sm", isSmall ? "text-sm mb-4" : "text-base md:text-lg mb-8")}
                             >
                                 {currentSlide.description}
                             </motion.p>
@@ -426,7 +443,7 @@ export function OnboardingPage() {
                                     duration: 0.4,
                                     ease: [0.4, 0, 0.2, 1]
                                 }}
-                                className="flex flex-wrap justify-center gap-3"
+                                className={cn("flex flex-wrap justify-center", isSmall ? "gap-2" : "gap-3")}
                             >
                                 {currentSlide.features.map((feature, index) => (
                                     <motion.div
@@ -442,7 +459,8 @@ export function OnboardingPage() {
                                             damping: 15
                                         }}
                                         className={cn(
-                                            "flex items-center gap-2 px-4 py-2.5 rounded-full border-2 backdrop-blur-sm",
+                                            "flex items-center gap-2 rounded-full border-2 backdrop-blur-sm",
+                                            isSmall ? "px-3 py-1.5" : "px-4 py-2.5",
                                             currentSlide.bgColor,
                                             "border-current shadow-sm"
                                         )}
@@ -464,7 +482,7 @@ export function OnboardingPage() {
             </div>
 
             {/* Footer Controls with safe area */}
-            <div className="px-6 pb-8 w-full max-w-md mx-auto relative z-10">
+            <div className={cn("px-6 w-full max-w-md mx-auto relative z-10", isSmall ? "pb-4" : "pb-8")}>
                 <div className="flex flex-col gap-4">
                     {/* Pagination Indicators */}
                     <div className="flex gap-2 justify-center items-center">
@@ -539,7 +557,8 @@ export function OnboardingPage() {
                         <motion.button
                             onClick={handleNext}
                             className={cn(
-                                "relative flex-1 h-14 rounded-full px-8 text-white shadow-xl font-bold text-base bg-gradient-to-r flex items-center justify-center gap-2 overflow-hidden",
+                                "relative flex-1 rounded-full px-8 text-white shadow-xl font-bold text-base bg-gradient-to-r flex items-center justify-center gap-2 overflow-hidden",
+                                isSmall ? "h-12" : "h-14",
                                 currentSlide.color
                             )}
                             whileHover={{

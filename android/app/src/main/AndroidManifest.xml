@@ -24,6 +24,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Deep link for OAuth callback (Google/Apple sign-in) -->
+            <!-- This handles both PKCE (?code=...) and implicit (#access_token=...) flows -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "io.synark.hisabify://" -->
+                <data android:scheme="io.synark.hisabify" />
+                <data android:host="auth" />
+                <data android:pathPrefix="/callback" />
+            </intent-filter>
+
         </activity>
 
         <provider

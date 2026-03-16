@@ -41,6 +41,17 @@
 	<string>To upload receipt images for data extraction.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>To transcribe voice commands into text.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>io.synark.hisabify</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>io.synark.hisabify</string>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

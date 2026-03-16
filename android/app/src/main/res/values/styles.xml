@@ -17,6 +17,13 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <!-- Dark brand background replaces the default system colour -->
+        <item name="windowSplashScreenBackground">#080c14</item>
+        <!-- Hisabify logo shown as the splash icon (Android 12+) -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash</item>
+        <!-- Transition to the normal no-action-bar theme after the splash -->
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <!-- Pre-Android-12 compat: window background before first frame -->
+        <item name="android:windowBackground">@drawable/splash</item>
     </style>
 </resources>

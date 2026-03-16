@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { Capacitor } from '@capacitor/core';
+import { SplashScreen as CapacitorSplashScreen } from '@capacitor/splash-screen';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { CurrencyProvider } from "@/hooks/useCurrency";
@@ -28,6 +31,7 @@ import { PreferencesPage } from "@/pages/settings/PreferencesPage";
 import { NotificationSettingsPage } from "@/pages/settings/NotificationSettingsPage";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { SupportPage } from "@/pages/SupportPage";
 import { FaqPage } from "@/pages/FaqPage";
 import { PersonalPage } from "@/pages/profile/PersonalPage";
@@ -91,6 +95,14 @@ function AppRoutes() {
   );
   const location = useLocation();
 
+  // Failsafe: hide native Capacitor splash immediately so it doesn't get stuck.
+  // launchShowDuration:0 handles it at config level; this covers any edge cases.
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      CapacitorSplashScreen.hide({ fadeOutDuration: 0 }).catch(() => {});
+    }
+  }, []);
+
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
@@ -143,6 +155,7 @@ function AppRoutes() {
           </AuthRoute>
         }
       />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route
         path="/reset-password"
@@ -183,6 +196,7 @@ const App = () => (
 // Separated component to use hooks inside BrowserRouter
 function RootLogic() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Handle Android back button with exit confirmation
   useAndroidBackButton();
@@ -192,6 +206,39 @@ function RootLogic() {
     const cleanup = initViewportHeight();
     return cleanup;
   }, []);
+
+  // Handle deep links on native platforms (e.g. OAuth callback)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listener = CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+      console.log('[App] appUrlOpen event received:', url);
+      try {
+        const parsed = new URL(url);
+        const path = parsed.pathname || '/';
+        
+        if (path.includes('/auth/callback')) {
+          // For PKCE flow, the auth code comes in query params, not hash
+          // Preserve both search and hash fragments
+          const search = parsed.search || '';
+          const hash = parsed.hash || '';
+          
+          console.log('[App] Navigating to auth callback with:', { search, hash, fullUrl: url });
+          navigate(`/auth/callback${search}${hash}`, { replace: true });
+        } else {
+          console.log('[App] Ignoring non-auth URL:', url);
+        }
+      } catch (error) {
+        console.error('[App] Error parsing URL:', error);
+      }
+    });
+
+    console.log('[App] Registered appUrlOpen listener');
+    return () => {
+      console.log('[App] Removing appUrlOpen listener');
+      listener.then((l) => l.remove());
+    };
+  }, [navigate]);
 
   useEffect(() => {
     if (user) {

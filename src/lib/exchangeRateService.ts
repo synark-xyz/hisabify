@@ -22,7 +22,7 @@ export function shouldUpdateRates(): boolean {
   const lastUpdateTime = parseInt(lastUpdate, 10);
   const now = Date.now();
 
-  return (now - lastUpdateTime) > UPDATE_INTERVAL;
+  return (now - lastUpdateTime) >= UPDATE_INTERVAL;
 }
 
 /**

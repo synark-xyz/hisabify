@@ -215,14 +215,16 @@ function RootLogic() {
       console.log('[App] appUrlOpen event received:', url);
       try {
         const parsed = new URL(url);
-        const path = parsed.pathname || '/';
-        
-        if (path.includes('/auth/callback')) {
+        // For custom scheme URLs (io.synark.hisabify://auth/callback),
+        // the host is "auth" and pathname is "/callback" — reconstruct full path
+        const fullPath = `/${parsed.host}${parsed.pathname}`.replace(/\/+/g, '/');
+
+        if (fullPath.includes('/auth/callback')) {
           // For PKCE flow, the auth code comes in query params, not hash
           // Preserve both search and hash fragments
           const search = parsed.search || '';
           const hash = parsed.hash || '';
-          
+
           console.log('[App] Navigating to auth callback with:', { search, hash, fullUrl: url });
           navigate(`/auth/callback${search}${hash}`, { replace: true });
         } else {

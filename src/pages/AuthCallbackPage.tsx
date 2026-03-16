@@ -26,7 +26,6 @@ export function AuthCallbackPage() {
     });
 
     // Primary mechanism: listen for auth state change.
-    // Supabase automatically handles both PKCE (query params) and implicit (hash) flows.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
@@ -39,51 +38,50 @@ export function AuthCallbackPage() {
           });
           navigate('/', { replace: true });
         }
-        
-        // Handle SIGN_OUT event too
-        if (event === 'SIGNED_OUT') {
-          console.log('[OAuthCallback] User signed out during callback');
-        }
       },
     );
 
-    // Fallback: check if there's already a session (e.g., PKCE code was processed
-    // before this component mounted, or the user navigated here directly).
-    const checkExistingSession = async () => {
-      // Small delay to let Supabase's internal URL parsing run first
-      await new Promise(r => setTimeout(r, 500));
-      if (!mounted) return;
+    // On native (Capacitor), detectSessionInUrl runs at client init time (https://localhost/),
+    // so by the time React Router navigates here, Supabase has already missed the ?code param.
+    // We must manually exchange it.
+    const exchangeCode = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const errorParam = params.get('error');
 
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      console.log('[OAuthCallback] Fallback getSession check', {
-        hasSession: !!data.session,
-        error: sessionError?.message,
-      });
-
-      if (sessionError) {
-        console.error('[OAuthCallback] Session error:', sessionError);
-        // Don't set error immediately - might still get auth state change
+      if (errorParam) {
+        console.error('[OAuthCallback] OAuth error from provider:', errorParam, params.get('error_description'));
+        setError(`Sign-in failed: ${params.get('error_description') || errorParam}`);
+        setTimeout(() => { if (mounted) navigate('/auth', { replace: true }); }, 2000);
         return;
       }
 
-      if (data.session) {
-        console.log('[OAuthCallback] Session found via fallback, navigating');
+      if (code) {
+        console.log('[OAuthCallback] Exchanging PKCE code for session');
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        console.log('[OAuthCallback] Exchange result', { hasSession: !!data?.session, error: exchangeError?.message });
+        if (!mounted) return;
+        if (exchangeError) {
+          console.error('[OAuthCallback] Code exchange failed:', exchangeError.message);
+          setError('Sign-in failed. Please try again.');
+          setTimeout(() => { if (mounted) navigate('/auth', { replace: true }); }, 2000);
+          return;
+        }
+        // onAuthStateChange SIGNED_IN will fire and navigate to dashboard
+        return;
+      }
+
+      // No code param — check if a session already exists (e.g., re-visit)
+      const { data } = await supabase.auth.getSession();
+      console.log('[OAuthCallback] Fallback getSession check', { hasSession: !!data.session });
+      if (data.session && mounted) {
         navigate('/', { replace: true });
-        return;
-      }
-
-      // Check if we have auth params (PKCE code or hash)
-      const hasAuthParams = window.location.search.includes('code=') || 
-                           window.location.search.includes('error=') ||
-                           window.location.hash;
-      
-      if (!hasAuthParams) {
-        // No auth params at all - might be a stale visit
-        console.warn('[OAuthCallback] No auth params present');
+      } else {
+        console.warn('[OAuthCallback] No code or session found');
       }
     };
 
-    checkExistingSession();
+    exchangeCode();
 
     // Safety timeout — if nothing happens in 15s, redirect back to auth
     const safetyTimeout = setTimeout(() => {

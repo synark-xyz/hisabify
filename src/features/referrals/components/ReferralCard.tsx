@@ -16,27 +16,47 @@ export function ReferralCard() {
 
     const handleCopy = () => {
         if (referralCode) {
-            navigator.clipboard.writeText(referralCode);
+            const deepLink = `https://hisabify.app/?ref=${referralCode}`;
+            navigator.clipboard.writeText(deepLink).catch(() => {
+                navigator.clipboard.writeText(referralCode);
+            });
             setCopied(true);
-            toast.success('Code copied to clipboard');
+            toast.success('Invite link copied to clipboard');
             setTimeout(() => setCopied(false), 2000);
         }
     };
 
     const handleShare = async () => {
-        if (navigator.share && referralCode) {
+        if (!referralCode) return;
+        const deepLink = `https://hisabify.app/?ref=${referralCode}`;
+        if (navigator.share) {
             try {
                 await navigator.share({
                     title: 'Join me on Hisabify!',
                     text: `Use my referral code ${referralCode} to get 30 days of Pro features for free!`,
-                    url: window.location.origin,
+                    url: deepLink,
                 });
             } catch (err) {
-                console.error('Error sharing:', err);
-                handleCopy();
+                if (err instanceof Error && err.name !== 'AbortError') {
+                    try {
+                        await navigator.clipboard.writeText(deepLink);
+                        setCopied(true);
+                        toast.success('Invite link copied to clipboard');
+                        setTimeout(() => setCopied(false), 2000);
+                    } catch {
+                        toast.error('Could not copy invite link');
+                    }
+                }
             }
         } else {
-            handleCopy();
+            try {
+                await navigator.clipboard.writeText(deepLink);
+                setCopied(true);
+                toast.success('Invite link copied to clipboard');
+                setTimeout(() => setCopied(false), 2000);
+            } catch {
+                toast.error('Could not copy invite link');
+            }
         }
     };
 

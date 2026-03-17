@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -24,7 +23,6 @@ import {
   Target,
   Trash2,
   Wallet,
-  PartyPopper,
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
@@ -33,6 +31,7 @@ import { PremiumGuard } from '@/components/PremiumGuard';
 import { cn } from '@/lib/utils';
 import { GoalThermometer } from './GoalThermometer';
 import { SavingsFundingDialog } from './SavingsFundingDialog';
+import { GoalCompletionModal } from './GoalCompletionModal';
 import { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
 
 interface SavingsGoalCardProps {
@@ -78,7 +77,7 @@ export function SavingsGoalCard({
   const [redeployAmount, setRedeployAmount] = useState(goal.availableToRedeploy.toString());
   const { formatAmount } = useCurrency();
   const previousStatusRef = useRef(goal.status);
-  const celebrationTimerRef = useRef<number | null>(null);
+  const celebrationTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
 
   const statusColors = {
     completed: 'text-green-500',
@@ -126,9 +125,6 @@ export function SavingsGoalCard({
       if (celebrationTimerRef.current) {
         window.clearTimeout(celebrationTimerRef.current);
       }
-      celebrationTimerRef.current = window.setTimeout(() => {
-        setShowCelebration(false);
-      }, 2200);
     }
 
     previousStatusRef.current = goal.status;
@@ -438,55 +434,11 @@ export function SavingsGoalCard({
         </CardContent>
       </Card>
 
-      <AnimatePresence>
-        {showCelebration && (
-          <motion.div
-            className="pointer-events-none fixed inset-0 z-[10050] flex items-center justify-center overflow-hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px]" />
-            {[...Array(14)].map((_, index) => (
-              <motion.span
-                key={index}
-                className="absolute h-3 w-3 rounded-full"
-                style={{
-                  backgroundColor: index % 3 === 0 ? goal.color : index % 2 === 0 ? '#10B981' : '#60A5FA',
-                  left: `${8 + (index * 6)}%`,
-                  top: `${18 + (index % 5) * 8}%`,
-                }}
-                initial={{ y: -40, opacity: 0, scale: 0.4 }}
-                animate={{
-                  y: [0, 220 + (index % 3) * 40],
-                  x: [0, index % 2 === 0 ? 40 : -40],
-                  opacity: [0, 1, 1, 0],
-                  scale: [0.4, 1, 0.8],
-                  rotate: [0, 180, 320],
-                }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.8, ease: 'easeOut', delay: index * 0.03 }}
-              />
-            ))}
-            <motion.div
-              className="relative z-10 rounded-3xl border border-emerald-500/30 bg-card/90 px-8 py-7 text-center shadow-2xl"
-              initial={{ scale: 0.88, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: -12 }}
-              transition={{ type: 'spring', stiffness: 240, damping: 18 }}
-            >
-              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
-                <PartyPopper className="h-8 w-8" />
-              </div>
-              <p className="text-xs font-bold uppercase tracking-[0.3em] text-emerald-500">Goal Completed</p>
-              <h3 className="mt-2 text-2xl font-black text-foreground">{goal.name}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {formatAmount(goal.current_amount)} saved. Archive it or redeploy the funds.
-              </p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <GoalCompletionModal
+        goal={goal}
+        open={showCelebration}
+        onClose={() => setShowCelebration(false)}
+      />
 
       <SavingsFundingDialog
         open={showFunding}

@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { HisabifyLogo } from '@/components/HisabifyLogo';
+import { LegalModal, type LegalTab } from '@/components/LegalModal';
 import { cn } from '@/lib/utils';
 
 // ─── Validation schemas ────────────────────────────────────────────────────────
@@ -144,7 +145,7 @@ function AuthBackground({ shouldReduce }: { shouldReduce: boolean }) {
             animate={{
               y: [0, -20, 0],
               x: [0, i % 2 === 0 ? 7 : -7, 0],
-              opacity: [0.07, 0.2, 0.07],
+              opacity: [0.04, 0.12, 0.04],
               rotate: [-10, 10, -10],
             }}
             transition={{
@@ -170,7 +171,7 @@ function AuthBackground({ shouldReduce }: { shouldReduce: boolean }) {
               filter: 'blur(64px)',
               willChange: 'transform, opacity',
             }}
-            animate={{ scale: [1, 1.12, 1], opacity: [0.6, 1, 0.6] }}
+            animate={{ scale: [1, 1.12, 1], opacity: [0.10, 0.20, 0.10] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           />
           {/* Emerald orb — mid left */}
@@ -182,7 +183,7 @@ function AuthBackground({ shouldReduce }: { shouldReduce: boolean }) {
               filter: 'blur(64px)',
               willChange: 'transform, opacity',
             }}
-            animate={{ scale: [1.1, 1, 1.1], opacity: [0.45, 0.85, 0.45] }}
+            animate={{ scale: [1.1, 1, 1.1], opacity: [0.08, 0.18, 0.08] }}
             transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
           />
           {/* Indigo orb — bottom right */}
@@ -194,7 +195,7 @@ function AuthBackground({ shouldReduce }: { shouldReduce: boolean }) {
               filter: 'blur(64px)',
               willChange: 'transform, opacity',
             }}
-            animate={{ scale: [1, 1.18, 1], opacity: [0.4, 0.75, 0.4] }}
+            animate={{ scale: [1, 1.18, 1], opacity: [0.07, 0.15, 0.07] }}
             transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
           />
         </div>
@@ -419,6 +420,8 @@ export function AuthPage() {
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalTab>('terms');
+  const [legalOpen, setLegalOpen] = useState(false);
 
   const { signIn, signUp, signInWithOAuth, user } = useAuth();
   const navigate = useNavigate();
@@ -569,14 +572,20 @@ export function AuthPage() {
         className="dark relative min-h-screen flex flex-col items-center justify-center px-5 overflow-hidden"
         style={{ background: 'linear-gradient(160deg, #07091200 0%, #080c14 40%, #0a0518 100%)' }}
       >
-        <AuthBackground shouldReduce={shouldReduce} />
+        <motion.div
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+        >
+          <AuthBackground shouldReduce={shouldReduce} />
+        </motion.div>
 
         <motion.div
           className="relative z-10 w-full max-w-sm space-y-5"
-          variants={pageVariants}
-          initial="hidden"
-          animate="visible"
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: shouldReduce ? 0 : 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="text-center space-y-4">
             {/* Animated envelope icon */}
@@ -666,14 +675,20 @@ export function AuthPage() {
         className="dark relative min-h-screen flex flex-col items-center justify-center px-5 overflow-hidden"
         style={{ background: 'linear-gradient(160deg, #07091200 0%, #080c14 40%, #0a0518 100%)' }}
       >
-        <AuthBackground shouldReduce={shouldReduce} />
+        <motion.div
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+        >
+          <AuthBackground shouldReduce={shouldReduce} />
+        </motion.div>
 
         <motion.div
           className="relative z-10 w-full max-w-sm space-y-6"
-          variants={pageVariants}
-          initial="hidden"
-          animate="visible"
-          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: shouldReduce ? 0 : 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* Header */}
           <div className="text-center space-y-3">
@@ -779,9 +794,21 @@ export function AuthPage() {
       className="dark relative min-h-screen flex flex-col items-center justify-center px-5 overflow-hidden"
       style={{ background: 'linear-gradient(160deg, #07091200 0%, #080c14 40%, #0a0518 100%)' }}
     >
-      <AuthBackground shouldReduce={shouldReduce} />
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
+        <AuthBackground shouldReduce={shouldReduce} />
+      </motion.div>
 
-      <div className="relative z-10 w-full max-w-sm flex flex-col gap-6">
+      <motion.div
+        className="relative z-10 w-full max-w-sm flex flex-col gap-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.25, duration: 0.5, ease: 'easeOut' }}
+      >
         {/* ── Logo + wordmark ────────────────────────────────────────────────── */}
         <motion.div
           className="text-center"
@@ -1032,14 +1059,13 @@ export function AuthPage() {
                         className="text-xs leading-relaxed text-white/35 cursor-pointer select-none"
                       >
                         I have read and agree to the{' '}
-                        <a
-                          href="/privacy"
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => { setLegalTab('privacy'); setLegalOpen(true); }}
                           className="font-semibold text-purple-400 underline underline-offset-2 hover:text-pink-400 transition-colors"
                         >
                           Privacy Policy
-                        </a>
+                        </button>
                         .
                       </Label>
                     </div>
@@ -1151,16 +1177,26 @@ export function AuthPage() {
           transition={{ delay: 0.4, duration: 0.5 }}
         >
           By continuing, you agree to our{' '}
-          <a href="/terms" className="underline hover:text-white/35 transition-colors">
+          <button
+            type="button"
+            onClick={() => { setLegalTab('terms'); setLegalOpen(true); }}
+            className="underline hover:text-white/35 transition-colors"
+          >
             Terms
-          </a>{' '}
+          </button>{' '}
           and{' '}
-          <a href="/privacy" className="underline hover:text-white/35 transition-colors">
+          <button
+            type="button"
+            onClick={() => { setLegalTab('privacy'); setLegalOpen(true); }}
+            className="underline hover:text-white/35 transition-colors"
+          >
             Privacy Policy
-          </a>
+          </button>
           .
         </motion.p>
-      </div>
+      </motion.div>
+
+      <LegalModal open={legalOpen} defaultTab={legalTab} onClose={() => setLegalOpen(false)} />
     </div>
   );
 }

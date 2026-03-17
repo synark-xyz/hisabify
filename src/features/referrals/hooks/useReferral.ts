@@ -8,8 +8,18 @@ const PENDING_REFERRAL_KEY = 'pendingReferralCode';
 
 export function useReferral() {
     const { user } = useAuth();
-    const { profile, refreshProfile } = useProfile();
+    const { profile, refreshProfile, loading: profileLoading } = useProfile();
     const [loading, setLoading] = useState(false);
+    const [friendsInvited, setFriendsInvited] = useState(0);
+
+    useEffect(() => {
+        if (!user) return;
+        supabase
+            .from('users')
+            .select('user_id', { count: 'exact', head: true })
+            .eq('referred_by', user.id)
+            .then(({ count }) => setFriendsInvited(count ?? 0));
+    }, [user]);
 
     const redeemCode = useCallback(async (code: string): Promise<boolean> => {
         if (!user) return false;
@@ -80,7 +90,9 @@ export function useReferral() {
         referralCode: profile.referral_code,
         daysRemaining,
         hasUsedReferral,
+        friendsInvited,
         redeemCode,
         loading,
+        profileLoading,
     };
 }

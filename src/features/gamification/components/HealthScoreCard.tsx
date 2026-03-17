@@ -45,8 +45,8 @@ export function HealthScoreCard() {
 
     const handleChallenge = async () => {
         const challengeUrl = referralCode
-            ? `https://hisabify.app/?challenge=${score.total}&ref=${referralCode}`
-            : `https://hisabify.app/?challenge=${score.total}`;
+            ? `https://hisabify.app/auth?challenge=${score.total}&ref=${referralCode}`
+            : `https://hisabify.app/auth?challenge=${score.total}`;
 
         const shareText = `I scored ${score.total}/100 on my Financial Health Score! ${milestoneBadge?.emoji ?? ''} Think you can beat me? Track your finances on Hisabify:`;
 

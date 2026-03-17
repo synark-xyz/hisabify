@@ -229,3 +229,22 @@ The goal of this initiative is to transition Hisabify from a free utility to a s
 - **Phase 1**: Logic & UI Gating (Current)
 - **Phase 2**: Stripe Integration
 - **Phase 3**: New Premium Features (OCR, Recurring)
+
+---
+
+# PRD: Referral System
+
+## Overview
+Each user receives a unique 8-character referral code derived deterministically from their UUID. When a new user signs up via a referral link, both parties receive **30 days of Pro access** (stacking for the referrer on each successful referral).
+
+## Implementation Notes (as of 2026-03-17)
+- **Code generation**: Inline UUID substring in `handle_new_user` DB trigger — no separate function call. Migration `20260317000100` fixes a trigger regression introduced by `20260316` and backfills NULL codes.
+- **Deep link format**: `https://hisabify.app/auth?ref=CODE` — points to `/auth` directly so the param survives without a `ProtectedRoute` redirect.
+- **Param forwarding**: `ProtectedRoute` forwards `?ref=` and `?challenge=` to `/auth` for unauthenticated users who open any protected URL with these params.
+- **Auto-redeem**: On first profile load after signup, `useReferral` checks `localStorage.pendingReferralCode` and calls the `redeem_referral_code` RPC atomically.
+- **Redemption guard**: `referred_by` and `referral_used_at` are now correctly mapped through `useProfile`, ensuring `hasUsedReferral` is accurate and the auto-redeem loop does not re-fire for users who already redeemed.
+- **Pro grant**: `referral_granted_until` in `public.users` drives `hasActiveReferralGrant` in `useSubscription`; stacks for the referrer on each new successful referral.
+
+## UI
+- **Share tab**: Shows referral code with loading skeleton, copy + native share buttons, "X friends joined" count, and remaining Pro days badge.
+- **Redeem tab**: Disabled with "already redeemed" message after first use; manual 8-char code entry with atomic RPC redemption.

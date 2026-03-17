@@ -37,6 +37,8 @@
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor-firebase/analytics": "^8.1.0",
+    "@capacitor-firebase/crashlytics": "^8.1.0",
     "@capacitor/android": "^8.0.1",
     "@capacitor/app": "^8.0.1",
     "@capacitor/camera": "^8.0.2",

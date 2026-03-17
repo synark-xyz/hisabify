@@ -235,12 +235,18 @@ export function TransactionForm({
         if (error) {
           throw error;
         }
+        import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+          analytics.logEvent(AnalyticsEvents.EDIT_TRANSACTION, { type });
+        }).catch(() => {});
         toast({ title: 'Transaction updated!' });
       } else {
         const { error } = await supabase.from('transactions').insert(payload);
         if (error) {
           throw error;
         }
+        import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+          analytics.logEvent(AnalyticsEvents.ADD_TRANSACTION, { type, category: data.categoryId || 'uncategorized' });
+        }).catch(() => {});
         const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
       }

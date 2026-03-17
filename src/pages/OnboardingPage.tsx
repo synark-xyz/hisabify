@@ -82,7 +82,13 @@ const slides = [
     }
 ];
 
-export function OnboardingPage() {
+interface OnboardingPageProps {
+    /** Called when the user completes or skips onboarding. If provided, the
+     *  parent is responsible for persisting the flag and navigating away. */
+    onComplete?: () => void;
+}
+
+export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
     const navigate = useNavigate();
@@ -113,8 +119,12 @@ export function OnboardingPage() {
     };
 
     const handleComplete = () => {
-        localStorage.setItem('hasSeenOnboarding', 'true');
-        navigate('/auth');
+        if (onComplete) {
+            onComplete();
+        } else {
+            localStorage.setItem('hasSeenOnboarding', 'true');
+            navigate('/auth');
+        }
     };
 
     const slideVariants = {

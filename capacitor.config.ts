@@ -39,12 +39,12 @@ const config: CapacitorConfig = {
   appId: 'io.synark.hisabify',
   appName: 'Hisabify',
   webDir: 'dist',
-  ...(APP_ENV === 'staging' && {
+  ...(APP_ENV === 'staging' ? {
     server: { url: STAGING_URL },
-  }),
-  ...(APP_ENV === 'local' && {
+  } : {}),
+  ...(APP_ENV === 'local' ? {
     server: { url: DEVICE_URLS[DEVICE_TYPE], cleartext: true },
-  }),
+  } : {}),
   // APP_ENV === 'production': no server block — Capacitor loads from dist/
   android: {
     allowMixedContent: true,

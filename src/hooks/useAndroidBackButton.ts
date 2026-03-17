@@ -1,98 +1,121 @@
 import { useEffect, useRef } from 'react';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { NavigateFunction } from 'react-router-dom';
+
+// Routes that are considered "root" — back from here should exit the app.
+const ROOT_PATHS = new Set(['/', '/auth', '/onboarding']);
 
 /**
- * Hook to handle Android back button with exit confirmation.
- * Shows a confirmation dialog before exiting the app.
- * Only active on Android platform.
+ * Handles the Android hardware/gesture back button.
+ *
+ * Behaviour:
+ *  - If NOT on a root path → navigate(-1) (go to previous screen).
+ *  - If ON a root path → first press shows "press again to exit" hint;
+ *    second press within 2 s exits the app.
+ *
+ * Only active on Android.
  */
-export function useAndroidBackButton() {
+export function useAndroidBackButton(navigate: NavigateFunction) {
   const lastBackPress = useRef<number>(0);
-  const exitToastTimeout = useRef<NodeJS.Timeout | null>(null);
+  const hintTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Only handle back button on Android
-    if (Capacitor.getPlatform() !== 'android') {
-      return;
-    }
-
-    console.log('[useAndroidBackButton] Registering Android back button handler');
+    if (Capacitor.getPlatform() !== 'android') return;
 
     const handleBackButton = () => {
-      const currentTime = Date.now();
-      const timeSinceLastPress = currentTime - lastBackPress.current;
+      const currentPath = window.location.pathname;
+      const atRoot = ROOT_PATHS.has(currentPath);
 
-      // If back was pressed within 2 seconds, exit the app
-      if (timeSinceLastPress < 2000) {
-        console.log('[useAndroidBackButton] Double back press detected - exiting app');
-        if (exitToastTimeout.current) {
-          clearTimeout(exitToastTimeout.current);
-        }
+      if (!atRoot) {
+        // Navigate back within the app
+        navigate(-1);
+        return;
+      }
+
+      // At root — implement double-back-to-exit
+      const now = Date.now();
+
+      if (now - lastBackPress.current < 2000) {
+        // Second press within window: exit
+        if (hintTimeout.current) clearTimeout(hintTimeout.current);
+        removeHint();
         App.exitApp();
         return;
       }
 
-      // First back press - show toast notification
-      console.log('[useAndroidBackButton] First back press - showing exit prompt');
-      lastBackPress.current = currentTime;
+      // First press: record time and show hint
+      lastBackPress.current = now;
+      showExitHint();
 
-      // Show toast message (we'll use a visual indicator in the UI)
-      showExitPrompt();
-
-      // Clear the exit prompt after 2 seconds
-      if (exitToastTimeout.current) {
-        clearTimeout(exitToastTimeout.current);
-      }
-      exitToastTimeout.current = setTimeout(() => {
+      if (hintTimeout.current) clearTimeout(hintTimeout.current);
+      hintTimeout.current = setTimeout(() => {
         lastBackPress.current = 0;
+        removeHint();
       }, 2000);
     };
 
-    // Register back button listener
-    const listener = App.addListener('backButton', handleBackButton);
+    // App.addListener returns a PluginListenerHandle (synchronous in Capacitor 8)
+    let handle: { remove: () => void } | null = null;
 
-    // Cleanup
-    return () => {
-      console.log('[useAndroidBackButton] Removing Android back button handler');
-      listener.remove();
-      if (exitToastTimeout.current) {
-        clearTimeout(exitToastTimeout.current);
-      }
+    const setup = async () => {
+      handle = await App.addListener('backButton', handleBackButton);
     };
-  }, []);
+
+    setup();
+
+    return () => {
+      handle?.remove();
+      if (hintTimeout.current) clearTimeout(hintTimeout.current);
+      removeHint();
+    };
+  }, [navigate]);
 }
 
-/**
- * Show exit prompt at the bottom of the screen.
- * Uses a temporary toast-like message.
- */
-function showExitPrompt() {
-  // Create toast element
-  const toast = document.createElement('div');
-  toast.id = 'android-exit-toast';
-  toast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full shadow-lg z-[100000] animate-in fade-in slide-in-from-bottom-2 duration-200';
-  toast.textContent = 'Press back again to exit';
-  toast.style.fontWeight = '600';
-  toast.style.fontSize = '14px';
-  toast.style.whiteSpace = 'nowrap';
+// ─── Exit hint ────────────────────────────────────────────────────────────────
 
-  // Remove existing toast if present
-  const existing = document.getElementById('android-exit-toast');
-  if (existing) {
-    existing.remove();
+const HINT_ID = 'android-exit-hint';
+
+function showExitHint() {
+  removeHint();
+
+  // Inject keyframe once
+  if (!document.getElementById('android-hint-style')) {
+    const style = document.createElement('style');
+    style.id = 'android-hint-style';
+    style.textContent = `
+      @keyframes android-hint-in {
+        from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
-  // Add to body
-  document.body.appendChild(toast);
+  const el = document.createElement('div');
+  el.id = HINT_ID;
+  Object.assign(el.style, {
+    position: 'fixed',
+    bottom: '88px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(30,30,40,0.92)',
+    color: '#fff',
+    padding: '10px 22px',
+    borderRadius: '999px',
+    fontSize: '13px',
+    fontWeight: '600',
+    whiteSpace: 'nowrap',
+    zIndex: '999999',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+    backdropFilter: 'blur(8px)',
+    animation: 'android-hint-in 0.2s ease',
+    pointerEvents: 'none',
+  });
+  el.textContent = 'Press back again to exit';
+  document.body.appendChild(el);
+}
 
-  // Auto-remove after 2 seconds with fade out animation
-  setTimeout(() => {
-    toast.classList.add('animate-out', 'fade-out', 'slide-out-to-bottom-2');
-    setTimeout(() => {
-      if (toast.parentNode) {
-        toast.remove();
-      }
-    }, 200);
-  }, 2000);
+function removeHint() {
+  document.getElementById(HINT_ID)?.remove();
 }

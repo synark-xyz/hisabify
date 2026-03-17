@@ -9,34 +9,55 @@ import { toast } from 'sonner';
 type TabMode = 'share' | 'redeem';
 
 export function ReferralCard() {
-    const { referralCode, daysRemaining, hasUsedReferral, redeemCode, loading } = useReferral();
+    const { referralCode, daysRemaining, hasUsedReferral, friendsInvited, redeemCode, loading, profileLoading } = useReferral();
+    const codeLoading = profileLoading && !referralCode;
     const [activeTab, setActiveTab] = useState<TabMode>('share');
     const [redeemInput, setRedeemInput] = useState('');
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
         if (referralCode) {
-            navigator.clipboard.writeText(referralCode);
+            const deepLink = `https://hisabify.app/auth?ref=${referralCode}`;
+            navigator.clipboard.writeText(deepLink).catch(() => {
+                navigator.clipboard.writeText(referralCode);
+            });
             setCopied(true);
-            toast.success('Code copied to clipboard');
+            toast.success('Invite link copied to clipboard');
             setTimeout(() => setCopied(false), 2000);
         }
     };
 
     const handleShare = async () => {
-        if (navigator.share && referralCode) {
+        if (!referralCode) return;
+        const deepLink = `https://hisabify.app/auth?ref=${referralCode}`;
+        if (navigator.share) {
             try {
                 await navigator.share({
                     title: 'Join me on Hisabify!',
                     text: `Use my referral code ${referralCode} to get 30 days of Pro features for free!`,
-                    url: window.location.origin,
+                    url: deepLink,
                 });
             } catch (err) {
-                console.error('Error sharing:', err);
-                handleCopy();
+                if (err instanceof Error && err.name !== 'AbortError') {
+                    try {
+                        await navigator.clipboard.writeText(deepLink);
+                        setCopied(true);
+                        toast.success('Invite link copied to clipboard');
+                        setTimeout(() => setCopied(false), 2000);
+                    } catch {
+                        toast.error('Could not copy invite link');
+                    }
+                }
             }
         } else {
-            handleCopy();
+            try {
+                await navigator.clipboard.writeText(deepLink);
+                setCopied(true);
+                toast.success('Invite link copied to clipboard');
+                setTimeout(() => setCopied(false), 2000);
+            } catch {
+                toast.error('Could not copy invite link');
+            }
         }
     };
 
@@ -84,30 +105,41 @@ export function ReferralCard() {
 
                         <div className="flex items-center gap-3">
                             <div
-                                onClick={handleCopy}
-                                className="flex-1 bg-muted rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-muted/70 transition-colors"
+                                onClick={!codeLoading ? handleCopy : undefined}
+                                className={`flex-1 bg-muted rounded-2xl p-4 flex items-center justify-between transition-colors ${codeLoading ? 'cursor-default' : 'cursor-pointer hover:bg-muted/70'}`}
                             >
                                 <div>
                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                                         Your Code
                                     </p>
-                                    <p className="text-lg font-black tracking-widest">{referralCode || '--------'}</p>
+                                    {codeLoading ? (
+                                        <div className="animate-pulse bg-muted-foreground/20 rounded h-7 w-32 mt-1" />
+                                    ) : (
+                                        <p className="text-lg font-black tracking-widest">{referralCode}</p>
+                                    )}
                                 </div>
                                 {copied ? (
                                     <Check className="w-5 h-5 text-green-500" />
                                 ) : (
-                                    <Copy className="w-5 h-5 text-muted-foreground" />
+                                    <Copy className={`w-5 h-5 ${codeLoading ? 'text-muted-foreground/40' : 'text-muted-foreground'}`} />
                                 )}
                             </div>
 
                             <Button
                                 size="icon"
                                 onClick={handleShare}
+                                disabled={codeLoading}
                                 className="w-12 h-12 rounded-2xl"
                             >
                                 <Share2 className="w-5 h-5" />
                             </Button>
                         </div>
+
+                        {friendsInvited > 0 && (
+                            <p className="text-xs text-muted-foreground font-medium">
+                                {friendsInvited} friend{friendsInvited > 1 ? 's' : ''} joined
+                            </p>
+                        )}
 
                         {daysRemaining > 0 && (
                             <div className="flex items-center gap-2 bg-accent/10 text-accent rounded-xl px-3 py-2 w-fit">

@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, RefreshCw, Lock, Crown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, RefreshCw, Lock, Crown, Share2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -26,8 +27,9 @@ import {
   SpendingHeatMap,
   DayOfWeekChart,
 } from '@/components/analytics';
+import { MonthlyWrapCard } from '@/components/MonthlyWrapCard';
 import { exportToCSV } from '@/lib/exportUtils';
-import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, getMonth, getYear } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
@@ -38,11 +40,13 @@ import { enforceHistoryWindow, getFreeHistoryStartDate } from '@/lib/historyLimi
 
 export function AnalyticsPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showWrapModal, setShowWrapModal] = useState(false);
   const [dateRange, setDateRange] = useState({
     from: startOfMonth(subMonths(new Date(), 11)), // Extended to 12 months for better analysis
     to: endOfMonth(new Date()),
   });
   const { user } = useAuth();
+  const { currency, formatAmount } = useCurrency();
   const { toast } = useToast();
   const { variant } = useTheme();
   const navigate = useNavigate();
@@ -153,17 +157,32 @@ export function AnalyticsPage() {
             </motion.div>
             <h1 className="text-xl font-bold text-foreground text-glow">Analytics Dashboard</h1>
           </div>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={refetch}
-              disabled={loading}
-              className="border-glow"
-            >
-              <RefreshCw className={`w-4 h-4 icon-glow ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-          </motion.div>
+          <div className="flex items-center gap-2">
+            {hasTransactionData && (
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowWrapModal(true)}
+                  className="rounded-xl font-bold text-xs border-glow gap-1.5"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  Share Month
+                </Button>
+              </motion.div>
+            )}
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={refetch}
+                disabled={loading}
+                className="border-glow"
+              >
+                <RefreshCw className={`w-4 h-4 icon-glow ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </motion.div>
+          </div>
         </motion.header>
 
         <motion.main
@@ -358,6 +377,49 @@ export function AnalyticsPage() {
         onOpenChange={setShowUpgradeModal}
         source="analytics_tab"
       />
+
+      {/* Monthly Wrap Modal */}
+      <AnimatePresence>
+        {showWrapModal && (
+          <motion.div
+            className="fixed inset-0 z-[10050] flex items-end sm:items-center justify-center p-4 sm:p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowWrapModal(false)}
+            />
+            <motion.div
+              className="relative z-10 w-full max-w-sm"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 22 }}
+            >
+              <button
+                onClick={() => setShowWrapModal(false)}
+                className="absolute -top-3 -right-3 z-20 w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center shadow-lg hover:bg-muted transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <MonthlyWrapCard
+                month={getMonth(dateRange.to) + 1}
+                year={getYear(dateRange.to)}
+                totalSaved={netBalance}
+                budgetWeeksUnder={budgetVsActualData.filter((b) => (b.actual ?? 0) <= (b.budget ?? 0)).length}
+                expenseStreak={transactions.length > 0 ? Math.min(transactions.length, 30) : 0}
+                currency={currency}
+                formattedTotalSaved={formatAmount(Math.abs(netBalance))}
+                formattedTotalExpenses={formatAmount(totalExpenses)}
+                formattedTotalIncome={formatAmount(totalIncome)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

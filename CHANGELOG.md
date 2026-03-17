@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Referral — Friends Joined Count**: The Share tab on the Invite Friends screen now shows "X friends joined" when at least one user has signed up via your referral link.
+- **Referral — Loading Skeleton**: Referral code now shows an animated skeleton while the profile is loading instead of the static "--------" placeholder; copy and share buttons are disabled until the code is ready.
+
+### Changed
+- **Referral Share Links**: Invite and challenge share URLs now point to `/auth?ref=CODE` instead of `/?ref=CODE`. This ensures the referral code is captured by `AuthPage` without an intermediate redirect that previously dropped the param.
+
+### Fixed
+- **Referral Code Blank ("--------")**: Two compounding bugs caused the referral code to never appear.
+  1. *Trigger bug*: Migration `20260316` restored a call to `public.generate_referral_code()` which was dropped by `20260311_simplify_referrals`. Any user who signed up after March 16 either got a trigger exception or a NULL `referral_code`. Fixed in migration `20260317000100` by replacing the function call with an inline UUID substring formula, with a backfill for existing NULL codes. A guard `ADD COLUMN IF NOT EXISTS` was also added for idempotency.
+  2. *Profile mapping bug*: `referred_by`, `referral_used_at`, and `referral_granted_until` were fetched via `select('*')` but silently dropped in `mapUserRowToProfile()` because they were absent from the `User` interface. This caused `hasUsedReferral` to always be `false`, `daysRemaining` to always be `0`, `hasActiveReferralGrant` in `useSubscription` to always be `false`, and the auto-redeem loop to fire for users who already redeemed. All three fields added to `User` interface, `defaultProfile`, and `mapUserRowToProfile` in `useProfile.tsx`.
+- **Referral Deep Link — Query Param Lost on Redirect**: `ProtectedRoute` redirected unauthenticated users to `/auth` with a bare `<Navigate to="/auth" replace />`, stripping `?ref=` and `?challenge=` params. Fixed by forwarding both params through the redirect when present.
+
 - **Feature Connectivity — Budget to Expenses**: Budget cards now have a "View in Expenses" action that navigates to the Expenses page pre-filtered by category and date range.
 - **Feature Connectivity — Analytics to Expenses**: Clicking a category slice in the Analytics pie chart navigates to Expenses pre-filtered by that category and date range.
 - **Feature Connectivity — Notification Action Links**: Budget notification cards now have "View Budget" and "View Spending" action buttons linking to relevant pages.

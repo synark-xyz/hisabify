@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Crown, Sparkles, Target, TrendingUp, Wallet } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Check, Crown, RotateCcw, Sparkles, Target, TrendingUp, Wallet, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
 import { cn } from '@/lib/utils';
 
 interface UpgradeModalProps {
@@ -90,17 +92,35 @@ function getUpgradeContent(source?: string) {
 }
 
 export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) {
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const { purchasePlan, restorePurchases } = useSubscription();
+  const { monthlyPrice, yearlyPrice } = useSubscriptionPricing();
   const content = getUpgradeContent(source);
+  const [checkoutLoading, setCheckoutLoading] = useState<'monthly' | 'yearly' | 'restore' | null>(null);
 
-  const handleUpgrade = () => {
-    onOpenChange(false);
-    toast({
-      title: 'Pro checkout is not enabled yet',
-      description: 'Contact support to activate Pro manually for now.',
-    });
-    navigate('/support');
+  const handleUpgrade = async (plan: 'monthly' | 'yearly') => {
+    setCheckoutLoading(plan);
+    try {
+      await purchasePlan(plan);
+      onOpenChange(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Purchase failed';
+      toast({ title: 'Purchase error', description: message, variant: 'destructive' });
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  const handleRestore = async () => {
+    setCheckoutLoading('restore');
+    try {
+      await restorePurchases();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Restore failed';
+      toast({ title: 'Restore error', description: message, variant: 'destructive' });
+    } finally {
+      setCheckoutLoading(null);
+    }
   };
 
   return (
@@ -168,21 +188,38 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               </div>
             </div>
 
-            <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-purple-400">Hisabify Pro</p>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-foreground">$4.99</span>
-                    <span className="text-sm text-muted-foreground">/month</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Manual activation for now. Billing flow comes next.
-                  </p>
+            {/* Pricing cards */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Monthly */}
+              <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-purple-400 mb-2">Monthly</p>
+                <div className="flex items-baseline gap-0.5 mb-1">
+                  <span className="text-2xl font-black text-foreground">{monthlyPrice}</span>
+                  <span className="text-xs text-muted-foreground">/mo</span>
                 </div>
-
-                <Sparkles className="h-8 w-8 text-purple-400" />
+                <p className="text-[10px] text-muted-foreground">7-day free trial</p>
               </div>
+              {/* Yearly */}
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 relative">
+                <div className="absolute -top-2 -right-1">
+                  <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider shadow-sm">
+                    Save 33%
+                  </span>
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-400 mb-2">Annual</p>
+                <div className="flex items-baseline gap-0.5 mb-1">
+                  <span className="text-2xl font-black text-foreground">{yearlyPrice}</span>
+                  <span className="text-xs text-muted-foreground">/yr</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">7-day free trial</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-purple-400 flex-shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Try free for 7 days — cancel anytime before you're charged.
+              </p>
             </div>
 
             <div className="mt-5 space-y-3">
@@ -190,14 +227,43 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                 className={cn(
                   'h-12 w-full rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 text-base font-black shadow-lg shadow-purple-500/20 transition-opacity hover:opacity-95'
                 )}
-                onClick={handleUpgrade}
+                disabled={checkoutLoading !== null}
+                onClick={() => handleUpgrade('monthly')}
               >
-                Upgrade to Pro
-                <ArrowRight className="ml-2 h-4 w-4" />
+                {checkoutLoading === 'monthly' ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Start 7-Day Free Trial — {monthlyPrice}/mo
+                {checkoutLoading !== 'monthly' && <ArrowRight className="ml-2 h-4 w-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-10 w-full rounded-2xl font-bold text-sm border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/50"
+                disabled={checkoutLoading !== null}
+                onClick={() => handleUpgrade('yearly')}
+              >
+                {checkoutLoading === 'yearly' ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Annual Plan — {yearlyPrice}/year (save 33%)
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-9 w-full rounded-2xl text-xs text-muted-foreground"
+                disabled={checkoutLoading !== null}
+                onClick={handleRestore}
+              >
+                {checkoutLoading === 'restore' ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Restore Purchases
               </Button>
               <Button
                 variant="ghost"
                 className="w-full rounded-2xl text-muted-foreground"
+                disabled={checkoutLoading !== null}
                 onClick={() => onOpenChange(false)}
               >
                 Maybe Later

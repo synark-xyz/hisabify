@@ -245,8 +245,8 @@ function RootLogic() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Handle Android back button with exit confirmation
-  useAndroidBackButton();
+  // Handle Android back button — navigates back in history; exits on double-back from root
+  useAndroidBackButton(navigate);
 
   // Initialize viewport height fix for mobile
   useEffect(() => {

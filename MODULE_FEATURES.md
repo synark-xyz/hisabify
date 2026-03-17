@@ -727,36 +727,45 @@
 #### 11.3 Referral/Invite (`/profile/invite`)
 
 ##### Functional Features
-- View personal referral code
-- Copy referral link
-- View referral statistics
-  - Total referrals
-  - Active referrals
-  - Rewards earned
-- Share referral link (social media, email)
-- Redeem referral code (for new users)
+- View personal referral code (8-char uppercase UUID substring, generated at signup via `handle_new_user` trigger)
+- Copy referral link (`https://hisabify.app/auth?ref=CODE`) — points directly to `/auth` so the code survives without a redirect
+- Share referral link via native share sheet or clipboard fallback
+- View "X friends joined" count (users who signed up via your code)
+- Animated skeleton shown while code loads; copy and share disabled until ready
+- Redeem a friend's code (Redeem tab) for 30 days Pro — atomic via `redeem_referral_code` RPC
+- Auto-redeem: if user signed up via `?ref=CODE` link, code is stored in `localStorage` and redeemed automatically after first profile load
+- Display days remaining on Pro grant earned via referral
+- "Already redeemed" state disables Redeem tab and hides input for users who already used a code
 
 ##### Non-Functional Features
-- Unique referral code per user
-- Referral tracking backend
-- Reward distribution mechanism
+- Unique referral code per user, deterministic from UUID (no collision risk)
+- Referral tracking via `referred_by`, `referral_used_at`, `referral_granted_until` columns in `public.users`
+- Reward granted atomically in PostgreSQL RPC; referrer Pro access stacks (extends existing grant)
+- `hasActiveReferralGrant` in `useSubscription` grants `isPremium: true` while `referral_granted_until > now()`
+- Deep link `?ref=` param forwarded through `ProtectedRoute` redirect so unauthenticated users never lose the code
 
 ##### Happy Paths
 1. **Share Referral**
-   - User views referral page
-   - Clicks "Copy Link"
-   - Toast confirms copy
-   - User shares externally
-   - New user signs up with code
-   - Both users receive reward
+   - User views referral page; 8-char code loads (skeleton shown briefly)
+   - Clicks "Copy Link" — toast confirms; clipboard receives `https://hisabify.app/auth?ref=XXXXXXXX`
+   - Friend opens link, lands on `/auth` with code pre-captured in localStorage
+   - Friend signs up → code auto-redeemed → both users get 30 days Pro
+   - "1 friend joined" appears on sharer's invite screen
+
+2. **Manual Redeem**
+   - Existing user navigates to Redeem tab
+   - Enters a friend's 8-char code
+   - Clicks "Redeem" → `redeem_referral_code` RPC validates and grants Pro to both
+   - Redeem tab becomes disabled with "already redeemed" message
 
 ##### Edge Cases
-- Referral code already used by same user (prevent duplicate)
-- Referral code case sensitivity
-- Invalid referral code entered (show error)
-- Expired referral code (if time-limited)
-- Self-referral attempt (prevent)
-- Referral reward distribution failure (retry)
+- Referral code already used by same user (RPC returns error; Redeem tab disabled after first use)
+- Referral code case-insensitive on entry (normalized to uppercase before RPC call)
+- Invalid referral code entered (RPC returns `{ success: false, error: 'Invalid referral code' }`)
+- Self-referral attempt (RPC blocks with `'You cannot use your own referral code'`)
+- NULL referral code for users who signed up during trigger breakage window (backfilled by migration `20260317000100`)
+- `?ref=` param dropped if user opens `/?ref=CODE` while unauthenticated — mitigated by `ProtectedRoute` forwarding params to `/auth`
+- Referral reward grant expiry: `daysRemaining` recalculates live from `referral_granted_until`; `isPremium` gate drops when expired
 
 ---
 

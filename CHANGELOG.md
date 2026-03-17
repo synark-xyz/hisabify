@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Analytics Savings Visibility**: Analytics now treats `Savings` as a permanent category, adds expense/savings/both chart modes, shows savings milestone markers, and surfaces monthly savings-rate insight.
 
 ### Fixed
+- **Android Google OAuth Login**: Fixed two-part failure preventing Google sign-in on Android (Capacitor).
+  1. Deep link `io.synark.hisabify://auth/callback?code=...` was silently ignored because `new URL()` parses custom schemes with `host="auth"` and `pathname="/callback"` — the path check for `/auth/callback` never matched. Fixed by reconstructing the full path as `/${parsed.host}${parsed.pathname}`.
+  2. After navigation to `/auth/callback`, Supabase's `detectSessionInUrl` (which runs at client init on `https://localhost/`) had already missed the `?code=` param. Fixed by manually calling `supabase.auth.exchangeCodeForSession(code)` in `AuthCallbackPage` when a `code` query param is present.
 - **Scrollbar Visibility**: Hidden scrollbars across all pages using multi-layered CSS fix with `!important` for cross-layer cascade, explicit `#root` rules, and `.custom-scrollbar` opt-in class for intentional scrollbars.
 - **Android WebView Scrollbars**: Disabled native overlay scrollbars in `MainActivity.java` via `setVerticalScrollBarEnabled(false)`.
 - **Voice Input Test Failures**: Fixed pre-existing test failures in `useVoiceInput.test.ts` by changing `toEqual` to `toMatchObject` (parseCommand returns extra fields).

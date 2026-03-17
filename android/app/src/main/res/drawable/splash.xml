@@ -1,106 +1,45 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="1024dp"
-    android:height="1024dp"
-    android:viewportWidth="1024"
-    android:viewportHeight="1024">
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Background Gradient -->
-    <path
-        android:pathData="M512,20a492,492 0 1,1 0,984a492,492 0 1,1 0,-984">
-        <aapt:attr name="android:fillColor">
+    <!-- Full-bleed dark gradient background (kept) -->
+    <item>
+        <shape android:shape="rectangle">
             <gradient
                 android:type="linear"
-                android:startX="0"
-                android:startY="0"
-                android:endX="1024"
-                android:endY="1024">
-                <item android:offset="0" android:color="#3B82F6"/>
-                <item android:offset="0.5" android:color="#8B5CF6"/>
-                <item android:offset="1" android:color="#EC4899"/>
-            </gradient>
-        </aapt:attr>
-    </path>
+                android:startColor="#080c14"
+                android:endColor="#0f1729"
+                android:angle="135" />
+        </shape>
+    </item>
 
-    <!-- Arc 1 -->
-    <path
-        android:fillColor="#60A5FA"
-        android:fillAlpha="0.95"
-        android:pathData="M512,184
-            A328,328 0 0,1 774,312
-            L664,409
-            A184,184 0 0,0 512,328 Z"/>
-
-    <!-- Arc 2 -->
-    <path
-        android:fillColor="#A78BFA"
-        android:fillAlpha="0.95"
-        android:pathData="M774,312
-            A328,328 0 0,1 840,512
-            H696
-            A184,184 0 0,0 664,409 Z"/>
-
-    <!-- Arc 3 -->
-    <path
-        android:fillColor="#F472B6"
-        android:fillAlpha="0.95"
-        android:pathData="M840,512
-            A328,328 0 0,1 712,774
-            L623,664
-            A184,184 0 0,0 696,512 Z"/>
-
-    <!-- Arc 4 -->
-    <path
-        android:fillColor="#FCD34D"
-        android:fillAlpha="0.95"
-        android:pathData="M712,774
-            A328,328 0 0,1 512,840
-            V696
-            A184,184 0 0,0 623,664 Z"/>
-
-    <!-- Inner White Circle -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.98"
-        android:pathData="M512,338
-            a174,174 0 1,1 0,348
-            a174,174 0 1,1 0,-348"/>
-
-    <!-- Dollar Symbol -->
-    <path
-        android:pathData="M505,390
-            c-42,4 -74,32 -74,70
-            c0,34 26,55 72,65
-            c42,9 54,19 54,35
-            c0,19 -18,33 -44,33
-            c-27,0 -46,-12 -54,-31
-            l-43,18
-            c10,29 37,49 75,54
-            v42
-            h36
-            v-40
-            c46,-5 78,-33 78,-73
-            c0,-36 -22,-56 -70,-68
-            c-44,-11 -57,-19 -57,-34
-            c0,-17 15,-28 40,-28
-            c22,0 38,9 47,25
-            l40,-19
-            c-11,-25 -35,-42 -67,-46
-            v-40
-            h-36
-            Z">
-        <aapt:attr name="android:fillColor">
+    <!-- Soft radial glow behind the logo -->
+    <item
+        android:width="240dp"
+        android:height="240dp"
+        android:gravity="center">
+        <shape android:shape="oval">
             <gradient
-                android:type="linear"
-                android:startX="400"
-                android:startY="350"
-                android:endX="650"
-                android:endY="650">
-                <item android:offset="0" android:color="#3B82F6"/>
-                <item android:offset="0.5" android:color="#8B5CF6"/>
-                <item android:offset="1" android:color="#EC4899"/>
-            </gradient>
-        </aapt:attr>
-    </path>
+                android:type="radial"
+                android:gradientRadius="120"
+                android:centerColor="#33FFFFFF"
+                android:endColor="#00FFFFFF"
+                android:useLevel="false" />
+        </shape>
+    </item>
 
-</vector>
+    <!-- Subtle translucent ring (gives depth) -->
+    <item
+        android:width="220dp"
+        android:height="220dp"
+        android:gravity="center">
+        <shape android:shape="oval">
+            <size android:width="220dp" android:height="220dp" />
+            <solid android:color="@android:color/transparent" />
+            <stroke android:width="0dp" android:color="#22FFFFFF" />
+        </shape>
+    </item>
+
+    <!-- Centered launcher animated vector -->
+    <item android:drawable="@drawable/avd_splash_logo" android:gravity="center" />
+
+</layer-list>

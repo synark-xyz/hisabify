@@ -237,6 +237,7 @@ export type Database = {
           currency: string
           date_format: string
           display_name: string | null
+          email: string | null
           email_notifications_enabled: boolean
           id: string
           phone: string | null
@@ -262,6 +263,7 @@ export type Database = {
           currency?: string
           date_format?: string
           display_name?: string | null
+          email?: string | null
           email_notifications_enabled?: boolean
           id?: string
           phone?: string | null
@@ -287,6 +289,7 @@ export type Database = {
           currency?: string
           date_format?: string
           display_name?: string | null
+          email?: string | null
           email_notifications_enabled?: boolean
           id?: string
           phone?: string | null

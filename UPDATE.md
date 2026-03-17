@@ -2,6 +2,25 @@
 
 ## Recent Changes (March 16, 2026)
 
+### 4. **Android Google OAuth Fix**
+**Status:** ✅ Complete
+**Location:** `src/App.tsx`, `src/pages/AuthCallbackPage.tsx`
+
+#### Problem:
+Google sign-in on Android (Capacitor) failed silently with a 15s timeout.
+
+Two bugs combined to cause this:
+
+1. **Deep link URL parsing** — `new URL("io.synark.hisabify://auth/callback?code=...")` parses custom schemes differently: `host="auth"`, `pathname="/callback"`. The path check `path.includes('/auth/callback')` evaluated against `/callback` and never matched, so the deep link was logged as "Ignoring non-auth URL" and discarded.
+
+2. **PKCE code never exchanged** — Supabase's `detectSessionInUrl: true` runs once at client initialization time (when the WebView loads `https://localhost/`). By the time React Router navigated to `/auth/callback?code=...` via the deep link, the Supabase client had already run its URL detection on the wrong URL and would never exchange the code automatically.
+
+#### Fix:
+1. In `App.tsx`: Reconstruct the full route path as `/${parsed.host}${parsed.pathname}` instead of using `parsed.pathname` alone, so the `/auth/callback` check works correctly for custom URL schemes.
+2. In `AuthCallbackPage.tsx`: Manually extract the `code` param from `window.location.search` and call `supabase.auth.exchangeCodeForSession(code)` explicitly, bypassing the missed auto-detection.
+
+---
+
 ### 1. **Voice Input "Record Once" Architecture**
 **Status:** ✅ Complete
 **Location:** `src/hooks/useVoiceInput.ts`, `src/components/VoiceInputFlow.tsx`, `src/components/NexusModal.tsx`

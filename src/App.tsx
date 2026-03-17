@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
+import { Capacitor } from '@capacitor/core';
+import { SplashScreen as CapacitorSplashScreen } from '@capacitor/splash-screen';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Preferences } from '@capacitor/preferences';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { CurrencyProvider } from "@/hooks/useCurrency";
@@ -28,6 +32,7 @@ import { PreferencesPage } from "@/pages/settings/PreferencesPage";
 import { NotificationSettingsPage } from "@/pages/settings/NotificationSettingsPage";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { SupportPage } from "@/pages/SupportPage";
 import { FaqPage } from "@/pages/FaqPage";
 import { PersonalPage } from "@/pages/profile/PersonalPage";
@@ -66,14 +71,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding') === 'true';
 
   if (loading) {
     return null;
-  }
-
-  if (!hasSeenOnboarding) {
-    return <Navigate to="/onboarding" replace />;
   }
 
   if (user) {
@@ -86,11 +86,69 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   // In E2E test runs, `e2e_skip_splash` is pre-set via addInitScript so
   // the splash screen is bypassed without affecting production behaviour.
-  const [showSplash, setShowSplash] = useState(
-    localStorage.getItem('e2e_skip_splash') !== 'true'
+  // Bug fix: first-time users (hasSeenOnboarding=false) must not see the web
+  // SplashScreen after they complete onboarding — go straight to /auth.
+  // Returning users (hasSeenOnboarding=true) still get the splash on every launch.
+  const [showSplash, setShowSplash] = useState(() => {
+    if (localStorage.getItem('e2e_skip_splash') === 'true') return false;
+    return localStorage.getItem('hasSeenOnboarding') === 'true';
+  });
+  // Read localStorage synchronously so the initial render is already correct —
+  // no frame where a returning user sees OnboardingPage before the check resolves.
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(
+    () => localStorage.getItem('hasSeenOnboarding') === 'true'
   );
+  // Only needed when localStorage is empty: async Capacitor Preferences check
+  // (covers native installs where localStorage was cleared but Preferences persisted).
+  const [checkingOnboarding, setCheckingOnboarding] = useState(
+    () => localStorage.getItem('hasSeenOnboarding') !== 'true'
+  );
+
+  useEffect(() => {
+    if (!checkingOnboarding) return;
+    Preferences.get({ key: 'hasSeenOnboarding' })
+      .then(({ value }) => {
+        if (value === 'true') {
+          setHasSeenOnboarding(true);
+          localStorage.setItem('hasSeenOnboarding', 'true'); // keep in sync for next launch
+        }
+        setCheckingOnboarding(false);
+      })
+      .catch(() => {
+        // If the Capacitor Preferences bridge is unavailable (e.g. cold-start race),
+        // fall back to treating this as a fresh install so onboarding is shown.
+        setCheckingOnboarding(false);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const location = useLocation();
 
+  // Failsafe: hide native Capacitor splash once we know what screen to show.
+  // Defer until checkingOnboarding is resolved so the correct screen is ready.
+  useEffect(() => {
+    if (checkingOnboarding) return;
+    if (Capacitor.isNativePlatform()) {
+      CapacitorSplashScreen.hide({ fadeOutDuration: 300 }).catch(() => {});
+    }
+  }, [checkingOnboarding]);
+
+  // Render nothing while we're still reading Capacitor Preferences.
+  // The native splash stays visible during this brief window (~50ms).
+  if (checkingOnboarding) return null;
+
+  // First launch: skip splash and go straight to onboarding.
+  if (!hasSeenOnboarding) {
+    return (
+      <OnboardingPage
+        onComplete={() => {
+          localStorage.setItem('hasSeenOnboarding', 'true');
+          Preferences.set({ key: 'hasSeenOnboarding', value: 'true' });
+          setHasSeenOnboarding(true);
+        }}
+      />
+    );
+  }
+
+  // Returning user: show splash before the main routes.
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
@@ -143,6 +201,8 @@ function AppRoutes() {
           </AuthRoute>
         }
       />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      {/* /onboarding kept for direct navigation (e.g. from settings "replay tour") */}
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route
         path="/reset-password"
@@ -183,6 +243,7 @@ const App = () => (
 // Separated component to use hooks inside BrowserRouter
 function RootLogic() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Handle Android back button with exit confirmation
   useAndroidBackButton();
@@ -192,6 +253,41 @@ function RootLogic() {
     const cleanup = initViewportHeight();
     return cleanup;
   }, []);
+
+  // Handle deep links on native platforms (e.g. OAuth callback)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listener = CapacitorApp.addListener('appUrlOpen', ({ url }) => {
+      console.log('[App] appUrlOpen event received:', url);
+      try {
+        const parsed = new URL(url);
+        // For custom scheme URLs (io.synark.hisabify://auth/callback),
+        // the host is "auth" and pathname is "/callback" — reconstruct full path
+        const fullPath = `/${parsed.host}${parsed.pathname}`.replace(/\/+/g, '/');
+
+        if (fullPath.includes('/auth/callback')) {
+          // For PKCE flow, the auth code comes in query params, not hash
+          // Preserve both search and hash fragments
+          const search = parsed.search || '';
+          const hash = parsed.hash || '';
+
+          console.log('[App] Navigating to auth callback with:', { search, hash, fullUrl: url });
+          navigate(`/auth/callback${search}${hash}`, { replace: true });
+        } else {
+          console.log('[App] Ignoring non-auth URL:', url);
+        }
+      } catch (error) {
+        console.error('[App] Error parsing URL:', error);
+      }
+    });
+
+    console.log('[App] Registered appUrlOpen listener');
+    return () => {
+      console.log('[App] Removing appUrlOpen listener');
+      listener.then((l) => l.remove());
+    };
+  }, [navigate]);
 
   useEffect(() => {
     if (user) {

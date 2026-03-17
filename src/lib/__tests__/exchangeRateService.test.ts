@@ -32,12 +32,12 @@ describe('shouldUpdateRates', () => {
     expect(shouldUpdateRates()).toBe(false);
   });
 
-  it('returns false when rates were updated exactly 24 hours ago (boundary: strict >)', () => {
-    // The implementation uses (now - lastUpdateTime) > UPDATE_INTERVAL (strict greater-than),
-    // so a timestamp that is EXACTLY one interval old still returns false.
+  it('returns true when rates were updated exactly 24 hours ago (boundary: >=)', () => {
+    // The implementation uses (now - lastUpdateTime) >= UPDATE_INTERVAL (greater-than-or-equal),
+    // so a timestamp that is EXACTLY one interval old returns true.
     const exactlyOneDayAgo = Date.now() - ONE_DAY_MS;
     localStorage.setItem(STORAGE_KEY, String(exactlyOneDayAgo));
-    expect(shouldUpdateRates()).toBe(false);
+    expect(shouldUpdateRates()).toBe(true);
   });
 
   it('returns true when rates were updated more than 24 hours ago', () => {

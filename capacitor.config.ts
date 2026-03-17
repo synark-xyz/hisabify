@@ -39,17 +39,18 @@ const config: CapacitorConfig = {
   appId: 'io.synark.hisabify',
   appName: 'Hisabify',
   webDir: 'dist',
-  ...(APP_ENV === 'staging' && {
+  ...(APP_ENV === 'staging' ? {
     server: { url: STAGING_URL },
-  }),
-  ...(APP_ENV === 'local' && {
+  } : {}),
+  ...(APP_ENV === 'local' ? {
     server: { url: DEVICE_URLS[DEVICE_TYPE], cleartext: true },
-  }),
+  } : {}),
   // APP_ENV === 'production': no server block — Capacitor loads from dist/
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    // Only enable remote WebView debugging in non-production environments.
+    webContentsDebuggingEnabled: APP_ENV !== 'production',
   },
   ios: {
     contentInset: 'automatic',
@@ -57,9 +58,13 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchAutoHide: false,
-      launchShowDuration: 3000,
-      backgroundColor: '#ffffff',
+      launchAutoHide: true,
+      // Keep the native splash visible long enough for React to mount and resolve
+      // the Capacitor Preferences check before we hand off to the web layer.
+      // The React code calls CapacitorSplashScreen.hide() manually once ready,
+      // so this duration is a safety ceiling, not a fixed delay.
+      launchShowDuration: 2000,
+      backgroundColor: '#080c14',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false
     },

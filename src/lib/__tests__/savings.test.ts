@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { calculateSavingsPace } from '../savings';
-import { addDays, addMonths, addWeeks, formatISO, subDays, subMonths, subWeeks } from 'date-fns';
+import { addDays, addMonths, addWeeks, formatISO, startOfWeek, subDays, subMonths, subWeeks } from 'date-fns';
 
 describe('calculateSavingsPace', () => {
   it('returns no_plan when schedule is not enabled', () => {
@@ -109,6 +109,9 @@ describe('calculateSavingsPace', () => {
 
   it('calculates current period amount from contributions inside the active period only', () => {
     const now = new Date();
+    // Use the start of the current calendar week (Monday) to guarantee
+    // contributions fall within the current period regardless of today's day-of-week.
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
     const result = calculateSavingsPace({
       target_amount: 500,
       current_saved: 100,
@@ -118,8 +121,8 @@ describe('calculateSavingsPace', () => {
       plan_start_date: formatISO(subWeeks(now, 4), { representation: 'date' }),
       contribution_history: [
         { amount: 20, date: formatISO(subWeeks(now, 1)) },
-        { amount: 35, date: formatISO(subDays(now, 2)) },
-        { amount: 15, date: formatISO(subDays(now, 1)) },
+        { amount: 35, date: formatISO(weekStart) },
+        { amount: 15, date: formatISO(now) },
       ],
     });
 

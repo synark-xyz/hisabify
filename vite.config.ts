@@ -76,6 +76,12 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Stub Firebase web SDK — only native Android SDK is used via Capacitor plugins.
+      // The @capacitor-firebase/* web fallback modules import these but they're never
+      // called at runtime (analytics.ts guards with Capacitor.isNativePlatform()).
+      "firebase/analytics": path.resolve(__dirname, "./src/lib/firebase-stub.ts"),
+      "firebase/app": path.resolve(__dirname, "./src/lib/firebase-stub.ts"),
+      "firebase/crashlytics": path.resolve(__dirname, "./src/lib/firebase-stub.ts"),
     },
   },
 }));

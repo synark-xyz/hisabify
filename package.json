@@ -37,6 +37,8 @@
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor-firebase/analytics": "^8.1.0",
+    "@capacitor-firebase/crashlytics": "^8.1.0",
     "@capacitor/android": "^8.0.1",
     "@capacitor/app": "^8.0.1",
     "@capacitor/camera": "^8.0.2",
@@ -80,6 +82,7 @@
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.83.0",
     "@types/papaparse": "^5.5.2",
+    "@vercel/analytics": "^2.0.1",
     "card-validator": "^10.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

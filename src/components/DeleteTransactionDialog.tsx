@@ -37,6 +37,9 @@ export function DeleteTransactionDialog({ open, onOpenChange, transaction, onSuc
 
       if (error) throw error;
 
+      import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+        analytics.logEvent(AnalyticsEvents.DELETE_TRANSACTION);
+      }).catch(() => {});
       toast({ title: 'Transaction deleted' });
       onSuccess();
       onOpenChange(false);

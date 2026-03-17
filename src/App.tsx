@@ -40,6 +40,7 @@ import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
+import { useScreenTracking } from "@/hooks/useScreenTracking";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,7 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     /* Loading is handled by splash screen or internal loaders closer to implementation */
@@ -63,7 +65,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    // Preserve ?ref= and ?challenge= params so AuthPage can capture them
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref');
+    const challenge = params.get('challenge');
+    const authParams = new URLSearchParams();
+    if (ref) authParams.set('ref', ref);
+    if (challenge) authParams.set('challenge', challenge);
+    const authPath = authParams.toString() ? `/auth?${authParams.toString()}` : '/auth';
+    return <Navigate to={authPath} replace />;
   }
 
   return <>{children}</>;
@@ -248,6 +258,9 @@ function RootLogic() {
   // Handle Android back button — navigates back in history; exits on double-back from root
   useAndroidBackButton(navigate);
 
+  // Track screen views in Firebase Analytics
+  useScreenTracking();
+
   // Initialize viewport height fix for mobile
   useEffect(() => {
     const cleanup = initViewportHeight();
@@ -288,6 +301,16 @@ function RootLogic() {
       listener.then((l) => l.remove());
     };
   }, [navigate]);
+
+  // Set Firebase Analytics user + enable Crashlytics
+  useEffect(() => {
+    if (user) {
+      import('@/lib/analytics').then(({ analytics }) => {
+        analytics.setUser(user.id);
+        analytics.initCrashlytics();
+      }).catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {

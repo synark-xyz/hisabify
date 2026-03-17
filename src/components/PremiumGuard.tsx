@@ -1,4 +1,4 @@
-import { useState, ReactNode } from 'react';
+import { useState, useEffect, useRef, ReactNode } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from './UpgradeModal';
 import { Lock, Sparkles } from 'lucide-react';
@@ -17,6 +17,17 @@ interface PremiumGuardProps {
 export function PremiumGuard({ children, featureName = "Premium Feature", className }: PremiumGuardProps) {
     const { isPremium, loading } = useSubscription();
     const [showUpgrade, setShowUpgrade] = useState(false);
+
+    // Track subscription view when the guard overlay is shown (not premium, not loading)
+    const hasTrackedRef = useRef(false);
+    useEffect(() => {
+        if (!loading && !isPremium && !hasTrackedRef.current) {
+            hasTrackedRef.current = true;
+            import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+                analytics.logEvent(AnalyticsEvents.VIEW_SUBSCRIPTION, { source: `guard_${featureName}` });
+            }).catch(() => {});
+        }
+    }, [loading, isPremium, featureName]);
 
     if (loading) {
         // Show skeleton during loading to prevent layout shift

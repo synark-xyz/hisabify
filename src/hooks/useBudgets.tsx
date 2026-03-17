@@ -378,6 +378,10 @@ export function useBudgets() {
 
       if (error) throw error;
 
+      import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+        analytics.logEvent(AnalyticsEvents.CREATE_BUDGET, { period: input.period_type });
+      }).catch(() => {});
+
       // Background fetch to ensure consistency
       fetchBudgets();
       emitBudgetSyncEvents();

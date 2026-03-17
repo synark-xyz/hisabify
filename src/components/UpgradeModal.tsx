@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Crown, RotateCcw, Sparkles, Target, TrendingUp, Wallet, Loader2 } from 'lucide-react';
+import { ArrowRight, Check, Clock, Crown, RotateCcw, Sparkles, Target, Wallet, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
@@ -15,9 +15,10 @@ interface UpgradeModalProps {
 
 const DEFAULT_BENEFITS = [
   'Unlimited budgets and savings goals',
-  'Advanced analytics and period comparisons',
-  'Savings automation and full history',
-  'Multi-currency and premium planning tools',
+  'All-time transaction history — no 30-day cap',
+  'Multi-currency support with live exchange rates',
+  'PDF & CSV report exports',
+  'Advanced analytics, automation, and savings history',
 ];
 
 const SOURCE_CONFIG: Record<string, {
@@ -98,7 +99,19 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
   const content = getUpgradeContent(source);
   const [checkoutLoading, setCheckoutLoading] = useState<'monthly' | 'yearly' | 'restore' | null>(null);
 
+  // Track when upgrade modal is opened
+  useEffect(() => {
+    if (open) {
+      import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+        analytics.logEvent(AnalyticsEvents.VIEW_SUBSCRIPTION, { source: source || 'modal' });
+      }).catch(() => {});
+    }
+  }, [open, source]);
+
   const handleUpgrade = async (plan: 'monthly' | 'yearly') => {
+    import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+      analytics.logEvent(AnalyticsEvents.SUBSCRIPTION_CTA_CLICK, { plan });
+    }).catch(() => {});
     setCheckoutLoading(plan);
     try {
       await purchasePlan(plan);
@@ -125,11 +138,11 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[440px] overflow-hidden border-0 bg-background/90 p-0 backdrop-blur-xl">
+      <DialogContent className="max-w-[440px] border-0 bg-background/90 p-0 backdrop-blur-xl">
         <div className="relative">
           <div className="absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_top,_rgba(139,92,246,0.35),_transparent_58%),linear-gradient(135deg,rgba(99,102,241,0.24),rgba(168,85,247,0.18),rgba(236,72,153,0.12))]" />
 
-          <div className="relative px-6 pb-6 pt-6">
+          <div className="relative px-6 pb-8 pt-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.28em] text-purple-400">
@@ -155,9 +168,9 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                 <p className="mt-1 text-sm font-black text-foreground">Goals</p>
               </div>
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
-                <TrendingUp className="mx-auto h-4 w-4 text-sky-500" />
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Deeper</p>
-                <p className="mt-1 text-sm font-black text-foreground">Insights</p>
+                <Clock className="mx-auto h-4 w-4 text-sky-500" />
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Full</p>
+                <p className="mt-1 text-sm font-black text-foreground">History</p>
               </div>
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
                 <Target className="mx-auto h-4 w-4 text-purple-500" />

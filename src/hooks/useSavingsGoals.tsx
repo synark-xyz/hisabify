@@ -426,6 +426,11 @@ export function useSavingsGoals() {
       }
 
       await syncGoalReminderById(data.id);
+
+      import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+        analytics.logEvent(AnalyticsEvents.CREATE_SAVINGS_GOAL);
+      }).catch(() => {});
+
       return data;
     },
     onSuccess: () => {

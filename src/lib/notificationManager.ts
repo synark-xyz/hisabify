@@ -2,11 +2,12 @@ import { toast } from 'sonner';
 
 export interface AppNotification {
   id: string;
-  type: 'budget_warning' | 'budget_exceeded' | 'goal_milestone' | 'goal_completed';
+  type: 'budget_warning' | 'budget_exceeded' | 'goal_milestone' | 'goal_completed' | 'push_notification';
   title: string;
   description: string;
   amount?: number;
   percentage?: number;
+  deepLink?: string; // optional in-app route, e.g. "/budget" or "/notifications"
   timestamp: string;
   read: boolean;
 }
@@ -52,6 +53,32 @@ function addNotification(notification: Omit<AppNotification, 'id' | 'timestamp' 
   saveNotifications(notifications);
 
   return newNotification;
+}
+
+// Normalize a deeplink from FCM data to a React Router path.
+// Accepts absolute paths ("/budget"), bare names ("budget"),
+// or custom-scheme URLs ("hisabify://budget").
+function resolveDeepLink(raw: string): string {
+  if (!raw) return '';
+  // Strip custom scheme: "hisabify://budget" → "budget"
+  const stripped = raw.replace(/^[a-z][a-z0-9+\-.]*:\/\//i, '');
+  // Ensure leading slash
+  return stripped.startsWith('/') ? stripped : `/${stripped}`;
+}
+
+// Add a push notification (from FCM)
+export function addPushNotification(title: string, body: string, rawDeepLink?: string): void {
+  const deepLink = rawDeepLink ? resolveDeepLink(rawDeepLink) : undefined;
+  addNotification({ type: 'push_notification', title, description: body, deepLink });
+  // Notify any active listeners (e.g. NotificationsPage) to re-read localStorage
+  window.dispatchEvent(new CustomEvent('hisabify:push-notification'));
+}
+
+// Delete a notification by id
+export function deleteNotification(id: string): void {
+  const all = getNotifications();
+  const updated = all.filter(n => n.id !== id);
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
 }
 
 // Mark notification as read

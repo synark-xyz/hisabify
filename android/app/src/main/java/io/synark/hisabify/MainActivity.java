@@ -3,6 +3,7 @@ package io.synark.hisabify;
 import android.os.Bundle;
 import android.view.View;
 import com.getcapacitor.BridgeActivity;
+import com.google.firebase.FirebaseApp;
 
 public class MainActivity extends BridgeActivity {
     @Override

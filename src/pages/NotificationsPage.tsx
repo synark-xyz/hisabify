@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format, isPast, isToday, differenceInDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getNotifications, markNotificationAsRead, clearOldNotifications, AppNotification } from '@/lib/notificationManager';
+import { getNotifications, markNotificationAsRead, clearOldNotifications, deleteNotification, AppNotification } from '@/lib/notificationManager';
 import { useHealthScore } from '@/features/gamification/hooks/useHealthScore';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -35,9 +35,16 @@ export function NotificationsPage() {
     useEffect(() => {
         if (user) {
             fetchAppNotifications();
-            clearOldNotifications(); // Clean up old notifications
+            clearOldNotifications();
         }
     }, [user, fetchAppNotifications]);
+
+    // Live-refresh when a new push notification is stored while the page is open
+    useEffect(() => {
+        const handler = () => fetchAppNotifications();
+        window.addEventListener('hisabify:push-notification', handler);
+        return () => window.removeEventListener('hisabify:push-notification', handler);
+    }, [fetchAppNotifications]);
 
     const handleMarkAsPaid = async (reminder: PaymentReminder) => {
         await markAsPaid(reminder);
@@ -83,6 +90,8 @@ export function NotificationsPage() {
                 return { icon: TrendUp, color: 'text-blue-500', bg: 'bg-blue-500/10' };
             case 'goal_completed':
                 return { icon: Target, color: 'text-green-500', bg: 'bg-green-500/10' };
+            case 'push_notification':
+                return { icon: Bell, color: 'text-blue-500', bg: 'bg-blue-500/10' };
         }
     };
 
@@ -162,6 +171,88 @@ export function NotificationsPage() {
                                                             className="shrink-0 h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 border-glow"
                                                         >
                                                             Mark Paid
+                                                        </Button>
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Push Notifications Section */}
+                        {appNotifications.filter(n => n.type === 'push_notification').length > 0 && (
+                            <section>
+                                <h3 className="text-sm font-black text-blue-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
+                                    <Bell className="w-4 h-4" />
+                                    Notifications
+                                </h3>
+                                <div className="space-y-3">
+                                    {appNotifications
+                                        .filter(n => n.type === 'push_notification')
+                                        .map((notification, idx) => {
+                                            const iconInfo = getNotificationIcon(notification.type);
+                                            const Icon = iconInfo.icon;
+                                            return (
+                                                <motion.div
+                                                    key={notification.id}
+                                                    className={`p-4 rounded-2xl border transition-all cursor-pointer ${notification.read
+                                                        ? 'bg-muted/10 border-border/30 opacity-70'
+                                                        : 'bg-blue-500/5 border-blue-500/20 shadow-sm'
+                                                        }`}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: idx * 0.05 }}
+                                                    onClick={() => {
+                                                        if (!notification.read) {
+                                                            markNotificationAsRead(notification.id);
+                                                            fetchAppNotifications();
+                                                        }
+                                                        if (notification.deepLink) {
+                                                            navigate(notification.deepLink);
+                                                        }
+                                                    }}
+                                                >
+                                                    <div className="flex items-start gap-4">
+                                                        <div className={`p-3 rounded-xl shrink-0 ${notification.read ? 'bg-muted/20' : iconInfo.bg}`}>
+                                                            <Icon className={`w-5 h-5 ${notification.read ? 'text-muted-foreground' : iconInfo.color}`} weight="duotone" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-bold text-foreground">{notification.title}</p>
+                                                            {notification.description && (
+                                                                <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{notification.description}</p>
+                                                            )}
+                                                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                                                <span className="text-[10px] text-muted-foreground uppercase tracking-tight font-black">
+                                                                    {format(new Date(notification.timestamp), 'MMM d, yyyy • h:mm a')}
+                                                                </span>
+                                                                {notification.deepLink && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        className="h-5 px-2 text-[10px] font-bold text-blue-500 hover:text-blue-400 uppercase tracking-tight"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            navigate(notification.deepLink!);
+                                                                        }}
+                                                                    >
+                                                                        View →
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="shrink-0 h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-destructive"
+                                                            aria-label={`Delete notification`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteNotification(notification.id);
+                                                                fetchAppNotifications();
+                                                            }}
+                                                        >
+                                                            <Trash className="w-4 h-4" weight="duotone" />
                                                         </Button>
                                                     </div>
                                                 </motion.div>
@@ -317,7 +408,7 @@ export function NotificationsPage() {
                         </section>
 
                         {/* Goal Updates Section */}
-                        {appNotifications.filter(n => !n.type.startsWith('budget')).length > 0 && (
+                        {appNotifications.filter(n => !n.type.startsWith('budget') && n.type !== 'push_notification').length > 0 && (
                             <section>
                                 <h3 className="text-sm font-black text-primary uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
                                     <Target className="w-4 h-4" />
@@ -325,7 +416,7 @@ export function NotificationsPage() {
                                 </h3>
                                 <div className="space-y-3">
                                     {appNotifications
-                                        .filter(n => !n.type.startsWith('budget'))
+                                        .filter(n => !n.type.startsWith('budget') && n.type !== 'push_notification')
                                         .map((notification, idx) => {
                                             const iconInfo = getNotificationIcon(notification.type);
                                             const Icon = iconInfo.icon;

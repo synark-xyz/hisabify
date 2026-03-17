@@ -41,6 +41,7 @@ import { ReferralsPage } from "@/pages/profile/ReferralsPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -250,16 +251,38 @@ const App = () => (
   </ErrorBoundary>
 );
 
+// On Android, WebView localStorage survives reinstalls on some OS versions.
+// Detect a fresh install via Capacitor Preferences (which IS cleared on reinstall)
+// and force-sign-out if the flag is missing.
+async function clearStaleSessionOnFreshInstall() {
+  if (!Capacitor.isNativePlatform()) return;
+  const { value } = await Preferences.get({ key: 'app_installed' });
+  if (!value) {
+    const { supabase } = await import('@/integrations/supabase/client');
+    await supabase.auth.signOut();
+    localStorage.clear();
+    await Preferences.set({ key: 'app_installed', value: 'true' });
+  }
+}
+
 // Separated component to use hooks inside BrowserRouter
 function RootLogic() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Clear stale WebView session on fresh install
+  useEffect(() => {
+    clearStaleSessionOnFreshInstall().catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle Android back button — navigates back in history; exits on double-back from root
   useAndroidBackButton(navigate);
 
   // Track screen views in Firebase Analytics
   useScreenTracking();
+
+  // Register Android device for FCM push notifications
+  usePushNotifications();
 
   // Initialize viewport height fix for mobile
   useEffect(() => {

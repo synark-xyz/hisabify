@@ -1,65 +1,81 @@
 import { useCallback } from 'react';
 import { useProfile } from './useProfile';
 import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useRevenueCat } from './useRevenueCat';
 import { logger } from '@/lib/logger';
 
 export function useSubscription() {
-    const { profile, loading } = useProfile();
-    const { user } = useAuth();
+  const { profile, loading } = useProfile();
+  const { user } = useAuth();
+  const { getOfferings, purchasePackage, restorePurchases } = useRevenueCat();
 
-    // specific override for sam103043
-    const isSpecialUser = user?.email === 'sam103043@gmail.com';
+  // Hardcoded override for the owner account
+  const isSpecialUser = user?.email === 'sam103043@gmail.com';
 
-    // Time-based referral Pro access check
-    const hasActiveReferralGrant = profile.referral_granted_until
-        ? new Date(profile.referral_granted_until) > new Date()
-        : false;
+  // Time-based referral Pro access check
+  const hasActiveReferralGrant = profile.referral_granted_until
+    ? new Date(profile.referral_granted_until) > new Date()
+    : false;
 
-    /**
-     * Initiates a Stripe Checkout session for the given plan.
-     * On success, redirects the browser to the Stripe-hosted checkout page.
-     * Throws an error if the Edge Function call fails.
-     */
-    const createCheckoutSession = useCallback(async (plan: 'monthly' | 'yearly'): Promise<void> => {
-        if (!user) {
-            throw new Error('You must be signed in to upgrade.');
-        }
+  /**
+   * Initiates an in-app purchase via RevenueCat for the given plan.
+   * Maps 'monthly' → MONTHLY package identifier, 'yearly' → ANNUAL.
+   * Throws on failure so callers can surface errors via toast.
+   */
+  const purchasePlan = useCallback(
+    async (plan: 'monthly' | 'yearly'): Promise<void> => {
+      if (!user) {
+        throw new Error('You must be signed in to upgrade.');
+      }
 
-        const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-            body: {
-                plan,
-                success_url: `${window.location.origin}/?checkout=success`,
-                cancel_url: `${window.location.origin}/?checkout=cancelled`,
-            },
+      const offerings = await getOfferings();
+      if (!offerings) {
+        throw new Error('Could not load subscription plans. Please try again.');
+      }
+
+      const current = offerings.current;
+      if (!current) {
+        throw new Error('No active offering found. Please try again later.');
+      }
+
+      // RevenueCat package identifiers per the Play Store product configuration
+      const packageIdentifier = plan === 'monthly' ? '$rc_monthly' : '$rc_annual';
+
+      const pkg = current.availablePackages.find(
+        (p) => p.packageType === (plan === 'monthly' ? 'MONTHLY' : 'ANNUAL'),
+      ) ?? current.availablePackages.find(
+        (p) => p.identifier === packageIdentifier,
+      );
+
+      if (!pkg) {
+        logger.error('[useSubscription] purchasePlan: package not found', {
+          plan,
+          availablePackages: current.availablePackages.map((p) => ({
+            id: p.identifier,
+            type: p.packageType,
+          })),
         });
+        throw new Error(`The ${plan} plan is not available right now.`);
+      }
 
-        if (error) {
-            logger.error('Checkout session error', { error: error.message });
-            throw new Error(error.message || 'Failed to create checkout session');
-        }
+      await purchasePackage(pkg);
+    },
+    [user, getOfferings, purchasePackage],
+  );
 
-        const result = data as { url?: string; error?: string };
+  // Backward-compatible alias — UpgradeModal already calls this name.
+  // New code should prefer purchasePlan directly.
+  const createCheckoutSession = purchasePlan;
 
-        if (result.error) {
-            throw new Error(result.error);
-        }
-
-        if (!result.url) {
-            throw new Error('No checkout URL returned');
-        }
-
-        // Redirect to Stripe Checkout
-        window.location.href = result.url;
-    }, [user]);
-
-    return {
-        isPremium: (
-            (profile.subscription_type === 'pro' && profile.subscription_status === 'active') ||
-            hasActiveReferralGrant ||
-            isSpecialUser
-        ),
-        loading,
-        createCheckoutSession,
-    };
+  return {
+    isPremium: (
+      (profile.subscription_type === 'pro' && profile.subscription_status === 'active') ||
+      hasActiveReferralGrant ||
+      isSpecialUser
+    ),
+    loading,
+    purchasePlan,
+    createCheckoutSession,
+    restorePurchases,
+  };
 }

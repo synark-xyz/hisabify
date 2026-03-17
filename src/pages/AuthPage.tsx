@@ -91,6 +91,21 @@ function GoogleIcon() {
 
 // ─── Ambient background ────────────────────────────────────────────────────────
 
+const MONEY_FLOATERS = [
+  { symbol: '$', x: 7,  y: 10, size: 26, delay: 0.0 },
+  { symbol: '€', x: 87, y: 18, size: 20, delay: 1.2 },
+  { symbol: '₿', x: 14, y: 65, size: 22, delay: 2.1 },
+  { symbol: '£', x: 81, y: 70, size: 18, delay: 0.6 },
+  { symbol: '$', x: 50, y: 6,  size: 15, delay: 1.8 },
+  { symbol: '¥', x: 74, y: 43, size: 24, delay: 3.0 },
+  { symbol: '₹', x: 26, y: 38, size: 17, delay: 2.5 },
+  { symbol: '$', x: 43, y: 83, size: 21, delay: 0.9 },
+  { symbol: '€', x: 62, y: 55, size: 14, delay: 3.6 },
+  { symbol: '₿', x: 5,  y: 85, size: 16, delay: 1.5 },
+];
+
+const FLOATER_COLORS = ['#F59E0B', '#10B981', '#6366F1'];
+
 function AuthBackground({ shouldReduce }: { shouldReduce: boolean }) {
   return (
     <>
@@ -99,63 +114,88 @@ function AuthBackground({ shouldReduce }: { shouldReduce: boolean }) {
         className="absolute inset-0 pointer-events-none select-none"
         style={{
           backgroundImage:
-            'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)',
+            'radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px)',
           backgroundSize: '28px 28px',
         }}
       />
-      {/* Ambient blobs — skipped when user prefers reduced motion */}
+
+      {/* Diagonal money-note stripe accent */}
+      <div
+        className="absolute inset-0 pointer-events-none select-none"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(45deg, rgba(245,158,11,0.025) 0px, rgba(245,158,11,0.025) 1px, transparent 1px, transparent 48px)',
+        }}
+      />
+
+      {/* Floating currency symbols — skipped when user prefers reduced motion */}
+      {!shouldReduce &&
+        MONEY_FLOATERS.map((f, i) => (
+          <motion.span
+            key={i}
+            className="absolute pointer-events-none select-none font-black"
+            style={{
+              left: `${f.x}%`,
+              top: `${f.y}%`,
+              fontSize: f.size,
+              color: FLOATER_COLORS[i % 3],
+              willChange: 'transform, opacity',
+            }}
+            animate={{
+              y: [0, -20, 0],
+              x: [0, i % 2 === 0 ? 7 : -7, 0],
+              opacity: [0.07, 0.2, 0.07],
+              rotate: [-10, 10, -10],
+            }}
+            transition={{
+              duration: 5 + i * 0.85,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: f.delay,
+            }}
+          >
+            {f.symbol}
+          </motion.span>
+        ))}
+
+      {/* Ambient orbs — money palette: gold + emerald + indigo */}
       {!shouldReduce && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+          {/* Gold orb — top right */}
           <motion.div
             className="absolute -top-56 -right-40 w-[480px] h-[480px] rounded-full"
             style={{
               background:
-                'radial-gradient(circle, rgba(59,130,246,0.22) 0%, transparent 68%)',
+                'radial-gradient(circle, rgba(245,158,11,0.20) 0%, transparent 68%)',
               filter: 'blur(64px)',
               willChange: 'transform, opacity',
             }}
             animate={{ scale: [1, 1.12, 1], opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           />
+          {/* Emerald orb — mid left */}
           <motion.div
             className="absolute top-1/2 -left-32 w-[400px] h-[400px] rounded-full"
             style={{
               background:
-                'radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 68%)',
+                'radial-gradient(circle, rgba(16,185,129,0.16) 0%, transparent 68%)',
               filter: 'blur(64px)',
               willChange: 'transform, opacity',
             }}
             animate={{ scale: [1.1, 1, 1.1], opacity: [0.45, 0.85, 0.45] }}
-            transition={{
-              duration: 12,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: 1.5,
-            }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
           />
+          {/* Indigo orb — bottom right */}
           <motion.div
             className="absolute -bottom-48 right-8 w-[360px] h-[360px] rounded-full"
             style={{
               background:
-                'radial-gradient(circle, rgba(236,72,153,0.16) 0%, transparent 68%)',
+                'radial-gradient(circle, rgba(99,102,241,0.14) 0%, transparent 68%)',
               filter: 'blur(64px)',
               willChange: 'transform, opacity',
             }}
             animate={{ scale: [1, 1.18, 1], opacity: [0.4, 0.75, 0.4] }}
-            transition={{
-              duration: 14,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: 3,
-            }}
-          />
-          {/* Subtle top-center accent beam */}
-          <div
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-48 pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(to bottom, rgba(139,92,246,0.4), transparent)',
-            }}
+            transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
           />
         </div>
       )}

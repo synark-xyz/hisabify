@@ -49,7 +49,8 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    // Only enable remote WebView debugging in non-production environments.
+    webContentsDebuggingEnabled: APP_ENV !== 'production',
   },
   ios: {
     contentInset: 'automatic',
@@ -58,7 +59,11 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchAutoHide: true,
-      launchShowDuration: 0,
+      // Keep the native splash visible long enough for React to mount and resolve
+      // the Capacitor Preferences check before we hand off to the web layer.
+      // The React code calls CapacitorSplashScreen.hide() manually once ready,
+      // so this duration is a safety ceiling, not a fixed delay.
+      launchShowDuration: 2000,
       backgroundColor: '#080c14',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false

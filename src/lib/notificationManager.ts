@@ -1,13 +1,15 @@
 import { toast } from 'sonner';
+import { getISOWeek, getISOWeekYear } from 'date-fns';
 
 export interface AppNotification {
   id: string;
-  type: 'budget_warning' | 'budget_exceeded' | 'goal_milestone' | 'goal_completed' | 'push_notification';
+  type: 'budget_warning' | 'budget_exceeded' | 'goal_milestone' | 'goal_completed' | 'push_notification' | 'health_weekly' | 'weekly_tip';
   title: string;
   description: string;
   amount?: number;
   percentage?: number;
   deepLink?: string; // optional in-app route, e.g. "/budget" or "/notifications"
+  metadata?: Record<string, string>; // FCM data payload fields (reminder_id, type, etc.)
   timestamp: string;
   read: boolean;
 }
@@ -66,10 +68,34 @@ function resolveDeepLink(raw: string): string {
   return stripped.startsWith('/') ? stripped : `/${stripped}`;
 }
 
-// Add a push notification (from FCM)
-export function addPushNotification(title: string, body: string, rawDeepLink?: string): void {
+// Add a push notification (from FCM), with deduplication.
+// Both pushNotificationReceived (foreground) and pushNotificationActionPerformed (tap)
+// call this for the same message — the 60-second dedup window prevents doubles.
+export function addPushNotification(
+  title: string,
+  body: string,
+  rawDeepLink?: string,
+  metadata?: Record<string, string>,
+): void {
+  // Deduplicate: skip if an identical push was stored in the last 60 seconds
+  const existing = getNotifications();
+  const sixtySecondsAgo = Date.now() - 60_000;
+  const isDuplicate = existing.some(
+    n =>
+      n.type === 'push_notification' &&
+      n.title === title &&
+      n.description === body &&
+      new Date(n.timestamp).getTime() > sixtySecondsAgo,
+  );
+  if (isDuplicate) return;
+
   const deepLink = rawDeepLink ? resolveDeepLink(rawDeepLink) : undefined;
-  addNotification({ type: 'push_notification', title, description: body, deepLink });
+  // Filter out title/body/message from metadata since they're already stored as top-level fields
+  const filteredMeta = metadata
+    ? Object.fromEntries(Object.entries(metadata).filter(([k]) => !['title', 'body', 'message'].includes(k)))
+    : undefined;
+  const hasMeta = filteredMeta && Object.keys(filteredMeta).length > 0;
+  addNotification({ type: 'push_notification', title, description: body, deepLink, metadata: hasMeta ? filteredMeta : undefined });
   // Notify any active listeners (e.g. NotificationsPage) to re-read localStorage
   window.dispatchEvent(new CustomEvent('hisabify:push-notification'));
 }
@@ -180,6 +206,71 @@ export function showGoalMilestone(goalName: string, percentage: number, amount: 
       });
     }
   }
+}
+
+// Clear all notifications
+export function clearAllNotifications(): void {
+  localStorage.removeItem(NOTIFICATIONS_KEY);
+}
+
+const WEEKLY_TIPS: string[] = [
+  "Track every expense for 7 days — awareness alone can reduce spending by 10-15%.",
+  "Review your subscriptions this week. Cancel any you haven't used in 30 days.",
+  "Set up automatic savings — even a small amount builds the habit.",
+  "Use the 24-hour rule: wait a day before any non-essential purchase over $50.",
+  "Pack lunch twice this week — small swaps add up to big savings over a year.",
+  "Check your bank statements for fees you didn't notice. Many are negotiable.",
+  "Set a weekly 'no-spend' day to reset your spending habits.",
+  "Round up every purchase mentally — it builds awareness of true costs.",
+  "Review your insurance policies annually. You might find better rates.",
+  "Automate bill payments to avoid late fees and protect your credit score.",
+  "Try a cash-only week for discretionary spending — physical money feels more real.",
+  "Negotiate one recurring bill this week (internet, phone, insurance).",
+  "Set a specific savings goal with a deadline — vague goals rarely get met.",
+  "Unsubscribe from marketing emails that tempt impulse purchases.",
+  "Cook at home one extra night this week — dining out costs 3-5x more.",
+  "Build an emergency fund covering 3 months of expenses before investing.",
+  "Compare prices on your 3 most frequent purchases — loyalty isn't always rewarded.",
+  "Review your budget categories — are they still relevant to your lifestyle?",
+  "Pause before buying: ask 'Do I need this, or do I want this?'",
+  "Celebrate small wins — hitting a savings milestone keeps motivation high.",
+];
+
+// Generate a weekly health notification (once per ISO week)
+export function generateWeeklyHealthNotification(score: number, insight: string): void {
+  const now = new Date();
+  const weekKey = `health-weekly-${getISOWeekYear(now)}-W${String(getISOWeek(now)).padStart(2, '0')}`;
+
+  if (localStorage.getItem(weekKey)) return;
+
+  const label = score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work';
+
+  addNotification({
+    type: 'health_weekly',
+    title: `Weekly Health: ${score}/100 — ${label}`,
+    description: insight,
+  });
+
+  localStorage.setItem(weekKey, 'true');
+}
+
+// Generate a weekly tip notification (once per ISO week)
+export function generateWeeklyTip(): void {
+  const now = new Date();
+  const weekNumber = getISOWeek(now);
+  const weekKey = `tip-weekly-${getISOWeekYear(now)}-W${String(weekNumber).padStart(2, '0')}`;
+
+  if (localStorage.getItem(weekKey)) return;
+
+  const tip = WEEKLY_TIPS[weekNumber % WEEKLY_TIPS.length];
+
+  addNotification({
+    type: 'weekly_tip',
+    title: 'Weekly Tip',
+    description: tip,
+  });
+
+  localStorage.setItem(weekKey, 'true');
 }
 
 // Show goal completed

@@ -95,11 +95,16 @@ serve(async (req: Request) => {
   // ── Send to each token ─────────────────────────────────────────────────────
   await Promise.all(
     tokens.map(async ({ id, token }) => {
+      // Duplicate title/body into data so pushNotificationActionPerformed
+      // can read them on Android background tap (notification field is not
+      // reliably available in the intent extras).
+      const mergedData = { ...(data ?? {}), title, body };
+
       const message = {
         message: {
           token,
           notification: { title, body },
-          ...(data ? { data } : {}),
+          data: mergedData,
           android: {
             notification: {
               channel_id: 'hisabify_reminders',

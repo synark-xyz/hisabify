@@ -99,7 +99,14 @@ serve(async (req: Request) => {
           user_id: reminder.user_id,
           title: `Reminder: ${reminder.title}`,
           body: `Due ${daysLabel}${amountLabel}`,
-          data: { reminder_id: reminder.id },
+          data: {
+            reminder_id: reminder.id,
+            type: 'payment_reminder',
+            deeplink: '/notifications',
+            amount: reminder.amount != null ? String(reminder.amount) : '',
+            currency: reminder.currency ?? '',
+            due_date: reminder.due_date,
+          },
         }),
       });
 

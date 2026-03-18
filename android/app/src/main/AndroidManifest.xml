@@ -65,15 +65,6 @@
 
         </activity>
 
-        <!-- FCM messaging service — logs token with FCM tag for debugging -->
-        <service
-            android:name=".HisabifyFirebaseMessagingService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
-
         <!-- FCM default notification channel -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

@@ -156,11 +156,19 @@ serve(async (req: Request) => {
 
 // ── Firebase OAuth2 helper ─────────────────────────────────────────────────
 // Generates a short-lived access token using the service account private key.
+// Cached per Deno isolate lifetime to avoid redundant OAuth round-trips.
+
+let _tokenCache: { value: string; expiresAt: number } | null = null;
 
 async function getFirebaseAccessToken(serviceAccount: {
   client_email: string;
   private_key: string;
 }): Promise<string | null> {
+  const now = Date.now();
+  // Reuse cached token if it has more than 60 seconds remaining
+  if (_tokenCache && _tokenCache.expiresAt > now + 60_000) {
+    return _tokenCache.value;
+  }
   try {
     const now = Math.floor(Date.now() / 1000);
     const header = { alg: 'RS256', typ: 'JWT' };
@@ -219,7 +227,11 @@ async function getFirebaseAccessToken(serviceAccount: {
     });
 
     const tokenData = await tokenRes.json() as { access_token?: string };
-    return tokenData.access_token ?? null;
+    const accessToken = tokenData.access_token ?? null;
+    if (accessToken) {
+      _tokenCache = { value: accessToken, expiresAt: now + 3_600_000 };
+    }
+    return accessToken;
   } catch (err) {
     console.error('[send-push-notification] Failed to generate Firebase access token:', err);
     return null;

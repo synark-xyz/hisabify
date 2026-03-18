@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { requestNotificationPermission, sendNotification } from '@/lib/notifications';
+import { setBudgetAlertsEnabled } from '@/lib/notificationManager';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -33,11 +34,13 @@ export function NotificationSettingsPage() {
                 .single();
 
             if (data) {
+                const budgetAlerts = data.budget_alerts_enabled ?? true;
                 setPreferences({
-                    budgetAlerts: data.budget_alerts_enabled ?? true,
+                    budgetAlerts,
                     emailNotifications: data.email_notifications_enabled ?? true,
                     pushNotifications: data.push_notifications_enabled ?? false,
                 });
+                setBudgetAlertsEnabled(budgetAlerts);
             }
         };
         loadPreferences();
@@ -47,6 +50,9 @@ export function NotificationSettingsPage() {
         if (!user) return;
         const newPrefs = { ...preferences, ...updated };
         setPreferences(newPrefs);
+        if ('budgetAlerts' in updated) {
+            setBudgetAlertsEnabled(newPrefs.budgetAlerts);
+        }
 
         const { error } = await supabase
             .from('users')
@@ -127,15 +133,10 @@ export function NotificationSettingsPage() {
     const disablePush = async () => {
         if (!user) return;
 
-        // Remove token from database if we have it
-        if (currentTokenRef.current) {
-            await supabase
-                .from('fcm_tokens')
-                .delete()
-                .eq('user_id', user.id)
-                .eq('token', currentTokenRef.current);
-            currentTokenRef.current = null;
-        }
+        // Delete all FCM tokens for this user regardless of whether we have
+        // the current token in memory (avoids orphaned tokens on re-login).
+        await supabase.from('fcm_tokens').delete().eq('user_id', user.id);
+        currentTokenRef.current = null;
 
         await handleSavePreferences({ pushNotifications: false });
     };

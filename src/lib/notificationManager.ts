@@ -17,6 +17,14 @@ export interface AppNotification {
 const NOTIFICATIONS_KEY = 'app-notifications';
 const MAX_NOTIFICATIONS = 50; // Keep last 50 notifications
 
+// In-memory flag synced from NotificationSettingsPage on load/change.
+// Defaults to true so alerts work before the settings page has been visited.
+let _budgetAlertsEnabled = true;
+
+export function setBudgetAlertsEnabled(enabled: boolean): void {
+  _budgetAlertsEnabled = enabled;
+}
+
 // Get all notifications from localStorage
 export function getNotifications(): AppNotification[] {
   try {
@@ -135,11 +143,12 @@ export function clearOldNotifications() {
 
 // Show budget warning (once per day per budget)
 export function showBudgetWarning(budgetName: string, percentage: number, periodType: string) {
+  if (!_budgetAlertsEnabled) return;
   const alertKey = `budget-warning-${budgetName}-${new Date().toDateString()}`;
-  const shown = sessionStorage.getItem(alertKey);
+  const shown = localStorage.getItem(alertKey);
 
   if (!shown) {
-    sessionStorage.setItem(alertKey, 'true');
+    localStorage.setItem(alertKey, 'true');
 
     // Show toast
     toast.warning(`Budget Warning: ${budgetName}`, {
@@ -158,11 +167,12 @@ export function showBudgetWarning(budgetName: string, percentage: number, period
 
 // Show budget exceeded (once per day per budget)
 export function showBudgetExceeded(budgetName: string, percentage: number, periodType: string) {
+  if (!_budgetAlertsEnabled) return;
   const alertKey = `budget-exceeded-${budgetName}-${new Date().toDateString()}`;
-  const shown = sessionStorage.getItem(alertKey);
+  const shown = localStorage.getItem(alertKey);
 
   if (!shown) {
-    sessionStorage.setItem(alertKey, 'true');
+    localStorage.setItem(alertKey, 'true');
 
     // Show toast
     toast.error(`Budget Exceeded: ${budgetName}`, {
@@ -186,10 +196,10 @@ export function showGoalMilestone(goalName: string, percentage: number, amount: 
 
   if (milestone) {
     const alertKey = `goal-milestone-${goalName}-${milestone}`;
-    const shown = sessionStorage.getItem(alertKey);
+    const shown = localStorage.getItem(alertKey);
 
     if (!shown) {
-      sessionStorage.setItem(alertKey, 'true');
+      localStorage.setItem(alertKey, 'true');
 
       // Show toast
       toast.success(`Savings Milestone: ${goalName}`, {
@@ -276,10 +286,10 @@ export function generateWeeklyTip(): void {
 // Show goal completed
 export function showGoalCompleted(goalName: string, amount: number) {
   const alertKey = `goal-completed-${goalName}`;
-  const shown = sessionStorage.getItem(alertKey);
+  const shown = localStorage.getItem(alertKey);
 
   if (!shown) {
-    sessionStorage.setItem(alertKey, 'true');
+    localStorage.setItem(alertKey, 'true');
 
     // Show toast
     toast.success(`Goal Achieved: ${goalName}`, {

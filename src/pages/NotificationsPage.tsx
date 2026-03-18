@@ -152,13 +152,7 @@ export function NotificationsPage() {
 
                         {/* ===== Messages Tab ===== */}
                         <TabsContent value="messages">
-                            {loading ? (
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map(i => (
-                                        <Skeleton key={i} className="h-20 w-full rounded-2xl" />
-                                    ))}
-                                </div>
-                            ) : appNotifications.length === 0 ? (
+                            {appNotifications.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
                                     <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
                                         <Bell className="w-10 h-10 text-muted-foreground/30" weight="duotone" />

@@ -108,6 +108,8 @@ serve(async (req: Request) => {
           android: {
             notification: {
               channel_id: 'hisabify_reminders',
+              icon: 'ic_notification',
+              color: '#3B82F6',
               priority: 'HIGH',
             },
           },

@@ -56,25 +56,8 @@ export function usePushNotifications() {
         // Remove any stale listeners before adding new ones
         await PushNotifications.removeAllListeners();
 
-        // Only call register() once across the app lifetime
-        if (!registeredRef.current) {
-          await PushNotifications.createChannel({
-            id: 'hisabify_reminders',
-            name: 'Payment Reminders',
-            description: 'Alerts for upcoming payment due dates and budget limits',
-            importance: 5,
-            visibility: 1,
-            vibration: true,
-            sound: 'default',
-          });
-
-          await PushNotifications.register();
-          registeredRef.current = true;
-        }
-
-        if (cancelled) return;
-
-        // --- Listeners (re-registered every time the effect runs) ---
+        // --- Listeners must be registered BEFORE register() to avoid missing
+        //     the token event if it fires synchronously from the cached FCM token ---
 
         await PushNotifications.addListener('registration', async (token) => {
           logger.info(`[PushNotifications] Registered with token: ${token.value.substring(0, 20)}...`);
@@ -105,6 +88,15 @@ export function usePushNotifications() {
         await PushNotifications.addListener('registrationError', (err) => {
           logger.error(err, { component: 'PushNotifications', action: 'registrationError' });
         });
+
+        // Only call register() once across the app lifetime — channel is created
+        // natively via AndroidManifest meta-data so no JS createChannel() needed.
+        if (!registeredRef.current) {
+          await PushNotifications.register();
+          registeredRef.current = true;
+        }
+
+        if (cancelled) return;
 
         // Helper: ingest delivered notifications from the system tray.
         // Called on foreground resume and on initial mount to capture

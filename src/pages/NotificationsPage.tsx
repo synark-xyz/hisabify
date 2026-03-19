@@ -394,69 +394,92 @@ export function NotificationsPage() {
 
             {/* Notification Detail Dialog */}
             <Dialog open={!!selectedNotification} onOpenChange={(open) => { if (!open) setSelectedNotification(null); }}>
-                <DialogContent className="max-w-[92vw] rounded-2xl p-0 gap-0 border-border/50 max-h-[80vh]">
-                    <DialogHeader className="px-5 pt-5 pb-3">
-                        <div className="flex items-start gap-3">
-                            {selectedNotification && (() => {
-                                const iconInfo = getNotificationIcon(selectedNotification.type);
-                                const Icon = iconInfo.icon;
-                                return (
-                                    <div className={`p-3 rounded-xl shrink-0 ${iconInfo.bg}`}>
-                                        <Icon className={`w-5 h-5 ${iconInfo.color}`} weight="duotone" />
-                                    </div>
-                                );
-                            })()}
-                            <div className="flex-1 min-w-0">
-                                <DialogTitle className="text-base font-bold text-foreground leading-snug">
-                                    {selectedNotification?.title}
-                                </DialogTitle>
-                                <DialogDescription className="text-xs text-muted-foreground mt-1">
-                                    {selectedNotification && format(new Date(selectedNotification.timestamp), 'MMMM d, yyyy \u2022 h:mm a')}
-                                </DialogDescription>
-                            </div>
-                        </div>
-                    </DialogHeader>
+                <DialogContent className="max-w-[88vw] rounded-3xl p-0 gap-0 border-0 overflow-hidden shadow-2xl">
+                    {selectedNotification && (() => {
+                        const iconInfo = getNotificationIcon(selectedNotification.type);
+                        const Icon = iconInfo.icon;
+                        const displayMeta = selectedNotification.metadata
+                            ? Object.entries(selectedNotification.metadata).filter(
+                                ([k]) => !['fcm_notification_id', 'reminder_id', 'type'].includes(k) && String(k).trim() && String(selectedNotification.metadata![k]).trim()
+                              )
+                            : [];
 
-                    <ScrollArea className="max-h-[50vh]">
-                        <div className="px-5 pb-5 space-y-4">
-                            {selectedNotification?.description && (
-                                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                                    {selectedNotification.description}
-                                </p>
-                            )}
-
-                            {selectedNotification?.metadata && Object.keys(selectedNotification.metadata).length > 0 && (
-                                <div className="space-y-2 pt-3 border-t border-border/50">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                                        Details
-                                    </p>
-                                    {Object.entries(selectedNotification.metadata).map(([key, value]) => (
-                                        <div key={key} className="flex justify-between items-center py-1.5">
-                                            <span className="text-xs text-muted-foreground capitalize">
-                                                {key.replace(/_/g, ' ')}
-                                            </span>
-                                            <span className="text-xs text-foreground font-medium text-right max-w-[60%] truncate">
-                                                {value}
-                                            </span>
-                                        </div>
-                                    ))}
+                        return (
+                            <>
+                                {/* Colored icon header */}
+                                <div className={`relative flex flex-col items-center pt-10 pb-7 px-6 ${iconInfo.bg}`}>
+                                    <motion.div
+                                        initial={{ scale: 0.5, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                                        className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg border border-white/10 bg-background/10`}
+                                    >
+                                        <Icon className={`w-10 h-10 ${iconInfo.color}`} weight="duotone" />
+                                    </motion.div>
                                 </div>
-                            )}
 
-                            {selectedNotification?.deepLink && (
-                                <Button
-                                    className="w-full rounded-xl"
-                                    onClick={() => {
-                                        const link = selectedNotification.deepLink!;
-                                        setSelectedNotification(null);
-                                        navigate(link);
-                                    }}
-                                >
-                                    Open Related Page
-                                </Button>
-                            )}
-                        </div>
-                    </ScrollArea>
+                                {/* Content */}
+                                <div className="bg-card px-6 pt-5 pb-6 space-y-4">
+                                    <div className="text-center space-y-1">
+                                        <DialogTitle className="text-lg font-bold text-foreground leading-snug">
+                                            {selectedNotification.title}
+                                        </DialogTitle>
+                                        <DialogDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                                            {format(new Date(selectedNotification.timestamp), 'MMM d, yyyy • h:mm a')}
+                                        </DialogDescription>
+                                    </div>
+
+                                    {selectedNotification.description && (
+                                        <p className="text-sm text-foreground/80 leading-relaxed text-center whitespace-pre-wrap">
+                                            {selectedNotification.description}
+                                        </p>
+                                    )}
+
+                                    {displayMeta.length > 0 && (
+                                        <div className="rounded-2xl border border-border/40 overflow-hidden bg-muted/20">
+                                            {displayMeta.map(([key, value], i) => (
+                                                <div
+                                                    key={key}
+                                                    className={cn(
+                                                        'flex justify-between items-center px-4 py-3',
+                                                        i > 0 && 'border-t border-border/30'
+                                                    )}
+                                                >
+                                                    <span className="text-xs text-muted-foreground font-medium capitalize">
+                                                        {key.replace(/_/g, ' ')}
+                                                    </span>
+                                                    <span className="text-xs text-foreground font-semibold text-right max-w-[55%] truncate">
+                                                        {value}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {selectedNotification.deepLink ? (
+                                        <Button
+                                            className="w-full rounded-2xl h-12 font-bold text-sm"
+                                            onClick={() => {
+                                                const link = selectedNotification.deepLink!;
+                                                setSelectedNotification(null);
+                                                navigate(link);
+                                            }}
+                                        >
+                                            Open Related Page
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full rounded-2xl h-12 font-bold text-sm border-border/50"
+                                            onClick={() => setSelectedNotification(null)}
+                                        >
+                                            Dismiss
+                                        </Button>
+                                    )}
+                                </div>
+                            </>
+                        );
+                    })()}
                 </DialogContent>
             </Dialog>
         </div>

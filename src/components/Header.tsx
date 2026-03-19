@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PaymentReminder } from '@/types';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
 
 interface HeaderProps {
   title: string;
@@ -34,6 +35,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
   const { profile } = useProfile();
   const { formatAmount } = useCurrency();
   const { reminders, markAsPaid } = usePaymentReminders();
+  const unreadMessagesCount = useUnreadCount();
   const [open, setOpen] = useState(false);
 
   const userInitial = profile.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
@@ -65,7 +67,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
     return r.status === 'upcoming' && isPast(date) && !isToday(date);
   }).length;
 
-  const notificationCount = upcomingCount + overdueCount;
+  const notificationCount = upcomingCount + overdueCount + unreadMessagesCount;
 
   const handleMarkAsPaid = async (reminder: PaymentReminder) => {
     await markAsPaid(reminder);

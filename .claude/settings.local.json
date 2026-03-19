@@ -17,7 +17,8 @@
       "Bash(npm test:*)",
       "Bash(npx playwright:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(npx tsc:*)"
     ]
   },
   "enabledPlugins": {

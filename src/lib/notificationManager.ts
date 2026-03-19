@@ -1,18 +1,29 @@
 import { toast } from 'sonner';
+import { getISOWeek, getISOWeekYear } from 'date-fns';
 
 export interface AppNotification {
   id: string;
-  type: 'budget_warning' | 'budget_exceeded' | 'goal_milestone' | 'goal_completed';
+  type: 'budget_warning' | 'budget_exceeded' | 'goal_milestone' | 'goal_completed' | 'push_notification' | 'health_weekly' | 'weekly_tip';
   title: string;
   description: string;
   amount?: number;
   percentage?: number;
+  deepLink?: string; // optional in-app route, e.g. "/budget" or "/notifications"
+  metadata?: Record<string, string>; // FCM data payload fields (reminder_id, type, etc.)
   timestamp: string;
   read: boolean;
 }
 
 const NOTIFICATIONS_KEY = 'app-notifications';
 const MAX_NOTIFICATIONS = 50; // Keep last 50 notifications
+
+// In-memory flag synced from NotificationSettingsPage on load/change.
+// Defaults to true so alerts work before the settings page has been visited.
+let _budgetAlertsEnabled = true;
+
+export function setBudgetAlertsEnabled(enabled: boolean): void {
+  _budgetAlertsEnabled = enabled;
+}
 
 // Get all notifications from localStorage
 export function getNotifications(): AppNotification[] {
@@ -54,6 +65,77 @@ function addNotification(notification: Omit<AppNotification, 'id' | 'timestamp' 
   return newNotification;
 }
 
+// Normalize a deeplink from FCM data to a React Router path.
+// Accepts absolute paths ("/budget"), bare names ("budget"),
+// or custom-scheme URLs ("hisabify://budget").
+function resolveDeepLink(raw: string): string {
+  if (!raw) return '';
+  // Strip custom scheme: "hisabify://budget" → "budget"
+  const stripped = raw.replace(/^[a-z][a-z0-9+\-.]*:\/\//i, '');
+  // Ensure leading slash
+  return stripped.startsWith('/') ? stripped : `/${stripped}`;
+}
+
+// Dispatch whenever notifications change so any subscribed component can re-read.
+function dispatchNotificationsChanged() {
+  window.dispatchEvent(new CustomEvent('hisabify:notifications-changed'));
+}
+
+// Add a push notification (from FCM), with deduplication.
+// Dedup strategy (in priority order):
+//   1. notificationId match — reliable, used when the Capacitor notification ID is available
+//   2. title+body within 60 seconds — fallback for foreground/tap events
+// The notificationId should be the Capacitor PushNotificationSchema.id value.
+export function addPushNotification(
+  title: string,
+  body: string,
+  rawDeepLink?: string,
+  metadata?: Record<string, string>,
+  notificationId?: string,
+): void {
+  const existing = getNotifications();
+
+  // Dedup by Capacitor notification ID when available (most reliable)
+  if (notificationId) {
+    const alreadyStored = existing.some(
+      n => n.type === 'push_notification' && n.metadata?.fcm_notification_id === notificationId,
+    );
+    if (alreadyStored) return;
+  } else {
+    // Fallback: skip if identical push stored in the last 60 seconds
+    const sixtySecondsAgo = Date.now() - 60_000;
+    const isDuplicate = existing.some(
+      n =>
+        n.type === 'push_notification' &&
+        n.title === title &&
+        n.description === body &&
+        new Date(n.timestamp).getTime() > sixtySecondsAgo,
+    );
+    if (isDuplicate) return;
+  }
+
+  const deepLink = rawDeepLink ? resolveDeepLink(rawDeepLink) : undefined;
+  // Filter out title/body/message from metadata; store fcm_notification_id when present
+  const filteredMeta: Record<string, string> = {};
+  if (notificationId) filteredMeta['fcm_notification_id'] = notificationId;
+  if (metadata) {
+    for (const [k, v] of Object.entries(metadata)) {
+      if (!['title', 'body', 'message'].includes(k)) filteredMeta[k] = v;
+    }
+  }
+  const hasMeta = Object.keys(filteredMeta).length > 0;
+  addNotification({ type: 'push_notification', title, description: body, deepLink, metadata: hasMeta ? filteredMeta : undefined });
+  dispatchNotificationsChanged();
+}
+
+// Delete a notification by id
+export function deleteNotification(id: string): void {
+  const all = getNotifications();
+  const updated = all.filter(n => n.id !== id);
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+  dispatchNotificationsChanged();
+}
+
 // Mark notification as read
 export function markNotificationAsRead(id: string) {
   const notifications = getNotifications();
@@ -61,6 +143,7 @@ export function markNotificationAsRead(id: string) {
     n.id === id ? { ...n, read: true } : n
   );
   saveNotifications(updated);
+  dispatchNotificationsChanged();
 }
 
 // Mark all as read
@@ -68,6 +151,7 @@ export function markAllNotificationsAsRead() {
   const notifications = getNotifications();
   const updated = notifications.map(n => ({ ...n, read: true }));
   saveNotifications(updated);
+  dispatchNotificationsChanged();
 }
 
 // Clear old notifications (older than 30 days)
@@ -82,11 +166,12 @@ export function clearOldNotifications() {
 
 // Show budget warning (once per day per budget)
 export function showBudgetWarning(budgetName: string, percentage: number, periodType: string) {
+  if (!_budgetAlertsEnabled) return;
   const alertKey = `budget-warning-${budgetName}-${new Date().toDateString()}`;
-  const shown = sessionStorage.getItem(alertKey);
+  const shown = localStorage.getItem(alertKey);
 
   if (!shown) {
-    sessionStorage.setItem(alertKey, 'true');
+    localStorage.setItem(alertKey, 'true');
 
     // Show toast
     toast.warning(`Budget Warning: ${budgetName}`, {
@@ -105,11 +190,12 @@ export function showBudgetWarning(budgetName: string, percentage: number, period
 
 // Show budget exceeded (once per day per budget)
 export function showBudgetExceeded(budgetName: string, percentage: number, periodType: string) {
+  if (!_budgetAlertsEnabled) return;
   const alertKey = `budget-exceeded-${budgetName}-${new Date().toDateString()}`;
-  const shown = sessionStorage.getItem(alertKey);
+  const shown = localStorage.getItem(alertKey);
 
   if (!shown) {
-    sessionStorage.setItem(alertKey, 'true');
+    localStorage.setItem(alertKey, 'true');
 
     // Show toast
     toast.error(`Budget Exceeded: ${budgetName}`, {
@@ -133,10 +219,10 @@ export function showGoalMilestone(goalName: string, percentage: number, amount: 
 
   if (milestone) {
     const alertKey = `goal-milestone-${goalName}-${milestone}`;
-    const shown = sessionStorage.getItem(alertKey);
+    const shown = localStorage.getItem(alertKey);
 
     if (!shown) {
-      sessionStorage.setItem(alertKey, 'true');
+      localStorage.setItem(alertKey, 'true');
 
       // Show toast
       toast.success(`Savings Milestone: ${goalName}`, {
@@ -155,13 +241,79 @@ export function showGoalMilestone(goalName: string, percentage: number, amount: 
   }
 }
 
+// Clear all notifications
+export function clearAllNotifications(): void {
+  localStorage.removeItem(NOTIFICATIONS_KEY);
+  dispatchNotificationsChanged();
+}
+
+const WEEKLY_TIPS: string[] = [
+  "Track every expense for 7 days — awareness alone can reduce spending by 10-15%.",
+  "Review your subscriptions this week. Cancel any you haven't used in 30 days.",
+  "Set up automatic savings — even a small amount builds the habit.",
+  "Use the 24-hour rule: wait a day before any non-essential purchase over $50.",
+  "Pack lunch twice this week — small swaps add up to big savings over a year.",
+  "Check your bank statements for fees you didn't notice. Many are negotiable.",
+  "Set a weekly 'no-spend' day to reset your spending habits.",
+  "Round up every purchase mentally — it builds awareness of true costs.",
+  "Review your insurance policies annually. You might find better rates.",
+  "Automate bill payments to avoid late fees and protect your credit score.",
+  "Try a cash-only week for discretionary spending — physical money feels more real.",
+  "Negotiate one recurring bill this week (internet, phone, insurance).",
+  "Set a specific savings goal with a deadline — vague goals rarely get met.",
+  "Unsubscribe from marketing emails that tempt impulse purchases.",
+  "Cook at home one extra night this week — dining out costs 3-5x more.",
+  "Build an emergency fund covering 3 months of expenses before investing.",
+  "Compare prices on your 3 most frequent purchases — loyalty isn't always rewarded.",
+  "Review your budget categories — are they still relevant to your lifestyle?",
+  "Pause before buying: ask 'Do I need this, or do I want this?'",
+  "Celebrate small wins — hitting a savings milestone keeps motivation high.",
+];
+
+// Generate a weekly health notification (once per ISO week)
+export function generateWeeklyHealthNotification(score: number, insight: string): void {
+  const now = new Date();
+  const weekKey = `health-weekly-${getISOWeekYear(now)}-W${String(getISOWeek(now)).padStart(2, '0')}`;
+
+  if (localStorage.getItem(weekKey)) return;
+
+  const label = score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work';
+
+  addNotification({
+    type: 'health_weekly',
+    title: `Weekly Health: ${score}/100 — ${label}`,
+    description: insight,
+  });
+
+  localStorage.setItem(weekKey, 'true');
+}
+
+// Generate a weekly tip notification (once per ISO week)
+export function generateWeeklyTip(): void {
+  const now = new Date();
+  const weekNumber = getISOWeek(now);
+  const weekKey = `tip-weekly-${getISOWeekYear(now)}-W${String(weekNumber).padStart(2, '0')}`;
+
+  if (localStorage.getItem(weekKey)) return;
+
+  const tip = WEEKLY_TIPS[weekNumber % WEEKLY_TIPS.length];
+
+  addNotification({
+    type: 'weekly_tip',
+    title: 'Weekly Tip',
+    description: tip,
+  });
+
+  localStorage.setItem(weekKey, 'true');
+}
+
 // Show goal completed
 export function showGoalCompleted(goalName: string, amount: number) {
   const alertKey = `goal-completed-${goalName}`;
-  const shown = sessionStorage.getItem(alertKey);
+  const shown = localStorage.getItem(alertKey);
 
   if (!shown) {
-    sessionStorage.setItem(alertKey, 'true');
+    localStorage.setItem(alertKey, 'true');
 
     // Show toast
     toast.success(`Goal Achieved: ${goalName}`, {

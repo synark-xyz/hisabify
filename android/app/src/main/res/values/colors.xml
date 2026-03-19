@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3B82F6</color>
+    <color name="colorPrimaryDark">#1E40AF</color>
+    <color name="colorAccent">#8B5CF6</color>
+    <!-- FCM notification accent color (status bar icon tint) -->
+    <color name="colorNotification">#3B82F6</color>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Notification small icon for Hisabify.
+  Must be white on transparent — Android tints this colour in the status bar.
+  Based on the dollar-sign mark from the app logo, simplified for 24dp.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Dollar-sign body (S-curve) + vertical bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M11.5,2L11.5,4.1C8.5,4.5 6.5,6.3 6.5,8.5C6.5,11 8.5,12.4 11.5,13.2L11.5,18.9C10,18.6 9,17.7 8.5,16.4L6.5,17.2C7.2,19.3 9,20.7 11.5,21L11.5,22.5L12.5,22.5L12.5,21C15.5,20.6 17.5,18.8 17.5,16.5C17.5,14 15.5,12.6 12.5,11.8L12.5,6.1C14,6.4 15,7.3 15.5,8.5L17.5,7.8C16.8,5.8 15,4.4 12.5,4.1L12.5,2L11.5,2Z M11.5,6.1L11.5,11.2C9.8,10.7 9,9.9 9,8.7C9,7.6 10,6.6 11.5,6.1Z M12.5,13.8L12.5,18.9C14.2,18.4 15,17.6 15,16.3C15,15.1 14,14.2 12.5,13.8Z" />
+
+</vector>

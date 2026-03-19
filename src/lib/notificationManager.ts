@@ -76,36 +76,56 @@ function resolveDeepLink(raw: string): string {
   return stripped.startsWith('/') ? stripped : `/${stripped}`;
 }
 
+// Dispatch whenever notifications change so any subscribed component can re-read.
+function dispatchNotificationsChanged() {
+  window.dispatchEvent(new CustomEvent('hisabify:notifications-changed'));
+}
+
 // Add a push notification (from FCM), with deduplication.
-// Both pushNotificationReceived (foreground) and pushNotificationActionPerformed (tap)
-// call this for the same message — the 60-second dedup window prevents doubles.
+// Dedup strategy (in priority order):
+//   1. notificationId match — reliable, used when the Capacitor notification ID is available
+//   2. title+body within 60 seconds — fallback for foreground/tap events
+// The notificationId should be the Capacitor PushNotificationSchema.id value.
 export function addPushNotification(
   title: string,
   body: string,
   rawDeepLink?: string,
   metadata?: Record<string, string>,
+  notificationId?: string,
 ): void {
-  // Deduplicate: skip if an identical push was stored in the last 60 seconds
   const existing = getNotifications();
-  const sixtySecondsAgo = Date.now() - 60_000;
-  const isDuplicate = existing.some(
-    n =>
-      n.type === 'push_notification' &&
-      n.title === title &&
-      n.description === body &&
-      new Date(n.timestamp).getTime() > sixtySecondsAgo,
-  );
-  if (isDuplicate) return;
+
+  // Dedup by Capacitor notification ID when available (most reliable)
+  if (notificationId) {
+    const alreadyStored = existing.some(
+      n => n.type === 'push_notification' && n.metadata?.fcm_notification_id === notificationId,
+    );
+    if (alreadyStored) return;
+  } else {
+    // Fallback: skip if identical push stored in the last 60 seconds
+    const sixtySecondsAgo = Date.now() - 60_000;
+    const isDuplicate = existing.some(
+      n =>
+        n.type === 'push_notification' &&
+        n.title === title &&
+        n.description === body &&
+        new Date(n.timestamp).getTime() > sixtySecondsAgo,
+    );
+    if (isDuplicate) return;
+  }
 
   const deepLink = rawDeepLink ? resolveDeepLink(rawDeepLink) : undefined;
-  // Filter out title/body/message from metadata since they're already stored as top-level fields
-  const filteredMeta = metadata
-    ? Object.fromEntries(Object.entries(metadata).filter(([k]) => !['title', 'body', 'message'].includes(k)))
-    : undefined;
-  const hasMeta = filteredMeta && Object.keys(filteredMeta).length > 0;
+  // Filter out title/body/message from metadata; store fcm_notification_id when present
+  const filteredMeta: Record<string, string> = {};
+  if (notificationId) filteredMeta['fcm_notification_id'] = notificationId;
+  if (metadata) {
+    for (const [k, v] of Object.entries(metadata)) {
+      if (!['title', 'body', 'message'].includes(k)) filteredMeta[k] = v;
+    }
+  }
+  const hasMeta = Object.keys(filteredMeta).length > 0;
   addNotification({ type: 'push_notification', title, description: body, deepLink, metadata: hasMeta ? filteredMeta : undefined });
-  // Notify any active listeners (e.g. NotificationsPage) to re-read localStorage
-  window.dispatchEvent(new CustomEvent('hisabify:push-notification'));
+  dispatchNotificationsChanged();
 }
 
 // Delete a notification by id
@@ -113,6 +133,7 @@ export function deleteNotification(id: string): void {
   const all = getNotifications();
   const updated = all.filter(n => n.id !== id);
   localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+  dispatchNotificationsChanged();
 }
 
 // Mark notification as read
@@ -122,6 +143,7 @@ export function markNotificationAsRead(id: string) {
     n.id === id ? { ...n, read: true } : n
   );
   saveNotifications(updated);
+  dispatchNotificationsChanged();
 }
 
 // Mark all as read
@@ -129,6 +151,7 @@ export function markAllNotificationsAsRead() {
   const notifications = getNotifications();
   const updated = notifications.map(n => ({ ...n, read: true }));
   saveNotifications(updated);
+  dispatchNotificationsChanged();
 }
 
 // Clear old notifications (older than 30 days)
@@ -221,6 +244,7 @@ export function showGoalMilestone(goalName: string, percentage: number, amount: 
 // Clear all notifications
 export function clearAllNotifications(): void {
   localStorage.removeItem(NOTIFICATIONS_KEY);
+  dispatchNotificationsChanged();
 }
 
 const WEEKLY_TIPS: string[] = [

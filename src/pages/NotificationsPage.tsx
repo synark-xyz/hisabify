@@ -56,11 +56,11 @@ export function NotificationsPage() {
         }
     }, [score, fetchAppNotifications]);
 
-    // Live-refresh when a new push notification is stored while the page is open
+    // Live-refresh whenever notifications change (new push, read, delete, etc.)
     useEffect(() => {
         const handler = () => fetchAppNotifications();
-        window.addEventListener('hisabify:push-notification', handler);
-        return () => window.removeEventListener('hisabify:push-notification', handler);
+        window.addEventListener('hisabify:notifications-changed', handler);
+        return () => window.removeEventListener('hisabify:notifications-changed', handler);
     }, [fetchAppNotifications]);
 
     const handleMarkAsPaid = async (reminder: PaymentReminder) => {

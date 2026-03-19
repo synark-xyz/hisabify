@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +28,7 @@ export function usePushNotifications() {
 
     let cancelled = false;
     let pluginRef: typeof import('@capacitor/push-notifications').PushNotifications | null = null;
+    let appStateHandleRef: { remove: () => Promise<void> } | null = null;
 
     const setup = async () => {
       try {
@@ -104,6 +106,26 @@ export function usePushNotifications() {
           logger.error(err, { component: 'PushNotifications', action: 'registrationError' });
         });
 
+        // Helper: ingest delivered notifications from the system tray.
+        // Called on foreground resume and on initial mount to capture
+        // notifications that arrived while the app was backgrounded/killed.
+        const ingestDelivered = async () => {
+          try {
+            const { notifications } = await PushNotifications.getDeliveredNotifications();
+            for (const n of notifications) {
+              const data = (n.data ?? {}) as Record<string, string>;
+              const title = n.title || data['title'] || '';
+              const body = n.body || data['body'] || data['message'] || '';
+              const rawDeepLink = data['deeplink'] ?? data['url'] ?? data['route'] ?? undefined;
+              if (title) {
+                addPushNotification(title, body, rawDeepLink, data, n.id);
+              }
+            }
+          } catch (err) {
+            logger.error(err, { component: 'PushNotifications', action: 'ingestDelivered' });
+          }
+        };
+
         // Foreground push received — store in notificationManager.
         // System-tray alert is handled by the Capacitor plugin via presentationOptions.
         await PushNotifications.addListener('pushNotificationReceived', (notification) => {
@@ -113,24 +135,19 @@ export function usePushNotifications() {
           logger.info(`[PushNotifications] Foreground: ${title} — ${body}`);
 
           const rawDeepLink = data['deeplink'] ?? data['url'] ?? data['route'] ?? undefined;
-          addPushNotification(title, body, rawDeepLink, data);
+          addPushNotification(title, body, rawDeepLink, data, notification.id);
         });
 
-        // Notification tapped (foreground OR background).
-        // Foreground: pushNotificationReceived already stored it — just navigate.
-        // Background: only this event fires, so we must store it here.
-        // The edge function duplicates title/body into data so we can read them.
+        // Notification tapped (foreground OR background OR killed-app cold start).
+        // The edge function duplicates title/body into data so we can always read them.
         await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
           const data = (action.notification?.data ?? {}) as Record<string, string>;
           const title = action.notification?.title || data['title'] || '';
           const body = action.notification?.body || data['body'] || data['message'] || '';
           const rawDeepLink = data['deeplink'] ?? data['url'] ?? data['route'] ?? undefined;
 
-          // Only store if we have a real title (not empty / fallback).
-          // For foreground taps, pushNotificationReceived already stored it
-          // and the 60s dedup window will prevent a duplicate.
           if (title) {
-            addPushNotification(title, body, rawDeepLink, data);
+            addPushNotification(title, body, rawDeepLink, data, action.notification?.id);
           }
 
           if (rawDeepLink) {
@@ -140,6 +157,16 @@ export function usePushNotifications() {
             navigate('/notifications');
           }
         });
+
+        // Capture notifications that arrived while backgrounded/killed by polling
+        // getDeliveredNotifications() whenever the app comes to the foreground.
+        appStateHandleRef = await CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+          if (isActive) ingestDelivered();
+        });
+
+        // Also run once on setup to capture the cold-start case (app was killed,
+        // user taps notification — the event fires but we also sweep the tray).
+        await ingestDelivered();
 
       } catch (err) {
         logger.error(err, { component: 'PushNotifications', action: 'setup' });
@@ -151,6 +178,7 @@ export function usePushNotifications() {
     return () => {
       cancelled = true;
       pluginRef?.removeAllListeners();
+      appStateHandleRef?.remove();
     };
   }, [user, navigate]);
 }

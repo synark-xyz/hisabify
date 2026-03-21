@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, Receipt, Trash } from '@phosphor-icons/react';
@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format, isPast, isToday, differenceInDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getNotifications, markNotificationAsRead, clearOldNotifications, deleteNotification, clearAllNotifications, generateWeeklyHealthNotification, generateWeeklyTip, AppNotification } from '@/lib/notificationManager';
+import { generateWeeklyHealthNotification, generateWeeklyTip, AppNotification } from '@/lib/notificationManager';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useHealthScore } from '@/features/gamification/hooks/useHealthScore';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -17,51 +18,37 @@ import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { PaymentReminder } from '@/types';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { formatReminderAmount } from '@/lib/reminderAmount';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useState } from 'react';
 
 export function NotificationsPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { formatAmount } = useCurrency();
-    const { score, loading: healthLoading } = useHealthScore();
+    const { score } = useHealthScore();
     const { reminders, loading, markAsPaid, deletePaidReminder } = usePaymentReminders();
-    const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
+    const { notifications: appNotifications, loading: notifLoading, unreadCount, refresh, markAsRead, remove, removeAll } = useNotifications();
     const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
 
-    const fetchAppNotifications = useCallback(() => {
-        const notifications = getNotifications();
-        setAppNotifications(notifications);
-    }, []);
-
+    // Generate weekly tip on mount
     useEffect(() => {
         if (user) {
-            fetchAppNotifications();
-            clearOldNotifications();
-            generateWeeklyTip();
+            generateWeeklyTip(user.id);
         }
-    }, [user, fetchAppNotifications]);
+    }, [user]);
 
     // Generate weekly health notification once score loads
     useEffect(() => {
-        if (score) {
+        if (user && score) {
             const insight = score.total >= 80
                 ? 'Great job! Your finances are in excellent shape this week.'
                 : score.total >= 50
                     ? 'You\'re doing well. A few tweaks could push your score higher.'
                     : 'Your financial health needs attention. Review your budgets and spending.';
-            generateWeeklyHealthNotification(score.total, insight);
-            fetchAppNotifications();
+            generateWeeklyHealthNotification(user.id, score.total, insight);
         }
-    }, [score, fetchAppNotifications]);
-
-    // Live-refresh whenever notifications change (new push, read, delete, etc.)
-    useEffect(() => {
-        const handler = () => fetchAppNotifications();
-        window.addEventListener('hisabify:notifications-changed', handler);
-        return () => window.removeEventListener('hisabify:notifications-changed', handler);
-    }, [fetchAppNotifications]);
+    }, [user, score]);
 
     const handleMarkAsPaid = async (reminder: PaymentReminder) => {
         await markAsPaid(reminder);
@@ -72,12 +59,7 @@ export function NotificationsPage() {
     };
 
     const handleRefresh = async () => {
-        fetchAppNotifications();
-    };
-
-    const handleClearAll = () => {
-        clearAllNotifications();
-        fetchAppNotifications();
+        await refresh();
     };
 
     const getStatusInfo = (status: string, dueDate: string) => {
@@ -120,8 +102,6 @@ export function NotificationsPage() {
         }
     };
 
-    const unreadCount = appNotifications.filter(n => !n.read).length;
-
     const { variant } = useTheme();
 
     return (
@@ -152,7 +132,13 @@ export function NotificationsPage() {
 
                         {/* ===== Messages Tab ===== */}
                         <TabsContent value="messages">
-                            {appNotifications.length === 0 ? (
+                            {notifLoading ? (
+                                <div className="space-y-4">
+                                    {[1, 2, 3].map(i => (
+                                        <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+                                    ))}
+                                </div>
+                            ) : appNotifications.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
                                     <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
                                         <Bell className="w-10 h-10 text-muted-foreground/30" weight="duotone" />
@@ -170,7 +156,7 @@ export function NotificationsPage() {
                                             size="sm"
                                             variant="ghost"
                                             className="text-xs text-muted-foreground hover:text-destructive"
-                                            onClick={handleClearAll}
+                                            onClick={removeAll}
                                         >
                                             Clear All
                                         </Button>
@@ -194,8 +180,7 @@ export function NotificationsPage() {
                                                 transition={{ delay: idx * 0.03 }}
                                                 onClick={() => {
                                                     if (!notification.read) {
-                                                        markNotificationAsRead(notification.id);
-                                                        fetchAppNotifications();
+                                                        markAsRead(notification.id);
                                                     }
                                                     setSelectedNotification(notification);
                                                 }}
@@ -217,7 +202,7 @@ export function NotificationsPage() {
                                                             </p>
                                                         )}
                                                         <span className="text-[10px] text-muted-foreground uppercase tracking-tight font-black mt-1.5 block">
-                                                            {format(new Date(notification.timestamp), 'MMM d, yyyy • h:mm a')}
+                                                            {format(new Date(notification.created_at), 'MMM d, yyyy • h:mm a')}
                                                         </span>
                                                     </div>
                                                     <Button
@@ -227,8 +212,7 @@ export function NotificationsPage() {
                                                         aria-label="Delete notification"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            deleteNotification(notification.id);
-                                                            fetchAppNotifications();
+                                                            remove(notification.id);
                                                         }}
                                                     >
                                                         <Trash className="w-4 h-4" weight="duotone" />
@@ -394,15 +378,10 @@ export function NotificationsPage() {
 
             {/* Notification Detail Dialog */}
             <Dialog open={!!selectedNotification} onOpenChange={(open) => { if (!open) setSelectedNotification(null); }}>
-                <DialogContent className="max-w-[88vw] rounded-3xl p-0 gap-0 border-0 overflow-hidden shadow-2xl">
+                <DialogContent className="max-w-[88vw] rounded-3xl p-0 gap-0 border-0 shadow-2xl overflow-y-auto">
                     {selectedNotification && (() => {
                         const iconInfo = getNotificationIcon(selectedNotification.type);
                         const Icon = iconInfo.icon;
-                        const displayMeta = selectedNotification.metadata
-                            ? Object.entries(selectedNotification.metadata).filter(
-                                ([k]) => !['fcm_notification_id', 'reminder_id', 'type'].includes(k) && String(k).trim() && String(selectedNotification.metadata![k]).trim()
-                              )
-                            : [];
 
                         return (
                             <>
@@ -412,7 +391,7 @@ export function NotificationsPage() {
                                         initial={{ scale: 0.5, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
                                         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                                        className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg border border-white/10 bg-background/10`}
+                                        className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg border border-white/10 bg-background/10"
                                     >
                                         <Icon className={`w-10 h-10 ${iconInfo.color}`} weight="duotone" />
                                     </motion.div>
@@ -425,7 +404,7 @@ export function NotificationsPage() {
                                             {selectedNotification.title}
                                         </DialogTitle>
                                         <DialogDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                                            {format(new Date(selectedNotification.timestamp), 'MMM d, yyyy • h:mm a')}
+                                            {format(new Date(selectedNotification.created_at), 'MMM d, yyyy • h:mm a')}
                                         </DialogDescription>
                                     </div>
 
@@ -435,32 +414,26 @@ export function NotificationsPage() {
                                         </p>
                                     )}
 
-                                    {displayMeta.length > 0 && (
-                                        <div className="rounded-2xl border border-border/40 overflow-hidden bg-muted/20">
-                                            {displayMeta.map(([key, value], i) => (
-                                                <div
-                                                    key={key}
-                                                    className={cn(
-                                                        'flex justify-between items-center px-4 py-3',
-                                                        i > 0 && 'border-t border-border/30'
-                                                    )}
-                                                >
-                                                    <span className="text-xs text-muted-foreground font-medium capitalize">
-                                                        {key.replace(/_/g, ' ')}
-                                                    </span>
-                                                    <span className="text-xs text-foreground font-semibold text-right max-w-[55%] truncate">
-                                                        {value}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                    {/* Image area — only rendered when an image URL exists */}
+                                    {selectedNotification.image && (
+                                        <div className="rounded-2xl overflow-hidden border border-border/30">
+                                            <img
+                                                src={selectedNotification.image}
+                                                alt=""
+                                                className="w-full h-auto max-h-[40vh] object-contain bg-muted/10"
+                                                loading="lazy"
+                                                onError={(e) => {
+                                                    (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                                                }}
+                                            />
                                         </div>
                                     )}
 
-                                    {selectedNotification.deepLink ? (
+                                    {selectedNotification.deep_link ? (
                                         <Button
                                             className="w-full rounded-2xl h-12 font-bold text-sm"
                                             onClick={() => {
-                                                const link = selectedNotification.deepLink!;
+                                                const link = selectedNotification.deep_link!;
                                                 setSelectedNotification(null);
                                                 navigate(link);
                                             }}

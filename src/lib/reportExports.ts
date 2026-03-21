@@ -2,6 +2,8 @@ import Papa from "papaparse";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
 import { ReportData } from "@/hooks/useReportData";
 import { ReportFilters } from "@/hooks/useReportTemplates";
 
@@ -11,19 +13,135 @@ interface ExportOptions {
   currencySymbol: string;
 }
 
-function downloadFile(content: string | Blob, filename: string, type: string) {
+export interface DownloadResult {
+  /** Human-readable save location shown in the toast */
+  savedTo: string;
+  /** 'downloads' = public Downloads/hisabify/, 'app-storage' = app-specific external, 'browser' = web download */
+  method: 'downloads' | 'app-storage' | 'share' | 'browser';
+}
+
+/** Converts a Blob to a bare base64 string (no data-URL prefix). */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** Creates a directory, ignoring "already exists" errors. */
+async function mkdirSafe(path: string, directory: Directory): Promise<void> {
+  try {
+    await Filesystem.mkdir({ path, directory, recursive: true });
+  } catch {
+    // Folder already exists — ignore
+  }
+}
+
+/**
+ * Android download strategy:
+ *
+ *  1. Request storage permissions.
+ *  2. Try ExternalStorage → Download/hisabify/<filename>
+ *     = /storage/emulated/0/Download/hisabify/
+ *     Works on Android ≤ 9 (WRITE_EXTERNAL_STORAGE) and Android 10
+ *     (requestLegacyExternalStorage=true in AndroidManifest).
+ *  3. If that fails (Android 11+ scoped-storage enforcement or permission denied):
+ *     fall back to app-specific external → hisabify/<filename>
+ *     = /storage/emulated/0/Android/data/<app>/files/hisabify/
+ *     Always writable, visible in Android's "Files" app under the app section.
+ *  4. After a successful filesystem write, open the system Share sheet so the
+ *     user can also "Open with" or send the file elsewhere.
+ *
+ * Web / iOS: standard blob-URL anchor click.
+ */
+async function downloadFile(content: string | Blob, filename: string, type: string): Promise<DownloadResult> {
   const blob = content instanceof Blob ? content : new Blob([content], { type });
+
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+    // --- Step 1: request permissions ---
+    try {
+      await Filesystem.requestPermissions();
+    } catch {
+      // Permission dialog failed or was already granted — continue
+    }
+
+    const base64 = await blobToBase64(blob);
+
+    // --- Step 2: try public Downloads/hisabify/ ---
+    try {
+      await mkdirSafe('Download/hisabify', Directory.ExternalStorage);
+      await Filesystem.writeFile({
+        path: `Download/hisabify/${filename}`,
+        data: base64,
+        directory: Directory.ExternalStorage,
+        recursive: true,
+      });
+
+      // Share so the user can open the file immediately if desired
+      void shareFileAfterSave(blob, filename, type);
+
+      return { savedTo: `Downloads/hisabify/${filename}`, method: 'downloads' };
+    } catch {
+      // Scoped storage (Android 11+) blocked writing to public Downloads — fall through
+    }
+
+    // --- Step 3: fall back to app-specific external storage ---
+    try {
+      await mkdirSafe('hisabify', Directory.External);
+      await Filesystem.writeFile({
+        path: `hisabify/${filename}`,
+        data: base64,
+        directory: Directory.External,
+        recursive: true,
+      });
+
+      // Open share sheet so user can "Save to Downloads" manually
+      await shareFileAfterSave(blob, filename, type);
+
+      return { savedTo: `Files/hisabify/${filename}`, method: 'app-storage' };
+    } catch {
+      // Both filesystem paths failed — last resort: share sheet only
+    }
+
+    // --- Step 4: share sheet only ---
+    try {
+      const file = new File([blob], filename, { type });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        return { savedTo: filename, method: 'share' };
+      }
+    } catch {
+      // User dismissed share sheet or share unsupported
+    }
+  }
+
+  // --- Web / iOS: blob URL anchor click ---
   const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  return { savedTo: filename, method: 'browser' };
 }
 
-export function exportReportToCSV({ reportData, filters, currencySymbol }: ExportOptions) {
+/** Silently triggers the system share sheet after a successful file save. */
+async function shareFileAfterSave(blob: Blob, filename: string, type: string): Promise<void> {
+  try {
+    const file = new File([blob], filename, { type });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title: filename });
+    }
+  } catch {
+    // User dismissed or share not supported — fine, file was already saved
+  }
+}
+
+export async function exportReportToCSV({ reportData, filters, currencySymbol }: ExportOptions): Promise<DownloadResult> {
   const sections: string[] = [];
 
   // Summary section
@@ -102,10 +220,10 @@ export function exportReportToCSV({ reportData, filters, currencySymbol }: Expor
   );
 
   const filename = `report_${filters.dateFrom}_to_${filters.dateTo}.csv`;
-  downloadFile(sections.join("\n"), filename, "text/csv;charset=utf-8;");
+  return downloadFile(sections.join("\n"), filename, "text/csv;charset=utf-8;");
 }
 
-export function exportReportToPDF({ reportData, filters, currencySymbol }: ExportOptions) {
+export async function exportReportToPDF({ reportData, filters, currencySymbol }: ExportOptions): Promise<DownloadResult> {
   const doc = new jsPDF();
   let yPos = 20;
 
@@ -233,5 +351,6 @@ export function exportReportToPDF({ reportData, filters, currencySymbol }: Expor
   }
 
   const filename = `report_${filters.dateFrom}_to_${filters.dateTo}.pdf`;
-  doc.save(filename);
+  const pdfBlob = doc.output('blob');
+  return downloadFile(pdfBlob, filename, 'application/pdf');
 }

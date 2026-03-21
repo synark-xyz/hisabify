@@ -9,6 +9,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Save, Trash2, FileText } from "lucide-react";
 import { ReportTemplate, ReportFilters } from "@/hooks/useReportTemplates";
@@ -31,6 +41,7 @@ export function ReportTemplatesPanel({
 }: ReportTemplatesPanelProps) {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleSave = () => {
     if (templateName.trim()) {
@@ -79,7 +90,7 @@ export function ReportTemplatesPanel({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => onDeleteTemplate(template.id)}
+                      onClick={() => setPendingDeleteId(template.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -96,6 +107,29 @@ export function ReportTemplatesPanel({
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This saved filter template will be permanently removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDeleteId) onDeleteTemplate(pendingDeleteId);
+                setPendingDeleteId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent className="max-w-[400px]">

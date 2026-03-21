@@ -195,6 +195,51 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          title: string
+          description: string
+          amount: number | null
+          percentage: number | null
+          deep_link: string | null
+          image: string | null
+          metadata: Json | null
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          title: string
+          description?: string
+          amount?: number | null
+          percentage?: number | null
+          deep_link?: string | null
+          image?: string | null
+          metadata?: Json | null
+          read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          title?: string
+          description?: string
+          amount?: number | null
+          percentage?: number | null
+          deep_link?: string | null
+          image?: string | null
+          metadata?: Json | null
+          read?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       payment_reminders: {
         Row: {
           amount: number

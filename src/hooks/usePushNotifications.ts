@@ -110,7 +110,7 @@ export function usePushNotifications() {
               const body = n.body || data['body'] || data['message'] || '';
               const rawDeepLink = data['deeplink'] ?? data['url'] ?? data['route'] ?? undefined;
               if (title) {
-                addPushNotification(title, body, rawDeepLink, data, n.id);
+                await addPushNotification(user.id, title, body, rawDeepLink, data, n.id);
               }
             }
           } catch (err) {
@@ -120,26 +120,26 @@ export function usePushNotifications() {
 
         // Foreground push received — store in notificationManager.
         // System-tray alert is handled by the Capacitor plugin via presentationOptions.
-        await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
           const data = (notification.data ?? {}) as Record<string, string>;
           const title = notification.title || data['title'] || 'Notification';
           const body = notification.body || data['body'] || data['message'] || '';
           logger.info(`[PushNotifications] Foreground: ${title} — ${body}`);
 
           const rawDeepLink = data['deeplink'] ?? data['url'] ?? data['route'] ?? undefined;
-          addPushNotification(title, body, rawDeepLink, data, notification.id);
+          await addPushNotification(user.id, title, body, rawDeepLink, data, notification.id);
         });
 
         // Notification tapped (foreground OR background OR killed-app cold start).
         // The edge function duplicates title/body into data so we can always read them.
-        await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+        await PushNotifications.addListener('pushNotificationActionPerformed', async (action) => {
           const data = (action.notification?.data ?? {}) as Record<string, string>;
           const title = action.notification?.title || data['title'] || '';
           const body = action.notification?.body || data['body'] || data['message'] || '';
           const rawDeepLink = data['deeplink'] ?? data['url'] ?? data['route'] ?? undefined;
 
           if (title) {
-            addPushNotification(title, body, rawDeepLink, data, action.notification?.id);
+            await addPushNotification(user.id, title, body, rawDeepLink, data, action.notification?.id);
           }
 
           if (rawDeepLink) {

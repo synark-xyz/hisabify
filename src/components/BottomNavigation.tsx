@@ -1,27 +1,19 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, List, Plus, HandCoins, Target, LayoutDashboardIcon } from 'lucide-react';
+import { List, HandCoins, Target, LayoutDashboardIcon, FileBarChart } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
 
 
-interface BottomNavigationProps {
-  onOpenInputSheet: () => void;
-}
-
-const dashboardLabel = 'Dashboard';
-const budgetLabel = 'Budget';
-const savingsLabel = 'Savings';
-const expensesLabel = 'Expenses';
 const navItems = [
   { path: '/', icon: LayoutDashboardIcon, label: 'Dashboard' },
   { path: '/budget', icon: Target, label: 'Budget' },
-  null, // Placeholder for the center FAB
-  { path: '/savings', icon: HandCoins, label: 'Savings' },
   { path: '/expenses', icon: List, label: 'Expenses' },
+  { path: '/savings', icon: HandCoins, label: 'Savings' },
+  { path: '/reports', icon: FileBarChart, label: 'Reports' },
 ];
 
-export function BottomNavigation({ onOpenInputSheet }: BottomNavigationProps) {
+export function BottomNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isKeyboardOpen } = useVisualViewport();
@@ -37,25 +29,7 @@ export function BottomNavigation({ onOpenInputSheet }: BottomNavigationProps) {
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         >
       <div className="max-w-2xl mx-auto grid grid-cols-5 items-center h-20 md:h-20 relative">
-        {navItems.map((item, index) => {
-          if (item === null) {
-            return (
-              <div key="add-button-container" className="flex justify-center items-center">
-                <motion.button
-                  onClick={onOpenInputSheet}
-                  aria-label="Add transaction"
-                  data-testid="fab-button"
-                  className="relative -top-4 w-16 h-16 rounded-full bg-accent text-white shadow-fab flex items-center justify-center z-[51]"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.9 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                >
-                  <Plus className="w-7 h-7" strokeWidth={2.5} />
-                </motion.button>
-              </div>
-            );
-          }
-
+        {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
 

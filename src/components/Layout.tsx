@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
+import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { ReceiptScannerModal, type ScannedReceiptData } from '@/components/ReceiptScannerModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { InputMethodSheet } from '@/components/InputMethodSheet';
@@ -22,6 +24,11 @@ export function Layout() {
 
     const location = useLocation();
     const { variant } = useTheme();
+    const { isKeyboardOpen } = useVisualViewport();
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }, [location.pathname]);
 
     useEffect(() => {
         const handleOpenInputSheet = () => setShowInputSheet(true);
@@ -92,9 +99,28 @@ export function Layout() {
                 </AnimatePresence>
             </main>
 
-            <BottomNavigation
-                onOpenInputSheet={() => setShowInputSheet(true)}
-            />
+            <BottomNavigation />
+
+            {/* Floating Action Button — fixed bottom-right, above nav bar */}
+            <AnimatePresence>
+                {!isKeyboardOpen && (
+                    <motion.button
+                        onClick={() => setShowInputSheet(true)}
+                        aria-label="Add transaction"
+                        data-testid="fab-button"
+                        className="fixed right-4 z-50 w-14 h-14 rounded-full bg-accent text-white shadow-fab flex items-center justify-center"
+                        style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    >
+                        <Plus className="w-6 h-6" strokeWidth={2.5} />
+                    </motion.button>
+                )}
+            </AnimatePresence>
 
             {/* Input Method Selection Sheet */}
             <InputMethodSheet

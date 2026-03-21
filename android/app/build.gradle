@@ -18,7 +18,10 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            // buildConfigField "String", "ENVIRONMENT", '"release"'
+            // Use the signing config defined above when available
+            // signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -40,9 +43,9 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
-    implementation 'com.revenuecat.purchases:purchases:7.+'
-    implementation 'com.revenuecat.purchases:purchases-ui:7.+'
-    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.revenuecat.purchases:purchases:9.26.1'
+    implementation 'com.revenuecat.purchases:purchases-ui:9.26.1'
+    implementation platform('com.google.firebase:firebase-bom:34.11.0')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
     implementation 'com.google.firebase:firebase-messaging'
@@ -57,5 +60,5 @@ try {
         apply plugin: 'com.google.firebase.crashlytics'
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work: ${e.message}")
 }

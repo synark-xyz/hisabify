@@ -1,19 +1,7 @@
-import { useState, useEffect } from 'react';
-import { getNotifications } from '@/lib/notificationManager';
+import { useNotifications } from '@/hooks/useNotifications';
 
-/** Returns the count of unread in-app notifications, kept in sync with localStorage. */
+/** Returns the count of unread in-app notifications. */
 export function useUnreadCount(): number {
-  const [count, setCount] = useState(() =>
-    getNotifications().filter(n => !n.read).length
-  );
-
-  useEffect(() => {
-    const refresh = () =>
-      setCount(getNotifications().filter(n => !n.read).length);
-
-    window.addEventListener('hisabify:notifications-changed', refresh);
-    return () => window.removeEventListener('hisabify:notifications-changed', refresh);
-  }, []);
-
-  return count;
+  const { unreadCount } = useNotifications();
+  return unreadCount;
 }

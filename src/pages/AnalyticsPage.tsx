@@ -86,13 +86,13 @@ export function AnalyticsPage() {
     dayOfWeekAnalysis,
   } = useAdvancedAnalytics(transactions);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (!canExportReports) {
       setShowUpgradeModal(true);
       return;
     }
 
-    exportToCSV({ transactions, dateRange });
+    await exportToCSV({ transactions, dateRange });
   };
 
   const handleDateRangeChange = (range: { from: Date; to: Date }) => {

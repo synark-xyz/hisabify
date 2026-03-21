@@ -1,5 +1,6 @@
 import { toast } from 'sonner';
 import { getISOWeek, getISOWeekYear } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AppNotification {
   id: string;
@@ -8,14 +9,12 @@ export interface AppNotification {
   description: string;
   amount?: number;
   percentage?: number;
-  deepLink?: string; // optional in-app route, e.g. "/budget" or "/notifications"
-  metadata?: Record<string, string>; // FCM data payload fields (reminder_id, type, etc.)
-  timestamp: string;
+  deep_link?: string;
+  image?: string;
+  metadata?: Record<string, string>;
+  created_at: string;
   read: boolean;
 }
-
-const NOTIFICATIONS_KEY = 'app-notifications';
-const MAX_NOTIFICATIONS = 50; // Keep last 50 notifications
 
 // In-memory flag synced from NotificationSettingsPage on load/change.
 // Defaults to true so alerts work before the settings page has been visited.
@@ -25,227 +24,314 @@ export function setBudgetAlertsEnabled(enabled: boolean): void {
   _budgetAlertsEnabled = enabled;
 }
 
-// Get all notifications from localStorage
-export function getNotifications(): AppNotification[] {
-  try {
-    const stored = localStorage.getItem(NOTIFICATIONS_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error('Error loading notifications:', e);
-  }
-  return [];
-}
-
-// Save notifications to localStorage
-function saveNotifications(notifications: AppNotification[]) {
-  try {
-    // Keep only the most recent MAX_NOTIFICATIONS
-    const trimmed = notifications.slice(0, MAX_NOTIFICATIONS);
-    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(trimmed));
-  } catch (e) {
-    console.error('Error saving notifications:', e);
-  }
-}
-
-// Add a new notification
-function addNotification(notification: Omit<AppNotification, 'id' | 'timestamp' | 'read'>) {
-  const newNotification: AppNotification = {
-    ...notification,
-    id: `notif-${Date.now()}-${Math.random()}`,
-    timestamp: new Date().toISOString(),
-    read: false,
-  };
-
-  const notifications = getNotifications();
-  notifications.unshift(newNotification); // Add to beginning
-  saveNotifications(notifications);
-
-  return newNotification;
-}
-
-// Normalize a deeplink from FCM data to a React Router path.
-// Accepts absolute paths ("/budget"), bare names ("budget"),
-// or custom-scheme URLs ("hisabify://budget").
-function resolveDeepLink(raw: string): string {
-  if (!raw) return '';
-  // Strip custom scheme: "hisabify://budget" → "budget"
-  const stripped = raw.replace(/^[a-z][a-z0-9+\-.]*:\/\//i, '');
-  // Ensure leading slash
-  return stripped.startsWith('/') ? stripped : `/${stripped}`;
-}
-
 // Dispatch whenever notifications change so any subscribed component can re-read.
 function dispatchNotificationsChanged() {
   window.dispatchEvent(new CustomEvent('hisabify:notifications-changed'));
 }
 
-// Add a push notification (from FCM), with deduplication.
-// Dedup strategy (in priority order):
-//   1. notificationId match — reliable, used when the Capacitor notification ID is available
-//   2. title+body within 60 seconds — fallback for foreground/tap events
-// The notificationId should be the Capacitor PushNotificationSchema.id value.
-export function addPushNotification(
+// ---------------------------------------------------------------------------
+// Core DB operations
+// ---------------------------------------------------------------------------
+
+/** Fetch all notifications for a user, newest first. */
+export async function fetchNotifications(userId: string): Promise<AppNotification[]> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching notifications:', error);
+    return [];
+  }
+
+  return (data ?? []).map(mapRow);
+}
+
+/** Insert a notification row. */
+async function insertNotification(
+  userId: string,
+  notification: Omit<AppNotification, 'id' | 'created_at' | 'read'>,
+): Promise<void> {
+  const { error } = await supabase.from('notifications').insert({
+    user_id: userId,
+    type: notification.type,
+    title: notification.title,
+    description: notification.description,
+    amount: notification.amount ?? null,
+    percentage: notification.percentage ?? null,
+    deep_link: notification.deep_link ?? null,
+    image: notification.image ?? null,
+    metadata: notification.metadata ? notification.metadata as unknown as Record<string, unknown> : null,
+    read: false,
+  });
+
+  if (error) {
+    console.error('Error inserting notification:', error);
+    return;
+  }
+
+  dispatchNotificationsChanged();
+}
+
+/** Mark a single notification as read. */
+export async function markNotificationAsRead(userId: string, id: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('id', id)
+    .eq('user_id', userId);
+
+  if (error) console.error('Error marking notification as read:', error);
+  dispatchNotificationsChanged();
+}
+
+/** Mark all notifications as read. */
+export async function markAllNotificationsAsRead(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', userId)
+    .eq('read', false);
+
+  if (error) console.error('Error marking all as read:', error);
+  dispatchNotificationsChanged();
+}
+
+/** Permanently delete a single notification. */
+export async function deleteNotification(userId: string, id: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId);
+
+  if (error) console.error('Error deleting notification:', error);
+  dispatchNotificationsChanged();
+}
+
+/** Permanently delete all notifications for a user. */
+export async function clearAllNotifications(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) console.error('Error clearing notifications:', error);
+  dispatchNotificationsChanged();
+}
+
+/** Delete notifications older than 30 days. */
+export async function clearOldNotifications(userId: string): Promise<void> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('user_id', userId)
+    .lt('created_at', thirtyDaysAgo);
+
+  if (error) console.error('Error clearing old notifications:', error);
+}
+
+// ---------------------------------------------------------------------------
+// Push notifications (from FCM) with deduplication
+// ---------------------------------------------------------------------------
+
+// Normalize a deeplink from FCM data to a React Router path.
+function resolveDeepLink(raw: string): string {
+  if (!raw) return '';
+  const stripped = raw.replace(/^[a-z][a-z0-9+\-.]*:\/\//i, '');
+  return stripped.startsWith('/') ? stripped : `/${stripped}`;
+}
+
+export async function addPushNotification(
+  userId: string,
   title: string,
   body: string,
   rawDeepLink?: string,
   metadata?: Record<string, string>,
   notificationId?: string,
-): void {
-  const existing = getNotifications();
-
-  // Dedup by Capacitor notification ID when available (most reliable)
+): Promise<void> {
+  // Dedup by Capacitor notification ID when available
   if (notificationId) {
-    const alreadyStored = existing.some(
-      n => n.type === 'push_notification' && n.metadata?.fcm_notification_id === notificationId,
-    );
-    if (alreadyStored) return;
+    const { data: existing } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('type', 'push_notification')
+      .contains('metadata', { fcm_notification_id: notificationId })
+      .limit(1);
+
+    if (existing && existing.length > 0) return;
   } else {
     // Fallback: skip if identical push stored in the last 60 seconds
-    const sixtySecondsAgo = Date.now() - 60_000;
-    const isDuplicate = existing.some(
-      n =>
-        n.type === 'push_notification' &&
-        n.title === title &&
-        n.description === body &&
-        new Date(n.timestamp).getTime() > sixtySecondsAgo,
-    );
-    if (isDuplicate) return;
+    const sixtySecondsAgo = new Date(Date.now() - 60_000).toISOString();
+    const { data: existing } = await supabase
+      .from('notifications')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('type', 'push_notification')
+      .eq('title', title)
+      .eq('description', body)
+      .gte('created_at', sixtySecondsAgo)
+      .limit(1);
+
+    if (existing && existing.length > 0) return;
   }
 
   const deepLink = rawDeepLink ? resolveDeepLink(rawDeepLink) : undefined;
-  // Filter out title/body/message from metadata; store fcm_notification_id when present
+  // Extract image URL from common FCM keys
+  const image = metadata?.['image'] ?? metadata?.['imageUrl'] ?? metadata?.['image_url'] ?? metadata?.['fcm_options.image'] ?? undefined;
+  // Filter out title/body/message/image keys from metadata
+  const IMAGE_KEYS = ['image', 'imageUrl', 'image_url', 'fcm_options.image'];
+  const EXCLUDED_KEYS = ['title', 'body', 'message', ...IMAGE_KEYS];
   const filteredMeta: Record<string, string> = {};
   if (notificationId) filteredMeta['fcm_notification_id'] = notificationId;
   if (metadata) {
     for (const [k, v] of Object.entries(metadata)) {
-      if (!['title', 'body', 'message'].includes(k)) filteredMeta[k] = v;
+      if (!EXCLUDED_KEYS.includes(k)) filteredMeta[k] = v;
     }
   }
   const hasMeta = Object.keys(filteredMeta).length > 0;
-  addNotification({ type: 'push_notification', title, description: body, deepLink, metadata: hasMeta ? filteredMeta : undefined });
-  dispatchNotificationsChanged();
+
+  await insertNotification(userId, {
+    type: 'push_notification',
+    title,
+    description: body,
+    deep_link: deepLink,
+    image,
+    metadata: hasMeta ? filteredMeta : undefined,
+  });
 }
 
-// Delete a notification by id
-export function deleteNotification(id: string): void {
-  const all = getNotifications();
-  const updated = all.filter(n => n.id !== id);
-  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
-  dispatchNotificationsChanged();
-}
+// ---------------------------------------------------------------------------
+// Domain-specific notification generators
+// ---------------------------------------------------------------------------
 
-// Mark notification as read
-export function markNotificationAsRead(id: string) {
-  const notifications = getNotifications();
-  const updated = notifications.map(n =>
-    n.id === id ? { ...n, read: true } : n
-  );
-  saveNotifications(updated);
-  dispatchNotificationsChanged();
-}
-
-// Mark all as read
-export function markAllNotificationsAsRead() {
-  const notifications = getNotifications();
-  const updated = notifications.map(n => ({ ...n, read: true }));
-  saveNotifications(updated);
-  dispatchNotificationsChanged();
-}
-
-// Clear old notifications (older than 30 days)
-export function clearOldNotifications() {
-  const notifications = getNotifications();
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  const filtered = notifications.filter(n =>
-    new Date(n.timestamp).getTime() > thirtyDaysAgo
-  );
-  saveNotifications(filtered);
-}
-
-// Show budget warning (once per day per budget)
-export function showBudgetWarning(budgetName: string, percentage: number, periodType: string) {
+/** Show budget warning (once per day per budget, via localStorage dedup key). */
+export async function showBudgetWarning(userId: string, budgetName: string, percentage: number, periodType: string): Promise<void> {
   if (!_budgetAlertsEnabled) return;
   const alertKey = `budget-warning-${budgetName}-${new Date().toDateString()}`;
-  const shown = localStorage.getItem(alertKey);
+  if (localStorage.getItem(alertKey)) return;
 
-  if (!shown) {
-    localStorage.setItem(alertKey, 'true');
+  localStorage.setItem(alertKey, 'true');
 
-    // Show toast
-    toast.warning(`Budget Warning: ${budgetName}`, {
-      description: `You've used ${percentage.toFixed(0)}% of your ${periodType} budget.`
-    });
+  toast.warning(`Budget Warning: ${budgetName}`, {
+    description: `You've used ${percentage.toFixed(0)}% of your ${periodType} budget.`,
+  });
 
-    // Add to notifications
-    addNotification({
-      type: 'budget_warning',
-      title: `Budget Warning: ${budgetName}`,
-      description: `You've used ${percentage.toFixed(0)}% of your ${periodType} budget.`,
-      percentage,
-    });
-  }
+  await insertNotification(userId, {
+    type: 'budget_warning',
+    title: `Budget Warning: ${budgetName}`,
+    description: `You've used ${percentage.toFixed(0)}% of your ${periodType} budget.`,
+    percentage,
+  });
 }
 
-// Show budget exceeded (once per day per budget)
-export function showBudgetExceeded(budgetName: string, percentage: number, periodType: string) {
+/** Show budget exceeded (once per day per budget). */
+export async function showBudgetExceeded(userId: string, budgetName: string, percentage: number, periodType: string): Promise<void> {
   if (!_budgetAlertsEnabled) return;
   const alertKey = `budget-exceeded-${budgetName}-${new Date().toDateString()}`;
-  const shown = localStorage.getItem(alertKey);
+  if (localStorage.getItem(alertKey)) return;
 
-  if (!shown) {
-    localStorage.setItem(alertKey, 'true');
+  localStorage.setItem(alertKey, 'true');
 
-    // Show toast
-    toast.error(`Budget Exceeded: ${budgetName}`, {
-      description: `You've spent ${percentage.toFixed(0)}% of your ${periodType} budget.`
-    });
+  toast.error(`Budget Exceeded: ${budgetName}`, {
+    description: `You've spent ${percentage.toFixed(0)}% of your ${periodType} budget.`,
+  });
 
-    // Add to notifications
-    addNotification({
-      type: 'budget_exceeded',
-      title: `Budget Exceeded: ${budgetName}`,
-      description: `You've spent ${percentage.toFixed(0)}% of your ${periodType} budget.`,
-      percentage,
-    });
-  }
+  await insertNotification(userId, {
+    type: 'budget_exceeded',
+    title: `Budget Exceeded: ${budgetName}`,
+    description: `You've spent ${percentage.toFixed(0)}% of your ${periodType} budget.`,
+    percentage,
+  });
 }
 
-// Show goal milestone
-export function showGoalMilestone(goalName: string, percentage: number, amount: number) {
+/** Show goal milestone. */
+export async function showGoalMilestone(userId: string, goalName: string, percentage: number, amount: number): Promise<void> {
   const milestones = [25, 50, 75, 90];
   const milestone = milestones.find(m => percentage >= m && percentage < m + 5);
 
   if (milestone) {
     const alertKey = `goal-milestone-${goalName}-${milestone}`;
-    const shown = localStorage.getItem(alertKey);
+    if (localStorage.getItem(alertKey)) return;
 
-    if (!shown) {
-      localStorage.setItem(alertKey, 'true');
+    localStorage.setItem(alertKey, 'true');
 
-      // Show toast
-      toast.success(`Savings Milestone: ${goalName}`, {
-        description: `You're ${percentage.toFixed(0)}% of the way to your goal!`
-      });
+    toast.success(`Savings Milestone: ${goalName}`, {
+      description: `You're ${percentage.toFixed(0)}% of the way to your goal!`,
+    });
 
-      // Add to notifications
-      addNotification({
-        type: 'goal_milestone',
-        title: `Savings Milestone: ${goalName}`,
-        description: `You're ${percentage.toFixed(0)}% of the way to your goal!`,
-        amount,
-        percentage,
-      });
-    }
+    await insertNotification(userId, {
+      type: 'goal_milestone',
+      title: `Savings Milestone: ${goalName}`,
+      description: `You're ${percentage.toFixed(0)}% of the way to your goal!`,
+      amount,
+      percentage,
+    });
   }
 }
 
-// Clear all notifications
-export function clearAllNotifications(): void {
-  localStorage.removeItem(NOTIFICATIONS_KEY);
-  dispatchNotificationsChanged();
+/** Show goal completed. */
+export async function showGoalCompleted(userId: string, goalName: string, amount: number): Promise<void> {
+  const alertKey = `goal-completed-${goalName}`;
+  if (localStorage.getItem(alertKey)) return;
+
+  localStorage.setItem(alertKey, 'true');
+
+  toast.success(`Goal Achieved: ${goalName}`, {
+    description: `Congratulations! You've reached your savings goal!`,
+  });
+
+  await insertNotification(userId, {
+    type: 'goal_completed',
+    title: `Goal Achieved: ${goalName}`,
+    description: `Congratulations! You've reached your savings goal!`,
+    amount,
+    percentage: 100,
+  });
 }
+
+/** Generate a weekly health notification (once per ISO week). */
+export async function generateWeeklyHealthNotification(userId: string, score: number, insight: string): Promise<void> {
+  const now = new Date();
+  const weekKey = `health-weekly-${getISOWeekYear(now)}-W${String(getISOWeek(now)).padStart(2, '0')}`;
+  if (localStorage.getItem(weekKey)) return;
+
+  const label = score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work';
+
+  await insertNotification(userId, {
+    type: 'health_weekly',
+    title: `Weekly Health: ${score}/100 — ${label}`,
+    description: insight,
+  });
+
+  localStorage.setItem(weekKey, 'true');
+}
+
+/** Generate a weekly tip notification (once per ISO week). */
+export async function generateWeeklyTip(userId: string): Promise<void> {
+  const now = new Date();
+  const weekNumber = getISOWeek(now);
+  const weekKey = `tip-weekly-${getISOWeekYear(now)}-W${String(weekNumber).padStart(2, '0')}`;
+  if (localStorage.getItem(weekKey)) return;
+
+  const tip = WEEKLY_TIPS[weekNumber % WEEKLY_TIPS.length];
+
+  await insertNotification(userId, {
+    type: 'weekly_tip',
+    title: 'Weekly Tip',
+    description: tip,
+  });
+
+  localStorage.setItem(weekKey, 'true');
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 const WEEKLY_TIPS: string[] = [
   "Track every expense for 7 days — awareness alone can reduce spending by 10-15%.",
@@ -270,63 +356,19 @@ const WEEKLY_TIPS: string[] = [
   "Celebrate small wins — hitting a savings milestone keeps motivation high.",
 ];
 
-// Generate a weekly health notification (once per ISO week)
-export function generateWeeklyHealthNotification(score: number, insight: string): void {
-  const now = new Date();
-  const weekKey = `health-weekly-${getISOWeekYear(now)}-W${String(getISOWeek(now)).padStart(2, '0')}`;
-
-  if (localStorage.getItem(weekKey)) return;
-
-  const label = score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work';
-
-  addNotification({
-    type: 'health_weekly',
-    title: `Weekly Health: ${score}/100 — ${label}`,
-    description: insight,
-  });
-
-  localStorage.setItem(weekKey, 'true');
-}
-
-// Generate a weekly tip notification (once per ISO week)
-export function generateWeeklyTip(): void {
-  const now = new Date();
-  const weekNumber = getISOWeek(now);
-  const weekKey = `tip-weekly-${getISOWeekYear(now)}-W${String(weekNumber).padStart(2, '0')}`;
-
-  if (localStorage.getItem(weekKey)) return;
-
-  const tip = WEEKLY_TIPS[weekNumber % WEEKLY_TIPS.length];
-
-  addNotification({
-    type: 'weekly_tip',
-    title: 'Weekly Tip',
-    description: tip,
-  });
-
-  localStorage.setItem(weekKey, 'true');
-}
-
-// Show goal completed
-export function showGoalCompleted(goalName: string, amount: number) {
-  const alertKey = `goal-completed-${goalName}`;
-  const shown = localStorage.getItem(alertKey);
-
-  if (!shown) {
-    localStorage.setItem(alertKey, 'true');
-
-    // Show toast
-    toast.success(`Goal Achieved: ${goalName}`, {
-      description: `Congratulations! You've reached your savings goal!`
-    });
-
-    // Add to notifications
-    addNotification({
-      type: 'goal_completed',
-      title: `Goal Achieved: ${goalName}`,
-      description: `Congratulations! You've reached your savings goal!`,
-      amount,
-      percentage: 100,
-    });
-  }
+/** Map a Supabase row to the AppNotification shape. */
+function mapRow(row: Record<string, unknown>): AppNotification {
+  return {
+    id: row.id as string,
+    type: row.type as AppNotification['type'],
+    title: row.title as string,
+    description: (row.description as string) || '',
+    amount: row.amount != null ? Number(row.amount) : undefined,
+    percentage: row.percentage != null ? Number(row.percentage) : undefined,
+    deep_link: (row.deep_link as string) || undefined,
+    image: (row.image as string) || undefined,
+    metadata: row.metadata as Record<string, string> | undefined,
+    created_at: row.created_at as string,
+    read: row.read as boolean,
+  };
 }

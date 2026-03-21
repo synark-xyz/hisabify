@@ -1,12 +1,41 @@
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
+import { Capacitor } from '@capacitor/core';
 
 interface ExportData {
   transactions: Transaction[];
   dateRange: { from: Date; to: Date };
 }
 
-export function exportToCSV({ transactions, dateRange }: ExportData): void {
+async function nativeAwareDownload(blob: Blob, filename: string, type: string): Promise<void> {
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+    try {
+      const file = new File([blob], filename, { type });
+      if (
+        typeof navigator.share === 'function' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      }
+    } catch {
+      // Share cancelled or unsupported — fall through
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export async function exportToCSV({ transactions, dateRange }: ExportData): Promise<void> {
   const headers = [
     'Date',
     'Merchant',
@@ -33,18 +62,8 @@ export function exportToCSV({ transactions, dateRange }: ExportData): void {
   ].join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute(
-    'download',
-    `transactions_${format(dateRange.from, 'yyyy-MM-dd')}_to_${format(dateRange.to, 'yyyy-MM-dd')}.csv`
-  );
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const filename = `transactions_${format(dateRange.from, 'yyyy-MM-dd')}_to_${format(dateRange.to, 'yyyy-MM-dd')}.csv`;
+  await nativeAwareDownload(blob, filename, 'text/csv;charset=utf-8;');
 }
 
 interface BudgetExportData {
@@ -60,7 +79,7 @@ interface BudgetExportData {
   }>;
 }
 
-export function exportBudgetsToCSV({ budgets }: BudgetExportData): void {
+export async function exportBudgetsToCSV({ budgets }: BudgetExportData): Promise<void> {
   const headers = [
     'Name',
     'Category',
@@ -89,13 +108,6 @@ export function exportBudgetsToCSV({ budgets }: BudgetExportData): void {
   ].join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `budgets_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const filename = `budgets_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+  await nativeAwareDownload(blob, filename, 'text/csv;charset=utf-8;');
 }

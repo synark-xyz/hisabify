@@ -241,7 +241,7 @@ export function useReportData(filters: ReportFilters) {
       .sort((a, b) => a.date.localeCompare(b.date));
 
     // Budget performance — filter to budgets active during the report period
-    const activeBudgets = budgets.filter((b: any) => {
+    const activeBudgets = budgets.filter((b) => {
       // Skip template budgets
       if (b.is_template) return false;
 
@@ -277,7 +277,7 @@ export function useReportData(filters: ReportFilters) {
       }
     });
 
-    const budgetPerformance = activeBudgets.map((b: any) => {
+    const budgetPerformance = activeBudgets.map((b) => {
       // Primary: use budget_id linked transactions
       let spent = budgetIdToSpent.get(b.id) || 0;
 
@@ -316,8 +316,8 @@ export function useReportData(filters: ReportFilters) {
       const target = Number(g.target_amount);
 
       // Sum contributions minus withdrawals for this goal
-      const goalTxs = savingsTransactions.filter((t: any) => t.savings_goal_id === g.id);
-      const netAmount = goalTxs.reduce((sum: number, tx: any) => {
+      const goalTxs = savingsTransactions.filter((t) => t.savings_goal_id === g.id);
+      const netAmount = goalTxs.reduce((sum: number, tx) => {
         const amt = Number(tx.amount_converted || tx.amount);
         const categoryName = tx.category?.name;
         if (categoryName === "Savings") return sum + amt;

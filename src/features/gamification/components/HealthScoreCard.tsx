@@ -14,12 +14,14 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { HealthScoreDetailSheet } from './HealthScoreDetailSheet';
 
 export function HealthScoreCard() {
     const { score, loading } = useHealthScore();
     const { referralCode } = useReferral();
     const { variant } = useTheme();
     const [shareCopied, setShareCopied] = useState(false);
+    const [detailOpen, setDetailOpen] = useState(false);
 
     if (loading) {
         return <Skeleton className="w-full h-[180px] rounded-3xl" />;
@@ -74,6 +76,7 @@ export function HealthScoreCard() {
     };
 
     return (
+        <>
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -123,8 +126,12 @@ export function HealthScoreCard() {
             </div>
 
             <div className="flex items-center gap-6">
-                {/* Gauge */}
-                <div className="relative w-32 h-32 flex-shrink-0 flex items-center justify-center">
+                {/* Gauge — tappable to open detail sheet */}
+                <button
+                    onClick={() => setDetailOpen(true)}
+                    className="relative w-32 h-32 flex-shrink-0 flex items-center justify-center active:scale-95 transition-transform"
+                    aria-label="View health score details"
+                >
                     <svg className="w-full h-full transform -rotate-90">
                         {/* Track */}
                         <circle
@@ -164,7 +171,7 @@ export function HealthScoreCard() {
                         </motion.span>
                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-0.5">Score</span>
                     </div>
-                </div>
+                </button>
 
                 {/* Info / Tip */}
                 <div className="flex-1 space-y-3">
@@ -260,5 +267,8 @@ export function HealthScoreCard() {
                 </div>
             </div>
         </motion.div>
+
+        <HealthScoreDetailSheet open={detailOpen} onOpenChange={setDetailOpen} />
+        </>
     );
 }

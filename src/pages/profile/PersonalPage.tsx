@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { CustomerCenterTrigger } from '@/components/CustomerCenterTrigger';
 
 export function PersonalPage() {
     const navigate = useNavigate();
@@ -295,6 +296,12 @@ export function PersonalPage() {
                             </Button>
                         </motion.div>
                     )}
+                </div>
+
+                {/* Subscription management */}
+                <div className="mt-6 rounded-2xl border border-border/50 bg-card p-4">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Subscription</p>
+                    <CustomerCenterTrigger variant="row" />
                 </div>
 
             </main>

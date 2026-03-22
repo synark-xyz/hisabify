@@ -1,13 +1,23 @@
 import { useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { useProfile } from './useProfile';
 import { useAuth } from './useAuth';
-import { useRevenueCat } from './useRevenueCat';
-import { logger } from '@/lib/logger';
+import { useRevenueCat, type PlanType } from './useRevenueCat';
 
 export function useSubscription() {
   const { profile, loading } = useProfile();
   const { user } = useAuth();
-  const { getOfferings, purchasePackage, restorePurchases } = useRevenueCat();
+  const {
+    getOfferings,
+    purchasePlan: rcPurchasePlan,
+    purchasePackage,
+    restorePurchases,
+    isEntitled,
+    revenueCatReady,
+    presentCustomerCenter,
+    refreshCustomerInfo,
+    presentPaywall: rcPresentPaywall,
+  } = useRevenueCat();
 
   // Hardcoded override for the owner account
   const isSpecialUser = user?.email === 'sam103043@gmail.com';
@@ -17,65 +27,51 @@ export function useSubscription() {
     ? new Date(profile.referral_granted_until) > new Date()
     : false;
 
+  const isPremium =
+    (profile.subscription_type === 'pro' && profile.subscription_status === 'active') ||
+    hasActiveReferralGrant ||
+    isSpecialUser ||
+    isEntitled;
+
   /**
-   * Initiates an in-app purchase via RevenueCat for the given plan.
-   * Maps 'monthly' → MONTHLY package identifier, 'yearly' → ANNUAL.
-   * Throws on failure so callers can surface errors via toast.
+   * Purchase a plan by type. On native, delegates to RevenueCat.
+   * Supported plans: monthly | yearly | lifetime | three_month
    */
   const purchasePlan = useCallback(
-    async (plan: 'monthly' | 'yearly'): Promise<void> => {
-      if (!user) {
-        throw new Error('You must be signed in to upgrade.');
-      }
-
-      const offerings = await getOfferings();
-      if (!offerings) {
-        throw new Error('Could not load subscription plans. Please try again.');
-      }
-
-      const current = offerings.current;
-      if (!current) {
-        throw new Error('No active offering found. Please try again later.');
-      }
-
-      // RevenueCat package identifiers per the Play Store product configuration
-      const packageIdentifier = plan === 'monthly' ? '$rc_monthly' : '$rc_annual';
-
-      const pkg = current.availablePackages.find(
-        (p) => p.packageType === (plan === 'monthly' ? 'MONTHLY' : 'ANNUAL'),
-      ) ?? current.availablePackages.find(
-        (p) => p.identifier === packageIdentifier,
-      );
-
-      if (!pkg) {
-        logger.error('[useSubscription] purchasePlan: package not found', {
-          plan,
-          availablePackages: current.availablePackages.map((p) => ({
-            id: p.identifier,
-            type: p.packageType,
-          })),
-        });
-        throw new Error(`The ${plan} plan is not available right now.`);
-      }
-
-      await purchasePackage(pkg);
+    async (plan: PlanType): Promise<void> => {
+      if (!user) throw new Error('You must be signed in to upgrade.');
+      await rcPurchasePlan(plan);
     },
-    [user, getOfferings, purchasePackage],
+    [user, rcPurchasePlan],
   );
 
-  // Backward-compatible alias — UpgradeModal already calls this name.
-  // New code should prefer purchasePlan directly.
+  /**
+   * Present the RevenueCat Customer Center (native only).
+   * Allows users to manage/cancel their subscription without contacting support.
+   */
+  const showCustomerCenter = useCallback(async (): Promise<void> => {
+    if (!Capacitor.isNativePlatform()) return;
+    await presentCustomerCenter();
+  }, [presentCustomerCenter]);
+
+  const showPaywall = useCallback(async (): Promise<void> => {
+    await rcPresentPaywall();
+  }, [rcPresentPaywall]);
+
+  // Backward-compatible alias
   const createCheckoutSession = purchasePlan;
 
   return {
-    isPremium: (
-      (profile.subscription_type === 'pro' && profile.subscription_status === 'active') ||
-      hasActiveReferralGrant ||
-      isSpecialUser
-    ),
+    isPremium,
     loading,
+    revenueCatReady,
     purchasePlan,
     createCheckoutSession,
     restorePurchases,
+    getOfferings,
+    purchasePackage,
+    showCustomerCenter,
+    showPaywall,
+    refreshCustomerInfo,
   };
 }

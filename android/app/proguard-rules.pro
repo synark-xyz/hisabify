@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# RevenueCat — keep SDK classes for in-app purchases
+-keep class com.revenuecat.purchases.** { *; }

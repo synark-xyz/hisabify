@@ -59,6 +59,45 @@ export interface HealthScoreResult {
   insight: string;
 }
 
+export interface HealthScoreTip {
+  text: string;
+  component: 'budget' | 'savings' | 'activity' | 'general';
+}
+
+/**
+ * Returns 1–3 actionable tips based on the weakest score components.
+ */
+export function generateTips(
+  breakdown: { budget: number; savings: number; activity: number },
+  total: number,
+): HealthScoreTip[] {
+  if (total >= 90) {
+    return [{ text: "You're in the top tier. Keep it up!", component: 'general' }];
+  }
+
+  const tips: HealthScoreTip[] = [];
+
+  if (breakdown.budget < 20) {
+    tips.push({ text: "You're overspending. Try setting stricter budgets.", component: 'budget' });
+  }
+
+  if (breakdown.savings < 25) {
+    tips.push({ text: "Set up a savings goal and contribute monthly to boost this score.", component: 'savings' });
+  } else if (breakdown.savings < 35) {
+    tips.push({ text: "Enable auto-contribute on your savings goals to earn +5 pts.", component: 'savings' });
+  }
+
+  if (breakdown.activity < 10) {
+    tips.push({ text: "Log transactions regularly — inactivity costs 2 pts/day.", component: 'activity' });
+  }
+
+  if (tips.length === 0) {
+    tips.push({ text: "Keep up the good work! Complete more savings goals to push higher.", component: 'general' });
+  }
+
+  return tips.slice(0, 3);
+}
+
 export function calculateHealthScore(params: HealthScoreParams): HealthScoreResult {
   let budgetScore = 0;
   if (params.totalBudget > 0) {

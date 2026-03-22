@@ -1,3 +1,4 @@
+            // keep as-is — no changes
 apply plugin: 'com.android.application'
 
 android {
@@ -17,12 +18,33 @@ android {
         }
     }
     buildTypes {
+        staging {
+            debuggable true
+            minifyEnabled false
+            applicationIdSuffix ".staging"
+            versionNameSuffix "-staging"
+            buildConfigField "String", "ENVIRONMENT", '"staging"'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
         release {
             minifyEnabled true
-            // buildConfigField "String", "ENVIRONMENT", '"release"'
-            // Use the signing config defined above when available
-            // signingConfig signingConfigs.release
+            buildConfigField "String", "ENVIRONMENT", '"release"'
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // signingConfig signingConfigs.release  ← uncomment when keystore is set up
+        }
+    }
+    buildFeatures {
+        buildConfig true
+    }
+    flavorDimensions "tier"
+    productFlavors {
+        base {
+            dimension "tier"
+            buildConfigField "String", "TIER", '"base"'
+        }
+        pro {
+            dimension "tier"
+            buildConfigField "String", "TIER", '"pro"'
         }
     }
 }
@@ -53,12 +75,5 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-        apply plugin: 'com.google.firebase.crashlytics'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work: ${e.message}")
-}
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'

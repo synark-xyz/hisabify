@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Check, Clock, Crown, RotateCcw, Sparkles, Target, Wallet, Loader2 } from 'lucide-react';
@@ -6,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
 import { cn } from '@/lib/utils';
+
+const isNativePlatform = Capacitor.isNativePlatform();
 
 interface UpgradeModalProps {
   open: boolean;
@@ -17,8 +20,10 @@ const DEFAULT_BENEFITS = [
   'Unlimited budgets and savings goals',
   'All-time transaction history — no 30-day cap',
   'Multi-currency support with live exchange rates',
-  'PDF & CSV report exports',
+  'Financial report template with PDF & CSV report exports',
   'Advanced analytics, automation, and savings history',
+  'AI analysis of spending patterns for deeper insights and personalized financial tips',
+  'Voice note, receipt scanner, and Premium App theme -- CyberPunk, and more!'
 ];
 
 const SOURCE_CONFIG: Record<string, {
@@ -75,15 +80,8 @@ function getUpgradeContent(source?: string) {
       benefits: DEFAULT_BENEFITS,
     };
   }
-
   const matched = SOURCE_CONFIG[source];
-  if (matched) {
-    return {
-      ...matched,
-      benefits: matched.benefits || DEFAULT_BENEFITS,
-    };
-  }
-
+  if (matched) return { ...matched, benefits: matched.benefits || DEFAULT_BENEFITS };
   return {
     eyebrow: 'Hisabify Pro',
     title: 'Upgrade to Pro',
@@ -94,7 +92,7 @@ function getUpgradeContent(source?: string) {
 
 export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) {
   const { toast } = useToast();
-  const { purchasePlan, restorePurchases } = useSubscription();
+  const { purchasePlan, restorePurchases, revenueCatReady, showPaywall } = useSubscription();
   const { monthlyPrice, yearlyPrice } = useSubscriptionPricing();
   const content = getUpgradeContent(source);
   const [checkoutLoading, setCheckoutLoading] = useState<'monthly' | 'yearly' | 'restore' | null>(null);
@@ -108,6 +106,16 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
     }
   }, [open, source]);
 
+  // On native: delegate entirely to RevenueCat's built-in paywall UI
+  useEffect(() => {
+    if (!open || !isNativePlatform) return;
+    onOpenChange(false);
+    showPaywall();
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Don't render the custom modal UI on native — RC handles it
+  if (isNativePlatform) return null;
+
   const handleUpgrade = async (plan: 'monthly' | 'yearly') => {
     import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
       analytics.logEvent(AnalyticsEvents.SUBSCRIPTION_CTA_CLICK, { plan });
@@ -117,6 +125,8 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
       await purchasePlan(plan);
       onOpenChange(false);
     } catch (err) {
+      // RC throws with userCancelled=true when user dismisses billing sheet — ignore silently
+      if ((err as Record<string, unknown>).userCancelled) return;
       const message = err instanceof Error ? err.message : 'Purchase failed';
       toast({ title: 'Purchase error', description: message, variant: 'destructive' });
     } finally {
@@ -135,6 +145,8 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
       setCheckoutLoading(null);
     }
   };
+
+  const purchaseDisabled = checkoutLoading !== null || !revenueCatReady;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -203,7 +215,6 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
 
             {/* Pricing cards */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Monthly */}
               <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-purple-400 mb-2">Monthly</p>
                 <div className="flex items-baseline gap-0.5 mb-1">
@@ -212,7 +223,6 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                 </div>
                 <p className="text-[10px] text-muted-foreground">7-day free trial</p>
               </div>
-              {/* Yearly */}
               <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 relative">
                 <div className="absolute -top-2 -right-1">
                   <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider shadow-sm">
@@ -228,7 +238,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mt-3">
               <Sparkles className="h-4 w-4 text-purple-400 flex-shrink-0" />
               <p className="text-xs text-muted-foreground">
                 Try free for 7 days — cancel anytime before you're charged.
@@ -240,30 +250,26 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                 className={cn(
                   'h-12 w-full rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 text-base font-black shadow-lg shadow-purple-500/20 transition-opacity hover:opacity-95'
                 )}
-                disabled={checkoutLoading !== null}
+                disabled={purchaseDisabled}
                 onClick={() => handleUpgrade('monthly')}
               >
-                {checkoutLoading === 'monthly' ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
+                {checkoutLoading === 'monthly' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Start 7-Day Free Trial — {monthlyPrice}/mo
                 {checkoutLoading !== 'monthly' && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
               <Button
                 variant="outline"
                 className="h-10 w-full rounded-2xl font-bold text-sm border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/50"
-                disabled={checkoutLoading !== null}
+                disabled={purchaseDisabled}
                 onClick={() => handleUpgrade('yearly')}
               >
-                {checkoutLoading === 'yearly' ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
+                {checkoutLoading === 'yearly' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Annual Plan — {yearlyPrice}/year (save 33%)
               </Button>
               <Button
                 variant="ghost"
                 className="h-9 w-full rounded-2xl text-xs text-muted-foreground"
-                disabled={checkoutLoading !== null}
+                disabled={purchaseDisabled}
                 onClick={handleRestore}
               >
                 {checkoutLoading === 'restore' ? (
@@ -276,7 +282,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               <Button
                 variant="ghost"
                 className="w-full rounded-2xl text-muted-foreground"
-                disabled={checkoutLoading !== null}
+                disabled={purchaseDisabled}
                 onClick={() => onOpenChange(false)}
               >
                 Maybe Later

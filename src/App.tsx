@@ -32,6 +32,7 @@ import { PreferencesPage } from "@/pages/settings/PreferencesPage";
 import { NotificationSettingsPage } from "@/pages/settings/NotificationSettingsPage";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { DeleteAccountPage } from "@/pages/DeleteAccountPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { SupportPage } from "@/pages/SupportPage";
 import { FaqPage } from "@/pages/FaqPage";
@@ -224,6 +225,7 @@ function AppRoutes() {
         element={<InstallPage />}
       />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/delete-account" element={<DeleteAccountPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

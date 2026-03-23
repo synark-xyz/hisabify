@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Trash2, Database } from 'lucide-react';
+import { Download, Trash2, UserX, AlertTriangle, FileJson } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,10 +18,18 @@ import { Label } from '@/components/ui/label';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
+const cardVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: (i: number) => ({
+        opacity: 1,
+        y: 0,
+        transition: { delay: i * 0.07, duration: 0.25, ease: 'easeOut' },
+    }),
+};
+
 export function DataPage() {
     const { variant } = useTheme();
     const navigate = useNavigate();
-    // ... rest of state ...
     const { user, signOut } = useAuth();
     const { profile } = useProfile();
     const { toast } = useToast();
@@ -31,6 +38,9 @@ export function DataPage() {
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
+    const [deleteAccountConfirmText, setDeleteAccountConfirmText] = useState('');
+    const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
 
     const handleExportAllData = async () => {
         if (!user) return;
@@ -67,112 +77,245 @@ export function DataPage() {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
-            toast({ title: 'Data exported successfully' });
-        } catch (error) {
+            toast({ title: 'Export complete', description: 'Your data has been downloaded.' });
+        } catch {
             toast({ title: 'Export failed', description: 'Could not export data', variant: 'destructive' });
         }
         setLoading(false);
     };
 
-    const handleDeleteAccount = async () => {
+    const deleteAllTableData = async (userId: string) => {
+        await Promise.all([
+            supabase.from('transactions').delete().eq('user_id', userId),
+            supabase.from('budgets').delete().eq('user_id', userId),
+            supabase.from('cards').delete().eq('user_id', userId),
+            supabase.from('savings_goals').delete().eq('user_id', userId),
+            supabase.from('payment_reminders').delete().eq('user_id', userId),
+            supabase.from('recurring_expenses').delete().eq('user_id', userId),
+            supabase.from('report_templates').delete().eq('user_id', userId),
+        ]);
+    };
+
+    const handleDeleteData = async () => {
         if (deleteConfirmText !== 'DELETE') return;
         setDeleteLoading(true);
 
         try {
-            // Delete all user data
-            await Promise.all([
-                supabase.from('transactions').delete().eq('user_id', user!.id),
-                supabase.from('budgets').delete().eq('user_id', user!.id),
-                supabase.from('cards').delete().eq('user_id', user!.id),
-                supabase.from('savings_goals').delete().eq('user_id', user!.id),
-                supabase.from('payment_reminders').delete().eq('user_id', user!.id),
-                supabase.from('recurring_expenses').delete().eq('user_id', user!.id),
-                supabase.from('report_templates').delete().eq('user_id', user!.id),
-            ]);
-
+            await deleteAllTableData(user!.id);
             await signOut();
-            toast({ title: 'Account data deleted', description: 'Your data has been removed. Contact support to fully delete your account.' });
+            toast({ title: 'Data deleted', description: 'All your financial data has been removed.' });
             navigate('/auth');
-        } catch (error) {
+        } catch {
             toast({ title: 'Error', description: 'Could not delete account data', variant: 'destructive' });
         }
         setDeleteLoading(false);
         setShowDeleteDialog(false);
     };
 
+    const handleDeleteFullAccount = async () => {
+        if (deleteAccountConfirmText !== 'DELETE ACCOUNT') return;
+        setDeleteAccountLoading(true);
+
+        try {
+            await deleteAllTableData(user!.id);
+            const { error } = await supabase.functions.invoke('delete-user');
+            if (error) throw error;
+
+            await signOut();
+            toast({ title: 'Account deleted', description: 'Your account and all data have been permanently removed.' });
+            navigate('/auth');
+        } catch {
+            toast({ title: 'Error', description: 'Could not delete your account. Please try again or contact support.', variant: 'destructive' });
+        }
+        setDeleteAccountLoading(false);
+        setShowDeleteAccountDialog(false);
+    };
+
     return (
-        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+        <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+            <main className="px-4 py-6 space-y-3 max-w-lg mx-auto">
 
-            <main className="px-4 py-6 space-y-6">
+                {/* ── Your Data ─────────────────────────────────────────── */}
+                <motion.p
+                    className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pb-1"
+                    custom={0} variants={cardVariants} initial="hidden" animate="visible"
+                >
+                    Your Data
+                </motion.p>
 
-                {/* Export Card */}
-                <div className="bg-card rounded-2xl p-6 border border-border/50 text-center space-y-4">
-                    <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Download className="w-8 h-8 text-blue-500" />
+                <motion.div
+                    custom={1} variants={cardVariants} initial="hidden" animate="visible"
+                    className="bg-card rounded-2xl border border-border/50 overflow-hidden"
+                >
+                    <div className="flex items-center gap-4 p-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                            <FileJson className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-foreground text-sm">Export Data</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Download all transactions, budgets, cards &amp; goals as JSON
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="font-bold text-lg text-foreground">Export Data</h3>
-                        <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-                            Download a copy of all your financial data, including transactions, budgets, and goals.
-                        </p>
+                    <div className="px-4 pb-4">
+                        <Button
+                            onClick={handleExportAllData}
+                            disabled={loading}
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                        >
+                            <Download className="w-4 h-4 mr-2" />
+                            {loading ? 'Exporting…' : 'Download JSON'}
+                        </Button>
                     </div>
-                    <Button
-                        onClick={handleExportAllData}
-                        disabled={loading}
-                        className="w-full"
-                        variant="outline"
-                    >
-                        {loading ? 'Exporting...' : 'Download JSON'}
-                    </Button>
-                </div>
+                </motion.div>
 
-                {/* Danger Zone */}
-                <div className="bg-destructive/5 rounded-2xl p-6 border border-destructive/20 text-center space-y-4">
-                    <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Trash2 className="w-8 h-8 text-destructive" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg text-destructive">Delete Account Data</h3>
-                        <p className="text-sm text-destructive/80 mt-1 max-w-xs mx-auto">
-                            Permanently delete all your financial data. This action cannot be undone.
-                        </p>
+                {/* ── Danger Zone ───────────────────────────────────────── */}
+                <motion.div
+                    custom={2} variants={cardVariants} initial="hidden" animate="visible"
+                    className="flex items-center gap-3 pt-4 pb-1 px-1"
+                >
+                    <AlertTriangle className="w-3.5 h-3.5 text-destructive flex-shrink-0" />
+                    <p className="text-xs font-semibold text-destructive uppercase tracking-wider">
+                        Danger Zone
+                    </p>
+                    <div className="flex-1 h-px bg-destructive/20" />
+                </motion.div>
+
+                {/* Delete Financial Data — amber (account stays) */}
+                <motion.div
+                    custom={3} variants={cardVariants} initial="hidden" animate="visible"
+                    className="bg-amber-500/5 rounded-2xl border border-amber-500/25 overflow-hidden"
+                >
+                    <div className="flex items-center gap-4 p-4">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                            <Trash2 className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-foreground text-sm">Delete Financial Data</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Erase all records — your login account is kept
+                            </p>
+                        </div>
                     </div>
 
-                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" className="w-full">
-                                Delete Data
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete your account data and remove your data from our servers.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <div className="py-4">
-                                <Label>Type <span className="font-mono font-bold">DELETE</span> to confirm</Label>
-                                <Input
-                                    value={deleteConfirmText}
-                                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                                    className="mt-2"
-                                    placeholder="DELETE"
-                                />
-                            </div>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleDeleteAccount}
-                                    disabled={deleteConfirmText !== 'DELETE' || deleteLoading}
-                                    className="bg-destructive hover:bg-destructive/90"
+                    <div className="px-4 pb-4">
+                        <AlertDialog
+                            open={showDeleteDialog}
+                            onOpenChange={(open) => {
+                                setShowDeleteDialog(open);
+                                if (!open) setDeleteConfirmText('');
+                            }}
+                        >
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600 hover:border-amber-500/60"
                                 >
-                                    {deleteLoading ? 'Deleting...' : 'Delete Data'}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
+                                    Delete Data
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete all financial data?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This permanently removes all transactions, budgets, cards, savings goals, and reminders.
+                                        Your login account stays active. This cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="py-3 space-y-1.5">
+                                    <Label className="text-sm">
+                                        Type <span className="font-mono font-bold">DELETE</span> to confirm
+                                    </Label>
+                                    <Input
+                                        value={deleteConfirmText}
+                                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                                        placeholder="DELETE"
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleDeleteData}
+                                        disabled={deleteConfirmText !== 'DELETE' || deleteLoading}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                        {deleteLoading ? 'Deleting…' : 'Delete Data'}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </motion.div>
+
+                {/* Delete Account — red (fully irreversible) */}
+                <motion.div
+                    custom={4} variants={cardVariants} initial="hidden" animate="visible"
+                    className="bg-destructive/5 rounded-2xl border border-destructive/25 overflow-hidden"
+                >
+                    <div className="flex items-center gap-4 p-4">
+                        <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                            <UserX className="w-5 h-5 text-destructive" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-foreground text-sm">Delete Account</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Permanently remove your account and all data
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="px-4 pb-4">
+                        <AlertDialog
+                            open={showDeleteAccountDialog}
+                            onOpenChange={(open) => {
+                                setShowDeleteAccountDialog(open);
+                                if (!open) setDeleteAccountConfirmText('');
+                            }}
+                        >
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm" className="w-full">
+                                    Delete Account
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Permanently delete your account?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This removes your account and everything in it — transactions, budgets, cards,
+                                        goals, and login credentials. You will not be able to sign in again.
+                                        This cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="py-3 space-y-1.5">
+                                    <Label className="text-sm">
+                                        Type <span className="font-mono font-bold">DELETE ACCOUNT</span> to confirm
+                                    </Label>
+                                    <Input
+                                        value={deleteAccountConfirmText}
+                                        onChange={(e) => setDeleteAccountConfirmText(e.target.value)}
+                                        placeholder="DELETE ACCOUNT"
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleDeleteFullAccount}
+                                        disabled={deleteAccountConfirmText !== 'DELETE ACCOUNT' || deleteAccountLoading}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                        {deleteAccountLoading ? 'Deleting…' : 'Delete My Account'}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </motion.div>
 
             </main>
         </div>

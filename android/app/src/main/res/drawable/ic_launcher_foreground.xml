@@ -42,9 +42,9 @@
                             android:startY="0"
                             android:endX="1024"
                             android:endY="1024">
-                            <item android:offset="0" android:color="#003B82F6"/>
-                            <item android:offset="0.5" android:color="#008B5CF6"/>
-                            <item android:offset="1" android:color="#00EC4899"/>
+                            <item android:offset="0" android:color="#3B82F6"/>
+                            <item android:offset="0.5" android:color="#8B5CF6"/>
+                            <item android:offset="1" android:color="#EC4899"/>
                         </gradient>
                     </aapt:attr>
                 </path>

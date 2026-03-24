@@ -180,9 +180,10 @@
 - Vercel (SPA deployment)
   - Configuration: `vercel.json`
   - Rewrites: All routes → `/index.html` (React Router)
-  - Auto-deploy: Enabled for `main` branch only, disabled for `develop`
-  - Preview URL: `https://hisabify-pi.vercel.app`
-  - Environment: Staging URL used for mobile testing (`capacitor.config.ts`)
+  - GitHub auto-deploy: **disabled** (`"github": { "enabled": false }`) — all deployments via GitHub Actions
+  - Production deploy: `.github/workflows/production-deploy.yml` (push to `main`)
+  - Staging deploy: `.github/workflows/staging-deploy.yml` (push to `develop`)
+  - Staging URL: `https://hisabify-staging.vercel.app` (fixed alias, always latest `develop`)
 
 **Mobile App Distribution:**
 - iOS App Store - Native iOS app (built with Xcode from Capacitor)

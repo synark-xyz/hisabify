@@ -18,7 +18,7 @@ This produces 6 build variants:
 | Variant | App ID | Firebase | Web Source |
 |---|---|---|---|
 | `baseDebug` / `proDebug` | `io.synark.hisabify` | Root fallback | Local dev server |
-| `baseStaging` / `proStaging` | `io.synark.hisabify.staging` | STG project | Vercel preview URL |
+| `baseStaging` / `proStaging` | `io.synark.hisabify.staging` | STG project | `https://hisabify-staging.vercel.app` |
 | `baseRelease` / `proRelease` | `io.synark.hisabify` | PROD project | Bundled `dist/` |
 
 ---
@@ -73,21 +73,18 @@ android/app/
 
 ## 3. Building a Staging APK
 
-### Option A: Default staging URL (Vercel main preview)
+The staging environment always points to the fixed alias `https://hisabify-staging.vercel.app`,
+which is automatically updated on every push to the `develop` branch via GitHub Actions.
+
 ```bash
 npm run cap:android:staging
 ```
 This runs:
 1. `npm run build` — builds the web app
-2. `APP_ENV=staging npx cap sync` — writes the Vercel URL into `capacitor.config.json`
+2. `APP_ENV=staging npx cap sync` — writes the staging URL into `capacitor.config.json`
 3. `npx cap open android` — opens Android Studio
 
 In Android Studio: **Build Variants** → select `baseStaging` → **Build APK** (or Run).
-
-### Option B: Per-PR Vercel preview URL
-```bash
-STAGING_URL=https://hisabify-abc123.vercel.app npm run cap:android:staging
-```
 
 ### Verifying the staging config
 After `cap sync`, check:
@@ -96,7 +93,7 @@ cat android/app/src/main/assets/capacitor.config.json
 ```
 It should contain:
 ```json
-{ "server": { "url": "https://hisabify-pi.vercel.app" } }
+{ "server": { "url": "https://hisabify-staging.vercel.app" } }
 ```
 
 ---
@@ -172,15 +169,19 @@ For automated builds, set these environment variables:
 | Variable | Purpose |
 |---|---|
 | `APP_ENV` | `staging` or `production` |
-| `STAGING_URL` | Vercel preview URL (staging builds only) |
 | `KEYSTORE_PASSWORD` | Keystore password (release builds only) |
 | `KEY_PASSWORD` | Key password (release builds only) |
+
+The staging URL is always `https://hisabify-staging.vercel.app` — no dynamic URL needed.
+Web deployments are handled by two GitHub Actions workflows:
+- **`.github/workflows/staging-deploy.yml`** — deploys `develop` → aliases to `hisabify-staging.vercel.app`
+- **`.github/workflows/production-deploy.yml`** — deploys `main` → production
 
 Example CI step (staging):
 ```bash
 npm ci
 npm run build
-APP_ENV=staging STAGING_URL=$VERCEL_PREVIEW_URL npx cap sync
+APP_ENV=staging npx cap sync
 cd android && ./gradlew assembleBaseStaging
 ```
 

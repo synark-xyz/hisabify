@@ -2,9 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "github": {
     "deploymentEnabled": {
-      "develop": true
+      "develop": false
     }
   },
-  "alias": ["https://hisabify-staging.vercel.app"],
+  "alias": ["hisabify-staging.vercel.app"],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

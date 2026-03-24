@@ -160,6 +160,86 @@ export type Database = {
         }
         Relationships: []
       }
+      fcm_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fcm_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          title: string
+          description: string
+          amount: number | null
+          percentage: number | null
+          deep_link: string | null
+          image: string | null
+          metadata: Json | null
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          title: string
+          description?: string
+          amount?: number | null
+          percentage?: number | null
+          deep_link?: string | null
+          image?: string | null
+          metadata?: Json | null
+          read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          title?: string
+          description?: string
+          amount?: number | null
+          percentage?: number | null
+          deep_link?: string | null
+          image?: string | null
+          metadata?: Json | null
+          read?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       payment_reminders: {
         Row: {
           amount: number

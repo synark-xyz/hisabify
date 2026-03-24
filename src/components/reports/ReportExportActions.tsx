@@ -24,30 +24,37 @@ export function ReportExportActions({
 }: ReportExportActionsProps) {
   const { currencySymbol } = useCurrency();
 
-  const handleExportCSV = () => {
+  const toastSaveMessage = (savedTo: string, method: string) => {
+    if (method === 'downloads') return `Saved to Downloads/hisabify/`;
+    if (method === 'app-storage') return `Saved — use the share sheet to move to Downloads`;
+    if (method === 'share') return `File shared successfully`;
+    return `File downloaded`;
+  };
+
+  const handleExportCSV = async () => {
     if (!canExport) {
       onUpgradeRequired?.();
       return;
     }
 
     try {
-      exportReportToCSV({ reportData, filters, currencySymbol });
-      toast.success("CSV report downloaded!");
-    } catch (error) {
+      const result = await exportReportToCSV({ reportData, filters, currencySymbol });
+      toast.success("CSV report saved!", { description: toastSaveMessage(result.savedTo, result.method) });
+    } catch {
       toast.error("Failed to export CSV");
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!canExport) {
       onUpgradeRequired?.();
       return;
     }
 
     try {
-      exportReportToPDF({ reportData, filters, currencySymbol });
-      toast.success("PDF report downloaded!");
-    } catch (error) {
+      const result = await exportReportToPDF({ reportData, filters, currencySymbol });
+      toast.success("PDF report saved!", { description: toastSaveMessage(result.savedTo, result.method) });
+    } catch {
       toast.error("Failed to export PDF");
     }
   };

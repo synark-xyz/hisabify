@@ -18,9 +18,10 @@ function getLocalIP(): string {
 // 'production' → no server config; uses bundled dist assets (for App Store/Play Store builds)
 // 'staging'    → server.url points to Vercel deployment; accessible on any device without ngrok
 // 'local'      → server.url points to local dev server (same network required)
-const APP_ENV: 'production' | 'staging' | 'local' = 'production';
+const APP_ENV: 'production' | 'staging' | 'local' =
+  (process.env.APP_ENV as 'production' | 'staging' | 'local') || 'production';
 
-const STAGING_URL = 'https://hisabify-pi.vercel.app'; // update to preview URL when testing a branch
+const STAGING_URL = process.env.STAGING_URL || 'https://hisabify-pi.vercel.app'; // override via env var for per-PR preview URLs
 
 const DEVICE_TYPE: 'android-emulator' | 'android-physical' | 'ios-simulator' | 'ios-physical' = 'android-physical';
 
@@ -73,6 +74,9 @@ const config: CapacitorConfig = {
       style: 'dark',
       resizeOnFullScreen: false,
       accessoryBarVisible: true
+    },
+    PushNotifications: {
+      presentationOptions: ["alert", "sound"],
     }
   }
 };

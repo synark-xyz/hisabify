@@ -98,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         console.log('[Auth] User signed up successfully', { email });
         logger.info('User signed up successfully', { email });
+        import('@/lib/analytics').then(({ analytics }) => analytics.trackAuth('sign_up', 'email')).catch(() => {});
         loginRateLimiter.reset(`signup:${email}`);
       }
 
@@ -140,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         console.log('[Auth] User signed in successfully', { email });
         logger.info('User signed in successfully', { email });
+        import('@/lib/analytics').then(({ analytics }) => analytics.trackAuth('login', 'email')).catch(() => {});
         loginRateLimiter.reset(`signin:${email}`);
       }
 
@@ -172,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         console.log('[OAuth] Success', { provider, url: data?.url ? 'present' : 'missing' });
         logger.info('[OAuth] signInWithOAuth returned', { provider, url: data?.url ? 'present' : 'missing' });
+        import('@/lib/analytics').then(({ analytics }) => analytics.trackAuth('login', provider)).catch(() => {});
       }
       return { error };
     } catch (error) {
@@ -185,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut();
       logger.info('User signed out successfully');
+      import('@/lib/analytics').then(({ analytics }) => { analytics.trackAuth('logout'); analytics.clearUser(); }).catch(() => {});
     } catch (error) {
       logger.error(error, { action: 'signOut' });
     }

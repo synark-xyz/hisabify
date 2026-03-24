@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useReceiptUpload } from '@/hooks/useReceiptUpload';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { createWorker } from 'tesseract.js';
 import { format, parse } from 'date-fns';
 import { preprocessImage } from '@/lib/imageProcessor';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReceiptUploadProps {
@@ -22,9 +24,11 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadReceipt, uploading: uploadLoading, progress } = useReceiptUpload();
   const { ensurePermission, isNative } = usePermissions();
+  const { currency: userCurrency } = useCurrency();
   const { toast } = useToast();
   const [previewUrl, setPreviewUrl] = useState<string | null>(value || null);
   const [scanning, setScanning] = useState(false);
+  const [scanLabel, setScanLabel] = useState('Scanning Receipt...');
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -37,9 +41,9 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
     // 1. Start OCR Scan (if callback provided)
     if (onScanComplete && file.type.startsWith('image/')) {
       setScanning(true);
+      setScanLabel('Scanning Receipt...');
       try {
         // Preprocess image for better OCR accuracy
-        console.log("Preprocessing image...");
         const processedImage = await preprocessImage(file);
 
         const worker = await createWorker('eng', 1, {
@@ -51,13 +55,35 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
         const text = ret.data.text;
         await worker.terminate();
 
-        console.log("Receipt OCR:", text);
-        processReceiptText(text);
+        // Attempt AI extraction; fall back to heuristic on failure
+        setScanLabel('Extracting with AI...');
+        let aiSuccess = false;
+        try {
+          const { data, error: fnError } = await supabase.functions.invoke('parse-transaction', {
+            body: { mode: 'receipt', text, user_currency: userCurrency },
+          });
+          if (!fnError && data && (data.merchant || data.amount)) {
+            const extractedDate = data.date ? new Date(data.date) : undefined;
+            onScanComplete({
+              amount: data.amount != null ? String(Number(data.amount).toFixed(2)) : undefined,
+              date: extractedDate,
+              merchant: data.merchant,
+            });
+            aiSuccess = true;
+          }
+        } catch {
+          // AI call failed — fall through to heuristic
+        }
+
+        if (!aiSuccess) {
+          processReceiptText(text);
+        }
 
       } catch (err) {
         console.error("OCR Failed:", err);
       } finally {
         setScanning(false);
+        setScanLabel('Scanning Receipt...');
       }
     }
 
@@ -189,7 +215,7 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
             {scanning && (
               <div className="absolute inset-0 bg-black/50 z-10 flex flex-col items-center justify-center text-white backdrop-blur-[2px]">
                 <ScanLine className="w-8 h-8 animate-pulse text-white mb-2" />
-                <span className="text-xs font-bold uppercase tracking-wider">Scanning Receipt...</span>
+                <span className="text-xs font-bold uppercase tracking-wider">{scanLabel}</span>
               </div>
             )}
 
@@ -261,7 +287,7 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
             {isLoading ? (
               <>
                 {scanning ? <ScanLine className="w-8 h-8 animate-pulse text-accent" /> : <Loader2 className="w-8 h-8 animate-spin text-accent" />}
-                <span className="text-sm">{scanning ? 'Extracting Data...' : `Uploading... ${progress}%`}</span>
+                <span className="text-sm">{scanning ? scanLabel : `Uploading... ${progress}%`}</span>
               </>
             ) : (
               <>

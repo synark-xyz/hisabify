@@ -32,6 +32,7 @@ import { PreferencesPage } from "@/pages/settings/PreferencesPage";
 import { NotificationSettingsPage } from "@/pages/settings/NotificationSettingsPage";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { DeleteAccountPage } from "@/pages/DeleteAccountPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { SupportPage } from "@/pages/SupportPage";
 import { FaqPage } from "@/pages/FaqPage";
@@ -40,6 +41,8 @@ import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
+import { useScreenTracking } from "@/hooks/useScreenTracking";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +55,7 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     /* Loading is handled by splash screen or internal loaders closer to implementation */
@@ -63,7 +67,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    // Preserve ?ref= and ?challenge= params so AuthPage can capture them
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref');
+    const challenge = params.get('challenge');
+    const authParams = new URLSearchParams();
+    if (ref) authParams.set('ref', ref);
+    if (challenge) authParams.set('challenge', challenge);
+    const authPath = authParams.toString() ? `/auth?${authParams.toString()}` : '/auth';
+    return <Navigate to={authPath} replace />;
   }
 
   return <>{children}</>;
@@ -213,6 +225,7 @@ function AppRoutes() {
         element={<InstallPage />}
       />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/delete-account" element={<DeleteAccountPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -240,13 +253,38 @@ const App = () => (
   </ErrorBoundary>
 );
 
+// On Android, WebView localStorage survives reinstalls on some OS versions.
+// Detect a fresh install via Capacitor Preferences (which IS cleared on reinstall)
+// and force-sign-out if the flag is missing.
+async function clearStaleSessionOnFreshInstall() {
+  if (!Capacitor.isNativePlatform()) return;
+  const { value } = await Preferences.get({ key: 'app_installed' });
+  if (!value) {
+    const { supabase } = await import('@/integrations/supabase/client');
+    await supabase.auth.signOut();
+    localStorage.clear();
+    await Preferences.set({ key: 'app_installed', value: 'true' });
+  }
+}
+
 // Separated component to use hooks inside BrowserRouter
 function RootLogic() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Handle Android back button with exit confirmation
-  useAndroidBackButton();
+  // Clear stale WebView session on fresh install
+  useEffect(() => {
+    clearStaleSessionOnFreshInstall().catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle Android back button — navigates back in history; exits on double-back from root
+  useAndroidBackButton(navigate);
+
+  // Track screen views in Firebase Analytics
+  useScreenTracking();
+
+  // Register Android device for FCM push notifications
+  usePushNotifications();
 
   // Initialize viewport height fix for mobile
   useEffect(() => {
@@ -288,6 +326,16 @@ function RootLogic() {
       listener.then((l) => l.remove());
     };
   }, [navigate]);
+
+  // Set Firebase Analytics user + enable Crashlytics
+  useEffect(() => {
+    if (user) {
+      import('@/lib/analytics').then(({ analytics }) => {
+        analytics.setUser(user.id);
+        analytics.initCrashlytics();
+      }).catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {

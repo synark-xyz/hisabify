@@ -1,19 +1,22 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Bell, AlertTriangle, Smartphone } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { AlertTriangle, Bell, Smartphone } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { requestNotificationPermission, sendNotification } from '@/lib/notifications';
+import { setBudgetAlertsEnabled } from '@/lib/notificationManager';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 export function NotificationSettingsPage() {
     const { user } = useAuth();
     const { toast } = useToast();
     const { variant } = useTheme();
+    const currentTokenRef = useRef<string | null>(null);
 
     const [preferences, setPreferences] = useState({
         budgetAlerts: true,
@@ -31,11 +34,13 @@ export function NotificationSettingsPage() {
                 .single();
 
             if (data) {
+                const budgetAlerts = data.budget_alerts_enabled ?? true;
                 setPreferences({
-                    budgetAlerts: data.budget_alerts_enabled ?? true,
+                    budgetAlerts,
                     emailNotifications: data.email_notifications_enabled ?? true,
                     pushNotifications: data.push_notifications_enabled ?? false,
                 });
+                setBudgetAlertsEnabled(budgetAlerts);
             }
         };
         loadPreferences();
@@ -45,6 +50,9 @@ export function NotificationSettingsPage() {
         if (!user) return;
         const newPrefs = { ...preferences, ...updated };
         setPreferences(newPrefs);
+        if ('budgetAlerts' in updated) {
+            setBudgetAlertsEnabled(newPrefs.budgetAlerts);
+        }
 
         const { error } = await supabase
             .from('users')
@@ -60,24 +68,77 @@ export function NotificationSettingsPage() {
         }
     };
 
+    const enableNativePush = async () => {
+        try {
+            const { PushNotifications } = await import('@capacitor/push-notifications');
+
+            const permStatus = await PushNotifications.checkPermissions();
+            let granted = permStatus.receive === 'granted';
+
+            if (permStatus.receive === 'prompt') {
+                const result = await PushNotifications.requestPermissions();
+                granted = result.receive === 'granted';
+            }
+
+            if (!granted) {
+                toast({
+                    title: 'Permission denied',
+                    description: 'Enable notifications in your device settings.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            await PushNotifications.register();
+
+            // Capture the token for potential later removal
+            const tokenListener = await PushNotifications.addListener('registration', (token) => {
+                currentTokenRef.current = token.value;
+                tokenListener.remove();
+            });
+
+            await handleSavePreferences({ pushNotifications: true });
+            toast({ title: 'Push notifications enabled' });
+        } catch (err) {
+            logger.error(err, { component: 'NotificationSettings', action: 'enableNativePush' });
+            toast({ title: 'Failed to enable notifications', variant: 'destructive' });
+        }
+    };
+
     const requestPushPermission = async () => {
+        if (Capacitor.getPlatform() === 'android') {
+            await enableNativePush();
+            return;
+        }
+
+        // Web fallback
         const granted = await requestNotificationPermission();
         if (granted) {
-            handleSavePreferences({ pushNotifications: true });
+            await handleSavePreferences({ pushNotifications: true });
             toast({ title: 'Push notifications enabled' });
 
-            // Test notification
-            sendNotification("Notifications Active!", {
+            sendNotification('Notifications Active!', {
                 body: "You'll now receive alerts for your payments and budgets.",
-                icon: "/pwa-192x192.png"
+                icon: '/pwa-192x192.png',
             });
         } else {
             toast({
                 title: 'Permission pending or denied',
                 description: 'Please check your browser notification settings.',
-                variant: 'destructive'
+                variant: 'destructive',
             });
         }
+    };
+
+    const disablePush = async () => {
+        if (!user) return;
+
+        // Delete all FCM tokens for this user regardless of whether we have
+        // the current token in memory (avoids orphaned tokens on re-login).
+        await supabase.from('fcm_tokens').delete().eq('user_id', user.id);
+        currentTokenRef.current = null;
+
+        await handleSavePreferences({ pushNotifications: false });
     };
 
     return (
@@ -136,7 +197,7 @@ export function NotificationSettingsPage() {
                             if (checked) {
                                 requestPushPermission();
                             } else {
-                                handleSavePreferences({ pushNotifications: false });
+                                disablePush();
                             }
                         }}
                     />

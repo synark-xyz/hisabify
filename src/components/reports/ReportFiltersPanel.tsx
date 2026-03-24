@@ -139,20 +139,22 @@ export function ReportFiltersPanel({
         </div>
 
         {/* Custom Date Range */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>From</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">From</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal",
+                    "w-full justify-start text-left font-normal h-9 px-3 text-sm",
                     !dateFrom && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateFrom ? format(dateFrom, "PPP") : "Pick date"}
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">
+                    {dateFrom ? format(dateFrom, "MMM d, yyyy") : "Pick date"}
+                  </span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -166,19 +168,21 @@ export function ReportFiltersPanel({
             </Popover>
           </div>
 
-          <div className="space-y-2">
-            <Label>To</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">To</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal",
+                    "w-full justify-start text-left font-normal h-9 px-3 text-sm",
                     !dateTo && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateTo ? format(dateTo, "PPP") : "Pick date"}
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">
+                    {dateTo ? format(dateTo, "MMM d, yyyy") : "Pick date"}
+                  </span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -261,7 +265,7 @@ export function ReportFiltersPanel({
           </ScrollArea>
           {filters.categoryIds.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              No categories selected = all categories included
+              Showing all categories. Select specific ones to narrow results.
             </p>
           )}
         </div>

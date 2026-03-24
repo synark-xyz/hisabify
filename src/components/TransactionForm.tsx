@@ -188,7 +188,7 @@ export function TransactionForm({
       return;
     }
 
-    if ((type === 'expense' || type === 'lend' || type === 'owe') && !data.categoryId) {
+    if (type === 'expense' && !data.categoryId) {
       form.setError('categoryId', { type: 'manual', message: 'Category is required.' });
       return;
     }
@@ -221,7 +221,7 @@ export function TransactionForm({
       exchange_source: exchangeSource,
       type,
       date: data.date.toISOString(),
-      category_id: (type === 'expense' || type === 'lend' || type === 'owe') ? data.categoryId : null,
+      category_id: (type === 'expense' || type === 'lend' || type === 'owe') ? (data.categoryId || null) : null,
       budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? (selectedBudgetId ?? null) : null,
       savings_goal_id: initialTransaction?.savings_goal_id ?? null,
       card_id: null,
@@ -235,12 +235,18 @@ export function TransactionForm({
         if (error) {
           throw error;
         }
+        import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+          analytics.logEvent(AnalyticsEvents.EDIT_TRANSACTION, { type });
+        }).catch(() => {});
         toast({ title: 'Transaction updated!' });
       } else {
         const { error } = await supabase.from('transactions').insert(payload);
         if (error) {
           throw error;
         }
+        import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+          analytics.logEvent(AnalyticsEvents.ADD_TRANSACTION, { type, category: data.categoryId || 'uncategorized' });
+        }).catch(() => {});
         const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
       }
@@ -300,9 +306,15 @@ export function TransactionForm({
             name="merchant"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Description</FormLabel>
+                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                  {type === 'lend' ? 'Who are you lending to?' : type === 'owe' ? 'Who are you borrowing from?' : 'Description'}
+                </FormLabel>
                 <FormControl>
-                  <Input placeholder="What was this for?" className="rounded-xl" {...field} />
+                  <Input
+                    placeholder={type === 'lend' ? 'Name or @handle' : type === 'owe' ? 'Name or @handle' : 'What was this for?'}
+                    className="rounded-xl"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -378,32 +390,40 @@ export function TransactionForm({
             <FormField
               control={form.control}
               name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Category</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(val) => {
-                      field.onChange(val);
-                      setSelectedBudgetId(null); // reset budget chip on category change
-                    }}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="rounded-2xl">
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const isLendOwe = type === 'lend' || type === 'owe';
+                const filteredCategories = isLendOwe
+                  ? categories.filter((cat) => !cat.is_system_category || !['lend', 'owe'].includes(cat.category_type || ''))
+                  : categories;
+                return (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      {isLendOwe ? 'Category (optional)' : 'Category'}
+                    </FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        setSelectedBudgetId(null); // reset budget chip on category change
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder={isLendOwe ? 'Select category (optional)' : 'Select category'} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="rounded-2xl">
+                        {filteredCategories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
           )}
 

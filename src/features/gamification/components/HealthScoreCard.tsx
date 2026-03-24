@@ -1,18 +1,27 @@
 import { motion } from 'framer-motion';
-import { ChartPie, Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ChartPie, Info, TrendingUp, Share2, Check } from 'lucide-react';
+import { useState } from 'react';
 import { useHealthScore } from '../hooks/useHealthScore';
+import { useReferral } from '@/features/referrals/hooks/useReferral';
+import { getMilestoneBadge } from '../utils/healthScoreLogic';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { HealthScoreDetailSheet } from './HealthScoreDetailSheet';
 
 export function HealthScoreCard() {
     const { score, loading } = useHealthScore();
+    const { referralCode } = useReferral();
     const { variant } = useTheme();
+    const [shareCopied, setShareCopied] = useState(false);
+    const [detailOpen, setDetailOpen] = useState(false);
 
     if (loading) {
         return <Skeleton className="w-full h-[180px] rounded-3xl" />;
@@ -32,7 +41,42 @@ export function HealthScoreCard() {
     const offset = circumference - (score.total / 100) * circumference;
     const strokeColor = getScoreColor(score.total);
 
+    // Milestone badge and challenge sharing
+    const milestoneBadge = getMilestoneBadge(score.total);
+    const showChallengeButton = milestoneBadge !== null;
+
+    const handleChallenge = async () => {
+        const challengeUrl = referralCode
+            ? `https://hisabify.app/auth?challenge=${score.total}&ref=${referralCode}`
+            : `https://hisabify.app/auth?challenge=${score.total}`;
+
+        const shareText = `I scored ${score.total}/100 on my Financial Health Score! ${milestoneBadge?.emoji ?? ''} Think you can beat me? Track your finances on Hisabify:`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `My Financial Health Score: ${score.total}/100`,
+                    text: shareText,
+                    url: challengeUrl,
+                });
+                return;
+            } catch (err) {
+                if (err instanceof Error && err.name === 'AbortError') return;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(`${shareText} ${challengeUrl}`);
+            setShareCopied(true);
+            toast.success('Challenge link copied!');
+            setTimeout(() => setShareCopied(false), 2500);
+        } catch {
+            toast.error('Could not copy challenge link');
+        }
+    };
+
     return (
+        <>
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -82,8 +126,12 @@ export function HealthScoreCard() {
             </div>
 
             <div className="flex items-center gap-6">
-                {/* Gauge */}
-                <div className="relative w-32 h-32 flex-shrink-0 flex items-center justify-center">
+                {/* Gauge — tappable to open detail sheet */}
+                <button
+                    onClick={() => setDetailOpen(true)}
+                    className="relative w-32 h-32 flex-shrink-0 flex items-center justify-center active:scale-95 transition-transform"
+                    aria-label="View health score details"
+                >
                     <svg className="w-full h-full transform -rotate-90">
                         {/* Track */}
                         <circle
@@ -123,10 +171,21 @@ export function HealthScoreCard() {
                         </motion.span>
                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-0.5">Score</span>
                     </div>
-                </div>
+                </button>
 
                 {/* Info / Tip */}
                 <div className="flex-1 space-y-3">
+                    {/* Milestone badge */}
+                    {milestoneBadge && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                            <span className="text-base leading-none">{milestoneBadge.emoji}</span>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-amber-600">{milestoneBadge.name}</p>
+                                <p className="text-[9px] text-muted-foreground truncate">{milestoneBadge.description}</p>
+                            </div>
+                        </div>
+                    )}
+
                     <Popover>
                         <PopoverTrigger asChild>
                             <div className="bg-muted/30 rounded-2xl p-4 border border-border/50 relative overflow-hidden group cursor-pointer transition-colors hover:bg-muted/50 active:scale-[0.98] transition-all">
@@ -183,8 +242,33 @@ export function HealthScoreCard() {
                             </div>
                         </PopoverContent>
                     </Popover>
+
+                    {/* Challenge a Friend button — only visible at milestone scores */}
+                    {showChallengeButton && (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-8 rounded-xl font-bold text-xs border-dashed border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/60 gap-1.5"
+                            onClick={handleChallenge}
+                        >
+                            {shareCopied ? (
+                                <>
+                                    <Check className="w-3 h-3" />
+                                    Copied!
+                                </>
+                            ) : (
+                                <>
+                                    <Share2 className="w-3 h-3" />
+                                    Challenge a Friend
+                                </>
+                            )}
+                        </Button>
+                    )}
                 </div>
             </div>
         </motion.div>
+
+        <HealthScoreDetailSheet open={detailOpen} onOpenChange={setDetailOpen} />
+        </>
     );
 }

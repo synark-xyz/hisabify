@@ -1,5 +1,34 @@
 import { differenceInDays, parseISO } from 'date-fns';
 
+// ─── Milestone badge definitions ──────────────────────────────────────────────
+
+export interface MilestoneBadge {
+  score: number;
+  name: string;
+  emoji: string;
+  description: string;
+}
+
+const MILESTONE_BADGES: MilestoneBadge[] = [
+  { score: 100, name: 'Financially Elite', emoji: '🏆', description: 'Perfect score across all categories' },
+  { score: 90, name: 'Money Master', emoji: '💎', description: 'Exceptional financial discipline' },
+  { score: 75, name: 'Budget Pro', emoji: '⭐', description: 'Strong habits across budgeting and savings' },
+  { score: 50, name: 'Getting Steady', emoji: '🌱', description: 'Building solid financial foundations' },
+];
+
+/**
+ * Returns the highest milestone badge earned for a given score.
+ * Returns null if the score is below the lowest milestone (50).
+ */
+export function getMilestoneBadge(score: number): MilestoneBadge | null {
+  for (const badge of MILESTONE_BADGES) {
+    if (score >= badge.score) {
+      return badge;
+    }
+  }
+  return null;
+}
+
 interface HealthScoreParams {
   totalSpent: number;
   totalBudget: number;
@@ -28,6 +57,45 @@ export interface HealthScoreResult {
     activity: number;
   };
   insight: string;
+}
+
+export interface HealthScoreTip {
+  text: string;
+  component: 'budget' | 'savings' | 'activity' | 'general';
+}
+
+/**
+ * Returns 1–3 actionable tips based on the weakest score components.
+ */
+export function generateTips(
+  breakdown: { budget: number; savings: number; activity: number },
+  total: number,
+): HealthScoreTip[] {
+  if (total >= 90) {
+    return [{ text: "You're in the top tier. Keep it up!", component: 'general' }];
+  }
+
+  const tips: HealthScoreTip[] = [];
+
+  if (breakdown.budget < 20) {
+    tips.push({ text: "You're overspending. Try setting stricter budgets.", component: 'budget' });
+  }
+
+  if (breakdown.savings < 25) {
+    tips.push({ text: "Set up a savings goal and contribute monthly to boost this score.", component: 'savings' });
+  } else if (breakdown.savings < 35) {
+    tips.push({ text: "Enable auto-contribute on your savings goals to earn +5 pts.", component: 'savings' });
+  }
+
+  if (breakdown.activity < 10) {
+    tips.push({ text: "Log transactions regularly — inactivity costs 2 pts/day.", component: 'activity' });
+  }
+
+  if (tips.length === 0) {
+    tips.push({ text: "Keep up the good work! Complete more savings goals to push higher.", component: 'general' });
+  }
+
+  return tips.slice(0, 3);
 }
 
 export function calculateHealthScore(params: HealthScoreParams): HealthScoreResult {

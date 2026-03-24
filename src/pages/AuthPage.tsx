@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Loader2,
@@ -425,11 +425,35 @@ export function AuthPage() {
 
   const { signIn, signUp, signInWithOAuth, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const shouldReduce = useReducedMotion() ?? false;
 
   // Ref to prevent redundant navigation
   const navigatingRef = useRef(false);
+
+  // Deep-link referral: read ?ref=CODE and store for auto-redemption after signup
+  const [pendingRefCode, setPendingRefCode] = useState<string | null>(null);
+  // Challenge banner: read ?challenge=SCORE to show motivational message
+  const [challengeScore, setChallengeScore] = useState<number | null>(null);
+
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    const challenge = searchParams.get('challenge');
+
+    if (refCode) {
+      const normalized = refCode.toUpperCase().trim();
+      localStorage.setItem('pendingReferralCode', normalized);
+      setPendingRefCode(normalized);
+    }
+
+    if (challenge) {
+      const score = parseInt(challenge, 10);
+      if (!isNaN(score) && score >= 0 && score <= 100) {
+        setChallengeScore(score);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user && !navigatingRef.current) {
@@ -863,6 +887,38 @@ export function AuthPage() {
             Your pulse on prosperity
           </p>
         </motion.div>
+
+        {/* ── Challenge banner ───────────────────────────────────────────────── */}
+        {challengeScore !== null && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+            className="rounded-2xl px-4 py-3 text-sm font-semibold text-white text-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.3) 0%, rgba(168,85,247,0.3) 100%)',
+              border: '1px solid rgba(139,92,246,0.35)',
+            }}
+          >
+            Your friend scored <span className="font-black text-purple-300">{challengeScore}/100</span>. Can you beat them? 💪
+          </motion.div>
+        )}
+
+        {/* ── Referral notice ────────────────────────────────────────────────── */}
+        {pendingRefCode && !challengeScore && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+            className="rounded-2xl px-4 py-3 text-sm font-semibold text-white text-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(6,182,212,0.2) 100%)',
+              border: '1px solid rgba(16,185,129,0.35)',
+            }}
+          >
+            You were invited! Sign up with code <span className="font-black text-emerald-300">{pendingRefCode}</span> to unlock 30 days Pro free.
+          </motion.div>
+        )}
 
         {/* ── Main card ──────────────────────────────────────────────────────── */}
         <motion.div

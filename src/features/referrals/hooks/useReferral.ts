@@ -1,15 +1,27 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 
+const PENDING_REFERRAL_KEY = 'pendingReferralCode';
+
 export function useReferral() {
     const { user } = useAuth();
-    const { profile, refreshProfile } = useProfile();
+    const { profile, refreshProfile, loading: profileLoading } = useProfile();
     const [loading, setLoading] = useState(false);
+    const [friendsInvited, setFriendsInvited] = useState(0);
 
-    const redeemCode = useCallback(async (code: string) => {
+    useEffect(() => {
+        if (!user) return;
+        supabase
+            .from('users')
+            .select('user_id', { count: 'exact', head: true })
+            .eq('referred_by', user.id)
+            .then(({ count }) => setFriendsInvited(count ?? 0));
+    }, [user]);
+
+    const redeemCode = useCallback(async (code: string): Promise<boolean> => {
         if (!user) return false;
         setLoading(true);
 
@@ -34,6 +46,9 @@ export function useReferral() {
                 return false;
             }
 
+            // Clear pending referral code from localStorage on successful redemption
+            localStorage.removeItem(PENDING_REFERRAL_KEY);
+
             toast.success('Referral code redeemed! You both get 30 days of Pro features.');
             await refreshProfile();
             return true;
@@ -46,6 +61,24 @@ export function useReferral() {
         }
     }, [user, refreshProfile]);
 
+    // Auto-redeem pending referral code after user signs up
+    useEffect(() => {
+        if (!user) return;
+
+        const hasUsedReferral = !!profile.referred_by || !!profile.referral_used_at;
+        if (hasUsedReferral) {
+            // Already used a code — clean up any stale pending code
+            localStorage.removeItem(PENDING_REFERRAL_KEY);
+            return;
+        }
+
+        const pendingCode = localStorage.getItem(PENDING_REFERRAL_KEY);
+        if (!pendingCode) return;
+
+        // Attempt auto-redemption of the pending code
+        void redeemCode(pendingCode);
+    }, [user, profile.referred_by, profile.referral_used_at, redeemCode]);
+
     // Calculate days remaining for referral Pro access
     const daysRemaining = profile.referral_granted_until
         ? Math.max(0, Math.ceil((new Date(profile.referral_granted_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
@@ -57,7 +90,9 @@ export function useReferral() {
         referralCode: profile.referral_code,
         daysRemaining,
         hasUsedReferral,
+        friendsInvited,
         redeemCode,
         loading,
+        profileLoading,
     };
 }

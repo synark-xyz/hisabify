@@ -305,13 +305,13 @@ export function useBudgets() {
 
       // Show alerts only when triggered by a real transaction change event,
       // not on page load, to prevent spam on tab open.
-      if (options?.fireAlerts) {
+      if (options?.fireAlerts && user) {
         budgetsWithSpending.forEach((budget) => {
           const budgetName = budget.category?.name || budget.name || 'Budget';
           if (budget.status === 'exceeded') {
-            showBudgetExceeded(budgetName, budget.percentage, budget.period_type);
+            showBudgetExceeded(user.id, budgetName, budget.percentage, budget.period_type);
           } else if (budget.status === 'warning') {
-            showBudgetWarning(budgetName, budget.percentage, budget.period_type);
+            showBudgetWarning(user.id, budgetName, budget.percentage, budget.period_type);
           }
         });
       }
@@ -377,6 +377,10 @@ export function useBudgets() {
       });
 
       if (error) throw error;
+
+      import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
+        analytics.logEvent(AnalyticsEvents.CREATE_BUDGET, { period: input.period_type });
+      }).catch(() => {});
 
       // Background fetch to ensure consistency
       fetchBudgets();

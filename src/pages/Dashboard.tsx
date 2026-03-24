@@ -22,9 +22,10 @@ import { useTheme } from '@/hooks/useTheme';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { useFirstTimeUser } from '@/hooks/useFirstTimeUser';
 import { UpgradeModal } from '@/components/UpgradeModal';
+import { MonthlyWrapCard } from '@/components/MonthlyWrapCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction } from '@/types';
-import { format, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, getMonth, getYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -220,6 +221,21 @@ export function Dashboard() {
 
   const netBalance = totalIncome - totalExpenses;
   const showGettingStarted = !firstTimeLoading && isFirstTimeUser;
+
+  // Monthly wrap prompt: show on the 1st of each month, dismiss via localStorage
+  const [showWrapPrompt, setShowWrapPrompt] = useState(false);
+  const [showWrapModal, setShowWrapModal] = useState(false);
+
+  useEffect(() => {
+    const today = new Date();
+    if (today.getDate() !== 1) return;
+
+    const dismissKey = `wrapPromptDismissed_${today.getFullYear()}_${today.getMonth() + 1}`;
+    const dismissed = localStorage.getItem(dismissKey);
+    if (!dismissed && !isFirstTimeUser && totalExpenses > 0) {
+      setShowWrapPrompt(true);
+    }
+  }, [isFirstTimeUser, totalExpenses]);
 
   return (
     <div className="min-h-screen relative">
@@ -432,6 +448,54 @@ export function Dashboard() {
               )}
             </AnimatePresence>
 
+            {/* Monthly Wrap Prompt */}
+            <AnimatePresence>
+              {showWrapPrompt && !showGettingStarted && (
+                <motion.section
+                  key="wrap-prompt"
+                  initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -16, scale: 0.97 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="relative rounded-2xl p-4 border border-indigo-500/25 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 overflow-hidden">
+                    <button
+                      className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => {
+                        const today = new Date();
+                        const dismissKey = `wrapPromptDismissed_${today.getFullYear()}_${today.getMonth() + 1}`;
+                        localStorage.setItem(dismissKey, '1');
+                        setShowWrapPrompt(false);
+                      }}
+                      aria-label="Dismiss"
+                    >
+                      <span className="text-lg leading-none">×</span>
+                    </button>
+                    <div className="flex items-center gap-3 pr-6">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                        <TrendUp className="w-5 h-5 text-indigo-400" weight="duotone" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-foreground">New month, new start!</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Share your {format(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1), 'MMMM')} recap with friends.</p>
+                      </div>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setShowWrapPrompt(false);
+                          setShowWrapModal(true);
+                        }}
+                        className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-indigo-500 text-white text-xs font-black"
+                      >
+                        Share
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.section>
+              )}
+            </AnimatePresence>
+
             {/* Payment Reminders Section */}
             {!showGettingStarted && activeReminders.length > 0 && (
               <motion.section
@@ -622,6 +686,49 @@ export function Dashboard() {
         onOpenChange={setShowUpgradeModal}
         source="dashboard_banner"
       />
+
+      {/* Monthly Wrap Modal */}
+      <AnimatePresence>
+        {showWrapModal && (
+          <motion.div
+            className="fixed inset-0 z-[10050] flex items-end sm:items-center justify-center p-4 sm:p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowWrapModal(false)}
+            />
+            <motion.div
+              className="relative z-10 w-full max-w-sm"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 22 }}
+            >
+              <button
+                onClick={() => setShowWrapModal(false)}
+                className="absolute -top-3 -right-3 z-20 w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center shadow-lg hover:bg-muted transition-colors"
+                aria-label="Close"
+              >
+                <span className="text-muted-foreground font-bold text-lg leading-none">×</span>
+              </button>
+              <MonthlyWrapCard
+                month={getMonth(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)) + 1}
+                year={getYear(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1))}
+                totalSaved={netBalance}
+                budgetWeeksUnder={0}
+                expenseStreak={transactions.length}
+                currency={currency}
+                formattedTotalSaved={formatAmount(Math.abs(netBalance))}
+                formattedTotalExpenses={formatAmount(totalExpenses)}
+                formattedTotalIncome={formatAmount(totalIncome)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

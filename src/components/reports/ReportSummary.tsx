@@ -15,62 +15,62 @@ export function ReportSummary({ summary }: ReportSummaryProps) {
       label: "Total Expenses",
       value: formatAmount(summary.totalExpenses),
       icon: TrendingDown,
-      color: "text-red-500",
-      bgColor: "bg-red-500/10",
+      color: "text-destructive",
+      bgColor: "bg-destructive/10",
     },
     {
       label: "Total Income",
       value: formatAmount(summary.totalIncome),
       icon: TrendingUp,
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
+      color: "text-chart-4",
+      bgColor: "bg-chart-4/10",
     },
     {
       label: "Net Balance",
       value: formatAmount(summary.netBalance),
       icon: ArrowDownUp,
-      color: summary.netBalance >= 0 ? "text-green-500" : "text-red-500",
-      bgColor: summary.netBalance >= 0 ? "bg-green-500/10" : "bg-red-500/10",
+      color: summary.netBalance >= 0 ? "text-chart-4" : "text-destructive",
+      bgColor: summary.netBalance >= 0 ? "bg-chart-4/10" : "bg-destructive/10",
     },
     {
       label: "Transactions",
       value: summary.transactionCount.toString(),
       icon: Hash,
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10",
+      color: "text-chart-1",
+      bgColor: "bg-chart-1/10",
     },
     {
       label: "Avg. Expense",
       value: formatAmount(summary.averageExpense),
       icon: Calculator,
-      color: "text-orange-500",
-      bgColor: "bg-orange-500/10",
+      color: "text-chart-5",
+      bgColor: "bg-chart-5/10",
     },
     {
       label: "Avg. Income",
       value: formatAmount(summary.averageIncome),
       icon: Calculator,
-      color: "text-emerald-500",
-      bgColor: "bg-emerald-500/10",
+      color: "text-chart-4",
+      bgColor: "bg-chart-4/10",
     },
   ];
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Summary Statistics</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Summary</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div
-                className={`w-10 h-10 rounded-full ${stat.bgColor} flex items-center justify-center mx-auto mb-2`}
-              >
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-border/50">
+          {stats.map((stat, i) => (
+            <div key={stat.label} className={`flex flex-col items-center gap-2 px-3 py-2 ${i < 2 ? "md:border-b lg:border-b-0 border-b border-border/50" : ""}`}>
+              <div className={`w-8 h-8 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </div>
-              <p className="text-lg font-semibold">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <div className="text-center">
+                <p className={`text-base font-semibold tabular-nums leading-tight ${stat.color}`}>{stat.value}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{stat.label}</p>
+              </div>
             </div>
           ))}
         </div>

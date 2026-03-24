@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Mic, Square, Check, X, AlertCircle, Sparkles, Plus,
-  TrendingUp, TrendingDown, RefreshCw,
+  TrendingUp, TrendingDown, RefreshCw, Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useCurrency } from '@/hooks/useCurrency';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface VoiceInputFlowProps {
@@ -31,11 +33,14 @@ const INCOME_TIPS  = ['"Salary 50000"',  '"Freelance 5000 dollars"', '"Received 
 
 export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlowProps) {
   const { listen, stop, parseCommand } = useVoiceInput();
+  const { currency: userCurrency } = useCurrency();
 
   const [phase, setPhase]                     = useState<Phase>('idle');
   const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
   const [transcript, setTranscript]           = useState('');
   const [error, setError]                     = useState<string | null>(null);
+  const [parsed, setParsed]                   = useState<ParsedResult>({});
+  const [aiLoading, setAiLoading]             = useState(false);
 
   // ── Reset when sheet closes ───────────────────────────────────────────────
 
@@ -44,6 +49,8 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
     setTranscript('');
     setError(null);
     setTransactionType('expense');
+    setParsed({});
+    setAiLoading(false);
   }, []);
 
   useEffect(() => {
@@ -58,13 +65,38 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
   const handleRecord = async () => {
     setError(null);
     setTranscript('');
+    setParsed({});
     setPhase('recording');
     try {
       const text = await listen();
       setTranscript(text);
-      setPhase(text ? 'result' : 'idle');
       if (!text) {
+        setPhase('idle');
         setError('No speech detected. Please try again.');
+        return;
+      }
+      setPhase('result');
+
+      // Try AI extraction; fall back to regex on failure
+      setAiLoading(true);
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke('parse-transaction', {
+          body: { mode: 'voice', text, user_currency: userCurrency },
+        });
+        if (fnError || !data || (!data.merchant && !data.amount)) {
+          throw new Error('AI returned no usable data');
+        }
+        setParsed({
+          merchant: data.merchant,
+          amount: typeof data.amount === 'number' ? data.amount : undefined,
+          currency: data.currency,
+          type: transactionType,
+          confidence: data.confidence,
+        });
+      } catch {
+        setParsed(parseCommand(text) as ParsedResult);
+      } finally {
+        setAiLoading(false);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -98,10 +130,11 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
   const handleRetry = () => {
     setTranscript('');
     setError(null);
+    setParsed({});
+    setAiLoading(false);
     setPhase('idle');
   };
 
-  const parsed = transcript ? (parseCommand(transcript) as ParsedResult) : {};
   const hasParsedData = !!(parsed.merchant || parsed.amount);
 
   const handleUseTranscript = () => {
@@ -270,11 +303,28 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
                           <p className="text-sm font-mono text-foreground/80">"{transcript}"</p>
                         </div>
                         <div className="flex items-start gap-2 pt-2 border-t border-border/50">
-                          {hasParsedData ? (
+                          {aiLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 text-accent animate-spin mt-0.5 flex-shrink-0" />
+                              <p className="text-xs text-muted-foreground">Analyzing with AI…</p>
+                            </>
+                          ) : hasParsedData ? (
                             <>
                               <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs text-muted-foreground mb-1">Extracted:</p>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="text-xs text-muted-foreground">Extracted:</p>
+                                  {parsed.confidence && parsed.confidence !== 'high' && (
+                                    <span className={cn(
+                                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                                      parsed.confidence === 'medium'
+                                        ? "bg-yellow-500/15 text-yellow-600"
+                                        : "bg-orange-500/15 text-orange-600",
+                                    )}>
+                                      {parsed.confidence} confidence
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-3 flex-wrap">
                                   {parsed.merchant && (
                                     <span className="text-sm font-medium capitalize">
@@ -311,11 +361,11 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
                   )}
 
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleRetry} className="flex-1">
+                    <Button variant="outline" onClick={handleRetry} className="flex-1" disabled={aiLoading}>
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Try Again
                     </Button>
-                    {hasParsedData ? (
+                    {hasParsedData && !aiLoading ? (
                       <Button
                         onClick={handleUseTranscript}
                         className={cn(
@@ -328,12 +378,12 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
                         <Check className="w-4 h-4 mr-2" />
                         Use This
                       </Button>
-                    ) : (
+                    ) : !aiLoading ? (
                       <Button variant="outline" onClick={handleAddManually} className="flex-1">
                         <Plus className="w-4 h-4 mr-2" />
                         Add Manually
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               )}

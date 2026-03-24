@@ -89,6 +89,11 @@ class Logger {
     //     extra: { ...context, appError: appError.toJSON() },
     //   });
     // }
+
+    // Send non-fatal errors to Crashlytics
+    import('./analytics').then(({ analytics }) => {
+      analytics.trackError(String(appError.code || 'unknown'), appError.message);
+    }).catch(() => {});
   }
 
   /**
@@ -109,6 +114,9 @@ class Logger {
    */
   userAction(action: string, context?: LogContext) {
     this.info(`User action: ${action}`, context);
+    import('./analytics').then(({ analytics }) => {
+      analytics.logEvent(action, context as Record<string, string | number>);
+    }).catch(() => {});
   }
 }
 

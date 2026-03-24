@@ -26,29 +26,72 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Signing configurations for release and staging. Values are read from local.properties
+    // or environment variables via the resolveSecret helper defined above.
+    signingConfigs {
+        release {
+            def ksPath = resolveSecret('KEYSTORE_PATH_RELEASE')
+            if (ksPath) {
+                storeFile file(ksPath)
+            }
+            storePassword resolveSecret('KEYSTORE_PASSWORD_RELEASE')
+            keyAlias resolveSecret('KEY_ALIAS_RELEASE')
+            keyPassword resolveSecret('KEY_PASSWORD_RELEASE')
+        }
+        staging {
+            // Prefer staging-specific values, fall back to release values when not provided.
+            def ksPath = resolveSecret('KEYSTORE_PATH_STAGING') ?: resolveSecret('KEYSTORE_PATH_RELEASE')
+            if (ksPath) {
+                storeFile file(ksPath)
+            }
+            storePassword resolveSecret('KEYSTORE_PASSWORD_STAGING') ?: resolveSecret('KEYSTORE_PASSWORD_RELEASE')
+            keyAlias resolveSecret('KEY_ALIAS_STAGING') ?: resolveSecret('KEY_ALIAS_RELEASE')
+            keyPassword resolveSecret('KEY_PASSWORD_STAGING') ?: resolveSecret('KEY_PASSWORD_RELEASE')
+        }
+    }
     buildFeatures {
         buildConfig true
     }
     buildTypes {
         debug {
+            buildConfigField("String", "ENVIRONMENT", '"development"')
             // RevenueCat sandbox key — injected from local.properties or CI env var
             buildConfigField "String", "REVENUECAT_API_KEY",
                     "\"${resolveSecret('REVENUECAT_API_KEY_DEBUG')}\""
+            // Development endpoint (used by app entry / native code)
+            buildConfigField "String", "ENDPOINT", '"https://hisabify-staging.vercel.app"'
         }
         staging {
             debuggable true
             minifyEnabled false
             applicationIdSuffix ".staging"
             versionNameSuffix "-staging"
+            // When consuming library modules that don't declare a 'staging' buildType,
+            // fall back to the 'debug' variant so variant matching succeeds.
+            matchingFallbacks = ['debug']
+            // RevenueCat key for staging — prefer a staging-specific key, fall back to debug
+            buildConfigField "String", "REVENUECAT_API_KEY",
+                    "\"${resolveSecret('REVENUECAT_API_KEY_STAGING') ?: resolveSecret('REVENUECAT_API_KEY_DEBUG')}\""
             buildConfigField "String", "ENVIRONMENT", '"staging"'
+            // Only assign the signingConfig if a keystore/storeFile was configured
+            if (signingConfigs.staging?.storeFile) {
+                signingConfig signingConfigs.staging
+            }
+            // Staging endpoint (same as development preview)
+            buildConfigField "String", "ENDPOINT", '"https://hisabify-staging.vercel.app"'
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         release {
             minifyEnabled true
+            debuggable false
+            buildConfigField "String", "ENVIRONMENT", '"production"'
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             // RevenueCat production key — injected from local.properties or CI env var
             buildConfigField "String", "REVENUECAT_API_KEY",
                 "\"${resolveSecret('REVENUECAT_API_KEY_RELEASE')}\""
+            // Production endpoint
+            buildConfigField "String", "ENDPOINT", '"https://hisabify-pi.vercel.app"'
+            signingConfig signingConfigs.release
         }
     }
 }

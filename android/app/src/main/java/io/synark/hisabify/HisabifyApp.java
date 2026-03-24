@@ -7,6 +7,7 @@ import com.google.firebase.FirebaseApp;
 import com.revenuecat.purchases.LogLevel;
 import com.revenuecat.purchases.Purchases;
 import com.revenuecat.purchases.PurchasesConfiguration;
+import io.synark.hisabify.BuildConfig;
 
 public class HisabifyApp extends Application {
     private static final String TAG = "HisabifyApp";

@@ -80,6 +80,7 @@ android {
             // Staging endpoint (same as development preview)
             buildConfigField "String", "ENDPOINT", '"https://hisabify-staging.vercel.app"'
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.staging
         }
         release {
             minifyEnabled true

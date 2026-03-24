@@ -4,7 +4,7 @@
  */
 
 export const LEGAL_LAST_UPDATED = 'March 2026';
-export const LEGAL_CONTACT_EMAIL = 'synark.labs@gmail.com';
+export const LEGAL_CONTACT_EMAIL = 'synarklabs@gmail.com';
 
 // ─── Shared section component ─────────────────────────────────────────────────
 

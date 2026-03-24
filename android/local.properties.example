@@ -1,0 +1,21 @@
+# Copy this file to local.properties and fill in your keys.
+# local.properties is gitignored — never commit it.
+
+sdk.dir=/path/to/android/sdk
+
+# RevenueCat keys
+# Get from: https://app.revenuecat.com → Project Settings → API Keys → Android
+REVENUECAT_API_KEY_DEBUG=test_xxxxxxxxxxxxxxxxxxxx
+REVENUECAT_API_KEY_RELEASE=prod_xxxxxxxxxxxxxxxxxxxx
+
+# Keystore information RELEASE
+KEYSTORE_PATH_RELEASE=
+KEYSTORE_PASSWORD_RELEASE=
+KEY_ALIAS_RELEASE=
+KEY_PASSWORD_RELEASE=
+
+# Keystore information STAGE
+KEYSTORE_PATH_STAGING=
+KEYSTORE_PASSWORD_STAGING=
+KEY_ALIAS_STAGING=
+KEY_PASSWORD_STAGING=

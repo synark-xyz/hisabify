@@ -38,3 +38,4 @@ test-report/
 android/app/google-services.json
 android/app/src/release/google-services.json
 android/app/src/staging/google-services.json
+/android/.kotlin

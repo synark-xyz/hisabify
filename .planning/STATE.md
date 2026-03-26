@@ -20,3 +20,13 @@ Last activity: 2026-03-24 — Milestone v1.2 started (GSD bootstrap)
 - Android working directory is `android/`; project root is `/Users/sayem/Business MVPs/hisabify/`
 - Codebase map available in `.planning/codebase/` (architecture, stack, concerns, structure, integrations, conventions, testing)
 - Known tech debt: RLS integration tests missing; Sentry not initialized; Web Speech API fragility; exchange rate cache unbounded
+
+### Pending Todos (7)
+
+1. Referral system update with coin rewards and benefits
+2. Coin system for partial premium feature unlocks
+3. AI-generated health tips and financial health calculations
+4. Automated daily gamification tasks for users
+5. Joint budget feature
+6. Split expenses with friends
+7. Circle — import friends and contacts from device

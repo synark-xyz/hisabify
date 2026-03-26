@@ -43,6 +43,7 @@ import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { getAuthCallbackRouteFromUrl } from "@/lib/authRedirect";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -298,25 +299,13 @@ function RootLogic() {
 
     const listener = CapacitorApp.addListener('appUrlOpen', ({ url }) => {
       console.log('[App] appUrlOpen event received:', url);
-      try {
-        const parsed = new URL(url);
-        // For custom scheme URLs (io.synark.hisabify://auth/callback),
-        // the host is "auth" and pathname is "/callback" — reconstruct full path
-        const fullPath = `/${parsed.host}${parsed.pathname}`.replace(/\/+/g, '/');
+      const callbackRoute = getAuthCallbackRouteFromUrl(url);
 
-        if (fullPath.includes('/auth/callback')) {
-          // For PKCE flow, the auth code comes in query params, not hash
-          // Preserve both search and hash fragments
-          const search = parsed.search || '';
-          const hash = parsed.hash || '';
-
-          console.log('[App] Navigating to auth callback with:', { search, hash, fullUrl: url });
-          navigate(`/auth/callback${search}${hash}`, { replace: true });
-        } else {
-          console.log('[App] Ignoring non-auth URL:', url);
-        }
-      } catch (error) {
-        console.error('[App] Error parsing URL:', error);
+      if (callbackRoute) {
+        console.log('[App] Navigating to auth callback with:', { callbackRoute, fullUrl: url });
+        navigate(callbackRoute, { replace: true });
+      } else {
+        console.log('[App] Ignoring non-auth URL:', url);
       }
     });
 

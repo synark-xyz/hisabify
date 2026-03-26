@@ -1,20 +1,9 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import { loginRateLimiter, isValidEmail, validatePasswordStrength, addAuthDelay } from '@/lib/security';
 import { logger } from '@/lib/logger';
-
-/** Build the correct OAuth redirect URL for web and native platforms. */
-function getOAuthRedirectUrl(): string {
-  // For native platforms, we use a custom URL scheme that Capacitor intercepts.
-  // The scheme matches the app ID: io.synark.hisabify://auth/callback
-  // This allows the system browser to open for OAuth and then redirect back to our app.
-  if (Capacitor.isNativePlatform()) {
-    return 'io.synark.hisabify://auth/callback';
-  }
-  return `${window.location.origin}/auth/callback`;
-}
+import { getEmailAuthRedirectUrl, getOAuthRedirectUrl } from '@/lib/authRedirect';
 
 interface AuthContextType {
   user: User | null;
@@ -78,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = getEmailAuthRedirectUrl('/');
       console.log('[Auth] Calling Supabase signUp', { email, redirectUrl });
       
       const { error } = await supabase.auth.signUp({
@@ -158,8 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithOAuth = async (provider: 'google') => {
     try {
       const redirectTo = getOAuthRedirectUrl();
-      console.log('[OAuth] Starting flow', { provider, redirectTo, isNative: Capacitor.isNativePlatform() });
-      logger.info('[OAuth] Starting flow', { provider, redirectTo, isNative: Capacitor.isNativePlatform() });
+      console.log('[OAuth] Starting flow', { provider, redirectTo });
+      logger.info('[OAuth] Starting flow', { provider, redirectTo });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,

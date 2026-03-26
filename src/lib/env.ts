@@ -15,6 +15,7 @@ const envSchema = z.object({
   // Optional with defaults
   VITE_SUPABASE_PROJECT_ID: z.string().optional(),
   VITE_APP_URL: z.string().url().optional(),
+  VITE_APP_URL_SCHEME: z.string().optional(),
   VITE_APP_NAME: z.string().default('Hisabify'),
   VITE_SENTRY_DSN: z.string().optional(),
   VITE_ENABLE_ANALYTICS: z.string().transform(v => v === 'true').default('false'),
@@ -31,6 +32,7 @@ function validateEnv(): Env {
     VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
     VITE_SUPABASE_PROJECT_ID: import.meta.env.VITE_SUPABASE_PROJECT_ID,
     VITE_APP_URL: import.meta.env.VITE_APP_URL,
+    VITE_APP_URL_SCHEME: import.meta.env.VITE_APP_URL_SCHEME,
     VITE_APP_NAME: import.meta.env.VITE_APP_NAME,
     VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
     VITE_ENABLE_ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS,

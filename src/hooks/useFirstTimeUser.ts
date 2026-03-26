@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export function useFirstTimeUser() {
   const { user } = useAuth();
-  const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
   const checkIfFirstTimeUser = useCallback(async () => {

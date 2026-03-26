@@ -21,6 +21,7 @@ import { z } from 'zod';
 import { HisabifyLogo } from '@/components/HisabifyLogo';
 import { LegalModal, type LegalTab } from '@/components/LegalModal';
 import { cn } from '@/lib/utils';
+import { getEmailAuthRedirectUrl } from '@/lib/authRedirect';
 
 // ─── Validation schemas ────────────────────────────────────────────────────────
 
@@ -505,7 +506,7 @@ export function AuthPage() {
       setLoading(true);
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
+          redirectTo: getEmailAuthRedirectUrl('/reset-password'),
         });
         if (error) {
           toast({ title: 'Error', description: error.message, variant: 'destructive' });

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { StreamingGreeting } from '@/components/StreamingGreeting';
+import { Skeleton } from '@/components/ui/skeleton';
 import { HealthScoreCard } from '@/features/gamification/components/HealthScoreCard';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
@@ -49,7 +50,7 @@ export function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
-  const { isFirstTimeUser, loading: firstTimeLoading, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
+  const { isFirstTimeUser, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
   const { user } = useAuth();
   const { variant, theme } = useTheme();
   const { formatAmount, currencyVersion, currency } = useCurrency();
@@ -220,9 +221,9 @@ export function Dashboard() {
   }, [paymentReminders]);
 
   const netBalance = totalIncome - totalExpenses;
-  const showGettingStarted = !firstTimeLoading && isFirstTimeUser;
+  const showGettingStarted = isFirstTimeUser === true;
 
-  // Monthly wrap prompt: show on the 1st of each month, dismiss via localStorage
+  // Monthly wrap prompt state and effect must live before any early returns (Rules of Hooks).
   const [showWrapPrompt, setShowWrapPrompt] = useState(false);
   const [showWrapModal, setShowWrapModal] = useState(false);
 
@@ -236,6 +237,31 @@ export function Dashboard() {
       setShowWrapPrompt(true);
     }
   }, [isFirstTimeUser, totalExpenses]);
+
+  // While the first-time-user check is still resolving, render a skeleton that
+  // mirrors the Dashboard's visual layout so neither the regular dashboard nor
+  // the getting-started UI flashes before we know which one to show.
+  if (isFirstTimeUser === null) {
+    return (
+      <div className="min-h-screen relative">
+        <ParticlesBackground />
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pb-24 pt-4">
+          {/* Greeting row */}
+          <div className="flex items-center gap-3 px-1">
+            <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
+            <div className="flex flex-col gap-2 flex-1">
+              <Skeleton className="h-5 w-40 rounded-md" />
+              <Skeleton className="h-3 w-56 rounded-md" />
+            </div>
+          </div>
+          {/* Hero balance card */}
+          <Skeleton className="rounded-3xl h-44 w-full" />
+          {/* Section block (health score / getting-started) */}
+          <Skeleton className="rounded-3xl h-36 w-full" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative">

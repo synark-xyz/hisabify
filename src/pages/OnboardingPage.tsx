@@ -97,8 +97,8 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
 
     useEffect(() => {
         controls.start({
-            scale: [1, 1.05, 1],
-            transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            scale: [1, 1.25, 1],
+            transition: { duration: 1, repeat: Infinity, ease: "easeInOut" }
         });
     }, [controls]);
 

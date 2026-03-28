@@ -72,7 +72,7 @@ export function TransactionForm({
 
   const { user } = useAuth();
   const { toast } = useToast();
-  const { currency } = useCurrency();
+  const { currency, formatAmount } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const { isPremium } = useSubscription();
   const { logEvent } = useUserBehavior();
@@ -80,6 +80,13 @@ export function TransactionForm({
   const { getBudgetsForCategory } = useBudgetContext();
 
   const isEditMode = mode === 'edit' && !!initialTransaction;
+
+  // Sync form currency when useCurrency() resolves from DB — skip if scan already detected a currency
+  useEffect(() => {
+    if (!isEditMode && !initialData?.currency) {
+      form.setValue('currency', currency);
+    }
+  }, [currency]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const form = useForm<TransactionFormValues>({
     defaultValues: {
@@ -109,7 +116,7 @@ export function TransactionForm({
       categoryId: initialData?.category || '',
       date: initialData?.date || new Date(),
       note: '',
-      currency,
+      currency: initialData?.currency || currency,
     });
     setSelectedBudgetId(initialBudgetId ?? null);
   }, [currency, form, initialData, initialType, initialBudgetId]);
@@ -394,7 +401,7 @@ export function TransactionForm({
                   </FormControl>
                 </div>
                 {convertedPreview && (
-                  <p className="text-xs text-muted-foreground mt-1 px-1">≈ {baseCurrencySymbol}{convertedPreview.amount.toFixed(2)} {currency}</p>
+                  <p className="text-xs text-muted-foreground mt-1 px-1">≈ {formatAmount(convertedPreview.amount)}</p>
                 )}
                 <FormMessage />
               </FormItem>
@@ -480,7 +487,7 @@ export function TransactionForm({
                       'tabular-nums text-[10px]',
                       b.remaining <= 0 ? 'text-destructive' : 'opacity-60'
                     )}>
-                      {baseCurrencySymbol}{b.remaining.toLocaleString(undefined, { maximumFractionDigits: 0 })} left
+                      {formatAmount(b.remaining)} left
                     </span>
                   </button>
                 ))}

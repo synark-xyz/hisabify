@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, X, Sparkles, Image, Check, Loader2 } from 'lucide-react';
+import { Camera, X, Sparkles, Image, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -333,6 +333,16 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                                             </p>
                                                         </div>
                                                     </div>
+                                                </div>
+                                            )}
+
+                                            {/* Old receipt warning */}
+                                            {extractedData?.date && (new Date().getTime() - extractedData.date.getTime()) > 365 * 24 * 60 * 60 * 1000 && (
+                                                <div className="flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3">
+                                                    <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                                                    <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+                                                        <span className="font-bold">Old receipt detected.</span> The date on this bill is over a year ago. If you're adding it now, edit the date to today in the next step.
+                                                    </p>
                                                 </div>
                                             )}
 

@@ -19,7 +19,7 @@ export function Layout() {
     const [showInputSheet, setShowInputSheet] = useState(false);
     const [showVoiceInput, setShowVoiceInput] = useState(false);
     const [smartData, setSmartData] = useState<
-        { merchant?: string; amount?: number; category?: string; receiptUrl?: string | null; date?: Date; type?: 'expense' | 'income' } | undefined
+        { merchant?: string; amount?: number; category?: string; receiptUrl?: string | null; date?: Date; type?: 'expense' | 'income'; currency?: string } | undefined
     >(undefined);
 
     const location = useLocation();
@@ -167,6 +167,7 @@ export function Layout() {
                         amount: data.amount,
                         date: data.date,
                         receiptUrl: data.receiptUrl,
+                        currency: data.currency,
                         type: 'expense'
                     });
                     setShowScanner(false);

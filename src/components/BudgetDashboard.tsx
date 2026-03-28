@@ -4,7 +4,7 @@ import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBudgets, BudgetWithSpending, Budget } from '@/hooks/useBudgets';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
-import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useCurrency } from '@/hooks/useCurrency';
 import { BudgetProgressCard } from '@/components/BudgetProgressCard';
 import { BudgetTransactionsSheet } from '@/components/BudgetTransactionsSheet';
 import { BudgetHistoryChart } from '@/components/BudgetHistoryChart';
@@ -39,8 +39,7 @@ export function BudgetDashboard() {
 
   const { budgets, loading, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
   const { activeGoals } = useSavingsGoals();
-  const { currency } = useCurrency();
-  const currencySymbol = currencyData[currency]?.symbol || '$';
+  const { formatAmount } = useCurrency();
   const { isPremium } = useSubscription();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const navigate = useNavigate();
@@ -173,7 +172,7 @@ export function BudgetDashboard() {
                   <p className="text-xs sm:text-sm text-muted-foreground">Budget</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
                     <PrivacyMask>
-                      {currencySymbol}{totalBudget.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      {formatAmount(totalBudget)}
                     </PrivacyMask>
                   </p>
                 </div>
@@ -197,7 +196,7 @@ export function BudgetDashboard() {
                   <p className="text-xs sm:text-sm text-muted-foreground">Spent</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
                     <PrivacyMask>
-                      {currencySymbol}{totalSpent.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      {formatAmount(totalSpent)}
                     </PrivacyMask>
                   </p>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
@@ -227,7 +226,7 @@ export function BudgetDashboard() {
                     totalRemaining >= 0 ? "text-green-500" : "text-destructive"
                   )}>
                     <PrivacyMask>
-                      {totalRemaining >= 0 ? '' : '-'}{currencySymbol}{Math.abs(totalRemaining).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      {formatAmount(totalRemaining)}
                     </PrivacyMask>
                   </p>
                 </div>
@@ -276,7 +275,7 @@ export function BudgetDashboard() {
           <CardContent className="flex flex-col gap-3 p-4">
             <div>
               <p className="text-sm font-semibold text-foreground">
-                You have {currencySymbol}{endedBudgetWithRemaining.remaining.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} unspent in {endedBudgetWithRemaining.category?.name || endedBudgetWithRemaining.name || 'this budget'}.
+                You have {formatAmount(endedBudgetWithRemaining.remaining)} unspent in {endedBudgetWithRemaining.category?.name || endedBudgetWithRemaining.name || 'this budget'}.
               </p>
               <p className="text-xs text-muted-foreground">Move to savings?</p>
             </div>

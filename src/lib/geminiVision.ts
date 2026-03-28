@@ -45,11 +45,16 @@ Return ONLY valid JSON (no markdown, no code fences):
 Rules:
 - amount = what the customer actually paid (look for Total, Grand Total, 合計, مجموع, Gesamt, 합계, etc.)
 - ¥ symbol → JPY unless context clearly says CNY
-- Omit any field you cannot determine.`;
+- Omit any field you cannot determine.
+- Do not translate any text. Keep merchant names exactly as they appear on the receipt.`;
 
   const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      // Override device locale so Gemini doesn't translate field values
+      'Accept-Language': 'en-US',
+    },
     body: JSON.stringify({
       contents: [{ parts: [
         { inline_data: { mime_type: mimeType, data: base64 } },

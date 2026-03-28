@@ -128,7 +128,7 @@
   - `VITE_REVENUECAT_API_KEY` - In-app purchase configuration (native only)
 - Server-side env vars (Supabase Edge Functions):
   - `SUPABASE_URL` - Service role access
-  - `SUPABASE_SERVICE_ROLE_KEY` - Privileged database operations
+  - `SERVICE_ROLE_KEY` - Privileged database operations
   - `OPENEXCHANGE_API_KEY` - Exchange rate API
   - `REVENUECAT_WEBHOOK_AUTH_HEADER` - Webhook signature verification
 

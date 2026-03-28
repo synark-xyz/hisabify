@@ -1,5 +1,19 @@
 import { differenceInDays, parseISO } from 'date-fns';
 
+// ─── Score component weights (keep in sync with calculateHealthScore) ────────
+
+export const SCORE_WEIGHTS = {
+  budget: 35,
+  savings: 50,
+  activity: 15,
+} as const;
+
+export function getScoreColor(val: number): string {
+  if (val >= 80) return '#10b981'; // emerald-500
+  if (val >= 50) return '#f59e0b'; // amber-500
+  return '#f43f5e'; // rose-500
+}
+
 // ─── Milestone badge definitions ──────────────────────────────────────────────
 
 export interface MilestoneBadge {

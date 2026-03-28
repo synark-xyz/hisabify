@@ -21,7 +21,7 @@ serve(async (req: Request) => {
   }
 
   // ── Verify service-role authorization ─────────────────────────────────────
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY') ?? '';
   const authHeader = req.headers.get('Authorization') ?? '';
   if (!authHeader || authHeader !== `Bearer ${serviceRoleKey}`) {
     return new Response('Unauthorized', { status: 401 });

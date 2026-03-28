@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -107,11 +107,13 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
   }, [open, source]);
 
   // On native: delegate entirely to RevenueCat's built-in paywall UI
+  const stableOnOpenChange = useCallback(onOpenChange, [onOpenChange]);
+  const stableShowPaywall = useCallback(showPaywall, [showPaywall]);
   useEffect(() => {
     if (!open || !isNativePlatform) return;
-    onOpenChange(false);
-    showPaywall();
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+    stableOnOpenChange(false);
+    stableShowPaywall();
+  }, [open, stableOnOpenChange, stableShowPaywall]);
 
   // Don't render the custom modal UI on native — RC handles it
   if (isNativePlatform) return null;
@@ -125,8 +127,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
       await purchasePlan(plan);
       onOpenChange(false);
     } catch (err) {
-      // RC throws with userCancelled=true when user dismisses billing sheet — ignore silently
-      if ((err as Record<string, unknown>).userCancelled) return;
+      if (err != null && typeof err === 'object' && 'userCancelled' in err && err.userCancelled) return;
       const message = err instanceof Error ? err.message : 'Purchase failed';
       toast({ title: 'Purchase error', description: message, variant: 'destructive' });
     } finally {

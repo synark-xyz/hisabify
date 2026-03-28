@@ -16,6 +16,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useCategories } from '@/hooks/useCategories';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
+import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -74,6 +75,7 @@ export function TransactionForm({
   const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const { isPremium } = useSubscription();
+  const { logEvent } = useUserBehavior();
   const { categories } = useCategories();
   const { getBudgetsForCategory } = useBudgetContext();
 
@@ -249,6 +251,19 @@ export function TransactionForm({
         }).catch(() => {});
         const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
+
+        // Log transaction_created behavior event
+        const category = type === 'expense' ? (data.categoryId || 'uncategorized') : null;
+        logEvent('transaction_created', {
+          amount: normalizedAmount,
+          type,
+          category,
+          merchant,
+          currency: data.currency,
+          input_method: initialData?.receiptUrl ? 'receipt' : 'manual',
+          day_of_week: data.date.getDay(),
+          hour_of_day: new Date().getHours(),
+        }).catch(() => {});
       }
 
       onSuccess();

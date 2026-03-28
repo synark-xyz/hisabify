@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Share2, Copy, Check, TrendingDown, PiggyBank, Flame, Calendar } from 'lucide-react';
+import { Share2, Check, TrendingDown, PiggyBank, Flame, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
 
 export interface MonthlyWrapCardProps {
   month: number;
@@ -42,39 +42,19 @@ export function MonthlyWrapCard({
     `Income: ${formattedTotalIncome}`,
     budgetWeeksUnder > 0 ? `Stayed under budget ${budgetWeeksUnder} week${budgetWeeksUnder !== 1 ? 's' : ''}` : null,
     expenseStreak > 1 ? `${expenseStreak}-day tracking streak` : null,
-    'Track yours at hisabify.app',
+    `Track yours at ${APP_BASE_URL}`,
   ]
     .filter(Boolean)
     .join('\n');
 
   const handleShare = async () => {
-    const sharePayload = {
-      title: `My ${monthLabel} Money Recap`,
-      text: shareText,
-      url: 'https://hisabify.app/',
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(sharePayload);
-      } catch (err) {
-        if (err instanceof Error && err.name !== 'AbortError') {
-          await copyFallback();
-        }
-      }
-    } else {
-      await copyFallback();
-    }
-  };
-
-  const copyFallback = async () => {
-    try {
-      await navigator.clipboard.writeText(`${shareText}\nhttps://hisabify.app/`);
+    const result = await shareOrCopy(
+      { title: `My ${monthLabel} Money Recap`, text: shareText, url: `${APP_BASE_URL}/` },
+      'Recap copied to clipboard!',
+    );
+    if (result === 'copied') {
       setCopied(true);
-      toast.success('Recap copied to clipboard!');
       setTimeout(() => setCopied(false), 2500);
-    } catch {
-      toast.error('Could not copy to clipboard');
     }
   };
 

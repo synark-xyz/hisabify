@@ -107,7 +107,7 @@ export function TransactionForm({
   const watchedCategoryId = form.watch('categoryId');
 
   const selectedCategory = categories.find((c) => c.id === watchedCategoryId);
-  const isOtherCategory = selectedCategory?.name === 'Other';
+  const isOtherCategory = selectedCategory?.name?.toLowerCase() === 'other' && !selectedCategory?.is_system_category;
 
   const matchingBudgets = useMemo(() => {
     if ((type !== 'expense' && type !== 'lend' && type !== 'owe') || !watchedCategoryId) return [];
@@ -181,6 +181,18 @@ export function TransactionForm({
     const debounce = setTimeout(previewConversion, 500);
     return () => clearTimeout(debounce);
   }, [watchedAmount, watchedCurrency, currency, convertAmount]);
+
+  const logCustomCategorySuggestion = (label: string) => {
+    if (!isOtherCategory || !label.trim() || !user) return;
+    supabase.rpc('upsert_custom_category_suggestion', {
+      p_label: label.trim(),
+      // lend/owe treated as expense for suggestion analytics purposes
+      p_category_type: type === 'income' ? 'income' : 'expense',
+      p_user_id: user.id,
+    }).then(({ error }) => {
+      if (error) logger.error(error, { action: 'upsert_custom_category_suggestion' });
+    });
+  };
 
   const handleSubmit = async (data: TransactionFormValues) => {
     if (!user) {
@@ -265,15 +277,7 @@ export function TransactionForm({
         }).catch(() => {});
         toast({ title: 'Transaction updated!' });
         // Fire-and-forget: log custom category suggestion
-        if (isOtherCategory && customCategoryLabel.trim()) {
-          supabase.rpc('upsert_custom_category_suggestion', {
-            p_label: customCategoryLabel.trim(),
-            p_category_type: (type === 'income' ? 'income' : 'expense') as string,
-            p_user_id: user.id,
-          }).then(({ error }) => {
-            if (error) logger.error(error, { action: 'upsert_custom_category_suggestion' });
-          });
-        }
+        logCustomCategorySuggestion(customCategoryLabel);
       } else {
         const { error } = await supabase.from('transactions').insert(payload);
         if (error) {
@@ -285,15 +289,7 @@ export function TransactionForm({
         const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
         // Fire-and-forget: log custom category suggestion
-        if (isOtherCategory && customCategoryLabel.trim()) {
-          supabase.rpc('upsert_custom_category_suggestion', {
-            p_label: customCategoryLabel.trim(),
-            p_category_type: (type === 'income' ? 'income' : 'expense') as string,
-            p_user_id: user.id,
-          }).then(({ error }) => {
-            if (error) logger.error(error, { action: 'upsert_custom_category_suggestion' });
-          });
-        }
+        logCustomCategorySuggestion(customCategoryLabel);
 
         // Log transaction_created behavior event
         const category = type === 'expense' ? (data.categoryId || 'uncategorized') : null;
@@ -499,6 +495,7 @@ export function TransactionForm({
                 placeholder="e.g. Pet supplies, Wedding gift…"
                 className="rounded-xl"
                 value={customCategoryLabel}
+                maxLength={100}
                 onChange={(e) => {
                   setCustomCategoryLabel(e.target.value);
                   if (e.target.value.trim()) setCustomCategoryError('');
@@ -506,6 +503,9 @@ export function TransactionForm({
               />
               {customCategoryError && (
                 <p className="text-xs text-destructive">{customCategoryError}</p>
+              )}
+              {customCategoryLabel.length > 80 && (
+                <p className="text-xs text-muted-foreground text-right">{customCategoryLabel.length}/100</p>
               )}
             </div>
           )}

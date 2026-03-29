@@ -20,6 +20,7 @@ export interface Category {
   created_at: string;
   is_system_category?: boolean;
   category_type?: string;
+  type: 'expense' | 'income';
 }
 
 export interface Transaction {
@@ -48,6 +49,7 @@ export interface Transaction {
   // Budget linkage
   budget_id?: string | null;
   savings_goal_id?: string | null;
+  custom_category_label?: string | null;
 }
 
 export interface Budget {

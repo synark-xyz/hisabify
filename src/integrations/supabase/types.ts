@@ -116,6 +116,7 @@ export type Database = {
           icon: string
           id: string
           name: string
+          type: string
         }
         Insert: {
           color?: string
@@ -123,6 +124,7 @@ export type Database = {
           icon?: string
           id?: string
           name: string
+          type?: string
         }
         Update: {
           color?: string
@@ -130,8 +132,71 @@ export type Database = {
           icon?: string
           id?: string
           name?: string
+          type?: string
         }
         Relationships: []
+      }
+      custom_category_suggestions: {
+        Row: {
+          category_type: string
+          first_used_at: string
+          label: string
+          last_used_at: string
+          promoted: boolean
+          promoted_at: string | null
+          unique_user_count: number
+          usage_count: number
+        }
+        Insert: {
+          category_type: string
+          first_used_at?: string
+          label: string
+          last_used_at?: string
+          promoted?: boolean
+          promoted_at?: string | null
+          unique_user_count?: number
+          usage_count?: number
+        }
+        Update: {
+          category_type?: string
+          first_used_at?: string
+          label?: string
+          last_used_at?: string
+          promoted?: boolean
+          promoted_at?: string | null
+          unique_user_count?: number
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      custom_category_user_log: {
+        Row: {
+          category_type: string
+          created_at: string
+          label: string
+          user_id: string
+        }
+        Insert: {
+          category_type: string
+          created_at?: string
+          label: string
+          user_id: string
+        }
+        Update: {
+          category_type?: string
+          created_at?: string
+          label?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_category_user_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exchange_rates: {
         Row: {
@@ -636,6 +701,7 @@ export type Database = {
           created_at: string
           currency_base: string | null
           currency_original: string | null
+          custom_category_label: string | null
           date: string
           exchange_rate: number | null
           exchange_source: string | null
@@ -658,6 +724,7 @@ export type Database = {
           created_at?: string
           currency_base?: string | null
           currency_original?: string | null
+          custom_category_label?: string | null
           date?: string
           exchange_rate?: number | null
           exchange_source?: string | null
@@ -680,6 +747,7 @@ export type Database = {
           created_at?: string
           currency_base?: string | null
           currency_original?: string | null
+          custom_category_label?: string | null
           date?: string
           exchange_rate?: number | null
           exchange_source?: string | null

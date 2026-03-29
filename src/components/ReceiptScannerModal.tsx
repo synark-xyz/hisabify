@@ -1,23 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, X, Sparkles, Image, Check, Loader2 } from 'lucide-react';
+import { Camera, X, Sparkles, Image, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { PrivacyMask } from '@/components/ui/privacy-mask';
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useCurrency } from '@/hooks/useCurrency';
+import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { Capacitor } from '@capacitor/core';
-import { preprocessImage } from '@/lib/imageProcessor';
-import { createWorker } from 'tesseract.js';
 import { useToast } from '@/hooks/use-toast';
+import { compressForGemini } from '@/lib/imageProcessor';
+import { callGeminiVision } from '@/lib/geminiVision';
 
 export interface ScannedReceiptData {
     merchant?: string;
     amount?: number;
+    subtotal?: number;
+    tax?: number;
+    tip?: number;
     date?: Date;
     receiptUrl?: string;
     receiptPath?: string;
     rawText?: string;
+    currency?: string;
+    provider?: string; // 'mindee-v2' | 'gemini-vision' | 'tesseract'
 }
 
 interface ReceiptScannerModalProps {
@@ -29,10 +34,14 @@ interface ReceiptScannerModalProps {
 export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: ReceiptScannerModalProps) {
     const { privacyMode } = useProfile();
     const { ensurePermission } = usePermissions();
+    const { currency: userCurrency } = useCurrency();
+    const { logEvent } = useUserBehavior();
     const { toast } = useToast();
     const [scanning, setScanning] = useState(false);
+    const [scanLabel, setScanLabel] = useState('Analyzing receipt...');
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [extractedData, setExtractedData] = useState<ScannedReceiptData | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Reset state when modal opens/closes
     useEffect(() => {
@@ -40,6 +49,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
             setPreviewImage(null);
             setExtractedData(null);
             setScanning(false);
+            setScanLabel('Analyzing receipt...');
         }
     }, [open]);
 
@@ -58,23 +68,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
             }
         }
 
-        // Use file input for camera capture (works on both web and native via Capacitor)
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.capture = 'environment'; // Use rear camera
-        
-        input.onchange = async (e: Event) => {
-            const target = e.target as HTMLInputElement;
-            const file = target.files?.[0];
-            if (file) {
-                const dataUrl = await fileToDataURL(file);
-                setPreviewImage(dataUrl);
-                await processImage(dataUrl, file.name);
-            }
-        };
-        
-        input.click();
+        fileInputRef.current?.click();
     };
 
     const handleChooseFromGallery = async () => {
@@ -90,130 +84,75 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
             }
         }
 
-        // Use file input for gallery selection
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        
+
         input.onchange = async (e: Event) => {
             const target = e.target as HTMLInputElement;
             const file = target.files?.[0];
             if (file) {
-                const dataUrl = await fileToDataURL(file);
-                setPreviewImage(dataUrl);
-                await processImage(dataUrl, file.name);
+                await processImage(file);
             }
         };
-        
+
         input.click();
     };
 
-    const fileToDataURL = (file: File): Promise<string> => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-        });
-    };
-
-    const blobToDataURL = (blob: Blob): Promise<string> => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-        });
-    };
-
-    const processImage = async (imageData: string, imagePath: string) => {
+    const processImage = async (file: File) => {
         setScanning(true);
+        setScanLabel('Analyzing receipt...');
+
         try {
-            // Preprocess image for better OCR accuracy
-            const blob = await (await fetch(imageData)).blob();
-            const file = new File([blob], 'receipt.jpg', { type: 'image/jpeg' });
-            const processedImage = await preprocessImage(file);
+            const dataUrl = await fileToDataURL(file);
+            setPreviewImage(dataUrl);
 
-            // Run OCR
-            const worker = await createWorker('eng', 1, {
-                workerPath: '/worker.min.js',
-                corePath: '/tesseract-core.wasm.js',
-            });
+            setScanLabel('Extracting with AI...');
+            const { base64, mimeType } = await compressForGemini(file);
+            const result = await callGeminiVision(base64, mimeType, userCurrency);
 
-            const ret = await worker.recognize(processedImage);
-            const text = ret.data.text;
-            await worker.terminate();
-
-            console.log("Receipt OCR:", text);
-
-            // Parse receipt data
-            const parsedData = processReceiptText(text);
-            
             setExtractedData({
-                ...parsedData,
-                receiptUrl: imageData,
-                receiptPath: imagePath,
-                rawText: text,
+                merchant: result.merchant,
+                amount: result.amount,
+                date: result.date ? new Date(result.date) : undefined,
+                currency: result.currency,
+                receiptUrl: dataUrl,
+                receiptPath: file.name,
+                provider: 'gemini-vision',
             });
+            logReceiptScan(result.confidence, 'unknown', userCurrency, false, false);
+
         } catch (err) {
-            console.error("OCR Failed:", err);
+            console.error('[ReceiptScanner] Extraction failed:', err);
             toast({
                 variant: 'destructive',
-                title: 'OCR Error',
-                description: 'Failed to extract text from image.'
+                title: 'Scan Failed',
+                description: 'Could not read receipt. Please try again or enter details manually.',
             });
         } finally {
             setScanning(false);
+            setScanLabel('Analyzing receipt...');
         }
     };
 
-    const processReceiptText = (text: string): { merchant?: string; amount?: number; date?: Date } => {
-        const lines = text.split('\n');
-        let amount = '';
-        let date: Date | undefined;
-        let merchant = '';
-
-        // 1. Extract Amount (Look for highest number formatted as price)
-        const priceRegex = /(\$|€|£|¥)?\s?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/g;
-        let maxVal = 0;
-        const amountMatches = [...text.matchAll(priceRegex)];
-
-        for (const match of amountMatches) {
-            const valStr = match[2].replace(',', '.');
-            const val = parseFloat(valStr);
-            if (!isNaN(val) && val > maxVal && val < 500000) {
-                maxVal = val;
-            }
+    const logReceiptScan = async (
+        confidence: string,
+        scriptType: string,
+        currency: string,
+        wasCorrected: boolean,
+        hadTaxLine: boolean
+    ) => {
+        try {
+            await logEvent('receipt_scanned', {
+                confidence,
+                script_type: scriptType,
+                currency,
+                was_corrected: wasCorrected,
+                had_tax_line: hadTaxLine,
+            });
+        } catch (err) {
+            console.error('[ReceiptScanner] Failed to log behavior event:', err);
         }
-        if (maxVal > 0) amount = maxVal.toFixed(2);
-
-        // 2. Extract Date
-        const dateRegex = /\b(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4})\b/;
-        const dateMatch = text.match(dateRegex);
-        if (dateMatch) {
-            const dateStr = dateMatch[1];
-            const timestamp = Date.parse(dateStr);
-            if (!isNaN(timestamp)) {
-                date = new Date(timestamp);
-            }
-        }
-
-        // 3. Extract Merchant (First meaningful line)
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.length > 3 && !trimmed.match(/^\d/) && !trimmed.includes('Welcome') && !trimmed.includes('RECEIPT')) {
-                if (trimmed === trimmed.toUpperCase()) {
-                    merchant = trimmed;
-                    break;
-                }
-                if (!merchant) merchant = trimmed;
-            }
-        }
-
-        console.log("Extracted:", { amount, date, merchant });
-        return {
-            merchant,
-            amount: amount ? parseFloat(amount) : undefined,
-            date,
-        };
     };
 
     const handleConfirm = () => {
@@ -238,6 +177,20 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                         exit={{ opacity: 0 }}
                         onClick={() => onOpenChange(false)}
                         className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60]"
+                    />
+
+                    {/* Hidden file input for camera */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) await processImage(file);
+                            e.target.value = '';
+                        }}
                     />
 
                     {/* Scanner Panel */}
@@ -313,8 +266,8 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                         >
                                             <Loader2 className="w-12 h-12 animate-spin text-accent" />
                                             <div className="text-center space-y-2">
-                                                <h4 className="text-lg font-bold">Scanning Receipt...</h4>
-                                                <p className="text-muted-foreground text-sm">Extracting merchant, amount & date</p>
+                                                <h4 className="text-lg font-bold">Analyzing Receipt...</h4>
+                                                <p className="text-muted-foreground text-sm">{scanLabel}</p>
                                             </div>
                                         </motion.div>
                                     )}
@@ -343,7 +296,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                                             </span>
                                                             {extractedData.amount && (
                                                                 <span className="text-emerald-400 ml-auto font-mono">
-                                                                    ${extractedData.amount.toFixed(2)}
+                                                                    {extractedData.currency || '$'}{extractedData.amount.toFixed(2)}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -354,7 +307,12 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                             {/* Extracted Data Summary */}
                                             {extractedData && (
                                                 <div className="bg-muted/50 rounded-2xl p-4 space-y-2">
-                                                    <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Extracted Details</h5>
+                                                    <div className="flex items-center justify-between">
+                                                        <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Extracted Details</h5>
+                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                                            AI Vision
+                                                        </span>
+                                                    </div>
                                                     <div className="grid grid-cols-2 gap-3">
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground">Merchant</p>
@@ -363,7 +321,9 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground">Amount</p>
                                                             <p className="text-sm font-bold text-emerald-500">
-                                                                {extractedData.amount ? `$${extractedData.amount.toFixed(2)}` : '—'}
+                                                                {extractedData.amount
+                                                                    ? `${extractedData.currency || '$'}${extractedData.amount.toFixed(2)}`
+                                                                    : '—'}
                                                             </p>
                                                         </div>
                                                         <div>
@@ -373,6 +333,16 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                                             </p>
                                                         </div>
                                                     </div>
+                                                </div>
+                                            )}
+
+                                            {/* Old receipt warning */}
+                                            {extractedData?.date && (new Date().getTime() - extractedData.date.getTime()) > 365 * 24 * 60 * 60 * 1000 && (
+                                                <div className="flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3">
+                                                    <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                                                    <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+                                                        <span className="font-bold">Old receipt detected.</span> The date on this bill is over a year ago. If you're adding it now, edit the date to today in the next step.
+                                                    </p>
                                                 </div>
                                             )}
 
@@ -387,6 +357,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                                 </Button>
                                                 <Button
                                                     onClick={handleConfirm}
+                                                    disabled={!extractedData}
                                                     className="flex-1 rounded-xl"
                                                 >
                                                     Continue
@@ -409,4 +380,12 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
             )}
         </AnimatePresence>
     );
+}
+
+function fileToDataURL(file: File): Promise<string> {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+    });
 }

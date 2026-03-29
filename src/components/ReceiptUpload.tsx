@@ -1,15 +1,13 @@
 import { useRef, useState } from 'react';
-import { Upload, X, FileImage, Loader2, Eye, ScanLine } from 'lucide-react';
+import { X, FileImage, Loader2, Eye, ScanLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useReceiptUpload } from '@/hooks/useReceiptUpload';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCurrency } from '@/hooks/useCurrency';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { createWorker } from 'tesseract.js';
-import { format, parse } from 'date-fns';
-import { preprocessImage } from '@/lib/imageProcessor';
-import { supabase } from '@/integrations/supabase/client';
+import { compressForGemini } from '@/lib/imageProcessor';
+import { callGeminiVision } from '@/lib/geminiVision';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReceiptUploadProps {
@@ -38,49 +36,30 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
     const localPreview = URL.createObjectURL(file);
     setPreviewUrl(localPreview);
 
-    // 1. Start OCR Scan (if callback provided)
+    // 1. OCR Scan via Gemini Vision
     if (onScanComplete && file.type.startsWith('image/')) {
       setScanning(true);
-      setScanLabel('Scanning Receipt...');
+      setScanLabel('Scanning with AI...');
       try {
-        // Preprocess image for better OCR accuracy
-        const processedImage = await preprocessImage(file);
+        const { base64, mimeType } = await compressForGemini(file);
+        const result = await callGeminiVision(base64, mimeType, userCurrency);
 
-        const worker = await createWorker('eng', 1, {
-          workerPath: '/worker.min.js',
-          corePath: '/tesseract-core.wasm.js',
-        });
-
-        const ret = await worker.recognize(processedImage);
-        const text = ret.data.text;
-        await worker.terminate();
-
-        // Attempt AI extraction; fall back to heuristic on failure
-        setScanLabel('Extracting with AI...');
-        let aiSuccess = false;
-        try {
-          const { data, error: fnError } = await supabase.functions.invoke('parse-transaction', {
-            body: { mode: 'receipt', text, user_currency: userCurrency },
+        if (result.merchant || result.amount) {
+          onScanComplete({
+            amount: result.amount != null ? String(Number(result.amount).toFixed(2)) : undefined,
+            date: result.date ? new Date(result.date) : undefined,
+            merchant: result.merchant,
           });
-          if (!fnError && data && (data.merchant || data.amount)) {
-            const extractedDate = data.date ? new Date(data.date) : undefined;
-            onScanComplete({
-              amount: data.amount != null ? String(Number(data.amount).toFixed(2)) : undefined,
-              date: extractedDate,
-              merchant: data.merchant,
+          if (import.meta.env.DEV) {
+            toast({
+              title: '[DEBUG] Gemini Vision',
+              description: `merchant=${result.merchant ?? '—'} amount=${result.amount ?? '—'} conf=${result.confidence}`,
             });
-            aiSuccess = true;
           }
-        } catch {
-          // AI call failed — fall through to heuristic
         }
-
-        if (!aiSuccess) {
-          processReceiptText(text);
-        }
-
       } catch (err) {
-        console.error("OCR Failed:", err);
+        console.error('[ReceiptUpload] OCR Failed:', err);
+        // Form stays blank — user fills in manually
       } finally {
         setScanning(false);
         setScanLabel('Scanning Receipt...');
@@ -94,13 +73,9 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
         setPreviewUrl(result.url);
         onChange(result.url, result.path);
       } else {
-        // If upload fails but we have a local preview, maybe keep it?
-        // For now, if upload fails, we revert to initial value
         if (!value) setPreviewUrl(null);
       }
     } else {
-      // In transient mode, we just keep the local preview for now
-      // It won't be persisted to DB
       onChange(localPreview);
     }
 
@@ -110,67 +85,12 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
     }
   };
 
-  const processReceiptText = (text: string) => {
-    const lines = text.split('\n');
-    let amount = '';
-    let date: Date | undefined;
-    let merchant = '';
-
-    // 1. Extract Amount (Look for highest number formatted as price)
-    // Matches: 12.34, 1,234.56, $12.34
-    const priceRegex = /(\$|€|£|¥)?\s?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/g;
-    let maxVal = 0;
-    const amountMatches = [...text.matchAll(priceRegex)];
-
-    for (const match of amountMatches) {
-      const valStr = match[2].replace(',', '.'); // Simplify
-      const val = parseFloat(valStr);
-      // Simple heuristic: Total is usually the largest number, but distinct from e.g. a phone number
-      if (!isNaN(val) && val > maxVal && val < 500000) {
-        maxVal = val;
-      }
-    }
-    if (maxVal > 0) amount = maxVal.toFixed(2);
-
-    // 2. Extract Date
-    // Matches: MM/DD/YYYY, YYYY-MM-DD, DD.MM.YYYY, etc.
-    const dateRegex = /\b(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4})\b/;
-    const dateMatch = text.match(dateRegex);
-    if (dateMatch) {
-      const dateStr = dateMatch[1];
-      // Try parsing common formats
-      const timestamp = Date.parse(dateStr);
-      if (!isNaN(timestamp)) {
-        date = new Date(timestamp);
-      }
-    }
-
-    // 3. Extract Merchant (First meaningful line)
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.length > 3 && !trimmed.match(/^\d/) && !trimmed.includes('Welcome') && !trimmed.includes('RECEIPT')) {
-        if (trimmed === trimmed.toUpperCase()) { // Heuristic: Merchants often use ALL CAPS
-          merchant = trimmed;
-          break;
-        }
-        // Fallback to first non-empty line
-        if (!merchant) merchant = trimmed;
-      }
-    }
-
-    console.log("Extracted:", { amount, date, merchant });
-    if (onScanComplete) {
-      onScanComplete({ amount, date, merchant });
-    }
-  };
-
   const handleRemove = () => {
     setPreviewUrl(null);
     onChange(null);
   };
 
   const handleFilePickerClick = async () => {
-    // On native platforms, request camera/photos permission before opening picker
     if (isNative) {
       const hasCameraPermission = await ensurePermission('camera');
       const hasPhotosPermission = await ensurePermission('photos');
@@ -185,7 +105,6 @@ export function ReceiptUpload({ value, onChange, onScanComplete, disabled, trans
       }
     }
 
-    // Trigger file input
     fileInputRef.current?.click();
   };
 

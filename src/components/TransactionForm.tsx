@@ -16,6 +16,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useCategories } from '@/hooks/useCategories';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
+import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -71,13 +72,21 @@ export function TransactionForm({
 
   const { user } = useAuth();
   const { toast } = useToast();
-  const { currency } = useCurrency();
+  const { currency, formatAmount } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const { isPremium } = useSubscription();
+  const { logEvent } = useUserBehavior();
   const { categories } = useCategories();
   const { getBudgetsForCategory } = useBudgetContext();
 
   const isEditMode = mode === 'edit' && !!initialTransaction;
+
+  // Sync form currency when useCurrency() resolves from DB — skip if scan already detected a currency
+  useEffect(() => {
+    if (!isEditMode && !initialData?.currency) {
+      form.setValue('currency', currency);
+    }
+  }, [currency]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const form = useForm<TransactionFormValues>({
     defaultValues: {
@@ -107,7 +116,7 @@ export function TransactionForm({
       categoryId: initialData?.category || '',
       date: initialData?.date || new Date(),
       note: '',
-      currency,
+      currency: initialData?.currency || currency,
     });
     setSelectedBudgetId(initialBudgetId ?? null);
   }, [currency, form, initialData, initialType, initialBudgetId]);
@@ -249,6 +258,19 @@ export function TransactionForm({
         }).catch(() => {});
         const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
+
+        // Log transaction_created behavior event
+        const category = type === 'expense' ? (data.categoryId || 'uncategorized') : null;
+        logEvent('transaction_created', {
+          amount: normalizedAmount,
+          type,
+          category,
+          merchant,
+          currency: data.currency,
+          input_method: initialData?.receiptUrl ? 'receipt' : 'manual',
+          day_of_week: data.date.getDay(),
+          hour_of_day: new Date().getHours(),
+        }).catch(() => {});
       }
 
       onSuccess();
@@ -379,7 +401,7 @@ export function TransactionForm({
                   </FormControl>
                 </div>
                 {convertedPreview && (
-                  <p className="text-xs text-muted-foreground mt-1 px-1">≈ {baseCurrencySymbol}{convertedPreview.amount.toFixed(2)} {currency}</p>
+                  <p className="text-xs text-muted-foreground mt-1 px-1">≈ {formatAmount(convertedPreview.amount)}</p>
                 )}
                 <FormMessage />
               </FormItem>
@@ -465,7 +487,7 @@ export function TransactionForm({
                       'tabular-nums text-[10px]',
                       b.remaining <= 0 ? 'text-destructive' : 'opacity-60'
                     )}>
-                      {baseCurrencySymbol}{b.remaining.toLocaleString(undefined, { maximumFractionDigits: 0 })} left
+                      {formatAmount(b.remaining)} left
                     </span>
                   </button>
                 ))}

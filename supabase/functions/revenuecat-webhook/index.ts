@@ -81,7 +81,7 @@ serve(async (req: Request) => {
 
   // ── Supabase service-role client (bypasses RLS) ───────────────────────────
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY') ?? '';
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const userId = event.app_user_id;

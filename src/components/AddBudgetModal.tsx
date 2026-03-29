@@ -15,6 +15,7 @@ import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useBudgets, PeriodType, Budget } from '@/hooks/useBudgets';
+import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
 import { useCategories } from '@/hooks/useCategories';
@@ -62,6 +63,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
   const { isPremium } = useSubscription();
   const { createBudget, updateBudget, budgets } = useBudgets();
   const { categories } = useCategories();
+  const { logEvent } = useUserBehavior();
   const currencySymbol = currencyData[currency]?.symbol || '$';
 
   // Handle keyboard on mobile
@@ -247,6 +249,17 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
 
       onSuccess?.();
       onOpenChange(false);
+
+      // Log budget_set behavior event (not for edits)
+      if (!editingBudget) {
+        const category = categories.find(c => c.id === (data.categoryId === 'all' ? null : data.categoryId));
+        logEvent('budget_set', {
+          category: category?.name || 'all',
+          period: data.periodType,
+          amount: parseFloat(data.amount),
+          currency: data.currency,
+        }).catch(() => {});
+      }
     } finally {
       setLoading(false);
     }

@@ -216,7 +216,7 @@
 
 **Server-Side Variables (Supabase Functions, not in client):**
 - `SUPABASE_URL` - Service-role access
-- `SUPABASE_SERVICE_ROLE_KEY` - Privileged database operations
+- `SERVICE_ROLE_KEY` - Privileged database operations
 - `OPENEXCHANGE_API_KEY` - OpenExchange Rates API key
 - `REVENUECAT_WEBHOOK_AUTH_HEADER` - Webhook signature verification header
 

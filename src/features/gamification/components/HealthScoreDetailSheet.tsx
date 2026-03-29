@@ -1,19 +1,20 @@
 import { motion } from 'framer-motion';
 import { Lightbulb } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { useHealthScore } from '../hooks/useHealthScore';
-import { getMilestoneBadge, generateTips } from '../utils/healthScoreLogic';
+import { getMilestoneBadge, generateTips, getScoreColor, SCORE_WEIGHTS } from '../utils/healthScoreLogic';
+import type { HealthScoreResult } from '../utils/healthScoreLogic';
 import { cn } from '@/lib/utils';
 
 interface HealthScoreDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  score: (HealthScoreResult & { insight: string }) | null;
 }
 
 const COMPONENTS = [
-  { key: 'budget' as const, label: 'Budgeting', max: 35, bg: 'bg-emerald-500' },
-  { key: 'savings' as const, label: 'Savings', max: 50, bg: 'bg-blue-500' },
-  { key: 'activity' as const, label: 'Activity', max: 15, bg: 'bg-amber-500' },
+  { key: 'budget' as const, label: 'Budgeting', max: SCORE_WEIGHTS.budget, bg: 'bg-emerald-500' },
+  { key: 'savings' as const, label: 'Savings', max: SCORE_WEIGHTS.savings, bg: 'bg-blue-500' },
+  { key: 'activity' as const, label: 'Activity', max: SCORE_WEIGHTS.activity, bg: 'bg-amber-500' },
 ] as const;
 
 const TIP_COLORS: Record<string, string> = {
@@ -23,19 +24,11 @@ const TIP_COLORS: Record<string, string> = {
   general: 'text-accent',
 };
 
-export function HealthScoreDetailSheet({ open, onOpenChange }: HealthScoreDetailSheetProps) {
-  const { score } = useHealthScore();
-
+export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScoreDetailSheetProps) {
   if (!score) return null;
 
   const milestoneBadge = getMilestoneBadge(score.total);
   const tips = generateTips(score.breakdown, score.total);
-
-  const getScoreColor = (val: number) => {
-    if (val >= 80) return '#10b981';
-    if (val >= 50) return '#f59e0b';
-    return '#f43f5e';
-  };
 
   const radius = 42;
   const circumference = 2 * Math.PI * radius;

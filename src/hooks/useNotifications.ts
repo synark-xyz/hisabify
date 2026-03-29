@@ -45,20 +45,29 @@ export function useNotifications() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Real-time subscription
+  // Real-time subscription (debounced to avoid burst fetches)
   useEffect(() => {
     if (!user) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
+    const debouncedRefresh = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(refresh, 1000);
+    };
 
     const channel = supabase
       .channel('notifications-realtime')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        () => refresh(),
+        debouncedRefresh,
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
   }, [user, refresh]);
 
   // Also listen for the custom event (fired by notificationManager after mutations)

@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PaymentReminder } from '@/types';
-import { useUnreadCount } from '@/hooks/useUnreadCount';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface HeaderProps {
   title: string;
@@ -35,7 +35,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
   const { profile } = useProfile();
   const { formatAmount } = useCurrency();
   const { reminders, markAsPaid } = usePaymentReminders();
-  const unreadMessagesCount = useUnreadCount();
+  const { unreadCount: unreadMessagesCount } = useNotifications();
   const [open, setOpen] = useState(false);
 
   const userInitial = profile.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';

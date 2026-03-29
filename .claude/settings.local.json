@@ -18,7 +18,10 @@
       "Bash(npx playwright:*)",
       "mcp__ide__getDiagnostics",
       "Bash(cd:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:developers.mindee.com)",
+      "WebFetch(domain:docs.mindee.com)",
+      "WebSearch"
     ]
   },
   "enabledPlugins": {

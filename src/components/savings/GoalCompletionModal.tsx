@@ -1,12 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInDays } from 'date-fns';
-import { Share2, Copy, Check, PartyPopper, Trophy, Star, Sparkles, X } from 'lucide-react';
+import { Share2, Check, PartyPopper, Trophy, Star, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
 import type { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
 
 interface GoalCompletionModalProps {
@@ -71,7 +71,6 @@ const CONFETTI_COLORS = ['#10B981', '#6366F1', '#F59E0B', '#EC4899', '#60A5FA', 
 export function GoalCompletionModal({ goal, open, onClose }: GoalCompletionModalProps) {
   const { formatAmount } = useCurrency();
   const [copied, setCopied] = useState(false);
-  const hasSharedRef = useRef(false);
 
   const tier = getCardTier(goal.current_amount);
   const config = TIER_CONFIG[tier];
@@ -85,38 +84,14 @@ export function GoalCompletionModal({ goal, open, onClose }: GoalCompletionModal
   const timeTaken = differenceInDays(completionDate, new Date(goal.created_at));
 
   const shareText = `I just hit my "${goal.name}" savings goal on Hisabify! Saved ${formatAmount(goal.current_amount)} in ${timeTaken} days. Track your finances too:`;
-  const shareUrl = 'https://hisabify.app/';
 
   const handleShare = async () => {
-    hasSharedRef.current = true;
-    const payload = {
-      title: `Goal Achieved: ${goal.name}`,
-      text: shareText,
-      url: shareUrl,
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(payload);
-        toast.success('Shared successfully!');
-      } catch (err) {
-        if (err instanceof Error && err.name !== 'AbortError') {
-          await copyToClipboard();
-        }
-      }
-    } else {
-      await copyToClipboard();
-    }
-  };
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+    const result = await shareOrCopy(
+      { title: `Goal Achieved: ${goal.name}`, text: shareText, url: `${APP_BASE_URL}/` },
+    );
+    if (result === 'copied') {
       setCopied(true);
-      toast.success('Copied to clipboard!');
       setTimeout(() => setCopied(false), 2500);
-    } catch {
-      toast.error('Could not copy to clipboard');
     }
   };
 

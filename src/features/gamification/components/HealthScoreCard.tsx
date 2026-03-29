@@ -3,12 +3,12 @@ import { ChartPie, Info, TrendingUp, Share2, Check } from 'lucide-react';
 import { useState } from 'react';
 import { useHealthScore } from '../hooks/useHealthScore';
 import { useReferral } from '@/features/referrals/hooks/useReferral';
-import { getMilestoneBadge } from '../utils/healthScoreLogic';
+import { getMilestoneBadge, getScoreColor } from '../utils/healthScoreLogic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
 import {
     Popover,
     PopoverContent,
@@ -29,12 +29,6 @@ export function HealthScoreCard() {
 
     if (!score) return null;
 
-    const getScoreColor = (val: number) => {
-        if (val >= 80) return '#10b981'; // emerald-500
-        if (val >= 50) return '#f59e0b'; // amber-500
-        return '#f43f5e'; // rose-500
-    };
-
     // Circular gauge calculations
     const radius = 58;
     const circumference = 2 * Math.PI * radius;
@@ -47,31 +41,18 @@ export function HealthScoreCard() {
 
     const handleChallenge = async () => {
         const challengeUrl = referralCode
-            ? `https://hisabify.app/auth?challenge=${score.total}&ref=${referralCode}`
-            : `https://hisabify.app/auth?challenge=${score.total}`;
+            ? `${APP_BASE_URL}/auth?challenge=${score.total}&ref=${referralCode}`
+            : `${APP_BASE_URL}/auth?challenge=${score.total}`;
 
         const shareText = `I scored ${score.total}/100 on my Financial Health Score! ${milestoneBadge?.emoji ?? ''} Think you can beat me? Track your finances on Hisabify:`;
 
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `My Financial Health Score: ${score.total}/100`,
-                    text: shareText,
-                    url: challengeUrl,
-                });
-                return;
-            } catch (err) {
-                if (err instanceof Error && err.name === 'AbortError') return;
-            }
-        }
-
-        try {
-            await navigator.clipboard.writeText(`${shareText} ${challengeUrl}`);
+        const result = await shareOrCopy(
+            { title: `My Financial Health Score: ${score.total}/100`, text: shareText, url: challengeUrl },
+            'Challenge link copied!',
+        );
+        if (result === 'copied') {
             setShareCopied(true);
-            toast.success('Challenge link copied!');
             setTimeout(() => setShareCopied(false), 2500);
-        } catch {
-            toast.error('Could not copy challenge link');
         }
     };
 
@@ -268,7 +249,7 @@ export function HealthScoreCard() {
             </div>
         </motion.div>
 
-        <HealthScoreDetailSheet open={detailOpen} onOpenChange={setDetailOpen} />
+        <HealthScoreDetailSheet open={detailOpen} onOpenChange={setDetailOpen} score={score} />
         </>
     );
 }

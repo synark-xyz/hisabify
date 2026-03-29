@@ -12,6 +12,7 @@ All work performed by the AI agent must adhere to the following safety and quali
 5. **Ask for Clarification:** If any business logic or requirement is unclear, STOP and ask the user.
 6. **Detailed Rules:** Refer to `.agent/rules.md` for the full instruction set.
 7. **Update Documentation:** Whenever you change code, logic, features, or fix bugs, update the relevant documentation files (`docs/`, `README.md`, `PRD.md`, `UPDATE.md`, `CHANGELOG.md`) to reflect those changes. Keep docs in sync with the codebase at all times.
+8. **Use LSP for Codebase Search:** When searching for symbols, definitions, references, or type information, prefer LSP tools (e.g., `mcp__ide__getDiagnostics`, go-to-definition, find-references) over plain `grep`. LSP understands TypeScript semantics — use it for symbol lookups, type-aware navigation, and finding all usages of a function or type. Fall back to `grep`/`Glob` only when LSP tools are unavailable or when searching non-code content (comments, strings, config files). If no relevant LSP tool is installed, suggest installing one (e.g., the `@modelcontextprotocol/server-typescript` MCP server).
 
 ## Project Overview
 

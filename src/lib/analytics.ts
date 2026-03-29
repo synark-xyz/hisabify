@@ -110,3 +110,11 @@ class AnalyticsService {
 }
 
 export const analytics = new AnalyticsService();
+
+/**
+ * Fire-and-forget analytics event. Safe to call from any context —
+ * lazy-loads the analytics module and silently swallows errors.
+ */
+export function trackEvent(name: string, params?: Record<string, string | number | boolean>): void {
+  analytics.logEvent(name, params).catch(() => {});
+}

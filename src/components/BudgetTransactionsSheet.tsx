@@ -4,7 +4,7 @@ import { Loader2, Receipt } from 'lucide-react';
 import { MobileDialog } from '@/components/ui/mobile-dialog';
 import { TransactionItem } from '@/components/TransactionItem';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
-import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,9 +25,8 @@ export function BudgetTransactionsSheet({ budget, open, onOpenChange }: BudgetTr
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth();
-  const { currency } = useCurrency();
+  const { currency, formatAmount } = useCurrency();
   const { convertAmount } = useExchangeRate();
-  const currencySymbol = currencyData[currency]?.symbol || '$';
 
   const fetchTransactions = useCallback(async () => {
     if (!budget || !user) return;
@@ -91,7 +90,7 @@ export function BudgetTransactionsSheet({ budget, open, onOpenChange }: BudgetTr
         <div className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2">
           <span className="text-xs text-muted-foreground">{periodLabel}</span>
           <span className="text-xs font-semibold text-foreground">
-            {currencySymbol}{totalSpent.toLocaleString(undefined, { maximumFractionDigits: 0 })} spent
+            {formatAmount(totalSpent)} spent
           </span>
         </div>
 

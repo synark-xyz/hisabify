@@ -42,25 +42,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, privacyPolicyAccepted: boolean) => {
     try {
-      console.log('[Auth] Starting sign up process', { email });
+      logger.info('[Auth] Starting sign up process', { email });
       
       // Validate email format
       if (!isValidEmail(email)) {
-        console.log('[Auth] Invalid email format', { email });
+        logger.info('[Auth] Invalid email format', { email });
         return { error: new Error('Invalid email format') };
       }
 
       // Validate password strength
       const passwordError = validatePasswordStrength(password);
       if (passwordError) {
-        console.log('[Auth] Password validation failed', { email, passwordError });
+        logger.info('[Auth] Password validation failed', { email });
         return { error: new Error(passwordError) };
       }
 
       // Check rate limit
       if (!loginRateLimiter.isAllowed(`signup:${email}`)) {
         const resetTime = loginRateLimiter.getResetTime(`signup:${email}`);
-        console.log('[Auth] Sign up rate limit exceeded', { email, resetTime });
+        logger.info('[Auth] Sign up rate limit exceeded', { email, resetTime });
         logger.warn('Sign up rate limit exceeded', { email });
         return { 
           error: new Error(`Too many sign up attempts. Please try again in ${resetTime} seconds.`) 
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const redirectUrl = getEmailAuthRedirectUrl('/');
-      console.log('[Auth] Calling Supabase signUp', { email, redirectUrl });
+      logger.info('[Auth] Calling Supabase signUp', { email, redirectUrl });
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -82,20 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        console.error('[Auth] Sign up failed', { email, error: error.message });
         logger.error(error, { action: 'signUp', email });
       } else {
-        console.log('[Auth] User signed up successfully', { email });
         logger.info('User signed up successfully', { email });
         import('@/lib/analytics').then(({ analytics }) => analytics.trackAuth('sign_up', 'email')).catch(() => {});
         loginRateLimiter.reset(`signup:${email}`);
       }
 
       await addAuthDelay();
-      console.log('[Auth] Sign up process completed', { email, hasError: !!error });
       return { error };
     } catch (error) {
-      console.error('[Auth] Sign up exception', { email, error });
       logger.error(error, { action: 'signUp' });
       return { error: error as Error };
     }
@@ -103,42 +99,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('[Auth] Starting sign in process', { email });
-      
+      logger.info('[Auth] Starting sign in', { email });
+
       // Validate email format
       if (!isValidEmail(email)) {
-        console.log('[Auth] Invalid email format', { email });
+        logger.info('[Auth] Invalid email format', { email });
         return { error: new Error('Invalid email format') };
       }
 
       // Check rate limit
       if (!loginRateLimiter.isAllowed(`signin:${email}`)) {
         const resetTime = loginRateLimiter.getResetTime(`signin:${email}`);
-        console.log('[Auth] Sign in rate limit exceeded', { email, resetTime });
-        logger.warn('Sign in rate limit exceeded', { email });
+        logger.warn('Sign in rate limit exceeded', { email, resetTime });
         return { 
           error: new Error(`Too many login attempts. Please try again in ${resetTime} seconds.`) 
         };
       }
 
-      console.log('[Auth] Calling Supabase signInWithPassword', { email });
       const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
-        console.error('[Auth] Sign in failed', { email, error: error.message });
         logger.error(error, { action: 'signIn', email });
       } else {
-        console.log('[Auth] User signed in successfully', { email });
         logger.info('User signed in successfully', { email });
         import('@/lib/analytics').then(({ analytics }) => analytics.trackAuth('login', 'email')).catch(() => {});
         loginRateLimiter.reset(`signin:${email}`);
       }
 
       await addAuthDelay();
-      console.log('[Auth] Sign in process completed', { email, hasError: !!error });
       return { error };
     } catch (error) {
-      console.error('[Auth] Sign in exception', { email, error });
       logger.error(error, { action: 'signIn' });
       return { error: error as Error };
     }
@@ -147,7 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithOAuth = async (provider: 'google') => {
     try {
       const redirectTo = getOAuthRedirectUrl();
-      console.log('[OAuth] Starting flow', { provider, redirectTo });
       logger.info('[OAuth] Starting flow', { provider, redirectTo });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -158,16 +147,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        console.error('[OAuth] Failed', { provider, error: error.message });
         logger.error(error, { action: 'signInWithOAuth', provider });
       } else {
-        console.log('[OAuth] Success', { provider, url: data?.url ? 'present' : 'missing' });
         logger.info('[OAuth] signInWithOAuth returned', { provider, url: data?.url ? 'present' : 'missing' });
         import('@/lib/analytics').then(({ analytics }) => analytics.trackAuth('login', provider)).catch(() => {});
       }
       return { error };
     } catch (error) {
-      console.error('[OAuth] Exception', { provider, error });
       logger.error(error, { action: 'signInWithOAuth' });
       return { error: error as Error };
     }

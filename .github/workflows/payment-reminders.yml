@@ -14,6 +14,6 @@ jobs:
         run: |
           curl --fail --silent --show-error \
             -X POST \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
             "${{ secrets.SUPABASE_FUNCTIONS_URL }}/schedule-payment-reminders"

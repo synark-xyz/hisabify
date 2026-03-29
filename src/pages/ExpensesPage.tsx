@@ -10,6 +10,7 @@ import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
+import { AddPaymentReminderModal } from '@/components/AddPaymentReminderModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { getTransactionCategoryName, getTransactionCategoryColor, isRealExpense } from '@/lib/transactionUtils';
 import { useAuth } from '@/hooks/useAuth';
@@ -68,6 +69,7 @@ export function ExpensesPage() {
   const [cardFilter, setCardFilter] = useState<string>('all');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const [reminderTransaction, setReminderTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const latestRequestIdRef = useRef(0);
   const hasShownHistoryClampToastRef = useRef(false);
@@ -785,6 +787,7 @@ export function ExpensesPage() {
                             transaction={tx}
                             onEdit={setEditingTransaction}
                             onDelete={setDeletingTransaction}
+                            onAddReminder={setReminderTransaction}
                             revealedId={revealedTransactionId}
                             onReveal={setRevealedTransactionId}
                           />
@@ -834,6 +837,17 @@ export function ExpensesPage() {
         onOpenChange={(open) => !open && setDeletingTransaction(null)}
         transaction={deletingTransaction}
         onSuccess={handleTransactionMutationSuccess}
+      />
+
+      <AddPaymentReminderModal
+        open={!!reminderTransaction}
+        onOpenChange={(open) => !open && setReminderTransaction(null)}
+        onSuccess={() => setReminderTransaction(null)}
+        initialData={reminderTransaction ? {
+          title: reminderTransaction.merchant,
+          amount: reminderTransaction.amount_original ?? reminderTransaction.amount,
+          currency: reminderTransaction.currency_original ?? reminderTransaction.currency_base ?? undefined,
+        } : undefined}
       />
     </div>
   );

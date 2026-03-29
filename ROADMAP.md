@@ -38,6 +38,12 @@ To become the most frictionless and engaging personal finance manager, helping u
 - [ ] **Dark Mode Optimization**: Refine premium gradients for OLED screens.
 - [ ] **Localization**: Support for Spanish, French, Arabic, and Hindi.
 
+## 🗂️ 6. Dynamic Categories (Data-Driven)
+- [x] **v1.1 (2026-03-29)**: Custom "Other" label — mandatory text field when "Other" selected; `custom_category_suggestions` table tracks frequency + unique users per label via RPC. Categories table extended with `type` (expense/income).
+- [ ] **v2.0**: Auto-promote labels used by 10+ users to category suggestions dropdown.
+- [ ] **v2.0**: Replace category dropdown with most-used chips + "More" modal grouped by type.
+- [ ] **v2.0**: Autocomplete as user types in the "Other" text field (powered by suggestions table).
+
 ---
 
 ## 📈 Success Targets

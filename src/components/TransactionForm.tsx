@@ -20,6 +20,7 @@ import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 interface TransactionFormProps {
   onSuccess: () => void;
@@ -69,6 +70,8 @@ export function TransactionForm({
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(
     initialBudgetId ?? (initialTransaction?.budget_id ?? null)
   );
+  const [customCategoryLabel, setCustomCategoryLabel] = useState('');
+  const [customCategoryError, setCustomCategoryError] = useState('');
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -103,6 +106,9 @@ export function TransactionForm({
   const watchedCurrency = form.watch('currency');
   const watchedCategoryId = form.watch('categoryId');
 
+  const selectedCategory = categories.find((c) => c.id === watchedCategoryId);
+  const isOtherCategory = selectedCategory?.name === 'Other';
+
   const matchingBudgets = useMemo(() => {
     if ((type !== 'expense' && type !== 'lend' && type !== 'owe') || !watchedCategoryId) return [];
     return getBudgetsForCategory(watchedCategoryId);
@@ -119,6 +125,8 @@ export function TransactionForm({
       currency: initialData?.currency || currency,
     });
     setSelectedBudgetId(initialBudgetId ?? null);
+    setCustomCategoryLabel('');
+    setCustomCategoryError('');
   }, [currency, form, initialData, initialType, initialBudgetId]);
 
   const initializeEditState = useCallback(() => {
@@ -136,6 +144,8 @@ export function TransactionForm({
       currency: initialTransaction.currency_original || currency,
     });
     setSelectedBudgetId(initialTransaction.budget_id ?? null);
+    setCustomCategoryLabel(initialTransaction.custom_category_label || '');
+    setCustomCategoryError('');
   }, [currency, form, initialTransaction]);
 
   useEffect(() => {
@@ -202,6 +212,11 @@ export function TransactionForm({
       return;
     }
 
+    if (isOtherCategory && !customCategoryLabel.trim()) {
+      setCustomCategoryError('Please describe this category');
+      return;
+    }
+
     let convertedAmount = normalizedAmount;
     let exchangeRate = 1;
     let exchangeSource = 'same_currency';
@@ -236,6 +251,7 @@ export function TransactionForm({
       card_id: null,
       note: data.note.trim() || null,
       receipt_url: initialData?.receiptUrl || null,
+      custom_category_label: isOtherCategory ? customCategoryLabel.trim() : null,
     };
 
     try {
@@ -248,6 +264,16 @@ export function TransactionForm({
           analytics.logEvent(AnalyticsEvents.EDIT_TRANSACTION, { type });
         }).catch(() => {});
         toast({ title: 'Transaction updated!' });
+        // Fire-and-forget: log custom category suggestion
+        if (isOtherCategory && customCategoryLabel.trim()) {
+          supabase.rpc('upsert_custom_category_suggestion', {
+            p_label: customCategoryLabel.trim(),
+            p_category_type: (type === 'income' ? 'income' : 'expense') as string,
+            p_user_id: user.id,
+          }).then(({ error }) => {
+            if (error) logger.error(error, { action: 'upsert_custom_category_suggestion' });
+          });
+        }
       } else {
         const { error } = await supabase.from('transactions').insert(payload);
         if (error) {
@@ -258,6 +284,16 @@ export function TransactionForm({
         }).catch(() => {});
         const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
+        // Fire-and-forget: log custom category suggestion
+        if (isOtherCategory && customCategoryLabel.trim()) {
+          supabase.rpc('upsert_custom_category_suggestion', {
+            p_label: customCategoryLabel.trim(),
+            p_category_type: (type === 'income' ? 'income' : 'expense') as string,
+            p_user_id: user.id,
+          }).then(({ error }) => {
+            if (error) logger.error(error, { action: 'upsert_custom_category_suggestion' });
+          });
+        }
 
         // Log transaction_created behavior event
         const category = type === 'expense' ? (data.categoryId || 'uncategorized') : null;
@@ -284,6 +320,8 @@ export function TransactionForm({
           note: '',
           currency,
         });
+        setCustomCategoryLabel('');
+        setCustomCategoryError('');
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -427,6 +465,9 @@ export function TransactionForm({
                       onValueChange={(val) => {
                         field.onChange(val);
                         setSelectedBudgetId(null); // reset budget chip on category change
+                        // Clear custom label and error when switching away from Other
+                        setCustomCategoryLabel('');
+                        setCustomCategoryError('');
                       }}
                     >
                       <FormControl>
@@ -447,6 +488,26 @@ export function TransactionForm({
                 );
               }}
             />
+          )}
+
+          {isOtherCategory && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider opacity-70">
+                {type === 'income' ? 'What is this income for?' : 'What is this expense for?'}
+              </label>
+              <Input
+                placeholder="e.g. Pet supplies, Wedding gift…"
+                className="rounded-xl"
+                value={customCategoryLabel}
+                onChange={(e) => {
+                  setCustomCategoryLabel(e.target.value);
+                  if (e.target.value.trim()) setCustomCategoryError('');
+                }}
+              />
+              {customCategoryError && (
+                <p className="text-xs text-destructive">{customCategoryError}</p>
+              )}
+            </div>
           )}
 
           {/* Budget chip suggestions — Feature 1 & 4 */}

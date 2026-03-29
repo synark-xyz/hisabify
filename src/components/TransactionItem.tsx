@@ -16,6 +16,7 @@ import {
   Buildings,
   CreditCard,
   User,
+  Bell,
 } from '@phosphor-icons/react';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
@@ -29,6 +30,7 @@ interface TransactionItemProps {
   index?: number;
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
+  onAddReminder?: (transaction: Transaction) => void;
   revealedId?: string | null;
   onReveal?: (id: string | null) => void;
 }
@@ -52,7 +54,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string, weight?:
   'owe': Bank,
 };
 
-export function TransactionItem({ transaction, index = 0, onEdit, onDelete, revealedId, onReveal }: TransactionItemProps) {
+export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAddReminder, revealedId, onReveal }: TransactionItemProps) {
   const { currency, formatAmount } = useCurrency();
   const { variant } = useTheme();
 
@@ -252,7 +254,22 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
               ≈ {originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           )}
-          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{formattedDate}</p>
+          <div className="flex items-center justify-end gap-1.5 mt-0.5">
+            <p className="text-[10px] font-medium text-muted-foreground">{formattedDate}</p>
+            {onAddReminder && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddReminder(transaction);
+                }}
+                className="text-muted-foreground/50 hover:text-accent transition-colors"
+                aria-label="Add reminder"
+              >
+                <Bell className="w-3.5 h-3.5" weight="regular" />
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

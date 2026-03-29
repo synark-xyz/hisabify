@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
@@ -61,7 +61,8 @@ export function ExpensesPage() {
   const [focusedDate, setFocusedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<TransactionViewMode>('week');
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
-  const [showTransactionList, setShowTransactionList] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<FilterType>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -267,10 +268,23 @@ export function ExpensesPage() {
       const match = categoryOptions.find((c) => c.name.toLowerCase() === name);
       if (match) {
         setCategoryFilter(match.id);
+        setShowFilters(true);
       }
       pendingCategoryNameRef.current = null;
     }
   }, [categoryOptions]);
+
+  // Auto-open filters panel when any filter is active
+  useEffect(() => {
+    if (
+      typeFilter !== 'all' ||
+      categoryFilter !== 'all' ||
+      cardFilter !== 'all' ||
+      pendingCategoryNameRef.current
+    ) {
+      setShowFilters(true);
+    }
+  }, [typeFilter, categoryFilter, cardFilter]);
 
   useEffect(() => {
     if (categoryFilter === 'all') {
@@ -329,6 +343,24 @@ export function ExpensesPage() {
   const totalExpense = filteredTransactions
     .filter(isRealExpense)
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (typeFilter !== 'all') count++;
+    if (categoryFilter !== 'all') count++;
+    if (cardFilter !== 'all') count++;
+    return count;
+  }, [typeFilter, categoryFilter, cardFilter]);
+
+  const formatAmount = useCallback((amount: number) => {
+    const locale = currency === 'USD' ? 'en-US' : 'en-US';
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: currency === 'JPY' || currency === 'KRW' || currency === 'VND' ? 0 : 2,
+      maximumFractionDigits: currency === 'JPY' || currency === 'KRW' || currency === 'VND' ? 0 : 2,
+    }).format(amount);
+  }, [currency]);
 
   const categoryData: CategorySpending[] = Object.values(
     filteredTransactions
@@ -507,32 +539,9 @@ export function ExpensesPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <motion.button
-                          className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-accent/10 transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <span className="text-xl font-bold text-foreground">{format(anchorDate, 'MMMM')}</span>
-                          <ChevronDown className="w-4 h-4 text-foreground" />
-                        </motion.button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="center" className="max-h-[300px] overflow-y-auto">
-                        {Array.from({ length: 12 }, (_, i) => i).map((monthIndex) => {
-                          const monthDate = setMonth(new Date(), monthIndex);
-                          return (
-                            <DropdownMenuItem
-                              key={monthIndex}
-                              onClick={() => setAnchorDate(setMonth(anchorDate, monthIndex))}
-                              className={anchorDate.getMonth() === monthIndex ? 'bg-accent/10' : ''}
-                            >
-                              {format(monthDate, 'MMMM')}
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <span className="text-xl font-bold text-foreground select-none">
+                      {format(anchorDate, 'MMMM yyyy')}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-full">
@@ -593,52 +602,29 @@ export function ExpensesPage() {
                 </motion.button>
               </div>
 
-              <AnimatePresence mode="wait">
-                {viewMode === 'week' || viewMode === 'day' ? (
-                  <motion.div
-                    key="week-calendar"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                  >
-                    <SwipeableWeekCalendar
-                      currentDate={anchorDate}
-                      selectedDate={effectiveFocusedDate}
-                      onDateSelect={handleDateSelect}
-                      onWeekChange={handleWeekChange}
-                      hasTransactions={hasTransactions}
-                    />
-                  </motion.div>
-                ) : viewMode === 'month' ? (
-                  <motion.div
-                    key="month-calendar"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                  >
-                    <MonthCalendar
-                      currentDate={anchorDate}
-                      selectedDate={effectiveFocusedDate}
-                      onDateSelect={handleDateSelect}
-                      onMonthChange={setAnchorDate}
-                      hasTransactions={hasTransactions}
-                    />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="year-view"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="text-center py-4 text-muted-foreground text-sm"
-                  >
-                    Viewing all transactions for {anchorDate.getFullYear()}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {viewMode === 'week' || viewMode === 'day' ? (
+                <SwipeableWeekCalendar
+                  currentDate={anchorDate}
+                  selectedDate={effectiveFocusedDate}
+                  onDateSelect={handleDateSelect}
+                  onWeekChange={handleWeekChange}
+                  hasTransactions={hasTransactions}
+                  isSelectable={viewMode === 'day'}
+                />
+              ) : viewMode === 'month' ? (
+                <MonthCalendar
+                  currentDate={anchorDate}
+                  selectedDate={effectiveFocusedDate}
+                  onDateSelect={handleDateSelect}
+                  onMonthChange={setAnchorDate}
+                  hasTransactions={hasTransactions}
+                  isSelectable={false}
+                />
+              ) : (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  Viewing all transactions for {anchorDate.getFullYear()}
+                </div>
+              )}
             </motion.div>
 
             <motion.div variants={itemVariants}>
@@ -679,144 +665,255 @@ export function ExpensesPage() {
               <ExpenseOverview totalSalary={totalIncome} totalExpense={totalExpense} />
             </motion.div>
 
+            {/* Spending Breakdown Section - Collapsible */}
             <motion.section variants={itemVariants} className="space-y-3">
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by description, note, or category"
-              />
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <Select value={typeFilter} onValueChange={(value: FilterType) => setTypeFilter(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
-                    <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="lend">Lend</SelectItem>
-                    <SelectItem value="owe">Owe</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-foreground">Spending Breakdown</h2>
+                {categoryData.length > 0 && (
+                  <motion.button
+                    onClick={() => setShowBreakdown(!showBreakdown)}
+                    className="p-2 hover:bg-muted rounded-full transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <ChevronDown className={cn("w-4 h-4 transition-transform", showBreakdown && "rotate-180")} />
+                  </motion.button>
+                )}
+              </div>
 
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categoryOptions.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {categoryData.length === 0 ? (
+                <div className="bg-card rounded-2xl p-6 text-center shadow-card">
+                  <span className="text-4xl">📊</span>
+                  <p className="text-muted-foreground mt-2 text-sm">No expense data to visualize</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Add transactions to see breakdown</p>
+                </div>
+              ) : (
+                <>
+                  {/* Collapsed summary - top 3 categories */}
+                  {!showBreakdown && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="bg-card rounded-2xl p-4 shadow-card"
+                    >
+                      <div className="flex flex-wrap gap-2">
+                        {categoryData.slice(0, 3).map((cat) => (
+                          <div key={cat.name} className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                            <span className="text-xs font-medium text-muted-foreground">{cat.name}</span>
+                            <span className="text-xs font-semibold">{formatAmount(cat.amount)}</span>
+                          </div>
+                        ))}
+                        {categoryData.length > 3 && (
+                          <span className="text-xs text-muted-foreground">+{categoryData.length - 3} more</span>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
 
-                <Select value={cardFilter} onValueChange={setCardFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Card" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Cards</SelectItem>
-                    {cardOptions.map((card) => (
-                      <SelectItem key={card.id} value={card.id}>
-                        {card.card_holder} •••• {card.last_four || card.card_number.slice(-4)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {/* Expanded chart */}
+                  <AnimatePresence>
+                    {showBreakdown && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <ExpenseDonutChart data={categoryData} timeframeKey={timeframeKey} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
+            </motion.section>
+
+            {/* Search and Filters Section */}
+            <motion.section variants={itemVariants} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search by merchant, keywords etc."
+                  className="flex-1"
+                />
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setTypeFilter('all');
-                    setCategoryFilter('all');
-                    setCardFilter('all');
-                  }}
-                  className="text-sm rounded-md border border-border px-3 py-2 hover:bg-muted transition-colors"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium transition-colors whitespace-nowrap",
+                    showFilters || activeFilterCount > 0 ? "bg-accent/10 border-accent/30" : "hover:bg-muted"
+                  )}
                 >
-                  Clear Filters
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>{activeFilterCount > 0 ? `Filters · ${activeFilterCount}` : 'Filters'}</span>
                 </button>
               </div>
-            </motion.section>
 
-            <motion.section variants={itemVariants}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-foreground">
-                  {isDateFocused
-                    ? 'Daily Analytics'
-                    : viewMode === 'day'
-                      ? 'Daily Analytics'
-                      : viewMode === 'week'
-                        ? 'Weekly Analytics'
-                        : viewMode === 'month'
-                          ? 'Monthly Analytics'
-                          : 'Yearly Analytics'}
-                </h2>
-                <motion.button
-                  onClick={() => setShowTransactionList(!showTransactionList)}
-                  className="text-sm text-muted-foreground hover:text-accent transition-colors"
-                  whileHover={{ x: 4 }}
-                >
-                  {showTransactionList ? 'Show Chart' : 'View All'}
-                </motion.button>
-              </div>
+              <AnimatePresence>
+                {showFilters && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-2"
+                  >
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <Select
+                        value={typeFilter}
+                        onValueChange={(value: FilterType) => {
+                          setTypeFilter(value);
+                          if (value !== 'all') setShowFilters(true);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="expense">Expense</SelectItem>
+                          <SelectItem value="income">Income</SelectItem>
+                          <SelectItem value="lend">Lend</SelectItem>
+                          <SelectItem value="owe">Owe</SelectItem>
+                        </SelectContent>
+                      </Select>
 
-              <AnimatePresence mode="wait">
-                {showTransactionList ? (
-                  <motion.div
-                    key="transaction-list"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-3"
-                  >
-                    {filteredTransactions.length > 0 ? (
-                      filteredTransactions.map((tx, index) => (
-                        <motion.div
-                          key={tx.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <TransactionItem
-                            transaction={tx}
-                            onEdit={setEditingTransaction}
-                            onDelete={setDeletingTransaction}
-                            revealedId={revealedTransactionId}
-                            onReveal={setRevealedTransactionId}
-                          />
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="bg-card rounded-2xl p-8 text-center shadow-card">
-                        <span className="text-5xl">💸</span>
-                        <p className="text-muted-foreground mt-3">No transactions found</p>
-                        <p className="text-sm text-muted-foreground/70 mt-1">Try adjusting your search or filters</p>
-                      </div>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="pie-chart"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                  >
-                    {categoryData.length > 0 ? (
-                      <ExpenseDonutChart data={categoryData} timeframeKey={timeframeKey} />
-                    ) : (
-                      <div className="bg-card rounded-2xl p-8 text-center shadow-card">
-                        <span className="text-5xl">📊</span>
-                        <p className="text-muted-foreground mt-3">No data to visualize</p>
-                        <p className="text-sm text-muted-foreground/70 mt-1">Add transactions to see analytics</p>
-                      </div>
-                    )}
+                      <Select
+                        value={categoryFilter}
+                        onValueChange={(value) => {
+                          setCategoryFilter(value);
+                          if (value !== 'all') setShowFilters(true);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {categoryOptions.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={cardFilter}
+                        onValueChange={(value) => {
+                          setCardFilter(value);
+                          if (value !== 'all') setShowFilters(true);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Card" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Cards</SelectItem>
+                          {cardOptions.map((card) => (
+                            <SelectItem key={card.id} value={card.id}>
+                              {card.card_holder} •••• {card.last_four || card.card_number.slice(-4)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setTypeFilter('all');
+                        setCategoryFilter('all');
+                        setCardFilter('all');
+                        setShowFilters(false);
+                      }}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+                    >
+                      Clear all filters
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
+            </motion.section>
+
+            {/* Transactions Section */}
+            <motion.section variants={itemVariants}>
+              <div className="flex items-center mb-4">
+                <h2 className="text-lg font-bold text-foreground">Transactions</h2>
+                <span className="text-xs text-muted-foreground ml-2">
+                  {viewMode === 'day' || effectiveFocusedDate
+                    ? format(effectiveFocusedDate || anchorDate, 'MMM d, yyyy')
+                    : viewMode === 'week'
+                      ? 'This Week'
+                      : viewMode === 'month'
+                        ? format(anchorDate, 'MMMM yyyy')
+                        : format(anchorDate, 'yyyy')}
+                </span>
+              </div>
+
+              {filteredTransactions.length > 0 ? (
+                <div className="space-y-3">
+                  {filteredTransactions.map((tx) => (
+                    <TransactionItem
+                      key={tx.id}
+                      transaction={tx}
+                      onEdit={setEditingTransaction}
+                      onDelete={setDeletingTransaction}
+                      revealedId={revealedTransactionId}
+                      onReveal={setRevealedTransactionId}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-card rounded-2xl p-8 text-center shadow-card">
+                  <span className="text-5xl">💸</span>
+                  <p className="text-muted-foreground mt-3">No transactions found</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    {searchQuery || activeFilterCount > 0 ? 'Try adjusting your search or filters' : 'Add transactions to get started'}
+                  </p>
+
+                  {/* Active filter chips */}
+                  {(searchQuery || typeFilter !== 'all' || categoryFilter !== 'all' || cardFilter !== 'all') && (
+                    <div className="flex flex-wrap justify-center gap-2 mt-4">
+                      {searchQuery && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Search: "{searchQuery}"
+                          <button onClick={() => setSearchQuery('')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {typeFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Type: {typeFilter}
+                          <button onClick={() => setTypeFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {categoryFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Category: {categoryOptions.find(c => c.id === categoryFilter)?.name || categoryFilter}
+                          <button onClick={() => setCategoryFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {cardFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Card: {cardOptions.find(c => c.id === cardFilter)?.card_holder || cardFilter}
+                          <button onClick={() => setCardFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.section>
           </motion.main>
         </div>

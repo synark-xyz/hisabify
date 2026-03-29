@@ -43,7 +43,6 @@ import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { useLocalInitialization } from "@/hooks/useLocalInitialization";
 import { getAuthCallbackRouteFromUrl } from "@/lib/authRedirect";
 
 const queryClient = new QueryClient({
@@ -98,9 +97,6 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
-  // Initialize local DB and AI on startup
-  useLocalInitialization();
-
   // In E2E test runs, `e2e_skip_splash` is pre-set via addInitScript so
   // the splash screen is bypassed without affecting production behaviour.
   // Bug fix: first-time users (hasSeenOnboarding=false) must not see the web

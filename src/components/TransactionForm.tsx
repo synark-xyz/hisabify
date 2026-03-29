@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useCategories } from '@/hooks/useCategories';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
+import { useProfile } from '@/hooks/useProfile';
+import { AICategorySuggestion, AISuggestionButton, type AICategorySuggestionHandle } from './AICategorySuggestion';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -69,6 +71,7 @@ export function TransactionForm({
     initialBudgetId ?? (initialTransaction?.budget_id ?? null)
   );
 
+  const aiSuggestionRef = useRef<AICategorySuggestionHandle>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const { currency } = useCurrency();
@@ -310,16 +313,45 @@ export function TransactionForm({
                   {type === 'lend' ? 'Who are you lending to?' : type === 'owe' ? 'Who are you borrowing from?' : 'Description'}
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={type === 'lend' ? 'Name or @handle' : type === 'owe' ? 'Name or @handle' : 'What was this for?'}
-                    className="rounded-xl"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Input
+                      placeholder={type === 'lend' ? 'Name or @handle' : type === 'owe' ? 'Name or @handle' : 'What was this for?'}
+                      className="rounded-xl pr-10"
+                      {...field}
+                    />
+                    {/* AI Suggestion Button - manual trigger */}
+                    {(type === 'expense' || type === 'lend' || type === 'owe') && field.value && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <AISuggestionButton
+                          onClick={async () => {
+                            if (aiSuggestionRef.current) {
+                              await aiSuggestionRef.current.getSuggestion();
+                            }
+                          }}
+                          isLoading={aiSuggestionRef.current?.isLoading}
+                          disabled={!field.value.trim()}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          {/* AI Category Suggestion - shows when merchant is filled for expenses */}
+          {(type === 'expense' || type === 'lend' || type === 'owe') && form.watch('merchant') && (
+            <AICategorySuggestion
+              ref={aiSuggestionRef}
+              merchant={form.watch('merchant')}
+              confidenceThreshold={0.6}
+              onSelect={(categoryId) => {
+                form.setValue('categoryId', categoryId);
+                setSelectedBudgetId(null); // reset budget on category change
+              }}
+              disabled={false}
+            />
+          )}
 
           <FormField
             control={form.control}

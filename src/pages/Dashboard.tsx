@@ -14,6 +14,7 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { ManageRemindersModal } from '@/components/ManageRemindersModal';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
+import { InsightsSection } from '@/components/InsightsSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -381,6 +382,9 @@ export function Dashboard() {
             </motion.section>
 
             {!showGettingStarted && <HealthScoreCard />}
+
+            {/* AI Insights Section */}
+            {!showGettingStarted && <InsightsSection />}
 
             {showGettingStarted && (
               <motion.section

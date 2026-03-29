@@ -84,4 +84,16 @@ export default defineConfig(({ mode }) => ({
       "firebase/crashlytics": path.resolve(__dirname, "./src/lib/firebase-stub.ts"),
     },
   },
+  build: {
+    rollupOptions: {
+      external: [
+        '@tensorflow/tfjs',
+        '@tensorflow/tfjs-core',
+        '@tensorflow/tfjs-converter',
+        '@tensorflow/tfjs-backend-cpu',
+        '@tensorflow/tfjs-backend-webgl',
+        '@tensorflow-models/universal-sentence-encoder',
+      ],
+    },
+  },
 }));

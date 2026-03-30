@@ -25,12 +25,24 @@ ALTER TABLE public.custom_category_suggestions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.custom_category_user_log ENABLE ROW LEVEL SECURITY;
 
 -- Suggestions: readable by all authenticated users
-CREATE POLICY "suggestions_read" ON public.custom_category_suggestions
-  FOR SELECT TO authenticated USING (true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'custom_category_suggestions' AND policyname = 'suggestions_read'
+  ) THEN
+    CREATE POLICY "suggestions_read" ON public.custom_category_suggestions
+      FOR SELECT TO authenticated USING (true);
+  END IF;
+END $$;
 
 -- User log: users see only their own rows
-CREATE POLICY "user_log_own" ON public.custom_category_user_log
-  FOR SELECT TO authenticated USING (user_id = auth.uid());
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'custom_category_user_log' AND policyname = 'user_log_own'
+  ) THEN
+    CREATE POLICY "user_log_own" ON public.custom_category_user_log
+      FOR SELECT TO authenticated USING (user_id = auth.uid());
+  END IF;
+END $$;
 
 -- RPC: upsert_custom_category_suggestion
 -- Atomically increments usage_count and conditionally increments unique_user_count

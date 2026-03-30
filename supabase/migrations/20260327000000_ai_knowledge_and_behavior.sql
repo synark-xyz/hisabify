@@ -5,7 +5,7 @@
 -- Table 1: ai_receipt_knowledge — App-only, no user RLS
 -- Stores anonymized receipt parsing outcomes for AI improvement
 -- ============================================================
-CREATE TABLE public.ai_receipt_knowledge (
+CREATE TABLE IF NOT EXISTS public.ai_receipt_knowledge (
   id                 UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   receipt_signature  TEXT        UNIQUE,         -- SHA-256 of merchant|amount|date|currency; dedupes re-scans
   script_type        TEXT,                      -- 'latin' | 'arabic' | 'devanagari' | 'han' | 'thai' | 'unknown'
@@ -26,16 +26,16 @@ CREATE TABLE public.ai_receipt_knowledge (
 );
 
 -- No RLS — accessible only via service_role in edge functions
-CREATE INDEX idx_ai_receipt_knowledge_script      ON public.ai_receipt_knowledge (script_type);
-CREATE INDEX idx_ai_receipt_knowledge_currency    ON public.ai_receipt_knowledge (currency);
-CREATE INDEX idx_ai_receipt_knowledge_confidence  ON public.ai_receipt_knowledge (ai_confidence);
-CREATE INDEX idx_ai_receipt_knowledge_merchant    ON public.ai_receipt_knowledge (merchant_name);
+CREATE INDEX IF NOT EXISTS idx_ai_receipt_knowledge_script      ON public.ai_receipt_knowledge (script_type);
+CREATE INDEX IF NOT EXISTS idx_ai_receipt_knowledge_currency    ON public.ai_receipt_knowledge (currency);
+CREATE INDEX IF NOT EXISTS idx_ai_receipt_knowledge_confidence  ON public.ai_receipt_knowledge (ai_confidence);
+CREATE INDEX IF NOT EXISTS idx_ai_receipt_knowledge_merchant    ON public.ai_receipt_knowledge (merchant_name);
 
 -- ============================================================
 -- Table 2: ai_merchant_knowledge — App-only, no user RLS
 -- Grows into merchant directory as users scan receipts
 -- ============================================================
-CREATE TABLE public.ai_merchant_knowledge (
+CREATE TABLE IF NOT EXISTS public.ai_merchant_knowledge (
   id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   merchant_name     TEXT        NOT NULL UNIQUE,   -- normalized lowercase
   merchant_display  TEXT,                          -- display-form name
@@ -49,14 +49,14 @@ CREATE TABLE public.ai_merchant_knowledge (
 );
 
 -- No RLS — app-only
-CREATE INDEX idx_ai_merchant_knowledge_name     ON public.ai_merchant_knowledge (merchant_name);
-CREATE INDEX idx_ai_merchant_knowledge_category ON public.ai_merchant_knowledge (category);
+CREATE INDEX IF NOT EXISTS idx_ai_merchant_knowledge_name     ON public.ai_merchant_knowledge (merchant_name);
+CREATE INDEX IF NOT EXISTS idx_ai_merchant_knowledge_category ON public.ai_merchant_knowledge (category);
 
 -- ============================================================
 -- Table 3: user_behavior_events — Per-user, RLS protected
 -- Append-only event stream for future AI Agent analysis
 -- ============================================================
-CREATE TABLE public.user_behavior_events (
+CREATE TABLE IF NOT EXISTS public.user_behavior_events (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID        NOT NULL,
   event_type  TEXT        NOT NULL,
@@ -69,28 +69,42 @@ CREATE TABLE public.user_behavior_events (
 -- RLS: users can only insert/read their own events
 ALTER TABLE public.user_behavior_events ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can insert own behavior events"
-  ON public.user_behavior_events FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'user_behavior_events' AND policyname = 'Users can insert own behavior events'
+  ) THEN
+    CREATE POLICY "Users can insert own behavior events"
+      ON public.user_behavior_events FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can view own behavior events"
-  ON public.user_behavior_events FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'user_behavior_events' AND policyname = 'Users can view own behavior events'
+  ) THEN
+    CREATE POLICY "Users can view own behavior events"
+      ON public.user_behavior_events FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- No UPDATE/DELETE — append-only log
 
 -- Performance indexes for AI Agent queries
-CREATE INDEX idx_behavior_events_user_type
+CREATE INDEX IF NOT EXISTS idx_behavior_events_user_type
   ON public.user_behavior_events (user_id, event_type, created_at DESC);
 
-CREATE INDEX idx_behavior_events_user_created
+CREATE INDEX IF NOT EXISTS idx_behavior_events_user_created
   ON public.user_behavior_events (user_id, created_at DESC);
 
 -- ============================================================
 -- Table 4: rate_limits — Per-user API rate limiting
 -- Protects Gemini API quota from abuse
 -- ============================================================
-CREATE TABLE public.rate_limits (
+CREATE TABLE IF NOT EXISTS public.rate_limits (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      UUID        NOT NULL,
   action       TEXT        NOT NULL,   -- 'receipt_scan' | 'voice_input' | etc.
@@ -99,7 +113,7 @@ CREATE TABLE public.rate_limits (
   UNIQUE(user_id, action)
 );
 
-CREATE INDEX idx_rate_limits_user_action ON public.rate_limits (user_id, action);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_user_action ON public.rate_limits (user_id, action);
 
 -- ============================================================
 -- Function: handle_updated_at — Auto-update updated_at column
@@ -113,10 +127,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS set_ai_receipt_knowledge_updated_at ON public.ai_receipt_knowledge;
 CREATE TRIGGER set_ai_receipt_knowledge_updated_at
   BEFORE UPDATE ON public.ai_receipt_knowledge
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS set_ai_merchant_knowledge_updated_at ON public.ai_merchant_knowledge;
 CREATE TRIGGER set_ai_merchant_knowledge_updated_at
   BEFORE UPDATE ON public.ai_merchant_knowledge
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -185,6 +201,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- pg_cron: Nightly auto-trim behavior events
 -- Runs at 3am daily — far cheaper than per-INSERT trigger
 -- ============================================================
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'trim-old-behavior-events') THEN
+    PERFORM cron.unschedule('trim-old-behavior-events');
+  END IF;
+END $$;
 SELECT cron.schedule(
   'trim-old-behavior-events',
   '0 3 * * *',
@@ -209,18 +231,46 @@ ALTER TABLE public.ai_merchant_knowledge ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rate_limits           ENABLE ROW LEVEL SECURITY;
 
 -- service_role bypasses RLS, but these policies ensure service_role has access
-CREATE POLICY "service_role can manage ai_receipt_knowledge"
-  ON public.ai_receipt_knowledge FOR ALL
-  USING (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'ai_receipt_knowledge' AND policyname = 'service_role can manage ai_receipt_knowledge'
+  ) THEN
+    CREATE POLICY "service_role can manage ai_receipt_knowledge"
+      ON public.ai_receipt_knowledge FOR ALL
+      USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
-CREATE POLICY "service_role can manage ai_merchant_knowledge"
-  ON public.ai_merchant_knowledge FOR ALL
-  USING (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'ai_merchant_knowledge' AND policyname = 'service_role can manage ai_merchant_knowledge'
+  ) THEN
+    CREATE POLICY "service_role can manage ai_merchant_knowledge"
+      ON public.ai_merchant_knowledge FOR ALL
+      USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
-CREATE POLICY "service_role can manage rate_limits"
-  ON public.rate_limits FOR ALL
-  USING (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'rate_limits' AND policyname = 'service_role can manage rate_limits'
+  ) THEN
+    CREATE POLICY "service_role can manage rate_limits"
+      ON public.rate_limits FOR ALL
+      USING (auth.role() = 'service_role');
+  END IF;
+END $$;
 
-CREATE POLICY "service_role can read user_behavior_events"
-  ON public.user_behavior_events FOR SELECT
-  USING (auth.role() = 'service_role');
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'user_behavior_events' AND policyname = 'service_role can read user_behavior_events'
+  ) THEN
+    CREATE POLICY "service_role can read user_behavior_events"
+      ON public.user_behavior_events FOR SELECT
+      USING (auth.role() = 'service_role');
+  END IF;
+END $$;

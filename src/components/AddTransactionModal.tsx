@@ -35,6 +35,7 @@ export function AddTransactionModal({
           onSuccess();
           onOpenChange(false);
         }}
+        onSuccessKeepOpen={() => onSuccess()}
         onCancel={() => onOpenChange(false)}
         initialType={initialType}
         initialData={initialData}

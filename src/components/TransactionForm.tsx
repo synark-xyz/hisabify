@@ -22,6 +22,7 @@ import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
 
 interface TransactionFormProps {
   onSuccess: () => void;
@@ -55,8 +56,6 @@ interface SplitRow {
   amount: string;
 }
 
-/* ─── Constants ─── */
-const PREDEFINED_TAGS = ['Tax Deductible', 'Reimbursable', 'Business', 'Personal', 'Vacation', 'Medical'] as const;
 
 function stripLegacyNoteTag(note: string | null): string {
   const raw = (note || '').trim();
@@ -482,9 +481,9 @@ export function TransactionForm({
       receipt_url: initialData?.receiptUrl || null,
       custom_category_label: isOtherCategory ? customCategoryLabel.trim() : null,
       /* ─── Feature 1.2: Tags ─── */
-      tags: selectedTags.length > 0 ? selectedTags : null,
+      tags: selectedTags,
       /* ─── Feature 1.3: Status ─── */
-      status: (type === 'expense' || type === 'income') ? transactionStatus : null,
+      status: (type === 'expense' || type === 'income') ? transactionStatus : 'cleared',
       /* ─── Feature 1.4: Split parent marker ─── */
       is_split_child: false,
       parent_transaction_id: null,
@@ -545,7 +544,7 @@ export function TransactionForm({
             note: data.note.trim() || null,
             receipt_url: null,
             custom_category_label: null,
-            tags: null,
+            tags: [],
             status: transactionStatus,
             is_split_child: true,
             parent_transaction_id: parentId,

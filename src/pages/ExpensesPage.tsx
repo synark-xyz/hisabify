@@ -270,17 +270,34 @@ export function ExpensesPage() {
     return Array.from(map.values()).sort((a, b) => a.card_holder.localeCompare(b.card_holder));
   }, [rangeTransactions]);
 
-  // Build a full category map for TransactionItem parent-name lookups
-  const categoriesMap = useMemo(
-    () => new Map<string, Category>(allCategories.map((c) => [c.id, c])),
-    [allCategories]
-  );
+  // Build a full category map for TransactionItem parent-name lookups.
+  // Derived from already-fetched transaction data (no extra network request).
+  const categoriesMap = useMemo(() => {
+    const map = new Map<string, Category>();
+    for (const tx of transactions) {
+      if (tx.category) {
+        map.set(tx.category.id, tx.category as Category);
+      }
+    }
+    return map;
+  }, [transactions]);
 
   // Sub-category options — only children of the currently selected parent category
   const subCategoryOptions = useMemo(() => {
     if (categoryFilter === 'all') return [];
     return allCategories.filter((c) => c.parent_id === categoryFilter);
   }, [allCategories, categoryFilter]);
+
+  // Map of parent category id → child categories, used in filteredTransactions
+  const subCategoriesMap = useMemo(() => {
+    const map = new Map<string, Category[]>();
+    allCategories.filter((c) => c.parent_id).forEach((c) => {
+      const kids = map.get(c.parent_id!) ?? [];
+      kids.push(c);
+      map.set(c.parent_id!, kids);
+    });
+    return map;
+  }, [allCategories]);
 
   // Resolve deferred categoryName filter once categories are loaded
   useEffect(() => {
@@ -344,13 +361,13 @@ export function ExpensesPage() {
         return false;
       }
 
-      if (categoryFilter !== 'all' && tx.category_id !== categoryFilter) {
-        return false;
-      }
-
-      // Sub-category filter (only applies when a parent is selected and sub-category chosen)
-      if (subCategoryFilter !== 'all' && tx.category_id !== subCategoryFilter) {
-        return false;
+      // When a sub-category filter is active, match that sub-category exactly
+      if (subCategoryFilter !== 'all') {
+        if (tx.category_id !== subCategoryFilter) return false;
+      } else if (categoryFilter !== 'all') {
+        // When only parent category filter is active, match parent OR any of its children
+        const childIds = subCategoriesMap.get(categoryFilter)?.map((c) => c.id) ?? [];
+        if (tx.category_id !== categoryFilter && !childIds.includes(tx.category_id ?? '')) return false;
       }
 
       if (cardFilter !== 'all' && tx.card_id !== cardFilter) {
@@ -380,7 +397,7 @@ export function ExpensesPage() {
 
       return merchant.includes(query) || note.includes(query) || categoryName.includes(query);
     });
-  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly]);
+  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, subCategoryFilter, subCategoriesMap, cardFilter, filterTags, showUnclearedOnly]);
 
   const totalIncome = filteredTransactions
     .filter((tx) => tx.type === 'income')
@@ -1022,7 +1039,7 @@ export function ExpensesPage() {
                       )}
                       {subCategoryFilter !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          Sub: {subCategoryOptions.find(c => c.id === subCategoryFilter)?.name || subCategoryFilter}
+                          Sub: {allCategories.find(c => c.id === subCategoryFilter)?.name || 'Sub-category'}
                           <button onClick={() => setSubCategoryFilter('all')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>

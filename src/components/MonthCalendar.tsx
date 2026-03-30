@@ -11,6 +11,7 @@ interface MonthCalendarProps {
   onDateSelect: (date: Date) => void;
   onMonthChange: (date: Date) => void;
   hasTransactions?: (date: Date) => boolean;
+  isSelectable?: boolean;
 }
 
 export function MonthCalendar({
@@ -18,7 +19,8 @@ export function MonthCalendar({
   selectedDate,
   onDateSelect,
   onMonthChange,
-  hasTransactions
+  hasTransactions,
+  isSelectable = true
 }: MonthCalendarProps) {
 
   // Custom day content to show transaction indicators
@@ -53,7 +55,7 @@ export function MonthCalendar({
       <DayPicker
         mode="single"
         selected={selectedDate || undefined}
-        onSelect={(date) => date && onDateSelect(date)}
+        onSelect={isSelectable ? (date) => date && onDateSelect(date) : undefined}
         month={currentDate}
         onMonthChange={onMonthChange}
         showOutsideDays={true}

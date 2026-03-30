@@ -10,6 +10,7 @@ interface SwipeableWeekCalendarProps {
     onDateSelect: (date: Date) => void;
     onWeekChange: (direction: 'prev' | 'next') => void;
     hasTransactions?: (date: Date) => boolean;
+    isSelectable?: boolean;
 }
 
 export function SwipeableWeekCalendar({
@@ -17,7 +18,8 @@ export function SwipeableWeekCalendar({
     selectedDate,
     onDateSelect,
     onWeekChange,
-    hasTransactions
+    hasTransactions,
+    isSelectable = true
 }: SwipeableWeekCalendarProps) {
     const controls = useAnimation();
     const [dragging, setDragging] = useState(false);
@@ -73,16 +75,17 @@ export function SwipeableWeekCalendar({
                     return (
                         <motion.button
                             key={index}
-                            onClick={() => !dragging && onDateSelect(day)}
+                            onClick={() => !dragging && isSelectable && onDateSelect(day)}
                             className={cn(
                                 'relative flex flex-col items-center py-2.5 rounded-xl transition-all border-2',
                                 isSelected
                                     ? 'bg-accent/10 border-accent border-3 text-accent shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                                    : 'border-transparent hover:bg-muted/50',
-                                !isCurrentMonth && 'opacity-30'
+                                    : 'border-transparent',
+                                !isCurrentMonth && 'opacity-30',
+                                isSelectable && 'hover:bg-muted/50'
                             )}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={isSelectable ? { scale: 1.05 } : {}}
+                            whileTap={isSelectable ? { scale: 0.95 } : {}}
                         >
                             <span className={cn(
                                 'text-base font-bold tracking-tight',

@@ -33,7 +33,7 @@ export function ReferralCard() {
         if (!referralCode) return;
         const deepLink = `${APP_BASE_URL}/auth?ref=${referralCode}`;
         const result = await shareOrCopy(
-            { title: 'Join me on Hisabify!', text: `Use my referral code ${referralCode} to get 30 days of Pro features for free!`, url: deepLink },
+            { title: 'Join me on Hisabify!', text: `Use my referral code ${referralCode} to get 3 days of Pro features for free!`, url: deepLink },
             'Invite link copied to clipboard',
         );
         if (result === 'copied') {
@@ -81,7 +81,7 @@ export function ReferralCard() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 text-accent">
                             <Gift className="w-5 h-5" />
-                            <h3 className="font-bold text-sm">Invite friends. You both get 30 days Pro.</h3>
+                            <h3 className="font-bold text-sm">Invite friends. You both get 3 days Pro.</h3>
                         </div>
 
                         <div className="flex items-center gap-3">

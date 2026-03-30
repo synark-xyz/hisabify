@@ -545,7 +545,7 @@ export function TransactionForm({
             receipt_url: null,
             custom_category_label: null,
             tags: [],
-            status: transactionStatus,
+            status: 'cleared',  // Children always cleared; parent carries the reconciliation status
             is_split_child: true,
             parent_transaction_id: parentId,
           });

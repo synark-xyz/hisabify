@@ -253,8 +253,8 @@ export function ExpensesPage() {
   const categoryOptions = useMemo(() => {
     const map = new Map<string, Category>();
     for (const tx of rangeTransactions) {
-      if (tx.category?.id && !map.has(tx.category.id)) {
-        map.set(tx.category.id, tx.category);
+      if (tx.category?.id && !map.has(tx.category.id) && !tx.category.parent_id) {
+        map.set(tx.category.id, tx.category as Category);
       }
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -271,16 +271,11 @@ export function ExpensesPage() {
   }, [rangeTransactions]);
 
   // Build a full category map for TransactionItem parent-name lookups.
-  // Derived from already-fetched transaction data (no extra network request).
-  const categoriesMap = useMemo(() => {
-    const map = new Map<string, Category>();
-    for (const tx of transactions) {
-      if (tx.category) {
-        map.set(tx.category.id, tx.category as Category);
-      }
-    }
-    return map;
-  }, [transactions]);
+  // Uses allCategories so parent categories outside the current date window are still available.
+  const categoriesMap = useMemo(
+    () => new Map<string, Category>(allCategories.map((c) => [c.id, c])),
+    [allCategories]
+  );
 
   // Sub-category options — only children of the currently selected parent category
   const subCategoryOptions = useMemo(() => {
@@ -322,6 +317,7 @@ export function ExpensesPage() {
     if (
       typeFilter !== 'all' ||
       categoryFilter !== 'all' ||
+      subCategoryFilter !== 'all' ||
       cardFilter !== 'all' ||
       filterTags.length > 0 ||
       showUnclearedOnly ||
@@ -329,7 +325,7 @@ export function ExpensesPage() {
     ) {
       setShowFilters(true);
     }
-  }, [typeFilter, categoryFilter, cardFilter, filterTags, showUnclearedOnly]);
+  }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly]);
 
   useEffect(() => {
     if (categoryFilter === 'all') {

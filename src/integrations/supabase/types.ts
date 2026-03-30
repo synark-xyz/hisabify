@@ -117,6 +117,7 @@ export type Database = {
           id: string
           name: string
           type: string
+          parent_id: string | null
         }
         Insert: {
           color?: string
@@ -125,6 +126,7 @@ export type Database = {
           id?: string
           name: string
           type?: string
+          parent_id?: string | null
         }
         Update: {
           color?: string
@@ -133,8 +135,17 @@ export type Database = {
           id?: string
           name?: string
           type?: string
+          parent_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       custom_category_suggestions: {
         Row: {
@@ -713,6 +724,10 @@ export type Database = {
           savings_goal_id: string | null
           type: string
           user_id: string
+          tags: string[]
+          status: string
+          parent_transaction_id: string | null
+          is_split_child: boolean
         }
         Insert: {
           amount: number
@@ -736,6 +751,10 @@ export type Database = {
           savings_goal_id?: string | null
           type?: string
           user_id: string
+          tags?: string[]
+          status?: string
+          parent_transaction_id?: string | null
+          is_split_child?: boolean
         }
         Update: {
           amount?: number
@@ -759,6 +778,10 @@ export type Database = {
           savings_goal_id?: string | null
           type?: string
           user_id?: string
+          tags?: string[]
+          status?: string
+          parent_transaction_id?: string | null
+          is_split_child?: boolean
         }
         Relationships: [
           {
@@ -787,6 +810,13 @@ export type Database = {
             columns: ["savings_goal_id"]
             isOneToOne: false
             referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_parent_transaction_id_fkey"
+            columns: ["parent_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]

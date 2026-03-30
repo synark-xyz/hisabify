@@ -49,7 +49,7 @@ export function useReferral() {
             // Clear pending referral code from localStorage on successful redemption
             localStorage.removeItem(PENDING_REFERRAL_KEY);
 
-            toast.success('Referral code redeemed! You both get 30 days of Pro features.');
+            toast.success('Referral code redeemed! You both get 3 days of Pro features.');
             await refreshProfile();
             return true;
         } catch (err) {

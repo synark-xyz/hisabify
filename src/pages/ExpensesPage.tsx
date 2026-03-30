@@ -19,9 +19,11 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTheme } from '@/hooks/useTheme';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, CategorySpending, Card, Category } from '@/types';
 import { getViewRange, type TransactionViewMode } from '@/lib/transactionDateRange';
+import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
 import { enforceHistoryWindow } from '@/lib/historyLimits';
 import { emitTransactionUpdated } from '@/lib/transaction-events';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
@@ -33,6 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   format,
   isSameDay,
@@ -67,7 +70,10 @@ export function ExpensesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<FilterType>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>('all');
   const [cardFilter, setCardFilter] = useState<string>('all');
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [showUnclearedOnly, setShowUnclearedOnly] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [reminderTransaction, setReminderTransaction] = useState<Transaction | null>(null);
@@ -83,6 +89,7 @@ export function ExpensesPage() {
   const { variant } = useTheme();
   const { isPremium } = useSubscription();
   const { toast } = useToast();
+  const { categories: allCategories } = useCategories();
 
   // ── Apply URL search params on mount ────────────────────────────────────
   useEffect(() => {
@@ -263,6 +270,18 @@ export function ExpensesPage() {
     return Array.from(map.values()).sort((a, b) => a.card_holder.localeCompare(b.card_holder));
   }, [rangeTransactions]);
 
+  // Build a full category map for TransactionItem parent-name lookups
+  const categoriesMap = useMemo(
+    () => new Map<string, Category>(allCategories.map((c) => [c.id, c])),
+    [allCategories]
+  );
+
+  // Sub-category options — only children of the currently selected parent category
+  const subCategoryOptions = useMemo(() => {
+    if (categoryFilter === 'all') return [];
+    return allCategories.filter((c) => c.parent_id === categoryFilter);
+  }, [allCategories, categoryFilter]);
+
   // Resolve deferred categoryName filter once categories are loaded
   useEffect(() => {
     if (pendingCategoryNameRef.current && categoryOptions.length > 0) {
@@ -276,17 +295,24 @@ export function ExpensesPage() {
     }
   }, [categoryOptions]);
 
+  // Reset sub-category when parent category changes
+  useEffect(() => {
+    setSubCategoryFilter('all');
+  }, [categoryFilter]);
+
   // Auto-open filters panel when any filter is active
   useEffect(() => {
     if (
       typeFilter !== 'all' ||
       categoryFilter !== 'all' ||
       cardFilter !== 'all' ||
+      filterTags.length > 0 ||
+      showUnclearedOnly ||
       pendingCategoryNameRef.current
     ) {
       setShowFilters(true);
     }
-  }, [typeFilter, categoryFilter, cardFilter]);
+  }, [typeFilter, categoryFilter, cardFilter, filterTags, showUnclearedOnly]);
 
   useEffect(() => {
     if (categoryFilter === 'all') {
@@ -322,7 +348,25 @@ export function ExpensesPage() {
         return false;
       }
 
+      // Sub-category filter (only applies when a parent is selected and sub-category chosen)
+      if (subCategoryFilter !== 'all' && tx.category_id !== subCategoryFilter) {
+        return false;
+      }
+
       if (cardFilter !== 'all' && tx.card_id !== cardFilter) {
+        return false;
+      }
+
+      // Tag filter — at least one tag must match
+      if (filterTags.length > 0) {
+        const txTags = tx.tags ?? [];
+        if (!filterTags.some((tag) => txTags.includes(tag))) {
+          return false;
+        }
+      }
+
+      // Uncleared only filter
+      if (showUnclearedOnly && tx.status !== 'uncleared') {
         return false;
       }
 
@@ -336,7 +380,7 @@ export function ExpensesPage() {
 
       return merchant.includes(query) || note.includes(query) || categoryName.includes(query);
     });
-  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, cardFilter]);
+  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly]);
 
   const totalIncome = filteredTransactions
     .filter((tx) => tx.type === 'income')
@@ -350,9 +394,12 @@ export function ExpensesPage() {
     let count = 0;
     if (typeFilter !== 'all') count++;
     if (categoryFilter !== 'all') count++;
+    if (subCategoryFilter !== 'all') count++;
     if (cardFilter !== 'all') count++;
+    if (filterTags.length > 0) count++;
+    if (showUnclearedOnly) count++;
     return count;
-  }, [typeFilter, categoryFilter, cardFilter]);
+  }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly]);
 
   const formatAmount = useCallback((amount: number) => {
     const locale = currency === 'USD' ? 'en-US' : 'en-US';
@@ -802,6 +849,27 @@ export function ExpensesPage() {
                         </SelectContent>
                       </Select>
 
+                      {subCategoryOptions.length > 0 && (
+                        <Select
+                          value={subCategoryFilter}
+                          onValueChange={(value) => {
+                            setSubCategoryFilter(value);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sub-category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Sub-categories</SelectItem>
+                            {subCategoryOptions.map((sub) => (
+                              <SelectItem key={sub.id} value={sub.id}>
+                                {sub.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
                       <Select
                         value={cardFilter}
                         onValueChange={(value) => {
@@ -823,13 +891,60 @@ export function ExpensesPage() {
                       </Select>
                     </div>
 
+                    {/* Tag filter */}
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">Tags</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {PREDEFINED_TAGS.map((tag) => {
+                          const isActive = filterTags.includes(tag);
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => {
+                                setFilterTags((prev) =>
+                                  isActive ? prev.filter((t) => t !== tag) : [...prev, tag]
+                                );
+                              }}
+                              className={cn(
+                                'text-[11px] px-2 py-1 rounded-full border font-medium transition-colors',
+                                isActive
+                                  ? 'bg-accent/20 border-accent/40 text-accent'
+                                  : 'bg-muted/30 border-border text-muted-foreground hover:border-accent/30 hover:text-foreground'
+                              )}
+                            >
+                              {tag}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Uncleared only toggle */}
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="uncleared-toggle"
+                        className="text-sm font-medium text-foreground cursor-pointer"
+                      >
+                        Show uncleared only
+                      </label>
+                      <Switch
+                        id="uncleared-toggle"
+                        checked={showUnclearedOnly}
+                        onCheckedChange={setShowUnclearedOnly}
+                      />
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => {
                         setSearchQuery('');
                         setTypeFilter('all');
                         setCategoryFilter('all');
+                        setSubCategoryFilter('all');
                         setCardFilter('all');
+                        setFilterTags([]);
+                        setShowUnclearedOnly(false);
                         setShowFilters(false);
                       }}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
@@ -866,6 +981,7 @@ export function ExpensesPage() {
                       onDelete={setDeletingTransaction}
                       revealedId={revealedTransactionId}
                       onReveal={setRevealedTransactionId}
+                      categoriesMap={categoriesMap}
                     />
                   ))}
                 </div>
@@ -878,7 +994,7 @@ export function ExpensesPage() {
                   </p>
 
                   {/* Active filter chips */}
-                  {(searchQuery || typeFilter !== 'all' || categoryFilter !== 'all' || cardFilter !== 'all') && (
+                  {(searchQuery || activeFilterCount > 0) && (
                     <div className="flex flex-wrap justify-center gap-2 mt-4">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
@@ -904,10 +1020,34 @@ export function ExpensesPage() {
                           </button>
                         </span>
                       )}
+                      {subCategoryFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Sub: {subCategoryOptions.find(c => c.id === subCategoryFilter)?.name || subCategoryFilter}
+                          <button onClick={() => setSubCategoryFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
                       {cardFilter !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
                           Card: {cardOptions.find(c => c.id === cardFilter)?.card_holder || cardFilter}
                           <button onClick={() => setCardFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {filterTags.map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Tag: {tag}
+                          <button onClick={() => setFilterTags((prev) => prev.filter((t) => t !== tag))} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                      {showUnclearedOnly && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-amber-500/15 text-amber-400 rounded-full">
+                          Uncleared only
+                          <button onClick={() => setShowUnclearedOnly(false)} className="hover:opacity-70">
                             <X className="w-3 h-3" />
                           </button>
                         </span>

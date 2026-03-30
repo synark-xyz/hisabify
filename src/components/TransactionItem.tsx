@@ -18,7 +18,7 @@ import {
   User,
   Bell,
 } from '@phosphor-icons/react';
-import { Transaction } from '@/types';
+import { Transaction, Category } from '@/types';
 import { format } from 'date-fns';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
@@ -33,6 +33,7 @@ interface TransactionItemProps {
   onAddReminder?: (transaction: Transaction) => void;
   revealedId?: string | null;
   onReveal?: (id: string | null) => void;
+  categoriesMap?: Map<string, Category>;
 }
 
 type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
@@ -54,7 +55,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string, weight?:
   'owe': Bank,
 };
 
-export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAddReminder, revealedId, onReveal }: TransactionItemProps) {
+export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAddReminder, revealedId, onReveal, categoriesMap }: TransactionItemProps) {
   const { currency, formatAmount } = useCurrency();
   const { variant } = useTheme();
 
@@ -65,6 +66,22 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
 
   const categoryName = getTransactionCategoryName(transaction);
   const categoryColor = getTransactionCategoryColor(transaction);
+
+  // Resolve parent category name for sub-category display
+  const parentCategoryName = (() => {
+    const parentId = transaction.category?.parent_id;
+    if (!parentId || !categoriesMap) return null;
+    return categoriesMap.get(parentId)?.name ?? null;
+  })();
+
+  const displayCategoryLabel = parentCategoryName
+    ? `${parentCategoryName} › ${categoryName}`
+    : categoryName;
+
+  // Tags display — limit to first 3 + overflow chip
+  const tags = transaction.tags ?? [];
+  const visibleTags = tags.slice(0, 3);
+  const overflowCount = tags.length - visibleTags.length;
 
   // Map category icons or use defaults based on keywords
   const getIcon = () => {
@@ -238,7 +255,24 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
         </motion.div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-foreground truncate tracking-tight">{transaction.merchant}</p>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-70">{categoryName}</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-70">{displayCategoryLabel}</p>
+          {visibleTags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {visibleTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent/80 font-medium"
+                >
+                  {tag}
+                </span>
+              ))}
+              {overflowCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent/80 font-medium">
+                  +{overflowCount}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="text-right">
           {/* Main amount in user's base currency */}
@@ -270,6 +304,13 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
               </button>
             )}
           </div>
+          {transaction.status === 'uncleared' && (
+            <div className="flex justify-end mt-0.5">
+              <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold uppercase tracking-wider">
+                Uncleared
+              </span>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

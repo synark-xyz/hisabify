@@ -18,14 +18,21 @@ import { PaymentReminder } from '@/types';
 import { format, addMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+interface ReminderInitialData {
+  title?: string;
+  amount?: number;
+  currency?: string;
+}
+
 interface AddPaymentReminderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   reminder?: PaymentReminder; // For editing
+  initialData?: ReminderInitialData; // Pre-fill from a transaction
 }
 
-export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminder }: AddPaymentReminderModalProps) {
+export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminder, initialData }: AddPaymentReminderModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { currency } = useCurrency();
@@ -72,8 +79,13 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
       setNote(reminder.note || '');
     } else {
       resetForm();
+      if (initialData) {
+        if (initialData.title) setTitle(initialData.title);
+        if (initialData.amount !== undefined) setAmount(initialData.amount.toString());
+        if (initialData.currency) setReminderCurrency(initialData.currency);
+      }
     }
-  }, [reminder, open, currency, resetForm]);
+  }, [reminder, initialData, open, currency, resetForm]);
 
   // Filter transactions based on search query
   const filteredTransactions = transactions.filter(tx =>

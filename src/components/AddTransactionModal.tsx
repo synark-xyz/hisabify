@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Mic, Camera } from 'lucide-react';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import { TransactionForm } from '@/components/TransactionForm';
 import { VoiceInputFlow } from '@/components/VoiceInputFlow';
@@ -60,26 +59,6 @@ export function AddTransactionModal({
         title="New Transaction"
         className="max-h-[90vh]"
       >
-        {/* Voice / Scan quick-fill */}
-        <div className="flex items-center justify-end gap-1 px-4 pb-1 -mt-2">
-          <button
-            type="button"
-            onClick={() => setShowVoice(true)}
-            title="Fill with voice"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-          >
-            <Mic className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowReceipt(true)}
-            title="Scan receipt"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-          >
-            <Camera className="w-4 h-4" />
-          </button>
-        </div>
-
         <TransactionForm
           key={prefillKey}
           mode="create"
@@ -93,6 +72,8 @@ export function AddTransactionModal({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           initialData={prefillData as any}
           initialBudgetId={initialBudgetId}
+          onVoiceRequest={() => setShowVoice(true)}
+          onScanRequest={() => setShowReceipt(true)}
         />
       </ResponsiveDrawer>
 

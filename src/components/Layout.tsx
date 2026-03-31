@@ -9,6 +9,25 @@ import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberpunkBackground } from '@/components/CyberpunkBackground';
 import { cn } from '@/lib/utils';
+import { emitTransactionUpdated } from '@/lib/transaction-events';
+
+const PAGE_TITLES: Record<string, string> = {
+    '/': 'Dashboard',
+    '/budget': 'Budget',
+    '/savings': 'Savings',
+    '/expenses': 'Expenses',
+    '/reports': 'Reports',
+    '/profile': 'Profile',
+    '/profile/personal': 'Personal Info',
+    '/profile/data': 'Data Management',
+    '/profile/invite': 'Invite Friends',
+    '/analytics': 'Analytics',
+    '/settings': 'Settings',
+    '/settings/preferences': 'Preferences',
+    '/settings/notifications': 'Notifications',
+};
+
+const getPageTitle = (pathname: string) => PAGE_TITLES[pathname] ?? 'Hisabify';
 
 export function Layout() {
     const [showManual, setShowManual] = useState(false);
@@ -18,7 +37,7 @@ export function Layout() {
     const { isKeyboardOpen } = useVisualViewport();
 
     useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
     }, [location.pathname]);
 
     useEffect(() => {
@@ -26,22 +45,6 @@ export function Layout() {
         window.addEventListener('open-input-sheet', handleOpenModal);
         return () => window.removeEventListener('open-input-sheet', handleOpenModal);
     }, []);
-
-    const getPageTitle = (pathname: string) => {
-        switch (pathname) {
-            case '/': return 'Dashboard';
-            case '/budget': return 'Budget';
-            case '/savings': return 'Savings';
-            case '/expenses': return 'Expenses';
-            case '/reports': return 'Reports';
-            case '/profile': return 'Profile';
-            case '/profile/personal': return 'Personal Info';
-            case '/profile/data': return 'Data Management';
-            case '/profile/invite': return 'Invite Friends';
-            case '/analytics': return 'Analytics';
-            default: return 'Hisabify';
-        }
-    };
 
     const isProfileSubPage = location.pathname.startsWith('/profile/');
     const isProfileRootPage = location.pathname === '/profile';
@@ -98,7 +101,7 @@ export function Layout() {
                 open={showManual}
                 onOpenChange={setShowManual}
                 onSuccess={() => {
-                    window.dispatchEvent(new Event('transaction-updated'));
+                    emitTransactionUpdated();
                 }}
             />
         </div>

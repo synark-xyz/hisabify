@@ -20,7 +20,6 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useCategories } from '@/hooks/useCategories';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
 import { useUserBehavior } from '@/hooks/useUserBehavior';
-import { useBudgets } from '@/hooks/useBudgets';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useSmartSuggest } from '@/hooks/useSmartSuggest';
 import { SuggestionBanner } from '@/components/SuggestionBanner';
@@ -151,8 +150,7 @@ export function TransactionForm({
   const { isPremium } = useSubscription();
   const { logEvent } = useUserBehavior();
   const { categories } = useCategories();
-  const { getBudgetsForCategory } = useBudgetContext();
-  const { budgets } = useBudgets();
+  const { budgets, getBudgetsForCategory } = useBudgetContext();
   const { activeGoals } = useSavingsGoals();
 
   const [linkedBudgetId, setLinkedBudgetId] = useState<string | null>(
@@ -548,7 +546,7 @@ export function TransactionForm({
       category_id: isSplit
         ? null
         : (type === 'expense' || type === 'lend' || type === 'owe') ? (data.categoryId || null) : null,
-      budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? (linkedBudgetId ?? selectedBudgetId ?? null) : null,
+      budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? linkedBudgetId : null,
       savings_goal_id: linkedGoalId,
       card_id: null,
       note: (() => {
@@ -1115,7 +1113,7 @@ export function TransactionForm({
           )}
 
           {/* ─── Smart Suggestion Banner ─── */}
-          {(type === 'expense' || type === 'lend' || type === 'owe') && !isSplit && (
+          {(type === 'expense' || type === 'income' || type === 'lend' || type === 'owe') && !isSplit && (
             <SuggestionBanner
               suggestion={suggestion}
               linkedBudgetId={linkedBudgetId}

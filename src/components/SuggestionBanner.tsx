@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import type { SmartSuggestion } from '@/hooks/useSmartSuggest';
@@ -28,6 +28,10 @@ export function SuggestionBanner({
 }: SuggestionBannerProps) {
   const [dismissed, setDismissed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  useEffect(() => {
+    setDismissed(false);
+  }, [suggestion]);
 
   const isLinked = linkedBudgetId !== null || linkedGoalId !== null;
 

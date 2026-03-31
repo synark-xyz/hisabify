@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon } from 'lucide-react';
+import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,6 +41,8 @@ interface TransactionFormProps {
     currency?: string;
   };
   initialBudgetId?: string | null;
+  onVoiceRequest?: () => void;
+  onScanRequest?: () => void;
 }
 
 interface TransactionFormValues {
@@ -63,6 +66,26 @@ function stripLegacyNoteTag(note: string | null): string {
   return raw.replace(/^\[(credit_card|utility|lend|owe|custom)\]\s*/i, '').trim();
 }
 
+function parseNoteMeta(note: string | null): {
+  payer: string; payee: string; splitWith: string; cleanNote: string;
+} {
+  let remaining = stripLegacyNoteTag(note);
+  let payer = '';
+  let payee = '';
+  let splitWith = '';
+
+  const payerMatch = remaining.match(/^\[payer:([^\]]*)\]\s*/);
+  if (payerMatch) { payer = payerMatch[1]; remaining = remaining.slice(payerMatch[0].length); }
+
+  const payeeMatch = remaining.match(/^\[payee:([^\]]*)\]\s*/);
+  if (payeeMatch) { payee = payeeMatch[1]; remaining = remaining.slice(payeeMatch[0].length); }
+
+  const splitMatch = remaining.match(/^\[split_with:([^\]]*)\]\s*/);
+  if (splitMatch) { splitWith = splitMatch[1]; remaining = remaining.slice(splitMatch[0].length); }
+
+  return { payer, payee, splitWith, cleanNote: remaining };
+}
+
 export function TransactionForm({
   onSuccess,
   onCancel,
@@ -72,6 +95,8 @@ export function TransactionForm({
   initialType,
   initialData,
   initialBudgetId,
+  onVoiceRequest,
+  onScanRequest,
 }: TransactionFormProps) {
   const [type, setType] = useState<'expense' | 'income' | 'lend' | 'owe'>(
     initialType || 'expense'
@@ -97,6 +122,11 @@ export function TransactionForm({
   /* ─── Feature 1.4: Split Transaction state ─── */
   const [isSplit, setIsSplit] = useState(false);
   const [splitRows, setSplitRows] = useState<SplitRow[]>([]);
+
+  /* ─── Payer / Payee / Split With ─── */
+  const [payer, setPayer] = useState('');
+  const [payee, setPayee] = useState('');
+  const [splitWith, setSplitWith] = useState('');
 
   /* ─── Reminder toggle state ─── */
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -194,6 +224,9 @@ export function TransactionForm({
     setReminderEnabled(false);
     setReminderDate(undefined);
     setReminderDateOpen(false);
+    setPayer('');
+    setPayee('');
+    setSplitWith('');
   }, []);
 
   const initializeCreateState = useCallback(() => {
@@ -216,14 +249,18 @@ export function TransactionForm({
     }
 
     setType((initialTransaction.type as 'expense' | 'income' | 'lend' | 'owe') || 'expense');
+    const { payer: initPayer, payee: initPayee, splitWith: initSplitWith, cleanNote } = parseNoteMeta(initialTransaction.note);
     form.reset({
       merchant: initialTransaction.merchant,
       amount: String(initialTransaction.amount_original || initialTransaction.amount),
       categoryId: initialTransaction.category_id || '',
       date: new Date(initialTransaction.date),
-      note: stripLegacyNoteTag(initialTransaction.note),
+      note: cleanNote,
       currency: initialTransaction.currency_original || currency,
     });
+    setPayer(initPayer);
+    setPayee(initPayee);
+    setSplitWith(initSplitWith);
     setSelectedBudgetId(initialTransaction.budget_id ?? null);
     setCustomCategoryLabel(initialTransaction.custom_category_label || '');
     setCustomCategoryError('');
@@ -486,7 +523,14 @@ export function TransactionForm({
       budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? (selectedBudgetId ?? null) : null,
       savings_goal_id: initialTransaction?.savings_goal_id ?? null,
       card_id: null,
-      note: data.note.trim() || null,
+      note: (() => {
+        const metaParts: string[] = [];
+        if (type === 'expense' && payer.trim()) metaParts.push(`[payer:${payer.trim()}]`);
+        if (type === 'income' && payee.trim()) metaParts.push(`[payee:${payee.trim()}]`);
+        if (isSplit && splitWith.trim()) metaParts.push(`[split_with:${splitWith.trim()}]`);
+        const metaStr = metaParts.join(' ');
+        return [metaStr, data.note.trim()].filter(Boolean).join(' ') || null;
+      })(),
       receipt_url: initialData?.receiptUrl || null,
       custom_category_label: isOtherCategory ? customCategoryLabel.trim() : null,
       /* ─── Feature 1.2: Tags ─── */
@@ -674,38 +718,118 @@ export function TransactionForm({
 
   return (
     <div className="overflow-y-auto px-4 pb-safe-nav h-full">
-      <div className="grid grid-cols-4 gap-2 mb-6">
-        {[
-          { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-          { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-          { id: 'lend', name: 'Lend', icon: Handshake, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-          { id: 'owe', name: 'Borrow', icon: Landmark, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-        ].map((opt: { id: 'expense' | 'income' | 'lend' | 'owe'; name: string; icon: typeof ArrowUpRight; color: string; bg: string }) => (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => {
-              setType(opt.id);
-              // Reset split when switching away from expense
-              if (opt.id !== 'expense' && isSplit) {
-                setIsSplit(false);
-                setSplitRows([]);
-              }
-            }}
-            className={cn(
-              'flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all card-3d',
-              type === opt.id ? 'border-accent bg-accent/5 ring-1 ring-accent/20 border-glow' : 'border-border bg-card hover:bg-muted'
-            )}
-          >
-            <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', opt.bg)}>
-              <opt.icon className={cn('w-5 h-5', opt.color, 'icon-glow')} />
-            </div>
-            <span className={cn('text-[10px] font-bold uppercase tracking-wider', type === opt.id && 'text-glow')}>
-              {opt.name}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* ─── Type selector: Tabs in create mode; legacy 4-button grid for lend/owe edit ─── */}
+      {isEditMode && (type === 'lend' || type === 'owe') ? (
+        <div className="grid grid-cols-4 gap-2 mb-4">
+          {[
+            { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+            { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+            { id: 'lend', name: 'Lend', icon: Handshake, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+            { id: 'owe', name: 'Borrow', icon: Landmark, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => setType(opt.id as typeof type)}
+              className={cn(
+                'flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all card-3d',
+                type === opt.id ? 'border-accent bg-accent/5 ring-1 ring-accent/20 border-glow' : 'border-border bg-card hover:bg-muted'
+              )}
+            >
+              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', opt.bg)}>
+                <opt.icon className={cn('w-5 h-5', opt.color, 'icon-glow')} />
+              </div>
+              <span className={cn('text-[10px] font-bold uppercase tracking-wider', type === opt.id && 'text-glow')}>
+                {opt.name}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <Tabs
+          value={type === 'income' ? 'income' : 'expense'}
+          onValueChange={(v) => {
+            const newType = v as 'expense' | 'income';
+            setType(newType);
+            if (isSplit && newType !== 'expense') {
+              setIsSplit(false);
+              setSplitRows([]);
+            }
+            setPayer('');
+            setPayee('');
+          }}
+          className="mb-4"
+        >
+          <TabsList className="w-full h-12 rounded-2xl p-1">
+            <TabsTrigger
+              value="expense"
+              className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-rose-500"
+            >
+              <ArrowUpRight className="w-4 h-4" />
+              Expense
+            </TabsTrigger>
+            <TabsTrigger
+              value="income"
+              className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-emerald-500"
+            >
+              <ArrowDownLeft className="w-4 h-4" />
+              Income
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
+
+      {/* ─── PAYER / PAYEE contextual field ─── */}
+      {type === 'expense' && (
+        <div className="space-y-1.5 mb-2">
+          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Payer (Optional)</label>
+          <input
+            type="text"
+            placeholder="Who paid? e.g. John"
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={payer}
+            onChange={(e) => setPayer(e.target.value)}
+          />
+        </div>
+      )}
+      {type === 'income' && (
+        <div className="space-y-1.5 mb-2">
+          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Payee (Optional)</label>
+          <input
+            type="text"
+            placeholder="Paid by whom? e.g. Client"
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={payee}
+            onChange={(e) => setPayee(e.target.value)}
+          />
+        </div>
+      )}
+
+      {/* ─── Voice / Scan quick-fill row ─── */}
+      {(onVoiceRequest || onScanRequest) && (
+        <div className="flex gap-2 mb-2">
+          {onVoiceRequest && (
+            <button
+              type="button"
+              onClick={onVoiceRequest}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <Mic className="w-4 h-4 text-accent" />
+              <span className="text-sm font-semibold">Voice Fill</span>
+            </button>
+          )}
+          {onScanRequest && (
+            <button
+              type="button"
+              onClick={onScanRequest}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <Camera className="w-4 h-4 text-accent" />
+              <span className="text-sm font-semibold">Scan Receipt</span>
+            </button>
+          )}
+        </div>
+      )}
 
       <Form {...form}>
         <form
@@ -871,6 +995,20 @@ export function TransactionForm({
                     setSplitRows([]);
                   }
                 }}
+              />
+            </div>
+          )}
+
+          {/* ─── Split With field ─── */}
+          {isSplit && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider opacity-70">Split With (Optional)</label>
+              <input
+                type="text"
+                placeholder="Who are you splitting with? e.g. Alice"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={splitWith}
+                onChange={(e) => setSplitWith(e.target.value)}
               />
             </div>
           )}

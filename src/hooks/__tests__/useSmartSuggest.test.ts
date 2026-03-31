@@ -54,8 +54,8 @@ function makeGoal(overrides: Partial<SavingsGoalWithProgress> = {}): SavingsGoal
     percentage: 42.5,
     remaining: 11500,
     daysLeft: 275,
-    status: 'on_track' as any,
-    paceStatus: 'on_track' as any,
+    status: 'on_track',
+    paceStatus: 'on_track',
     isArchived: false,
     isUrgent: false,
     planEnabled: false,
@@ -116,6 +116,14 @@ describe('useSmartSuggest', () => {
         useSmartSuggest('expense', 'cat-food', budgets, [])
       );
       expect(result.current?.item.id).toBe('b2');
+    });
+
+    it('suggests a utilized budget (not exceeded)', () => {
+      const budgets = [makeBudget({ id: 'b1', status: 'utilized' })];
+      const { result } = renderHook(() =>
+        useSmartSuggest('expense', 'cat-food', budgets, [])
+      );
+      expect(result.current?.item.id).toBe('b1');
     });
 
     it('returns null when all budgets are exceeded and no category match', () => {

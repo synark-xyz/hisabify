@@ -20,6 +20,10 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useCategories } from '@/hooks/useCategories';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
 import { useUserBehavior } from '@/hooks/useUserBehavior';
+import { useBudgets } from '@/hooks/useBudgets';
+import { useSavingsGoals } from '@/hooks/useSavingsGoals';
+import { useSmartSuggest } from '@/hooks/useSmartSuggest';
+import { SuggestionBanner } from '@/components/SuggestionBanner';
 import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -148,6 +152,15 @@ export function TransactionForm({
   const { logEvent } = useUserBehavior();
   const { categories } = useCategories();
   const { getBudgetsForCategory } = useBudgetContext();
+  const { budgets } = useBudgets();
+  const { activeGoals } = useSavingsGoals();
+
+  const [linkedBudgetId, setLinkedBudgetId] = useState<string | null>(
+    initialTransaction?.budget_id ?? null
+  );
+  const [linkedGoalId, setLinkedGoalId] = useState<string | null>(
+    initialTransaction?.savings_goal_id ?? null
+  );
 
   const isEditMode = mode === 'edit' && !!initialTransaction;
 
@@ -194,6 +207,20 @@ export function TransactionForm({
 
   const selectedCategory = categories.find((c) => c.id === watchedCategoryId);
   const isOtherCategory = selectedCategory?.name?.toLowerCase() === 'other' && !selectedCategory?.is_system_category;
+
+  const suggestion = useSmartSuggest(
+    type,
+    watchedCategoryId,
+    budgets,
+    activeGoals
+  );
+
+  useEffect(() => {
+    if (mode === 'create') {
+      setLinkedBudgetId(null);
+      setLinkedGoalId(null);
+    }
+  }, [type, watchedCategoryId, mode]);
 
   const matchingBudgets = useMemo(() => {
     if ((type !== 'expense' && type !== 'lend' && type !== 'owe') || !watchedCategoryId) return [];
@@ -521,8 +548,8 @@ export function TransactionForm({
       category_id: isSplit
         ? null
         : (type === 'expense' || type === 'lend' || type === 'owe') ? (data.categoryId || null) : null,
-      budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? (selectedBudgetId ?? null) : null,
-      savings_goal_id: initialTransaction?.savings_goal_id ?? null,
+      budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? (linkedBudgetId ?? selectedBudgetId ?? null) : null,
+      savings_goal_id: linkedGoalId,
       card_id: null,
       note: (() => {
         const metaParts: string[] = [];
@@ -1083,6 +1110,30 @@ export function TransactionForm({
                     <FormMessage />
                   </FormItem>
                 );
+              }}
+            />
+          )}
+
+          {/* ─── Smart Suggestion Banner ─── */}
+          {(type === 'expense' || type === 'lend' || type === 'owe') && !isSplit && (
+            <SuggestionBanner
+              suggestion={suggestion}
+              linkedBudgetId={linkedBudgetId}
+              linkedGoalId={linkedGoalId}
+              budgets={budgets}
+              goals={activeGoals}
+              onConfirm={(entityType, id) => {
+                if (entityType === 'budget') {
+                  setLinkedBudgetId(id);
+                  setLinkedGoalId(null);
+                } else {
+                  setLinkedGoalId(id);
+                  setLinkedBudgetId(null);
+                }
+              }}
+              onUnlink={() => {
+                setLinkedBudgetId(null);
+                setLinkedGoalId(null);
               }}
             />
           )}

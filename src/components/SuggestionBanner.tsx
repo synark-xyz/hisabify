@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { HandCoins, X } from 'lucide-react';
 import type { SmartSuggestion } from '@/hooks/useSmartSuggest';
 import type { BudgetWithSpending } from '@/hooks/useBudgets';
 import type { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
@@ -39,7 +39,11 @@ export function SuggestionBanner({
   const linkedBudget = linkedBudgetId ? budgets.find(b => b.id === linkedBudgetId) : null;
   const linkedGoal = linkedGoalId ? goals.find(g => g.id === linkedGoalId) : null;
   const linkedName = linkedBudget?.name || linkedBudget?.category?.name || linkedGoal?.name;
-  const linkedIcon = linkedGoal?.icon ?? '📊';
+  const linkedIconContent = linkedGoalId ? (
+    <HandCoins size={16} className="text-primary" />
+  ) : (
+    linkedBudget?.category?.icon ?? '📊'
+  );
 
   // Show confirmed chip when something is linked
   if (isLinked) {
@@ -55,7 +59,7 @@ export function SuggestionBanner({
             onClick={() => setSheetOpen(true)}
             className="flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-full px-3 py-1 text-xs text-primary font-medium"
           >
-            <span>{linkedIcon}</span>
+            <span>{linkedIconContent}</span>
             <span>{linkedName}</span>
           </button>
           <button
@@ -118,7 +122,7 @@ export function SuggestionBanner({
   const meta = isBudgetSuggestion
     ? `${(item as BudgetWithSpending).remaining.toFixed(0)} remaining · ${(item as BudgetWithSpending).percentage}% used`
     : `${(item as SavingsGoalWithProgress).percentage.toFixed(0)}% saved · ${(item as SavingsGoalWithProgress).remaining.toFixed(0)} to go`;
-  const icon = isBudgetSuggestion ? '📊' : (item as SavingsGoalWithProgress).icon;
+  const icon = isBudgetSuggestion ? '💸' : '🎯';
 
   return (
     <AnimatePresence>

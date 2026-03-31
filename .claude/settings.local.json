@@ -21,7 +21,8 @@
       "Bash(npx tsc:*)",
       "WebFetch(domain:developers.mindee.com)",
       "WebFetch(domain:docs.mindee.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx vitest:*)"
     ]
   },
   "enabledPlugins": {

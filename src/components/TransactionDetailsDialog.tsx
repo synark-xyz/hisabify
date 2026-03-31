@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -60,9 +60,16 @@ export function TransactionDetailsDialog({
   onDelete,
 }: TransactionDetailsDialogProps) {
   const { formatAmount, currency } = useCurrency();
+  // Note: useBudgets() is called here independently (not shared with parent page)
+  // since TransactionDetailsDialog is opened episodically and useBudgets is not
+  // yet React Query-backed. Acceptable perf trade-off for a short-lived dialog.
   const { budgets } = useBudgets();
   const { activeGoals } = useSavingsGoals();
   const { toast } = useToast();
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
   const [assignSheetOpen, setAssignSheetOpen] = useState(false);
   const [localBudgetId, setLocalBudgetId] = useState<string | null>(
     transaction?.budget_id ?? null
@@ -98,6 +105,7 @@ export function TransactionDetailsDialog({
         .update(patch)
         .eq('id', transaction.id);
 
+      if (!mountedRef.current) return;
       if (error) {
         setLocalBudgetId(transaction.budget_id ?? null);
         setLocalGoalId(transaction.savings_goal_id ?? null);
@@ -117,6 +125,7 @@ export function TransactionDetailsDialog({
       .update({ budget_id: null, savings_goal_id: null })
       .eq('id', transaction.id);
 
+    if (!mountedRef.current) return;
     if (error) {
       setLocalBudgetId(transaction.budget_id ?? null);
       setLocalGoalId(transaction.savings_goal_id ?? null);
@@ -199,6 +208,7 @@ export function TransactionDetailsDialog({
             if (!linkedBudget && !linkedGoal) {
               return (
                 <button
+                  type="button"
                   onClick={() => setAssignSheetOpen(true)}
                   className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
                 >
@@ -211,7 +221,7 @@ export function TransactionDetailsDialog({
             const name = linkedBudget
               ? (linkedBudget.name || linkedBudget.category?.name || 'Budget')
               : linkedGoal!.name;
-            const icon = linkedGoal?.icon ?? '📊';
+            const icon = linkedBudget ? '📊' : linkedGoal!.icon;
             const meta = linkedBudget
               ? `${linkedBudget.remaining.toFixed(0)} remaining · ${linkedBudget.percentage}% used`
               : `${linkedGoal!.percentage.toFixed(0)}% saved`;
@@ -219,6 +229,8 @@ export function TransactionDetailsDialog({
 
             return (
               <button
+                type="button"
+                aria-label="Change budget or goal assignment"
                 onClick={() => setAssignSheetOpen(true)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 text-left hover:bg-primary/10 transition-colors"
               >
@@ -233,7 +245,7 @@ export function TransactionDetailsDialog({
                     />
                   </div>
                 </div>
-                <span className="text-muted-foreground text-lg">›</span>
+                <span aria-hidden="true" className="text-muted-foreground text-lg">›</span>
               </button>
             );
           })()}

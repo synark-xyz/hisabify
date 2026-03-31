@@ -31,6 +31,7 @@ interface TransactionItemProps {
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
   onAddReminder?: (transaction: Transaction) => void;
+  onViewDetails?: (transaction: Transaction) => void;
   revealedId?: string | null;
   onReveal?: (id: string | null) => void;
   categoriesMap?: Map<string, Category>;
@@ -55,7 +56,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string, weight?:
   'owe': Bank,
 };
 
-export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAddReminder, revealedId, onReveal, categoriesMap }: TransactionItemProps) {
+export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAddReminder, onViewDetails, revealedId, onReveal, categoriesMap }: TransactionItemProps) {
   const { currency, formatAmount } = useCurrency();
   const { variant } = useTheme();
 
@@ -77,6 +78,19 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
   const displayCategoryLabel = parentCategoryName
     ? `${parentCategoryName} › ${categoryName}`
     : categoryName;
+
+  // Parse payer/payee/splitWith from note
+  const noteMeta = (() => {
+    const n = transaction.note || '';
+    const payerMatch = n.match(/\[payer:([^\]]+)\]/);
+    const payeeMatch = n.match(/\[payee:([^\]]+)\]/);
+    const splitMatch = n.match(/\[split_with:([^\]]+)\]/);
+    return {
+      payer: payerMatch?.[1] ?? null,
+      payee: payeeMatch?.[1] ?? null,
+      splitWith: splitMatch?.[1] ?? null,
+    };
+  })();
 
   // Tags display — limit to first 3 + overflow chip
   const tags = transaction.tags ?? [];
@@ -237,7 +251,14 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
         dragElastic={0.15}
         dragMomentum={false}
         onDragEnd={handleDragEnd}
-        onClick={() => actualRevealed && (onReveal ? onReveal(null) : setInternalRevealed(false))}
+        onClick={() => {
+          if (actualRevealed) {
+            if (onReveal) onReveal(null);
+            else setInternalRevealed(false);
+          } else {
+            onViewDetails?.(transaction);
+          }
+        }}
       >
         <motion.div
           className="w-12 h-12 rounded-xl flex items-center justify-center shadow-inner"
@@ -256,8 +277,23 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
         <div className="flex-1 min-w-0">
           <p className="font-bold text-foreground truncate tracking-tight">{transaction.merchant}</p>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-70">{displayCategoryLabel}</p>
-          {visibleTags.length > 0 && (
+          {(visibleTags.length > 0 || noteMeta.payer || noteMeta.payee || noteMeta.splitWith) && (
             <div className="flex flex-wrap gap-1 mt-1">
+              {noteMeta.payer && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 font-medium">
+                  Payer: {noteMeta.payer}
+                </span>
+              )}
+              {noteMeta.payee && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">
+                  Payee: {noteMeta.payee}
+                </span>
+              )}
+              {noteMeta.splitWith && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-500 font-medium">
+                  Split: {noteMeta.splitWith}
+                </span>
+              )}
               {visibleTags.map((tag) => (
                 <span
                   key={tag}

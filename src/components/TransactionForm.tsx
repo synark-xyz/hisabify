@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split } from 'lucide-react';
+import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -97,6 +97,11 @@ export function TransactionForm({
   const [isSplit, setIsSplit] = useState(false);
   const [splitRows, setSplitRows] = useState<SplitRow[]>([]);
 
+  /* ─── Reminder toggle state ─── */
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderDate, setReminderDate] = useState<Date | undefined>(undefined);
+  const [reminderDateOpen, setReminderDateOpen] = useState(false);
+
   /* ─── Feature 1.5: Auto-fill merchant suggestions state ─── */
   const [merchantSuggestions, setMerchantSuggestions] = useState<Array<{ merchant: string; category_id: string | null; type: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -185,6 +190,9 @@ export function TransactionForm({
     setCustomCategoryError('');
     setMerchantSuggestions([]);
     setShowSuggestions(false);
+    setReminderEnabled(false);
+    setReminderDate(undefined);
+    setReminderDateOpen(false);
   }, []);
 
   const initializeCreateState = useCallback(() => {
@@ -608,6 +616,23 @@ export function TransactionForm({
           day_of_week: data.date.getDay(),
           hour_of_day: new Date().getHours(),
         }).catch(() => {});
+      }
+
+      /* ─── Reminder insert (fire-and-forget) ─── */
+      if (reminderEnabled && reminderDate && user) {
+        supabase.from('payment_reminders').insert({
+          user_id: user.id,
+          title: data.merchant || 'Payment reminder',
+          amount: Math.abs(normalizedAmount),
+          currency: data.currency,
+          due_date: reminderDate.toISOString(),
+          status: 'upcoming',
+          is_recurring: false,
+          notify_before_days: 1,
+          note: null,
+        }).then(({ error }) => {
+          if (error) console.warn('Reminder insert failed:', error);
+        });
       }
 
       /* ─── Feature 1.6: Save & Add Another ─── */
@@ -1166,7 +1191,44 @@ export function TransactionForm({
             )}
           />
 
-          <div className="flex gap-3 pt-6 pb-2">
+          {/* ─── Reminder toggle ─── */}
+          {(type === 'expense' || type === 'income') && (
+            <div className="space-y-3 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5">
+                  <Bell className="w-3.5 h-3.5" /> Set Reminder
+                </label>
+                <Switch
+                  checked={reminderEnabled}
+                  onCheckedChange={(checked) => {
+                    setReminderEnabled(checked);
+                    if (!checked) setReminderDate(undefined);
+                  }}
+                />
+              </div>
+              {reminderEnabled && (
+                <Popover open={reminderDateOpen} onOpenChange={setReminderDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
+                      <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                      {reminderDate ? format(reminderDate, 'MMM dd, yyyy') : 'Remind me on...'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl" align="end">
+                    <CalendarComponent
+                      mode="single"
+                      selected={reminderDate}
+                      onSelect={(d) => { setReminderDate(d ?? undefined); setReminderDateOpen(false); }}
+                      defaultMonth={reminderDate ?? new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-6 pb-2">
             <Button type="button" variant="ghost" onClick={onCancel} className="flex-1">
               Cancel
             </Button>
@@ -1176,23 +1238,21 @@ export function TransactionForm({
                 type="button"
                 variant="outline"
                 disabled={form.formState.isSubmitting}
-                className="flex-1"
+                className="flex-1 text-sm"
                 onClick={() => form.handleSubmit((data) => handleSubmit(data, true))()}
               >
                 {form.formState.isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  'Save & Add Another'
+                  'Save & New'
                 )}
               </Button>
             )}
             <Button type="submit" disabled={form.formState.isSubmitting} className="flex-1">
               {form.formState.isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
-              ) : isEditMode ? (
-                'Save Changes'
               ) : (
-                'Save Record'
+                'Save'
               )}
             </Button>
           </div>

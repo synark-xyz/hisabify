@@ -6,7 +6,7 @@ CREATE TABLE public.savings_goals (
   target_amount NUMERIC NOT NULL,
   current_amount NUMERIC NOT NULL DEFAULT 0,
   deadline DATE,
-  icon TEXT DEFAULT 'piggy-bank',
+  icon TEXT DEFAULT 'target',
   color TEXT DEFAULT '#10B981',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()

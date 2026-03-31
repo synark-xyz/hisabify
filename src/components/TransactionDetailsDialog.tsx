@@ -1,3 +1,4 @@
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -8,9 +9,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Transaction } from '@/types';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useBudgets } from '@/hooks/useBudgets';
+import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { getTransactionCategoryName } from '@/lib/transactionUtils';
 import { cn } from '@/lib/utils';
 import { PencilSimple, Trash } from '@phosphor-icons/react';
+import { AssignmentSheet } from '@/components/AssignmentSheet';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface TransactionDetailsDialogProps {
   transaction: Transaction | null;
@@ -54,6 +60,78 @@ export function TransactionDetailsDialog({
   onDelete,
 }: TransactionDetailsDialogProps) {
   const { formatAmount, currency } = useCurrency();
+  // Note: useBudgets() is called here independently (not shared with parent page)
+  // since TransactionDetailsDialog is opened episodically and useBudgets is not
+  // yet React Query-backed. Acceptable perf trade-off for a short-lived dialog.
+  const { budgets } = useBudgets();
+  const { activeGoals } = useSavingsGoals();
+  const { toast } = useToast();
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
+  const [assignSheetOpen, setAssignSheetOpen] = useState(false);
+  const [localBudgetId, setLocalBudgetId] = useState<string | null>(
+    transaction?.budget_id ?? null
+  );
+  const [localGoalId, setLocalGoalId] = useState<string | null>(
+    transaction?.savings_goal_id ?? null
+  );
+
+  useEffect(() => {
+    setLocalBudgetId(transaction?.budget_id ?? null);
+    setLocalGoalId(transaction?.savings_goal_id ?? null);
+  }, [transaction?.id]);
+
+  const handleAssign = useCallback(
+    async (entityType: 'budget' | 'goal', id: string) => {
+      if (!transaction) return;
+      const patch =
+        entityType === 'budget'
+          ? { budget_id: id, savings_goal_id: null }
+          : { budget_id: null, savings_goal_id: id };
+
+      // Optimistic update
+      if (entityType === 'budget') {
+        setLocalBudgetId(id);
+        setLocalGoalId(null);
+      } else {
+        setLocalGoalId(id);
+        setLocalBudgetId(null);
+      }
+
+      const { error } = await supabase
+        .from('transactions')
+        .update(patch)
+        .eq('id', transaction.id);
+
+      if (!mountedRef.current) return;
+      if (error) {
+        setLocalBudgetId(transaction.budget_id ?? null);
+        setLocalGoalId(transaction.savings_goal_id ?? null);
+        toast({ title: 'Failed to update link', variant: 'destructive' });
+      }
+    },
+    [transaction, toast]
+  );
+
+  const handleUnlink = useCallback(async () => {
+    if (!transaction) return;
+    setLocalBudgetId(null);
+    setLocalGoalId(null);
+
+    const { error } = await supabase
+      .from('transactions')
+      .update({ budget_id: null, savings_goal_id: null })
+      .eq('id', transaction.id);
+
+    if (!mountedRef.current) return;
+    if (error) {
+      setLocalBudgetId(transaction.budget_id ?? null);
+      setLocalGoalId(transaction.savings_goal_id ?? null);
+      toast({ title: 'Failed to remove link', variant: 'destructive' });
+    }
+  }, [transaction, toast]);
 
   if (!transaction) return null;
 
@@ -121,6 +199,68 @@ export function TransactionDetailsDialog({
 
           {/* Split With */}
           {noteMeta.splitWith && <Row label="Split with" value={noteMeta.splitWith} />}
+
+          {/* Linked budget or savings goal */}
+          {(() => {
+            const linkedBudget = localBudgetId ? budgets.find(b => b.id === localBudgetId) : null;
+            const linkedGoal = localGoalId ? activeGoals.find(g => g.id === localGoalId) : null;
+
+            if (!linkedBudget && !linkedGoal) {
+              return (
+                <button
+                  type="button"
+                  onClick={() => setAssignSheetOpen(true)}
+                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                >
+                  <span>🎯</span>
+                  <span>Link to budget or goal…</span>
+                </button>
+              );
+            }
+
+            const name = linkedBudget
+              ? (linkedBudget.name || linkedBudget.category?.name || 'Budget')
+              : linkedGoal!.name;
+            const icon = linkedBudget ? '📊' : linkedGoal!.icon;
+            const meta = linkedBudget
+              ? `${linkedBudget.remaining.toFixed(0)} remaining · ${linkedBudget.percentage}% used`
+              : `${linkedGoal!.percentage.toFixed(0)}% saved`;
+            const progress = linkedBudget ? linkedBudget.percentage : linkedGoal!.percentage;
+
+            return (
+              <button
+                type="button"
+                aria-label="Change budget or goal assignment"
+                onClick={() => setAssignSheetOpen(true)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 text-left hover:bg-primary/10 transition-colors"
+              >
+                <span className="text-xl flex-shrink-0">{icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-primary truncate">{name}</p>
+                  <p className="text-xs text-muted-foreground">{meta}</p>
+                  <div className="mt-1 h-1 bg-primary/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${Math.min(progress, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <span aria-hidden="true" className="text-muted-foreground text-lg">›</span>
+              </button>
+            );
+          })()}
+
+          <AssignmentSheet
+            open={assignSheetOpen}
+            onOpenChange={setAssignSheetOpen}
+            budgets={budgets}
+            goals={activeGoals}
+            currentBudgetId={localBudgetId}
+            currentGoalId={localGoalId}
+            onSelectBudget={id => handleAssign('budget', id)}
+            onSelectGoal={id => handleAssign('goal', id)}
+            onUnlink={handleUnlink}
+          />
 
           {/* Tags */}
           {tags.length > 0 && (

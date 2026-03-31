@@ -45,7 +45,7 @@ $$;
 
 INSERT INTO public.categories (name, icon, color, is_system_category, category_type)
 VALUES
-  ('Savings', 'piggy-bank', '#10B981', TRUE, 'savings'),
+  ('Savings', 'target', '#10B981', TRUE, 'savings'),
   ('Savings Return', 'wallet', '#3B82F6', TRUE, 'savings_return')
 ON CONFLICT (name) DO UPDATE
 SET

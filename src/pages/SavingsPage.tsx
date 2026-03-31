@@ -111,7 +111,7 @@ export default function SavingsPage() {
       initial_amount: data.current_amount,
       deadline: data.deadline ? format(data.deadline, "yyyy-MM-dd") : null,
       color: data.color,
-      icon: "piggy-bank",
+      icon: "target",
       linked_budget_id: data.linked_budget_id ?? null,
       reserve_amount: data.reserve_amount,
       auto_contribute_enabled: isPremium ? data.auto_contribute_enabled : false,

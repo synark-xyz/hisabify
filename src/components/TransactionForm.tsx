@@ -216,6 +216,7 @@ export function TransactionForm({
   useEffect(() => {
     if (mode === 'create') {
       setLinkedBudgetId(null);
+      setSelectedBudgetId(null);
       setLinkedGoalId(null);
     }
   }, [type, watchedCategoryId, mode]);
@@ -266,6 +267,7 @@ export function TransactionForm({
       currency: initialData?.currency || currency,
     });
     setSelectedBudgetId(initialBudgetId ?? null);
+    setLinkedBudgetId(initialBudgetId ?? null);
     resetFormState();
   }, [currency, form, initialData, initialType, initialBudgetId, resetFormState]);
 
@@ -288,6 +290,7 @@ export function TransactionForm({
     setPayee(initPayee);
     setSplitWith(initSplitWith);
     setSelectedBudgetId(initialTransaction.budget_id ?? null);
+    setLinkedBudgetId(initialTransaction.budget_id ?? null);
     setCustomCategoryLabel(initialTransaction.custom_category_label || '');
     setCustomCategoryError('');
 
@@ -424,6 +427,7 @@ export function TransactionForm({
         form.setValue('categoryId', '');
       }
       setSelectedBudgetId(null);
+      setLinkedBudgetId(null);
       setCustomCategoryLabel('');
       setCustomCategoryError('');
     },
@@ -1088,6 +1092,7 @@ export function TransactionForm({
                         onValueChange={(val) => {
                           field.onChange(val);
                           setSelectedBudgetId(null);
+                          setLinkedBudgetId(null);
                           setCustomCategoryLabel('');
                           setCustomCategoryError('');
                         }}
@@ -1123,14 +1128,17 @@ export function TransactionForm({
               onConfirm={(entityType, id) => {
                 if (entityType === 'budget') {
                   setLinkedBudgetId(id);
+                  setSelectedBudgetId(id);
                   setLinkedGoalId(null);
                 } else {
                   setLinkedGoalId(id);
                   setLinkedBudgetId(null);
+                  setSelectedBudgetId(null);
                 }
               }}
               onUnlink={() => {
                 setLinkedBudgetId(null);
+                setSelectedBudgetId(null);
                 setLinkedGoalId(null);
               }}
             />
@@ -1256,6 +1264,7 @@ export function TransactionForm({
                     onClick={() => {
                       const selecting = selectedBudgetId !== b.id;
                       setSelectedBudgetId(selecting ? b.id : null);
+                      setLinkedBudgetId(selecting ? b.id : null);
 
                       if (selecting) {
                         // Auto-fill amount if field is currently empty

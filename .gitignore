@@ -39,3 +39,4 @@ android/app/google-services.json
 android/app/src/release/google-services.json
 android/app/src/staging/google-services.json
 /android/.kotlin
+UX-Redesign/*

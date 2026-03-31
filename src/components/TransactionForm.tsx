@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera } from 'lucide-react';
+import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { toastInfo } from '@/lib/toast';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -1273,9 +1274,23 @@ export function TransactionForm({
           {/* ─── Feature 1.3: Cleared / Uncleared status toggle ─── */}
           {(type === 'expense' || type === 'income') && (
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-70">
-                {transactionStatus === 'cleared' ? 'Cleared' : 'Uncleared'}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider opacity-70">
+                  {transactionStatus === 'cleared' ? 'Cleared' : 'Uncleared'}
+                </span>
+                <button
+                  type="button"
+                  className="focus:outline-none"
+                  onClick={() => toastInfo(
+                    transactionStatus === 'cleared' ? 'Cleared' : 'Uncleared',
+                    transactionStatus === 'cleared'
+                      ? 'This transaction has been confirmed against your bank — the money has moved.'
+                      : "This transaction hasn't been confirmed yet — it may still be pending in your bank.",
+                  )}
+                >
+                  <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                </button>
+              </div>
               <Switch
                 checked={transactionStatus === 'cleared'}
                 onCheckedChange={(checked) =>

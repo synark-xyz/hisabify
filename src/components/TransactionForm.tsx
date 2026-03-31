@@ -37,6 +37,7 @@ interface TransactionFormProps {
     category?: string;
     receiptUrl?: string | null;
     date?: Date;
+    currency?: string;
   };
   initialBudgetId?: string | null;
 }

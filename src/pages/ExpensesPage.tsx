@@ -9,6 +9,7 @@ import { ExpenseOverview } from '@/components/ExpenseOverview';
 import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
+import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { AddPaymentReminderModal } from '@/components/AddPaymentReminderModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -74,6 +75,7 @@ export function ExpensesPage() {
   const [cardFilter, setCardFilter] = useState<string>('all');
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [showUnclearedOnly, setShowUnclearedOnly] = useState(false);
+  const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [reminderTransaction, setReminderTransaction] = useState<Transaction | null>(null);
@@ -990,6 +992,7 @@ export function ExpensesPage() {
                     <TransactionItem
                       key={tx.id}
                       transaction={tx}
+                      onViewDetails={setViewingTransaction}
                       onEdit={setEditingTransaction}
                       onDelete={setDeletingTransaction}
                       revealedId={revealedTransactionId}
@@ -1073,6 +1076,14 @@ export function ExpensesPage() {
           </motion.main>
         </div>
       </PullToRefresh>
+
+      <TransactionDetailsDialog
+        open={!!viewingTransaction}
+        onOpenChange={(open) => !open && setViewingTransaction(null)}
+        transaction={viewingTransaction}
+        onEdit={(tx) => { setViewingTransaction(null); setEditingTransaction(tx); }}
+        onDelete={(tx) => { setViewingTransaction(null); setDeletingTransaction(tx); }}
+      />
 
       <EditTransactionModal
         open={!!editingTransaction}

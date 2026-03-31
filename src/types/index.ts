@@ -21,6 +21,7 @@ export interface Category {
   is_system_category?: boolean;
   category_type?: string;
   type: 'expense' | 'income';
+  parent_id?: string | null;
 }
 
 export interface Transaction {
@@ -50,6 +51,11 @@ export interface Transaction {
   budget_id?: string | null;
   savings_goal_id?: string | null;
   custom_category_label?: string | null;
+  // Phase 1 additions
+  tags?: string[];
+  status?: 'cleared' | 'uncleared';
+  parent_transaction_id?: string | null;
+  is_split_child?: boolean;
 }
 
 export interface Budget {

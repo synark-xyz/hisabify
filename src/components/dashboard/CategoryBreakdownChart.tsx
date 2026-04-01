@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, Sector } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { useState } from 'react';
 import { useCurrency } from '@/hooks/useCurrency';
 import { CategorySpending } from '@/types';
+import { cn } from '@/lib/utils';
 import type { PieSectorDataItem } from 'recharts/types/polar/Pie';
-import type { Props as TooltipProps, Payload, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
 interface CategoryBreakdownChartProps {
   data: CategorySpending[];
@@ -12,7 +12,6 @@ interface CategoryBreakdownChartProps {
   onCategoryClick?: (categoryName: string) => void;
 }
 
-// Get theme-aware colors from CSS variables
 const getChartColors = () => {
   const root = getComputedStyle(document.documentElement);
   return [
@@ -51,21 +50,37 @@ const renderActiveShape = (props: ActiveShapeProps) => {
 
   return (
     <g>
+      {/* Outer glow ring */}
       <Sector
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 10}
+        outerRadius={outerRadius + 15}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        fillOpacity={0.2}
+        cornerRadius={10}
+        style={{ filter: `blur(4px)` }}
+      />
+      {/* Main active segment */}
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 12}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
         cornerRadius={8}
-        style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }}
+        style={{ filter: `drop-shadow(0 0 12px ${fill}90)` }}
       />
-      <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={20} fontWeight="bold">
+      {/* Percentage */}
+      <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={26} fontWeight="bold">
         {`${(percent * 100).toFixed(0)}%`}
       </text>
-      <text x={cx} y={cy + 14} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={12}>
+      {/* Category name */}
+      <text x={cx} y={cy + 18} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={15} fontWeight="600">
         {payload.category}
       </text>
     </g>
@@ -74,11 +89,8 @@ const renderActiveShape = (props: ActiveShapeProps) => {
 
 export function CategoryBreakdownChart({ data, title = "Category Breakdown", onCategoryClick }: CategoryBreakdownChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [clickAnimation, setClickAnimation] = useState(false);
   const { formatAmount } = useCurrency();
-
-  const onPieEnter = (_: unknown, index: number) => {
-    setActiveIndex(index);
-  };
 
   const chartData = data.map((item, index) => ({
     ...item,
@@ -86,34 +98,32 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
     color: item.color || COLORS[index % COLORS.length],
   }));
 
-  const onPieClick = (_: unknown, index: number) => {
+  const handleClick = (index: number) => {
+    setActiveIndex(index);
+    setClickAnimation(true);
+    setTimeout(() => setClickAnimation(false), 300);
     if (onCategoryClick && chartData[index]) {
       onCategoryClick(chartData[index].category);
     }
   };
 
-  const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
-    if (active && payload && payload.length) {
-      const tooltipData = payload[0].payload as ChartCategoryDatum;
-      return (
-        <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg">
-          <p className="text-sm font-semibold text-foreground">{tooltipData.category}</p>
-          <p className="text-sm text-muted-foreground">{formatAmount(tooltipData.amount)}</p>
-          <p className="text-xs text-muted-foreground">{tooltipData.percentage.toFixed(1)}%</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <motion.div
-      className="bg-card rounded-2xl p-6 shadow-card"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      className="w-full bg-card/50 backdrop-blur-md rounded-2xl p-6 border border-border/50 shadow-xl card-3d transition-all"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{
+        opacity: 1,
+        scale: clickAnimation ? 0.98 : 1,
+      }}
+      transition={{ duration: 0.4 }}
     >
       <h3 className="text-lg font-bold text-foreground mb-4">{title}</h3>
-      <div className="h-64">
+
+      <motion.div
+        className="h-72 relative"
+        animate={{ scale: clickAnimation ? 1.05 : 1 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -122,43 +132,73 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
               data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={80}
-              paddingAngle={2}
+              innerRadius={70}
+              outerRadius={105}
               dataKey="amount"
               nameKey="category"
-              onMouseEnter={onPieEnter}
-              onClick={onPieClick}
+              onMouseEnter={(_: unknown, index: number) => setActiveIndex(index)}
+              onClick={(_: unknown, index: number) => handleClick(index)}
+              paddingAngle={3}
+              cornerRadius={10}
+              animationBegin={0}
+              animationDuration={800}
             >
               {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
+                <Cell
+                  key={`cell-${index}`}
                   fill={entry.color}
-                  style={{ cursor: 'pointer' }}
+                  stroke="transparent"
+                  style={{
+                    cursor: 'pointer',
+                    filter: activeIndex === index ? `drop-shadow(0 0 12px ${entry.color}80)` : 'none',
+                  }}
                 />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
           </PieChart>
         </ResponsiveContainer>
-      </div>
+      </motion.div>
+
       {/* Legend */}
-      <div className="grid grid-cols-2 gap-2 mt-4">
-        {chartData.slice(0, 6).map((item, index) => (
+      <div className="grid grid-cols-2 gap-3 mt-6">
+        {chartData.map((item, index) => (
           <motion.div
             key={item.category}
-            className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors"
-            onClick={() => {
-              setActiveIndex(index);
-              onCategoryClick?.(item.category);
+            className={cn(
+              'flex items-center gap-3 cursor-pointer p-3 rounded-xl transition-all border',
+              activeIndex === index
+                ? 'bg-accent/10 border-accent/30 translate-x-1'
+                : 'bg-muted/30 border-transparent hover:bg-muted/50'
+            )}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: activeIndex === index ? 1.02 : 1,
             }}
-            whileHover={{ scale: 1.02 }}
+            transition={{ delay: 0.05 * index }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95, transition: { type: 'spring', stiffness: 400, damping: 17 } }}
+            onClick={() => handleClick(index)}
           >
-            <div
-              className="w-3 h-3 rounded-full flex-shrink-0"
-              style={{ backgroundColor: item.color }}
+            <motion.div
+              className="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-lg"
+              style={{
+                backgroundColor: item.color,
+                boxShadow: `0 0 10px ${item.color}60`,
+              }}
+              animate={{ scale: activeIndex === index ? [1, 1.2, 1] : 1 }}
+              transition={{ duration: 0.5, repeat: activeIndex === index ? Infinity : 0, repeatDelay: 1 }}
             />
-            <span className="text-foreground truncate">{item.category}</span>
+            <div className="min-w-0 flex-1">
+              <p className={cn(
+                'text-sm font-bold truncate',
+                activeIndex === index ? 'text-accent text-glow' : 'text-foreground'
+              )}>
+                {item.category}
+              </p>
+              <p className="text-xs font-medium text-muted-foreground">{formatAmount(item.amount)}</p>
+            </div>
           </motion.div>
         ))}
       </div>

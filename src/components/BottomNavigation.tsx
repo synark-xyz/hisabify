@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { List, HandCoins, Target, LayoutDashboardIcon, FileBarChart } from 'lucide-react';
+import { List, Target, LayoutDashboardIcon, FileBarChart } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
@@ -9,7 +9,6 @@ const navItems = [
   { path: '/', icon: LayoutDashboardIcon, label: 'Dashboard' },
   { path: '/budget', icon: Target, label: 'Budget' },
   { path: '/transactions', icon: List, label: 'Transactions' },
-  { path: '/savings', icon: HandCoins, label: 'Savings' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
 ];
 
@@ -28,7 +27,7 @@ export function BottomNavigation() {
           exit={{ y: 100 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         >
-      <div className="max-w-2xl mx-auto grid grid-cols-5 items-center h-20 md:h-20 relative">
+      <div className="max-w-2xl mx-auto grid grid-cols-4 items-center h-20 md:h-20 relative">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;

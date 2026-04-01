@@ -6,7 +6,7 @@ const ROUTE_TO_SCREEN: Record<string, string> = {
   '/transactions': 'Transactions',
   '/analytics': 'Analytics',
   '/budget': 'Budget',
-  '/savings': 'Savings',
+  '/savings': 'Budget',
   '/reports': 'Reports',
   '/profile': 'Profile',
   '/profile/personal': 'Profile_Personal',

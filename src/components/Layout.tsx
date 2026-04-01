@@ -14,7 +14,7 @@ import { emitTransactionUpdated } from '@/lib/transaction-events';
 const PAGE_TITLES: Record<string, string> = {
     '/': 'Dashboard',
     '/budget': 'Budget',
-    '/savings': 'Savings',
+    '/savings': 'Budget',
     '/expenses': 'Transactions',
     '/transactions': 'Transactions',
     '/reports': 'Reports',

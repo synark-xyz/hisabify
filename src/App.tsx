@@ -21,7 +21,6 @@ import { ProfilePage } from "@/pages/ProfilePage";
 import { AuthPage } from "@/pages/AuthPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { BudgetPage } from "@/pages/BudgetPage";
-import SavingsPage from "@/pages/SavingsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import { InstallPage } from "@/pages/InstallPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
@@ -180,7 +179,7 @@ function AppRoutes() {
         <Route path="/expenses" element={<Navigate to="/transactions" replace />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/budget" element={<BudgetPage />} />
-        <Route path="/savings" element={<SavingsPage />} />
+        <Route path="/savings" element={<Navigate to="/budget?tab=goals" replace />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/personal" element={<PersonalPage />} />

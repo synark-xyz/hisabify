@@ -186,6 +186,7 @@ function AppRoutes() {
         <Route path="/profile/personal" element={<PersonalPage />} />
         <Route path="/profile/data" element={<DataPage />} />
         <Route path="/profile/invite" element={<ReferralsPage />} />
+        <Route path="/debts" element={<DebtPage />} />
       </Route>
 
       {/* Pages without Main Layout (No double header) */}
@@ -201,7 +202,6 @@ function AppRoutes() {
         path="/settings"
       />
 
-      <Route element={<ProtectedRoute><DebtPage /></ProtectedRoute>} path="/debts" />
       <Route element={<ProtectedRoute><PreferencesPage /></ProtectedRoute>} path="/settings/preferences" />
       <Route element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} path="/settings/notifications" />
       <Route element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} path="/notifications" />

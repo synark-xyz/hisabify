@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Handshake } from 'lucide-react';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import { TransactionForm } from '@/components/TransactionForm';
 import { VoiceInputFlow } from '@/components/VoiceInputFlow';
@@ -34,7 +32,6 @@ export function AddTransactionModal({
   const [showReceipt, setShowReceipt] = useState(false);
   const [prefillData, setPrefillData] = useState<Record<string, unknown>>(initialData ?? {});
   const [prefillKey, setPrefillKey] = useState(0);
-  const navigate = useNavigate();
 
   const handleVoiceComplete = (data: { merchant?: string; amount?: number; currency?: string; type?: string }) => {
     setPrefillData({ merchant: data.merchant, amount: data.amount, currency: data.currency });
@@ -61,16 +58,6 @@ export function AddTransactionModal({
         onOpenChange={onOpenChange}
         title="New Transaction"
         className="max-h-[90vh]"
-        headerRight={
-          <button
-            type="button"
-            onClick={() => { onOpenChange(false); navigate('/debts'); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-xs font-semibold"
-          >
-            <Handshake className="w-3.5 h-3.5" />
-            Debts
-          </button>
-        }
       >
         <TransactionForm
           key={prefillKey}

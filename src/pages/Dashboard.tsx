@@ -9,7 +9,7 @@ import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
 import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
 import { SavingsSnapshotCard } from '@/components/dashboard/SavingsSnapshotCard';
-import { DebtSummaryWidget } from '@/components/dashboard/DebtSummaryWidget';
+import { DebtTriageWidget } from '@/components/dashboard/DebtTriageWidget';
 import { ParticlesBackground } from '@/components/ParticlesBackground';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { ManageRemindersModal } from '@/components/ManageRemindersModal';
@@ -287,7 +287,7 @@ export function Dashboard() {
             >
               <div
                 className={cn(
-                  "rounded-3xl p-6 shadow-xl relative overflow-hidden transition-all",
+                  "rounded-3xl p-4 px-5 shadow-xl relative overflow-hidden transition-all",
                   variant === 'cyberpunk'
                     ? "card-3d bg-card border-none"
                     : "bg-[image:var(--gradient-balance)] text-white",
@@ -310,7 +310,7 @@ export function Dashboard() {
                   style={{ willChange: 'filter', transform: 'translateZ(0)' }}
                 />
 
-                <div className="relative z-10 flex justify-between items-start mb-6">
+                <div className="relative z-10 flex justify-between items-start mb-3">
                   <div>
                     <div className="flex items-center gap-2 mb-2 opacity-90">
                       <div
@@ -324,7 +324,7 @@ export function Dashboard() {
                       </div>
                       <span className="text-sm font-medium tracking-wide">Main Balance</span>
                     </div>
-                    <h2 className={cn("text-4xl font-black tracking-tight mb-1", variant === 'cyberpunk' && !useDarkText && "text-glow")}>
+                    <h2 className={cn("text-3xl font-black tracking-tight mb-1", variant === 'cyberpunk' && !useDarkText && "text-glow")}>
                       {formatAmount(netBalance)}
                     </h2>
                   </div>
@@ -342,10 +342,10 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div
                     className={cn(
-                      "group p-4 rounded-2xl backdrop-blur-sm border transition-colors",
+                      "group p-3 rounded-2xl backdrop-blur-sm border transition-colors",
                       useDarkText
                         ? "bg-muted/20 border-border hover:bg-muted/30"
                         : "bg-black/20 border-white/10 hover:bg-black/30"
@@ -358,11 +358,11 @@ export function Dashboard() {
                       </div>
                       <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>Expenses</span>
                     </div>
-                    <p className={cn("text-lg font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
+                    <p className={cn("text-base font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
                   </div>
                   <div
                     className={cn(
-                      "group p-4 rounded-2xl backdrop-blur-sm border transition-colors",
+                      "group p-3 rounded-2xl backdrop-blur-sm border transition-colors",
                       useDarkText
                         ? "bg-muted/20 border-border hover:bg-muted/30"
                         : "bg-black/20 border-white/10 hover:bg-black/30"
@@ -375,11 +375,21 @@ export function Dashboard() {
                       </div>
                       <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>Income</span>
                     </div>
-                    <p className={cn("text-lg font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
+                    <p className={cn("text-base font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
                   </div>
                 </div>
               </div>
             </motion.section>
+
+            {!showGettingStarted && (
+              <motion.section
+                key="debt-triage-section"
+                initial={{ opacity: 1, y: 0 }}
+                style={{ willChange: 'auto' }}
+              >
+                <DebtTriageWidget />
+              </motion.section>
+            )}
 
             {!showGettingStarted && <HealthScoreCard />}
 
@@ -559,16 +569,6 @@ export function Dashboard() {
                   onViewAll={() => navigate('/savings')}
                   onCreateFirst={() => navigate('/savings')}
                 />
-              </motion.section>
-            )}
-
-            {!showGettingStarted && (
-              <motion.section
-                key="debt-summary-section"
-                initial={{ opacity: 1, y: 0 }}
-                style={{ willChange: 'auto' }}
-              >
-                <DebtSummaryWidget />
               </motion.section>
             )}
 

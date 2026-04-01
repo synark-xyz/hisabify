@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Handshake, User, Calendar, ChevronDown, ChevronUp, Trash2, CheckCircle2, CircleDollarSign, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Handshake, User, Calendar, ChevronDown, ChevronUp, Trash2, CheckCircle2, CircleDollarSign, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -240,12 +240,15 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
 }
 
 export function DebtPage() {
-  const navigate = useNavigate();
   const { debts, loading, totalIOwe, totalTheyOwe, createDebt, settleDebt, deleteDebt } = useDebts();
   const [showAdd, setShowAdd] = useState(false);
   const [settlingDebt, setSettlingDebt] = useState<Debt | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'i_owe' | 'they_owe'>('all');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'all' | 'i_owe' | 'they_owe'>(() => {
+    const t = searchParams.get('tab');
+    return (t === 'i_owe' || t === 'they_owe') ? t : 'all';
+  });
 
   const filteredDebts = activeTab === 'all'
     ? debts
@@ -253,28 +256,19 @@ export function DebtPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-xl hover:bg-muted transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-xl font-black tracking-tight flex-1">Debt Tracker</h1>
+      <div className="px-4 py-4 space-y-4">
+        {/* Add button */}
+        <div className="flex justify-end">
           <Button
             size="sm"
             onClick={() => setShowAdd(true)}
             className="rounded-xl gap-1.5"
           >
             <Plus className="w-4 h-4" />
-            Add
+            Add Debt
           </Button>
         </div>
-      </div>
 
-      <div className="px-4 py-4 space-y-4">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4">

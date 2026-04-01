@@ -16,12 +16,11 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
-import { AnalyticsPage } from "@/pages/AnalyticsPage";
+import { InsightsPage } from "@/pages/InsightsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { AuthPage } from "@/pages/AuthPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { BudgetPage } from "@/pages/BudgetPage";
-import ReportsPage from "@/pages/ReportsPage";
 import { InstallPage } from "@/pages/InstallPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -177,10 +176,11 @@ function AppRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/transactions" element={<ExpensesPage />} />
         <Route path="/expenses" element={<Navigate to="/transactions" replace />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/insights" element={<InsightsPage />} />
+        <Route path="/analytics" element={<Navigate to="/insights?tab=analytics" replace />} />
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/savings" element={<Navigate to="/budget?tab=goals" replace />} />
-        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/reports" element={<Navigate to="/insights?tab=reports" replace />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/personal" element={<PersonalPage />} />
         <Route path="/profile/data" element={<DataPage />} />

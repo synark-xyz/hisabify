@@ -102,10 +102,6 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
     setActiveIndex(index);
     setClickAnimation(true);
     setTimeout(() => setClickAnimation(false), 300);
-    if (onCategoryClick && chartData[index]) {
-      // Delay navigation so the label highlight is visible before routing
-      setTimeout(() => onCategoryClick(chartData[index].category), 420);
-    }
   };
 
   const handleLabelClick = (index: number) => {

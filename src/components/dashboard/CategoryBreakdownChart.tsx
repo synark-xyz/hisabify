@@ -98,13 +98,19 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
     color: item.color || COLORS[index % COLORS.length],
   }));
 
-  const handleClick = (index: number) => {
+  const handleSegmentClick = (_: unknown, index: number) => {
     setActiveIndex(index);
     setClickAnimation(true);
     setTimeout(() => setClickAnimation(false), 300);
     if (onCategoryClick && chartData[index]) {
       onCategoryClick(chartData[index].category);
     }
+  };
+
+  const handleLabelClick = (index: number) => {
+    setActiveIndex(index);
+    setClickAnimation(true);
+    setTimeout(() => setClickAnimation(false), 300);
   };
 
   return (
@@ -137,7 +143,7 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
               dataKey="amount"
               nameKey="category"
               onMouseEnter={(_: unknown, index: number) => setActiveIndex(index)}
-              onClick={(_: unknown, index: number) => handleClick(index)}
+              onClick={handleSegmentClick}
               paddingAngle={3}
               cornerRadius={10}
               animationBegin={0}
@@ -179,7 +185,7 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
             transition={{ delay: 0.05 * index }}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95, transition: { type: 'spring', stiffness: 400, damping: 17 } }}
-            onClick={() => handleClick(index)}
+            onClick={() => handleLabelClick(index)}
           >
             <motion.div
               className="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-lg"

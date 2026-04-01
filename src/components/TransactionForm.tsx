@@ -1130,12 +1130,21 @@ export function TransactionForm({
               <div className="grid grid-cols-3 gap-2">
                 {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([method, label]) => {
                   const icons: Record<PaymentMethod, JSX.Element> = {
-                    cash: <Banknote className="w-3.5 h-3.5" />,
-                    card: <CreditCard className="w-3.5 h-3.5" />,
-                    bank_transfer: <Building2 className="w-3.5 h-3.5" />,
-                    online: <Globe className="w-3.5 h-3.5" />,
-                    cheque: <FileText className="w-3.5 h-3.5" />,
-                    other: <ArrowLeftRight className="w-3.5 h-3.5" />,
+                    cash: <Banknote className="w-3.5 h-3.5 shrink-0" />,
+                    card: <CreditCard className="w-3.5 h-3.5 shrink-0" />,
+                    bank_transfer: <Building2 className="w-3.5 h-3.5 shrink-0" />,
+                    online: <Globe className="w-3.5 h-3.5 shrink-0" />,
+                    cheque: <FileText className="w-3.5 h-3.5 shrink-0" />,
+                    other: <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />,
+                  };
+                  // Shorten long labels so all chips fit on one line
+                  const shortLabels: Record<PaymentMethod, string> = {
+                    cash: 'Cash',
+                    card: 'Card',
+                    bank_transfer: 'Bank',
+                    online: 'Online',
+                    cheque: 'Cheque',
+                    other: 'Other',
                   };
                   return (
                     <button
@@ -1143,14 +1152,14 @@ export function TransactionForm({
                       type="button"
                       onClick={() => setPaymentMethod(paymentMethod === method ? '' : method)}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-medium transition-all',
+                        'flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-all h-9',
                         paymentMethod === method
                           ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
                           : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
                       )}
                     >
                       {icons[method]}
-                      {label}
+                      <span>{shortLabels[method]}</span>
                     </button>
                   );
                 })}

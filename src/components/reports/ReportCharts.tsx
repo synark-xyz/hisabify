@@ -76,6 +76,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
     dateLabel: format(parseISO(d.date), "MMM d"),
   }));
 
+  const categoryColors = reportData.categoryBreakdown.map((entry) => entry.color);
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {/* Category Breakdown Pie Chart */}
@@ -105,21 +106,12 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                     {reportData.categoryBreakdown.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={entry.color}
+                        fill={categoryColors[index]}
                         stroke="transparent"
                         style={{ cursor: "pointer" }}
                       />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: number) => formatAmount(value)}
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      color: "hsl(var(--foreground))",
-                    }}
-                  />
                 </PieChart>
               </ResponsiveContainer>
 

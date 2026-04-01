@@ -37,6 +37,7 @@ import { FaqPage } from "@/pages/FaqPage";
 import { PersonalPage } from "@/pages/profile/PersonalPage";
 import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
+import { DebtPage } from "@/pages/DebtPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
@@ -185,6 +186,7 @@ function AppRoutes() {
         <Route path="/profile/personal" element={<PersonalPage />} />
         <Route path="/profile/data" element={<DataPage />} />
         <Route path="/profile/invite" element={<ReferralsPage />} />
+        <Route path="/debts" element={<DebtPage />} />
       </Route>
 
       {/* Pages without Main Layout (No double header) */}

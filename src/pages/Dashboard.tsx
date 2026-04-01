@@ -9,6 +9,7 @@ import { TransactionItem } from '@/components/TransactionItem';
 import { EnhancedAnalyticsChart } from '@/components/EnhancedAnalyticsChart';
 import { PaymentReminderCarousel } from '@/components/PaymentReminderCarousel';
 import { SavingsSnapshotCard } from '@/components/dashboard/SavingsSnapshotCard';
+import { DebtSummaryWidget } from '@/components/dashboard/DebtSummaryWidget';
 import { ParticlesBackground } from '@/components/ParticlesBackground';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { ManageRemindersModal } from '@/components/ManageRemindersModal';
@@ -558,6 +559,16 @@ export function Dashboard() {
                   onViewAll={() => navigate('/savings')}
                   onCreateFirst={() => navigate('/savings')}
                 />
+              </motion.section>
+            )}
+
+            {!showGettingStarted && (
+              <motion.section
+                key="debt-summary-section"
+                initial={{ opacity: 1, y: 0 }}
+                style={{ willChange: 'auto' }}
+              >
+                <DebtSummaryWidget />
               </motion.section>
             )}
 

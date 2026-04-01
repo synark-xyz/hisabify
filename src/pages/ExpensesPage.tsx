@@ -22,7 +22,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
-import { Transaction, CategorySpending, Card, Category } from '@/types';
+import { Transaction, CategorySpending, Card, Category, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
 import { getViewRange, type TransactionViewMode } from '@/lib/transactionDateRange';
 import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
 import { enforceHistoryWindow } from '@/lib/historyLimits';
@@ -75,6 +75,7 @@ export function ExpensesPage() {
   const [cardFilter, setCardFilter] = useState<string>('all');
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [showUnclearedOnly, setShowUnclearedOnly] = useState(false);
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<PaymentMethod | 'all'>('all');
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
@@ -323,11 +324,12 @@ export function ExpensesPage() {
       cardFilter !== 'all' ||
       filterTags.length > 0 ||
       showUnclearedOnly ||
+      filterPaymentMethod !== 'all' ||
       pendingCategoryNameRef.current
     ) {
       setShowFilters(true);
     }
-  }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly]);
+  }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly, filterPaymentMethod]);
 
   useEffect(() => {
     if (categoryFilter === 'all') {
@@ -385,6 +387,11 @@ export function ExpensesPage() {
         return false;
       }
 
+      // Payment method filter
+      if (filterPaymentMethod !== 'all' && tx.payment_method !== filterPaymentMethod) {
+        return false;
+      }
+
       if (!query) {
         return true;
       }
@@ -395,7 +402,7 @@ export function ExpensesPage() {
 
       return merchant.includes(query) || note.includes(query) || categoryName.includes(query);
     });
-  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, subCategoryFilter, subCategoriesMap, cardFilter, filterTags, showUnclearedOnly]);
+  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, subCategoryFilter, subCategoriesMap, cardFilter, filterTags, showUnclearedOnly, filterPaymentMethod]);
 
   const totalIncome = filteredTransactions
     .filter((tx) => tx.type === 'income')
@@ -413,8 +420,9 @@ export function ExpensesPage() {
     if (cardFilter !== 'all') count++;
     if (filterTags.length > 0) count++;
     if (showUnclearedOnly) count++;
+    if (filterPaymentMethod !== 'all') count++;
     return count;
-  }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly]);
+  }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly, filterPaymentMethod]);
 
   const formatAmount = useCallback((amount: number) => {
     const locale = currency === 'USD' ? 'en-US' : 'en-US';
@@ -935,6 +943,28 @@ export function ExpensesPage() {
                       </div>
                     </div>
 
+                    {/* Payment method filter */}
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">Payment Method</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([method, label]) => (
+                          <button
+                            key={method}
+                            type="button"
+                            onClick={() => setFilterPaymentMethod(filterPaymentMethod === method ? 'all' : method)}
+                            className={cn(
+                              'text-[11px] px-2 py-1 rounded-full border font-medium transition-colors',
+                              filterPaymentMethod === method
+                                ? 'bg-accent/20 border-accent/40 text-accent'
+                                : 'bg-muted/30 border-border text-muted-foreground hover:border-accent/30 hover:text-foreground'
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Uncleared only toggle */}
                     <div className="flex items-center justify-between">
                       <label
@@ -960,6 +990,7 @@ export function ExpensesPage() {
                         setCardFilter('all');
                         setFilterTags([]);
                         setShowUnclearedOnly(false);
+                        setFilterPaymentMethod('all');
                         setShowFilters(false);
                       }}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
@@ -1064,6 +1095,14 @@ export function ExpensesPage() {
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-amber-500/15 text-amber-400 rounded-full">
                           Uncleared only
                           <button onClick={() => setShowUnclearedOnly(false)} className="hover:opacity-70">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {filterPaymentMethod !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          {PAYMENT_METHOD_LABELS[filterPaymentMethod]}
+                          <button onClick={() => setFilterPaymentMethod('all')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>
                         </span>

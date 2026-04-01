@@ -4,7 +4,6 @@ import { useLocation } from 'react-router-dom';
 const ROUTE_TO_SCREEN: Record<string, string> = {
   '/': 'Dashboard',
   '/transactions': 'Transactions',
-  '/expenses': 'Transactions',
   '/analytics': 'Analytics',
   '/budget': 'Budget',
   '/savings': 'Savings',

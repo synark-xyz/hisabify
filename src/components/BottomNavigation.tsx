@@ -8,7 +8,7 @@ import { useVisualViewport } from '@/hooks/useVisualViewport';
 const navItems = [
   { path: '/', icon: LayoutDashboardIcon, label: 'Dashboard' },
   { path: '/budget', icon: Target, label: 'Budget' },
-  { path: '/expenses', icon: List, label: 'Expenses' },
+  { path: '/transactions', icon: List, label: 'Transactions' },
   { path: '/savings', icon: HandCoins, label: 'Savings' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
 ];

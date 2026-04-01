@@ -644,7 +644,7 @@ export function Dashboard() {
                   Recent History
                 </h2>
                 <motion.button
-                  onClick={() => navigate('/expenses?viewMode=year')}
+                  onClick={() => navigate('/transactions?viewMode=year')}
                   className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-accent transition-colors"
                   whileHover={{ x: 4 }}
                 >

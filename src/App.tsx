@@ -176,7 +176,8 @@ function AppRoutes() {
         }
       >
         <Route path="/" element={<Dashboard />} />
-        <Route path="/expenses" element={<ExpensesPage />} />
+        <Route path="/transactions" element={<ExpensesPage />} />
+        <Route path="/expenses" element={<Navigate to="/transactions" replace />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/savings" element={<SavingsPage />} />

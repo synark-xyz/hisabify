@@ -222,7 +222,7 @@ export function AnalyticsPage() {
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
                   Add transactions first, then your insights and trends will appear here.
                 </p>
-                <Button onClick={() => navigate('/expenses')}>Add Transactions</Button>
+                <Button onClick={() => navigate('/transactions')}>Add Transactions</Button>
               </motion.div>
             ) : (
               <SummaryCards
@@ -298,7 +298,7 @@ export function AnalyticsPage() {
                           params.set('categoryName', name);
                           params.set('from', dateRange.from.toISOString());
                           params.set('to', dateRange.to.toISOString());
-                          navigate(`/expenses?${params.toString()}`);
+                          navigate(`/transactions?${params.toString()}`);
                         }}
                       />
                       <MonthlyTrendChart data={monthlyTrendData} />

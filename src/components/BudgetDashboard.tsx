@@ -95,7 +95,7 @@ export function BudgetDashboard() {
     if (budget.category_id) params.set('category', budget.category_id);
     if (budget.start_date) params.set('from', budget.start_date);
     if (budget.end_date) params.set('to', budget.end_date);
-    navigate(`/expenses?${params.toString()}`);
+    navigate(`/transactions?${params.toString()}`);
   };
 
   const handlePayNow = (budget: BudgetWithSpending) => {

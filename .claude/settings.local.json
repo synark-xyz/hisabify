@@ -22,7 +22,9 @@
       "WebFetch(domain:developers.mindee.com)",
       "WebFetch(domain:docs.mindee.com)",
       "WebSearch",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(grep -rn '\"\"/expenses\"\"' src/ --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(echo \"TSC EXIT: $?\")"
     ]
   },
   "enabledPlugins": {

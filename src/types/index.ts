@@ -22,6 +22,7 @@ export interface Category {
   category_type?: string;
   type: 'expense' | 'income';
   parent_id?: string | null;
+  usage_count?: number;
 }
 
 export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'cheque' | 'other';

@@ -44,7 +44,6 @@ export function AddCategoryModal({
   const [subInput, setSubInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState('');
-  const [typeError, setTypeError] = useState('');
 
   // Reset form whenever dialog opens/closes
   useEffect(() => {
@@ -57,7 +56,6 @@ export function AddCategoryModal({
       setSubInput('');
       setLoading(false);
       setNameError('');
-      setTypeError('');
     }
   }, [open]);
 
@@ -69,13 +67,6 @@ export function AddCategoryModal({
       valid = false;
     } else {
       setNameError('');
-    }
-
-    if (mode === 'parent' && !type) {
-      setTypeError('Type is required');
-      valid = false;
-    } else {
-      setTypeError('');
     }
 
     return valid;
@@ -129,24 +120,32 @@ export function AddCategoryModal({
           parent_id: null,
         });
 
-        // Then create all sub-entries
-        for (const sub of subEntries) {
-          await addCategory({
-            name: sub.name,
-            icon: parentCreated.icon,
-            color: parentCreated.color,
-            type: parentCreated.type,
-            parent_id: parentCreated.id,
-          });
+        // Then create all sub-entries in parallel
+        if (subEntries.length > 0) {
+          const subResults = await Promise.allSettled(
+            subEntries.map((sub) =>
+              addCategory({
+                name: sub.name,
+                icon: parentCreated.icon,
+                color: parentCreated.color,
+                type: parentCreated.type,
+                parent_id: parentCreated.id,
+              })
+            )
+          );
+          const failures = subResults.filter((r) => r.status === 'rejected').length;
+          if (failures > 0) {
+            toast({
+              title: 'Partially saved',
+              description: `Category created, but ${failures} sub-categor${failures === 1 ? 'y' : 'ies'} failed. You can add them manually.`,
+              variant: 'destructive',
+            });
+          } else {
+            toast({ title: `Category added with ${subEntries.length} sub-categor${subEntries.length === 1 ? 'y' : 'ies'}` });
+          }
+        } else {
+          toast({ title: 'Category added' });
         }
-
-        const subCount = subEntries.length;
-        toast({
-          title: 'Category added',
-          description: subCount > 0
-            ? `"${parentCreated.name}" and ${subCount} sub-categor${subCount === 1 ? 'y' : 'ies'} created.`
-            : `"${parentCreated.name}" was created.`,
-        });
         onSuccess?.(parentCreated);
         onOpenChange(false);
       }
@@ -243,7 +242,6 @@ export function AddCategoryModal({
               value={type}
               onValueChange={(val: 'expense' | 'income') => {
                 setType(val);
-                setTypeError('');
               }}
               disabled={loading}
             >
@@ -255,7 +253,6 @@ export function AddCategoryModal({
                 <SelectItem value="income">Income</SelectItem>
               </SelectContent>
             </Select>
-            {typeError && <p className="text-xs text-destructive">{typeError}</p>}
           </div>
         )}
 

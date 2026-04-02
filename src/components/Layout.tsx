@@ -25,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
     '/profile/invite': 'Invite Friends',
     '/analytics': 'Insights',
     '/debts': 'Debt Tracker',
+    '/categories': 'Categories',
     '/settings': 'Settings',
     '/settings/preferences': 'Preferences',
     '/settings/notifications': 'Notifications',

@@ -22,6 +22,7 @@ import { useBudgetContext } from '@/hooks/useBudgetContext';
 import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useSmartSuggest } from '@/hooks/useSmartSuggest';
+import { useCategoryMutations } from '@/hooks/useCategoryMutations';
 import { SuggestionBanner } from '@/components/SuggestionBanner';
 import { Transaction, Card as CardType, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
 import { format } from 'date-fns';
@@ -161,6 +162,7 @@ export function TransactionForm({
   const { categories } = useCategories();
   const { budgets, getBudgetsForCategory } = useBudgetContext();
   const { activeGoals } = useSavingsGoals();
+  const { incrementUsageCount } = useCategoryMutations();
 
   const [linkedBudgetId, setLinkedBudgetId] = useState<string | null>(
     initialTransaction?.budget_id ?? null
@@ -658,6 +660,11 @@ export function TransactionForm({
 
         const parentId = parentData.id;
 
+        // Fire-and-forget: increment category usage count for parent
+        if (data.categoryId) {
+          incrementUsageCount(data.categoryId);
+        }
+
         // Insert split children in parallel
         const childInserts = splitRows.map(async (row) => {
           const childAmount = Number.parseFloat(row.amount);
@@ -736,6 +743,10 @@ export function TransactionForm({
         }).catch(() => {});
         const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow', transfer: 'Transfer' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
+        // Fire-and-forget: increment category usage count
+        if (data.categoryId) {
+          incrementUsageCount(data.categoryId);
+        }
         // Fire-and-forget: log custom category suggestion
         logCustomCategorySuggestion(customCategoryLabel);
 
@@ -1211,7 +1222,7 @@ export function TransactionForm({
                 const isLendOwe = type === 'lend' || type === 'owe';
                 const filteredRootCategories = isLendOwe
                   ? rootCategories.filter((cat) => !cat.is_system_category || !['lend', 'owe'].includes(cat.category_type || ''))
-                  : rootCategories;
+                  : rootCategories.filter((cat) => cat.type === 'expense');
                 const currentSubs = selectedParentCategoryId ? getSubCategories(selectedParentCategoryId) : [];
                 const filteredSubs = isLendOwe
                   ? currentSubs.filter((cat) => !cat.is_system_category || !['lend', 'owe'].includes(cat.category_type || ''))

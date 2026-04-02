@@ -1226,7 +1226,7 @@ export function TransactionForm({
                 const currentSubs = selectedParentCategoryId ? getSubCategories(selectedParentCategoryId) : [];
                 const filteredSubs = isLendOwe
                   ? currentSubs.filter((cat) => !cat.is_system_category || !['lend', 'owe'].includes(cat.category_type || ''))
-                  : currentSubs;
+                  : currentSubs.filter((cat) => cat.type === 'expense');
 
                 return (
                   <FormItem>

@@ -39,6 +39,11 @@ import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
 import { DebtPage } from "@/pages/DebtPage";
 import { CategoriesPage } from "@/pages/CategoriesPage";
+import { MorePage } from "@/pages/MorePage";
+import { CalculatorPage } from "@/pages/more/CalculatorPage";
+import { LoanCalculatorPage } from "@/pages/more/LoanCalculatorPage";
+import { DiscountTaxCalculatorPage } from "@/pages/more/DiscountTaxCalculatorPage";
+import { CurrencyConverterPage } from "@/pages/more/CurrencyConverterPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
@@ -189,6 +194,11 @@ function AppRoutes() {
         <Route path="/profile/invite" element={<ReferralsPage />} />
         <Route path="/debts" element={<DebtPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/more" element={<MorePage />} />
+        <Route path="/more/calculator" element={<CalculatorPage />} />
+        <Route path="/more/loan" element={<LoanCalculatorPage />} />
+        <Route path="/more/discount" element={<DiscountTaxCalculatorPage />} />
+        <Route path="/more/currency" element={<CurrencyConverterPage />} />
       </Route>
 
       {/* Pages without Main Layout (No double header) */}

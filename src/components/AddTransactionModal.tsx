@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Tag } from 'lucide-react';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
+import { Button } from '@/components/ui/button';
 import { TransactionForm } from '@/components/TransactionForm';
 import { VoiceInputFlow } from '@/components/VoiceInputFlow';
 import { ReceiptScannerModal, ScannedReceiptData } from '@/components/ReceiptScannerModal';
@@ -32,6 +35,7 @@ export function AddTransactionModal({
   const [showReceipt, setShowReceipt] = useState(false);
   const [prefillData, setPrefillData] = useState<Record<string, unknown>>(initialData ?? {});
   const [prefillKey, setPrefillKey] = useState(0);
+  const navigate = useNavigate();
 
   const handleVoiceComplete = (data: { merchant?: string; amount?: number; currency?: string; type?: string }) => {
     setPrefillData({ merchant: data.merchant, amount: data.amount, currency: data.currency });
@@ -58,6 +62,20 @@ export function AddTransactionModal({
         onOpenChange={onOpenChange}
         title="New Transaction"
         className="max-h-[90vh]"
+        headerRight={
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              onOpenChange(false);
+              navigate('/categories');
+            }}
+          >
+            <Tag className="h-4 w-4" />
+            Categories
+          </Button>
+        }
       >
         <TransactionForm
           key={prefillKey}

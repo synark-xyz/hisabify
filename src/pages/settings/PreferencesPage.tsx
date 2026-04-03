@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Moon, Sun, Monitor, ArrowLeft, Zap, CheckCircle, Lock } from 'lucide-react';
+import { Moon, Sun, Monitor, ArrowLeft, Zap, CheckCircle, Lock, Tag } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -19,6 +20,7 @@ export function PreferencesPage() {
     const { theme, variant, setTheme, setVariant } = useTheme();
     const { currency, setCurrency } = useCurrency();
     const { toast } = useToast();
+    const navigate = useNavigate();
 
     const [preferences, setPreferences] = useState({
         dateFormat: 'DD/MM/YYYY',
@@ -254,6 +256,20 @@ export function PreferencesPage() {
                         </SelectContent>
                     </Select>
                 </div>
+
+                {/* Categories */}
+                <button
+                    onClick={() => navigate('/categories')}
+                    className="w-full p-4 bg-card rounded-2xl border border-border/50 flex items-center gap-3 text-left hover:bg-muted/40 transition-colors"
+                >
+                    <div className="p-2 bg-primary/10 rounded-xl">
+                        <Tag className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="font-bold text-foreground">Categories</p>
+                        <p className="text-sm text-muted-foreground">Manage expense & income categories</p>
+                    </div>
+                </button>
 
             </main>
         </div>

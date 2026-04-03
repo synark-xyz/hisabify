@@ -29,6 +29,11 @@ const PAGE_TITLES: Record<string, string> = {
     '/settings': 'Settings',
     '/settings/preferences': 'Preferences',
     '/settings/notifications': 'Notifications',
+    '/more': 'More',
+    '/more/calculator': 'Calculator',
+    '/more/loan': 'Loan Calculator',
+    '/more/discount': 'Discount & Tax',
+    '/more/currency': 'Currency Converter',
 };
 
 const getPageTitle = (pathname: string) => PAGE_TITLES[pathname] ?? 'Hisabify';

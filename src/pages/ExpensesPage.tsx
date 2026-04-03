@@ -64,7 +64,7 @@ export function ExpensesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [anchorDate, setAnchorDate] = useState(new Date());
   const [focusedDate, setFocusedDate] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<TransactionViewMode>('week');
+  const [viewMode, setViewMode] = useState<TransactionViewMode>('month');
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showFilters, setShowFilters] = useState(false);

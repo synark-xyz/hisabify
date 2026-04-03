@@ -8,7 +8,7 @@ interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  initialType?: 'expense' | 'income' | 'lend' | 'owe';
+  initialType?: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
   initialData?: {
     merchant?: string;
     amount?: number;

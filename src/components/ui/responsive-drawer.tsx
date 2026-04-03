@@ -10,6 +10,7 @@ interface ResponsiveDrawerProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  headerRight?: React.ReactNode;
 }
 
 /**
@@ -21,7 +22,8 @@ export function ResponsiveDrawer({
   onOpenChange,
   title,
   children,
-  className
+  className,
+  headerRight,
 }: ResponsiveDrawerProps) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -39,9 +41,17 @@ export function ResponsiveDrawer({
 
         {/* Header */}
         <DrawerHeader className="pt-2 pb-2 px-6 flex-shrink-0">
-          <DrawerTitle className="text-center font-bold text-lg">
-            {title}
-          </DrawerTitle>
+          {headerRight ? (
+            <div className="flex items-center justify-between">
+              <div className="w-16" />
+              <DrawerTitle className="font-bold text-lg">{title}</DrawerTitle>
+              <div className="flex justify-end w-16 pr-8">{headerRight}</div>
+            </div>
+          ) : (
+            <DrawerTitle className="text-center font-bold text-lg">
+              {title}
+            </DrawerTitle>
+          )}
         </DrawerHeader>
 
         {/* Scrollable Content */}

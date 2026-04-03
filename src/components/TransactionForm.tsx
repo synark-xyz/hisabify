@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info } from 'lucide-react';
+import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info, ArrowLeftRight, Banknote, CreditCard, Building2, Globe, FileText } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useSmartSuggest } from '@/hooks/useSmartSuggest';
 import { SuggestionBanner } from '@/components/SuggestionBanner';
-import { Transaction } from '@/types';
+import { Transaction, Card as CardType, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -35,7 +35,7 @@ interface TransactionFormProps {
   onSuccessKeepOpen?: () => void;
   mode?: 'create' | 'edit';
   initialTransaction?: Transaction | null;
-  initialType?: 'expense' | 'income' | 'lend' | 'owe';
+  initialType?: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
   initialData?: {
     merchant?: string;
     amount?: number;
@@ -102,9 +102,18 @@ export function TransactionForm({
   onVoiceRequest,
   onScanRequest,
 }: TransactionFormProps) {
-  const [type, setType] = useState<'expense' | 'income' | 'lend' | 'owe'>(
+  const [type, setType] = useState<'expense' | 'income' | 'lend' | 'owe' | 'transfer'>(
     initialType || 'expense'
   );
+
+  /* ─── Phase 2.1: Transfer state ─── */
+  const [cards, setCards] = useState<CardType[]>([]);
+  const [transferFromCardId, setTransferFromCardId] = useState<string>('');
+  const [transferToCardId, setTransferToCardId] = useState<string>('');
+  const [transferFee, setTransferFee] = useState<string>('');
+
+  /* ─── Phase 2.3: Payment method state ─── */
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [convertedPreview, setConvertedPreview] = useState<{ amount: number; rate: number } | null>(null);
@@ -161,6 +170,19 @@ export function TransactionForm({
   );
 
   const isEditMode = mode === 'edit' && !!initialTransaction;
+
+  /* ─── Phase 2.1: Fetch user cards for transfer accounts ─── */
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('cards')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        if (data) setCards(data as CardType[]);
+      });
+  }, [user]);
 
   /* ─── Feature 1.1: Category grouping ─── */
   const rootCategories = useMemo(() => categories.filter((c) => !c.parent_id), [categories]);
@@ -222,7 +244,7 @@ export function TransactionForm({
   }, [type, watchedCategoryId, mode]);
 
   const matchingBudgets = useMemo(() => {
-    if ((type !== 'expense' && type !== 'lend' && type !== 'owe') || !watchedCategoryId) return [];
+    if (type === 'transfer' || (type !== 'expense' && type !== 'lend' && type !== 'owe') || !watchedCategoryId) return [];
     return getBudgetsForCategory(watchedCategoryId);
   }, [type, watchedCategoryId, getBudgetsForCategory]);
 
@@ -254,6 +276,11 @@ export function TransactionForm({
     setPayer('');
     setPayee('');
     setSplitWith('');
+    /* ─── Phase 2.1 / 2.3 reset ─── */
+    setTransferFromCardId('');
+    setTransferToCardId('');
+    setTransferFee('');
+    setPaymentMethod('');
   }, []);
 
   const initializeCreateState = useCallback(() => {
@@ -276,7 +303,7 @@ export function TransactionForm({
       return;
     }
 
-    setType((initialTransaction.type as 'expense' | 'income' | 'lend' | 'owe') || 'expense');
+    setType((initialTransaction.type as 'expense' | 'income' | 'lend' | 'owe' | 'transfer') || 'expense');
     const { payer: initPayer, payee: initPayee, splitWith: initSplitWith, cleanNote } = parseNoteMeta(initialTransaction.note);
     form.reset({
       merchant: initialTransaction.merchant,
@@ -311,6 +338,16 @@ export function TransactionForm({
         setSelectedParentCategoryId(cat.id);
       }
     }
+
+    /* ─── Phase 2.1: Initialize transfer fields ─── */
+    if (initialTransaction.type === 'transfer') {
+      setTransferFromCardId(initialTransaction.card_id || '');
+      setTransferToCardId(initialTransaction.transfer_to_card_id || '');
+      setTransferFee(initialTransaction.transfer_fee ? String(initialTransaction.transfer_fee) : '');
+    }
+
+    /* ─── Phase 2.3: Initialize payment method ─── */
+    setPaymentMethod((initialTransaction.payment_method as PaymentMethod) || '');
   }, [currency, form, initialTransaction, categories]);
 
   useEffect(() => {
@@ -350,8 +387,8 @@ export function TransactionForm({
   /* ─── Feature 1.5: Merchant auto-fill effect ─── */
   const watchedMerchant = form.watch('merchant');
   useEffect(() => {
-    // Don't show suggestions for lend/owe types
-    if (type === 'lend' || type === 'owe') {
+    // Don't show suggestions for lend/owe/transfer types
+    if (type === 'lend' || type === 'owe' || type === 'transfer') {
       setMerchantSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -481,10 +518,12 @@ export function TransactionForm({
     const normalizedAmount = Number.isFinite(amountNum) ? Number(amountNum.toFixed(2)) : NaN;
     const hasValidDate = data.date instanceof Date && !Number.isNaN(data.date.getTime());
 
-    if (!merchant) {
+    if (!merchant && type !== 'transfer') {
       form.setError('merchant', { type: 'manual', message: 'Description is required.' });
       return;
     }
+    // For transfers, default description if blank
+    const effectiveMerchant = merchant || 'Account Transfer';
 
     if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
       form.setError('amount', { type: 'manual', message: 'Amount must be greater than 0.' });
@@ -494,6 +533,22 @@ export function TransactionForm({
     if (!hasValidDate) {
       form.setError('date', { type: 'manual', message: 'Date is required.' });
       return;
+    }
+
+    /* ─── Phase 2.1: Transfer validation ─── */
+    if (type === 'transfer') {
+      if (!transferFromCardId) {
+        toast({ title: 'From account required', description: 'Please select the source account.', variant: 'destructive' });
+        return;
+      }
+      if (!transferToCardId) {
+        toast({ title: 'To account required', description: 'Please select the destination account.', variant: 'destructive' });
+        return;
+      }
+      if (transferFromCardId === transferToCardId) {
+        toast({ title: 'Invalid transfer', description: 'From and To accounts must be different.', variant: 'destructive' });
+        return;
+      }
     }
 
     /* ─── Feature 1.4: Skip category validation when split ─── */
@@ -536,7 +591,7 @@ export function TransactionForm({
 
     const payload = {
       user_id: user.id,
-      merchant,
+      merchant: effectiveMerchant,
       amount: convertedAmount,
       amount_original: normalizedAmount,
       currency_original: data.currency,
@@ -551,8 +606,8 @@ export function TransactionForm({
         ? null
         : (type === 'expense' || type === 'lend' || type === 'owe') ? (data.categoryId || null) : null,
       budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? linkedBudgetId : null,
-      savings_goal_id: linkedGoalId,
-      card_id: null,
+      savings_goal_id: type === 'transfer' ? null : linkedGoalId,
+      card_id: type === 'transfer' ? (transferFromCardId || null) : null,
       note: (() => {
         const metaParts: string[] = [];
         if (type === 'expense' && payer.trim()) metaParts.push(`[payer:${payer.trim()}]`);
@@ -561,7 +616,7 @@ export function TransactionForm({
         const metaStr = metaParts.join(' ');
         return [metaStr, data.note.trim()].filter(Boolean).join(' ') || null;
       })(),
-      receipt_url: initialData?.receiptUrl || null,
+      receipt_url: type === 'transfer' ? null : (initialData?.receiptUrl || null),
       custom_category_label: isOtherCategory ? customCategoryLabel.trim() : null,
       /* ─── Feature 1.2: Tags ─── */
       tags: selectedTags,
@@ -570,6 +625,11 @@ export function TransactionForm({
       /* ─── Feature 1.4: Split parent marker ─── */
       is_split_child: false,
       parent_transaction_id: null,
+      /* ─── Phase 2.1: Transfer fields ─── */
+      transfer_to_card_id: type === 'transfer' ? (transferToCardId || null) : null,
+      transfer_fee: type === 'transfer' && transferFee ? Number.parseFloat(transferFee) || null : null,
+      /* ─── Phase 2.3: Payment method ─── */
+      payment_method: (type !== 'transfer' && paymentMethod) ? paymentMethod : null,
     };
 
     try {
@@ -674,7 +734,7 @@ export function TransactionForm({
         import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
           analytics.logEvent(AnalyticsEvents.ADD_TRANSACTION, { type, category: data.categoryId || 'uncategorized' });
         }).catch(() => {});
-        const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow' };
+        const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow', transfer: 'Transfer' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
         // Fire-and-forget: log custom category suggestion
         logCustomCategorySuggestion(customCategoryLabel);
@@ -777,9 +837,9 @@ export function TransactionForm({
         </div>
       ) : (
         <Tabs
-          value={type === 'income' ? 'income' : 'expense'}
+          value={type === 'income' ? 'income' : type === 'transfer' ? 'transfer' : 'expense'}
           onValueChange={(v) => {
-            const newType = v as 'expense' | 'income';
+            const newType = v as 'expense' | 'income' | 'transfer';
             setType(newType);
             if (isSplit && newType !== 'expense') {
               setIsSplit(false);
@@ -787,6 +847,7 @@ export function TransactionForm({
             }
             setPayer('');
             setPayee('');
+            setPaymentMethod('');
           }}
           className="mb-4"
         >
@@ -804,6 +865,13 @@ export function TransactionForm({
             >
               <ArrowDownLeft className="w-4 h-4" />
               Income
+            </TabsTrigger>
+            <TabsTrigger
+              value="transfer"
+              className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-blue-500"
+            >
+              <ArrowLeftRight className="w-4 h-4" />
+              Transfer
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -832,6 +900,53 @@ export function TransactionForm({
             value={payee}
             onChange={(e) => setPayee(e.target.value)}
           />
+        </div>
+      )}
+
+      {/* ─── Phase 2.1: Transfer account fields ─── */}
+      {type === 'transfer' && (
+        <div className="space-y-3 mb-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider opacity-70">From Account</label>
+            <select
+              value={transferFromCardId}
+              onChange={(e) => setTransferFromCardId(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Select source account</option>
+              {cards.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.card_holder} •••• {c.last_four || c.card_number.slice(-4)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider opacity-70">To Account</label>
+            <select
+              value={transferToCardId}
+              onChange={(e) => setTransferToCardId(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Select destination account</option>
+              {cards.filter((c) => c.id !== transferFromCardId).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.card_holder} •••• {c.last_four || c.card_number.slice(-4)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider opacity-70">Transfer Fee (Optional)</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              value={transferFee}
+              onChange={(e) => setTransferFee(e.target.value)}
+            />
+          </div>
         </div>
       )}
 
@@ -873,11 +988,11 @@ export function TransactionForm({
             render={({ field }) => (
               <FormItem className="relative">
                 <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                  {type === 'lend' ? 'Who are you lending to?' : type === 'owe' ? 'Who are you borrowing from?' : 'Description'}
+                  {type === 'lend' ? 'Who are you lending to?' : type === 'owe' ? 'Who are you borrowing from?' : type === 'transfer' ? 'Description (Optional)' : 'Description'}
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={type === 'lend' ? 'Name or @handle' : type === 'owe' ? 'Name or @handle' : 'What was this for?'}
+                    placeholder={type === 'lend' ? 'Name or @handle' : type === 'owe' ? 'Name or @handle' : type === 'transfer' ? 'e.g. Monthly savings transfer' : 'What was this for?'}
                     className="rounded-xl"
                     {...field}
                     ref={(el) => {
@@ -918,8 +1033,8 @@ export function TransactionForm({
                               }
                               form.setValue('categoryId', s.category_id);
                             }
-                            if (s.type && ['expense', 'income', 'lend', 'owe'].includes(s.type)) {
-                              setType(s.type as 'expense' | 'income' | 'lend' | 'owe');
+                            if (s.type && ['expense', 'income', 'lend', 'owe', 'transfer'].includes(s.type)) {
+                              setType(s.type as 'expense' | 'income' | 'lend' | 'owe' | 'transfer');
                             }
                             setShowSuggestions(false);
                             setMerchantSuggestions([]);
@@ -1008,8 +1123,52 @@ export function TransactionForm({
             )}
           />
 
+          {/* ─── Phase 2.3: Payment Method picker ─── */}
+          {type !== 'transfer' && (
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider opacity-70">Payment Method</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([method, label]) => {
+                  const icons: Record<PaymentMethod, JSX.Element> = {
+                    cash: <Banknote className="w-3.5 h-3.5 shrink-0" />,
+                    card: <CreditCard className="w-3.5 h-3.5 shrink-0" />,
+                    bank_transfer: <Building2 className="w-3.5 h-3.5 shrink-0" />,
+                    online: <Globe className="w-3.5 h-3.5 shrink-0" />,
+                    cheque: <FileText className="w-3.5 h-3.5 shrink-0" />,
+                    other: <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />,
+                  };
+                  // Shorten long labels so all chips fit on one line
+                  const shortLabels: Record<PaymentMethod, string> = {
+                    cash: 'Cash',
+                    card: 'Card',
+                    bank_transfer: 'Bank',
+                    online: 'Online',
+                    cheque: 'Cheque',
+                    other: 'Other',
+                  };
+                  return (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setPaymentMethod(paymentMethod === method ? '' : method)}
+                      className={cn(
+                        'flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-all h-9',
+                        paymentMethod === method
+                          ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
+                          : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                      )}
+                    >
+                      {icons[method]}
+                      <span>{shortLabels[method]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ─── Feature 1.4: Split toggle (expense only, create mode only) ─── */}
-          {type === 'expense' && !isEditMode && (
+          {type !== 'transfer' && type === 'expense' && !isEditMode && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Split className="w-4 h-4 text-muted-foreground" />
@@ -1118,7 +1277,7 @@ export function TransactionForm({
           )}
 
           {/* ─── Smart Suggestion Banner ─── */}
-          {(type === 'expense' || type === 'income' || type === 'lend' || type === 'owe') && !isSplit && (
+          {(type === 'expense' || type === 'income' || type === 'lend' || type === 'owe') && !isSplit && type !== 'transfer' && (
             <SuggestionBanner
               suggestion={suggestion}
               linkedBudgetId={linkedBudgetId}
@@ -1305,29 +1464,31 @@ export function TransactionForm({
           )}
 
           {/* ─── Feature 1.2: Transaction Tags ─── */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-wider opacity-70">Tags</p>
-            <div className="flex flex-wrap gap-2">
-              {PREDEFINED_TAGS.map((tag) => {
-                const isSelected = selectedTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    className={cn(
-                      'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
-                      isSelected
-                        ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
-                        : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
-                    )}
-                  >
-                    {tag}
-                  </button>
-                );
-              })}
+          {type !== 'transfer' && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-70">Tags</p>
+              <div className="flex flex-wrap gap-2">
+                {PREDEFINED_TAGS.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                        isSelected
+                          ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
+                          : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                      )}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ─── Feature 1.3: Cleared / Uncleared status toggle ─── */}
           {(type === 'expense' || type === 'income') && (
@@ -1404,7 +1565,7 @@ export function TransactionForm({
           />
 
           {/* ─── Reminder toggle ─── */}
-          {(type === 'expense' || type === 'income') && (
+          {(type === 'expense' || type === 'income') && type !== 'transfer' && (
             <div className="space-y-3 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5">

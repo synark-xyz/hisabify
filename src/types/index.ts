@@ -24,6 +24,17 @@ export interface Category {
   parent_id?: string | null;
 }
 
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'cheque' | 'other';
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: 'Cash',
+  card: 'Card',
+  bank_transfer: 'Bank Transfer',
+  online: 'Online',
+  cheque: 'Cheque',
+  other: 'Other',
+};
+
 export interface Transaction {
   id: string;
   user_id: string;
@@ -31,7 +42,7 @@ export interface Transaction {
   category_id: string | null;
   merchant: string;
   amount: number;
-  type: 'expense' | 'income' | 'lend' | 'owe';
+  type: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
   date: string;
   note: string | null;
   created_at: string;
@@ -56,6 +67,25 @@ export interface Transaction {
   status?: 'cleared' | 'uncleared';
   parent_transaction_id?: string | null;
   is_split_child?: boolean;
+  // Phase 2 additions
+  payment_method?: PaymentMethod | null;
+  transfer_to_card_id?: string | null;
+  transfer_fee?: number | null;
+}
+
+export interface Debt {
+  id: string;
+  user_id: string;
+  person_name: string;
+  amount: number;
+  currency: string;
+  type: 'i_owe' | 'they_owe';
+  due_date: string | null;
+  status: 'outstanding' | 'partial' | 'settled';
+  amount_paid: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Budget {

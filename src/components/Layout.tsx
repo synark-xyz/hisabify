@@ -24,6 +24,7 @@ const PAGE_TITLES: Record<string, string> = {
     '/profile/data': 'Data Management',
     '/profile/invite': 'Invite Friends',
     '/analytics': 'Insights',
+    '/debts': 'Debt Tracker',
     '/settings': 'Settings',
     '/settings/preferences': 'Preferences',
     '/settings/notifications': 'Notifications',
@@ -50,7 +51,8 @@ export function Layout() {
 
     const isProfileSubPage = location.pathname.startsWith('/profile/');
     const isProfileRootPage = location.pathname === '/profile';
-    const shouldShowBack = isProfileSubPage || isProfileRootPage;
+    const isDebtPage = location.pathname === '/debts';
+    const shouldShowBack = isProfileSubPage || isProfileRootPage || isDebtPage;
 
     return (
         <div className="min-h-screen relative">

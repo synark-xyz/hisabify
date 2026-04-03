@@ -3,11 +3,12 @@ import { useLocation } from 'react-router-dom';
 
 const ROUTE_TO_SCREEN: Record<string, string> = {
   '/': 'Dashboard',
-  '/expenses': 'Expenses',
-  '/analytics': 'Analytics',
+  '/transactions': 'Transactions',
+  '/insights': 'Insights',
+  '/analytics': 'Insights',
   '/budget': 'Budget',
-  '/savings': 'Savings',
-  '/reports': 'Reports',
+  '/savings': 'Budget',
+  '/reports': 'Insights',
   '/profile': 'Profile',
   '/profile/personal': 'Profile_Personal',
   '/profile/data': 'Profile_Data',

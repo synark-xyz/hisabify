@@ -139,7 +139,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
                 {onViewInExpenses && (
                   <DropdownMenuItem onClick={() => onViewInExpenses(budget)}>
                     <ArrowUpRight className="mr-2 h-4 w-4" />
-                    View in Expenses
+                    View in Transactions
                   </DropdownMenuItem>
                 )}
 

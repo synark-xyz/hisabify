@@ -334,8 +334,8 @@ describe('sanitizeUrl', () => {
   });
 
   it('preserves query string and hash for same-origin URL', () => {
-    const result = sanitizeUrl('/expenses?filter=month#top');
-    expect(result).toBe('/expenses?filter=month#top');
+    const result = sanitizeUrl('/transactions?filter=month#top');
+    expect(result).toBe('/transactions?filter=month#top');
   });
 
   it('returns null for a cross-origin URL', () => {

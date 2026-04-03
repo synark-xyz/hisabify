@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { CategorySpending } from '@/types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
 import type { PieSectorDataItem } from 'recharts/types/polar/Pie';
@@ -84,11 +84,17 @@ export function ExpenseDonutChart({ data, timeframeKey }: ExpenseDonutChartProps
   const [activeIndex, setActiveIndex] = useState(0);
   const [clickAnimation, setClickAnimation] = useState(false);
   const { formatAmount } = useCurrency();
+  const legendRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Reset active index when timeframe changes
   useEffect(() => {
     setActiveIndex(0);
   }, [timeframeKey, data?.length]);
+
+  // Scroll active legend item into view when activeIndex changes
+  useEffect(() => {
+    legendRefs.current[activeIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [activeIndex]);
 
   const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
@@ -96,7 +102,6 @@ export function ExpenseDonutChart({ data, timeframeKey }: ExpenseDonutChartProps
 
   const onPieClick = (_: unknown, index: number) => {
     setActiveIndex(index);
-    // Trigger click animation
     setClickAnimation(true);
     setTimeout(() => setClickAnimation(false), 300);
   };
@@ -165,6 +170,7 @@ export function ExpenseDonutChart({ data, timeframeKey }: ExpenseDonutChartProps
         {chartData.map((item, index) => (
           <motion.div
             key={index}
+            ref={(el) => { legendRefs.current[index] = el; }}
             className={cn(
               "flex items-center gap-3 cursor-pointer p-3 rounded-xl transition-all border",
               activeIndex === index

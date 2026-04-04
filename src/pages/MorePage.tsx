@@ -1,4 +1,4 @@
-import { Calculator, CreditCard, Percent, ArrowRightLeft, Tag, Handshake } from 'lucide-react';
+import { Calculator, CreditCard, Percent, ArrowRightLeft, Tag, Handshake, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +52,14 @@ const financeTracking = [
     description: 'Track money owed to/from people',
     path: '/debts',
     color: 'bg-rose-500/10 text-rose-500',
+  },
+  {
+    id: 'activity',
+    icon: Clock,
+    label: 'Activity History',
+    description: 'View all transactions and settlements',
+    path: '/activity',
+    color: 'bg-purple-500/10 text-purple-500',
   },
 ];
 

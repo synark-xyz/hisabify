@@ -8,9 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { MobileDialog } from '@/components/ui/mobile-dialog';
+import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
 import { cn } from '@/lib/utils';
 import { format, isPast } from 'date-fns';
 import { useDebts } from '@/hooks/useDebts';
+import { useActivityLog } from '@/hooks/useActivityLog';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { Debt } from '@/types';
 
@@ -34,20 +37,25 @@ interface SettleSheetProps {
   onClose: () => void;
 }
 function SettleSheet({ debt, onSettle, onClose }: SettleSheetProps) {
+  const [open, setOpen] = useState(true);
   const remaining = debt.amount - debt.amount_paid;
   const [amount, setAmount] = useState(String(remaining.toFixed(2)));
 
+  useKeyboardHandler(open);
+
+  const handleClose = () => {
+    setOpen(false);
+    setTimeout(onClose, 300);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-        className="relative w-full bg-card rounded-t-3xl p-6 space-y-4 border border-border/50 shadow-2xl"
-      >
-        <h3 className="text-lg font-bold">Settle Debt</h3>
+    <MobileDialog
+      open={open}
+      onOpenChange={(isOpen) => !isOpen && handleClose()}
+      title="Settle Debt"
+      className="z-[10000]"
+    >
+      <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
           Remaining: <span className="font-bold text-foreground">{debt.currency} {remaining.toFixed(2)}</span>
         </p>
@@ -63,13 +71,13 @@ function SettleSheet({ debt, onSettle, onClose }: SettleSheetProps) {
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" className="flex-1" onClick={handleClose}>Cancel</Button>
           <Button
             className="flex-1"
             onClick={() => {
               const val = Number.parseFloat(amount);
               if (val > 0) onSettle(debt.amount_paid + val);
-              onClose();
+              handleClose();
             }}
           >
             Mark Paid
@@ -78,13 +86,13 @@ function SettleSheet({ debt, onSettle, onClose }: SettleSheetProps) {
         <Button
           variant="ghost"
           className="w-full text-emerald-500 font-bold"
-          onClick={() => { onSettle(debt.amount); onClose(); }}
+          onClick={() => { onSettle(debt.amount); handleClose(); }}
         >
           <CheckCircle2 className="w-4 h-4 mr-2" />
           Fully Settled
         </Button>
-      </motion.div>
-    </div>
+      </div>
+    </MobileDialog>
   );
 }
 
@@ -100,6 +108,7 @@ interface AddDebtSheetProps {
   onClose: () => void;
 }
 function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
+  const [open, setOpen] = useState(true);
   const { currency } = useCurrency();
   const [personName, setPersonName] = useState('');
   const [amount, setAmount] = useState('');
@@ -109,20 +118,23 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const [notes, setNotes] = useState('');
 
+  useKeyboardHandler(open);
+
   const canSubmit = personName.trim() && Number.parseFloat(amount) > 0;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-        className="relative w-full bg-card rounded-t-3xl p-6 space-y-4 border border-border/50 shadow-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <h3 className="text-lg font-bold">Add Debt</h3>
+  const handleClose = () => {
+    setOpen(false);
+    setTimeout(onClose, 300);
+  };
 
+  return (
+    <MobileDialog
+      open={open}
+      onOpenChange={(isOpen) => !isOpen && handleClose()}
+      title="Add Debt"
+      className="z-[10000]"
+    >
+      <div className="space-y-4">
         {/* Type selector */}
         <div className="grid grid-cols-2 gap-2">
           {(['i_owe', 'they_owe'] as const).map((t) => (
@@ -215,7 +227,7 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
         </div>
 
         <div className="flex gap-2 pt-2">
-          <Button variant="ghost" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" className="flex-1" onClick={handleClose}>Cancel</Button>
           <Button
             className="flex-1"
             disabled={!canSubmit}
@@ -228,19 +240,22 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
                 due_date: dueDate ? dueDate.toISOString().split('T')[0] : null,
                 notes: notes.trim() || null,
               });
-              onClose();
+              handleClose();
             }}
           >
             Add Debt
           </Button>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </MobileDialog>
   );
 }
 
 export function DebtPage() {
-  const { debts, loading, totalIOwe, totalTheyOwe, createDebt, settleDebt, deleteDebt } = useDebts();
+  const { logActivity } = useActivityLog();
+  const { debts, loading, totalIOwe, totalTheyOwe, createDebt, settleDebt, deleteDebt } = useDebts({
+    onActivityLog: logActivity,
+  });
   const [showAdd, setShowAdd] = useState(false);
   const [settlingDebt, setSettlingDebt] = useState<Debt | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);

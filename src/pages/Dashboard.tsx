@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown } from '@phosphor-icons/react';
+import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown, CheckCircle, Plus, PiggyBank, Handshake, Trash } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { StreamingGreeting } from '@/components/StreamingGreeting';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,7 +26,7 @@ import { useFirstTimeUser } from '@/hooks/useFirstTimeUser';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { MonthlyWrapCard } from '@/components/MonthlyWrapCard';
 import { supabase } from '@/integrations/supabase/client';
-import { Transaction } from '@/types';
+import { Transaction, ActivityLog } from '@/types';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, getMonth, getYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
@@ -38,6 +38,7 @@ import {
 
 export function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
@@ -54,10 +55,8 @@ export function Dashboard() {
   const { isFirstTimeUser, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
   const { user } = useAuth();
   const { variant, theme } = useTheme();
-  const { formatAmount, currencyVersion, currency } = useCurrency();
-
-  // Determine if balance card should use light or dark text
   const useDarkText = variant === 'cyberpunk' && theme === 'light';
+  const { formatAmount, currencyVersion, currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
 
@@ -71,18 +70,13 @@ export function Dashboard() {
       .limit(5);
 
     if (data) {
-      // Convert amounts from stored currency to current currency
       const convertedData = await Promise.all(
         data.map(async (t) => {
           const storedCurrency = t.currency_base || 'USD';
           if (storedCurrency === currency) {
             return { ...t, convertedAmount: Number(t.amount) };
           }
-          // Convert to current currency
           const result = await convertAmount(Number(t.amount), storedCurrency, currency);
-          if (!result) {
-            console.warn(`Failed to convert ${t.amount} from ${storedCurrency} to ${currency} for transaction ${t.id}`);
-          }
           return {
             ...t,
             convertedAmount: result ? result.convertedAmount : Number(t.amount)
@@ -92,6 +86,20 @@ export function Dashboard() {
       setTransactions(convertedData as unknown as Transaction[]);
     }
   }, [convertAmount, currency, user]);
+
+  const fetchActivityLogs = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('activity_log')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    if (data) {
+      setActivityLogs(data as ActivityLog[]);
+    }
+  }, [user]);
 
   const fetchAvailableYears = useCallback(async () => {
     const currentYear = new Date().getFullYear();
@@ -192,13 +200,14 @@ export function Dashboard() {
   const handleRefresh = useCallback(async () => {
     await Promise.all([
       fetchTransactions(),
+      fetchActivityLogs(),
       fetchMonthlySummary(),
       fetchTodayTransactions(),
       fetchAvailableYears(),
       refetchReminders(),
       refetchFirstTimeStatus()
     ]);
-  }, [fetchTransactions, fetchMonthlySummary, fetchTodayTransactions, fetchAvailableYears, refetchReminders, refetchFirstTimeStatus]);
+  }, [fetchTransactions, fetchActivityLogs, fetchMonthlySummary, fetchTodayTransactions, fetchAvailableYears, refetchReminders, refetchFirstTimeStatus]);
 
   useTransactionUpdateListener(() => {
     void handleRefresh();
@@ -653,10 +662,13 @@ export function Dashboard() {
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />
-                  Recent History
+                  Activity History
+                  <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    NEW
+                  </span>
                 </h2>
                 <motion.button
-                  onClick={() => navigate('/transactions?viewMode=year')}
+                  onClick={() => navigate('/activity')}
                   className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-accent transition-colors"
                   whileHover={{ x: 4 }}
                 >
@@ -665,24 +677,68 @@ export function Dashboard() {
                 </motion.button>
               </div>
               <div className="bg-card rounded-2xl p-3 space-y-2 shadow-sm">
-                {transactions.length > 0 ? (
-                  transactions.map((tx, idx) => (
-                    <TransactionItem
-                      key={tx.id}
-                      transaction={tx}
-                      index={idx}
-                      onEdit={setEditingTransaction}
-                      onDelete={setDeletingTransaction}
-                      revealedId={revealedTransactionId}
-                      onReveal={setRevealedTransactionId}
-                    />
-                  ))
+                {transactions.length > 0 || activityLogs.length > 0 ? (
+                  <>
+                    {/* Debt/Settlement activities */}
+                    {activityLogs.filter(a => ['debt_created', 'debt_settled', 'debt_updated', 'debt_deleted'].includes(a.activity_type)).map((activity) => {
+                      const isSettled = activity.activity_type === 'debt_settled';
+                      const isDeleted = activity.activity_type === 'debt_deleted';
+                      const isCreated = activity.activity_type === 'debt_created';
+                      const isPositive = activity.activity_type === 'debt_settled' || activity.activity_type === 'debt_created';
+                      
+                      return (
+                        <div 
+                          key={activity.id}
+                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => navigate('/debts')}
+                        >
+                          <div className={cn(
+                            'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
+                            isSettled ? 'bg-emerald-500/10' : isDeleted ? 'bg-gray-500/10' : 'bg-rose-500/10'
+                          )}>
+                            {isSettled 
+                              ? <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
+                              : isDeleted 
+                                ? <Trash className="w-5 h-5 text-gray-500" />
+                                : <Handshake className="w-5 h-5 text-rose-500" weight="fill" />
+                            }
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{activity.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(activity.created_at), 'h:mm a')}
+                            </p>
+                          </div>
+                          {activity.amount && (
+                            <span className={cn(
+                              'text-sm font-semibold',
+                              isPositive ? 'text-emerald-500' : 'text-rose-500'
+                            )}>
+                              {activity.currency} {activity.amount.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {/* Transaction items */}
+                    {transactions.map((tx, idx) => (
+                      <TransactionItem
+                        key={tx.id}
+                        transaction={tx}
+                        index={idx}
+                        onEdit={setEditingTransaction}
+                        onDelete={setDeletingTransaction}
+                        revealedId={revealedTransactionId}
+                        onReveal={setRevealedTransactionId}
+                      />
+                    ))}
+                  </>
                 ) : (
                   <div className="py-8 text-center">
                     <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
                       <Sparkle className="w-8 h-8 text-muted-foreground/30" weight="duotone" />
                     </div>
-                    <p className="text-sm font-medium text-muted-foreground">No transactions yet. Start adding your expenses!</p>
+                    <p className="text-sm font-medium text-muted-foreground">No activity yet. Start adding your expenses!</p>
                   </div>
                 )}
               </div>

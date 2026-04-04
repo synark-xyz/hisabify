@@ -154,3 +154,44 @@ export interface PaymentReminder {
   created_at: string;
   updated_at?: string;
 }
+
+export type ActivityType =
+  | 'transaction_added'
+  | 'transaction_updated'
+  | 'transaction_deleted'
+  | 'debt_created'
+  | 'debt_settled'
+  | 'debt_updated'
+  | 'debt_deleted'
+  | 'budget_created'
+  | 'budget_updated'
+  | 'budget_deleted'
+  | 'savings_goal_created'
+  | 'savings_contribution'
+  | 'savings_goal_completed'
+  | 'savings_goal_archived'
+  | 'payment_reminder_created'
+  | 'payment_reminder_paid'
+  | 'payment_reminder_deleted'
+  | 'card_added'
+  | 'card_updated'
+  | 'card_deleted'
+  | 'recurring_expense_created'
+  | 'recurring_expense_updated'
+  | 'recurring_expense_deleted';
+
+export type EntityType = 'transaction' | 'debt' | 'budget' | 'savings_goal' | 'payment_reminder' | 'card' | 'recurring_expense';
+
+export interface ActivityLog {
+  id: string;
+  user_id: string;
+  activity_type: ActivityType;
+  entity_type: EntityType;
+  entity_id: string;
+  description: string;
+  amount: number | null;
+  currency: string | null;
+  metadata: Record<string, unknown> | null;
+  group_id: string | null;
+  created_at: string;
+}

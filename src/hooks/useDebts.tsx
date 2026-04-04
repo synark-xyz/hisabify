@@ -18,7 +18,19 @@ export interface SettleDebtInput {
   amount_paid: number;
 }
 
-export function useDebts() {
+export interface UseDebtsOptions {
+  onActivityLog?: (input: {
+    activity_type: 'debt_created' | 'debt_settled' | 'debt_updated' | 'debt_deleted';
+    entity_type: 'debt';
+    entity_id: string;
+    description: string;
+    amount?: number;
+    currency?: string;
+    group_id?: string;
+  }) => void;
+}
+
+export function useDebts(options?: UseDebtsOptions) {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -99,13 +111,25 @@ export function useDebts() {
 
       if (error) throw error;
       setDebts((prev) => prev.map((d) => (d.id === tempId ? (data as Debt) : d)));
+      
+      options?.onActivityLog?.({
+        activity_type: 'debt_created',
+        entity_type: 'debt',
+        entity_id: data.id,
+        description: input.type === 'i_owe' 
+          ? `You owe ${input.person_name} ${input.currency} ${input.amount.toFixed(2)}`
+          : `${input.person_name} owes you ${input.currency} ${input.amount.toFixed(2)}`,
+        amount: input.amount,
+        currency: input.currency,
+      });
+      
       return data as Debt;
     } catch (err) {
       setDebts((prev) => prev.filter((d) => d.id !== tempId));
       toast({ title: 'Error', description: 'Failed to add debt.', variant: 'destructive' });
       return null;
     }
-  }, [user, toast]);
+  }, [user, toast, options]);
 
   const settleDebt = useCallback(async ({ id, amount_paid }: SettleDebtInput) => {
     const debt = debts.find((d) => d.id === id);
@@ -114,6 +138,7 @@ export function useDebts() {
     const clamped = Math.min(amount_paid, debt.amount);
     const newStatus: Debt['status'] =
       clamped >= debt.amount ? 'settled' : clamped > 0 ? 'partial' : 'outstanding';
+    const paidAmount = clamped - debt.amount_paid;
 
     setDebts((prev) =>
       prev.map((d) =>
@@ -127,6 +152,21 @@ export function useDebts() {
         .update({ amount_paid: clamped, status: newStatus })
         .eq('id', id);
       if (error) throw error;
+
+      const isSettled = newStatus === 'settled';
+      const settlementAmount = paidAmount > 0 ? paidAmount : amount_paid;
+      
+      options?.onActivityLog?.({
+        activity_type: isSettled ? 'debt_settled' : 'debt_updated',
+        entity_type: 'debt',
+        entity_id: id,
+        description: isSettled
+          ? `Settled ${debt.type === 'i_owe' ? 'debt to' : 'from'} ${debt.person_name}: ${debt.currency} ${debt.amount.toFixed(2)}`
+          : `Paid ${debt.currency} ${settlementAmount.toFixed(2)} towards ${debt.person_name}`,
+        amount: settlementAmount,
+        currency: debt.currency,
+        group_id: id,
+      });
     } catch {
       setDebts((prev) =>
         prev.map((d) =>
@@ -135,19 +175,31 @@ export function useDebts() {
       );
       toast({ title: 'Error', description: 'Failed to update debt.', variant: 'destructive' });
     }
-  }, [debts, toast]);
+  }, [debts, toast, options]);
 
   const deleteDebt = useCallback(async (id: string) => {
+    const debt = debts.find((d) => d.id === id);
     const prev = debts;
     setDebts((d) => d.filter((x) => x.id !== id));
     try {
       const { error } = await supabase.from('debts').delete().eq('id', id);
       if (error) throw error;
+
+      if (debt) {
+        options?.onActivityLog?.({
+          activity_type: 'debt_deleted',
+          entity_type: 'debt',
+          entity_id: id,
+          description: `Deleted ${debt.type === 'i_owe' ? 'debt to' : 'from'} ${debt.person_name}`,
+          amount: debt.amount,
+          currency: debt.currency,
+        });
+      }
     } catch {
       setDebts(prev);
       toast({ title: 'Error', description: 'Failed to delete debt.', variant: 'destructive' });
     }
-  }, [debts, toast]);
+  }, [debts, toast, options]);
 
   const updateDebt = useCallback(async (id: string, updates: Partial<CreateDebtInput>) => {
     const prev = debts;

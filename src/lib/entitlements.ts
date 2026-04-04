@@ -1,5 +1,3 @@
-export const FREE_HISTORY_DAYS = 30;
-
 export type FeatureKey =
   | 'history_extended'
   | 'analytics_custom_range'

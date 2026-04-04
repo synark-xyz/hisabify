@@ -27,7 +27,7 @@ export function ProfilePage() {
     // The user moved "Invite" to Profile, let's keep it here.
     { id: 'invite', icon: Gift, label: 'Invite & Earn', path: '/profile/invite', color: 'bg-pink-500/10 text-pink-500' },
     { id: 'data', icon: Database, label: 'Data Management', path: '/profile/data', color: 'bg-orange-500/10 text-orange-500' },
-    { id: 'debts', icon: Handshake, label: 'Debt Tracker', path: '/debts', color: 'bg-rose-500/10 text-rose-500' },
+    // { id: 'debts', icon: Handshake, label: 'Debt Tracker', path: '/debts', color: 'bg-rose-500/10 text-rose-500' },
   ];
 
   return (

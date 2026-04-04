@@ -256,21 +256,6 @@ export function PreferencesPage() {
                         </SelectContent>
                     </Select>
                 </div>
-
-                {/* Categories */}
-                <button
-                    onClick={() => navigate('/categories')}
-                    className="w-full p-4 bg-card rounded-2xl border border-border/50 flex items-center gap-3 text-left hover:bg-muted/40 transition-colors"
-                >
-                    <div className="p-2 bg-primary/10 rounded-xl">
-                        <Tag className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="font-bold text-foreground">Categories</p>
-                        <p className="text-sm text-muted-foreground">Manage expense & income categories</p>
-                    </div>
-                </button>
-
             </main>
         </div>
     );

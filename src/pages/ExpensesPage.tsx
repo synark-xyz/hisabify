@@ -60,6 +60,8 @@ interface ConvertedTransaction extends Transaction {
 const FILTERABLE_TYPES = ['all', 'expense', 'income', 'lend', 'owe'] as const;
 type FilterType = typeof FILTERABLE_TYPES[number];
 
+export type GroupByOption = 'none' | 'category' | 'paymentMethod' | 'status' | 'merchant';
+
 export function ExpensesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [anchorDate, setAnchorDate] = useState(new Date());
@@ -76,6 +78,7 @@ export function ExpensesPage() {
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [showUnclearedOnly, setShowUnclearedOnly] = useState(false);
   const [filterPaymentMethod, setFilterPaymentMethod] = useState<PaymentMethod | 'all'>('all');
+  const [groupBy, setGroupBy] = useState<GroupByOption>('none');
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
@@ -185,13 +188,22 @@ export function ExpensesPage() {
 
     const { data, error } = await supabase
       .from('transactions')
-      .select('*, category:categories(*), card:cards(*)')
+      .select('*, category:categories(*), card:cards!transactions_card_id_fkey(*)')
       .eq('user_id', user.id)
-      .gte('date', effectiveRange.from.toISOString())
-      .lte('date', effectiveRange.to.toISOString())
+      .gte('date', effectiveRange.from.toISOString().split('T')[0])
+      .lte('date', effectiveRange.to.toISOString().split('T')[0])
       .order('date', { ascending: false });
 
-    if (error || !data || requestId !== latestRequestIdRef.current) {
+    if (error) {
+      console.error('[ExpensesPage] Error fetching transactions:', error);
+      return;
+    }
+
+    if (!data) {
+      return;
+    }
+
+    if (requestId !== latestRequestIdRef.current) {
       return;
     }
 
@@ -423,6 +435,49 @@ export function ExpensesPage() {
     if (filterPaymentMethod !== 'all') count++;
     return count;
   }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly, filterPaymentMethod]);
+
+  const groupedTransactions = useMemo(() => {
+    if (groupBy === 'none') {
+      return { type: 'flat' as const, items: filteredTransactions };
+    }
+
+    const groups = new Map<string, ConvertedTransaction[]>();
+    
+    filteredTransactions.forEach((tx) => {
+      let key: string;
+      switch (groupBy) {
+        case 'category':
+          key = tx.category?.name || 'Other';
+          break;
+        case 'paymentMethod':
+          key = tx.payment_method ? PAYMENT_METHOD_LABELS[tx.payment_method] || tx.payment_method : 'Not set';
+          break;
+        case 'status':
+          key = tx.status === 'uncleared' ? 'Uncleared' : 'Cleared';
+          break;
+        case 'merchant':
+          key = tx.merchant || 'Unknown';
+          break;
+        default:
+          key = 'Other';
+      }
+      
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(tx);
+    });
+
+    const sortedGroups = Array.from(groups.entries())
+      .map(([key, txs]) => ({
+        key,
+        transactions: txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        total: txs.reduce((sum, tx) => sum + tx.convertedAmount, 0),
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    return { type: 'grouped' as const, groups: sortedGroups };
+  }, [filteredTransactions, groupBy]);
 
   const formatAmount = useCallback((amount: number) => {
     const locale = currency === 'USD' ? 'en-US' : 'en-US';
@@ -912,6 +967,22 @@ export function ExpensesPage() {
                           ))}
                         </SelectContent>
                       </Select>
+
+                      <Select
+                        value={groupBy}
+                        onValueChange={(value: GroupByOption) => setGroupBy(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Group by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No grouping</SelectItem>
+                          <SelectItem value="category">Category</SelectItem>
+                          <SelectItem value="paymentMethod">Payment Method</SelectItem>
+                          <SelectItem value="status">Status</SelectItem>
+                          <SelectItem value="merchant">Merchant</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {/* Tag filter */}
@@ -991,6 +1062,7 @@ export function ExpensesPage() {
                         setFilterTags([]);
                         setShowUnclearedOnly(false);
                         setFilterPaymentMethod('all');
+                        setGroupBy('none');
                         setShowFilters(false);
                       }}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
@@ -1017,9 +1089,9 @@ export function ExpensesPage() {
                 </span>
               </div>
 
-              {filteredTransactions.length > 0 ? (
+              {groupedTransactions.type === 'flat' && groupedTransactions.items.length > 0 ? (
                 <div className="space-y-3">
-                  {filteredTransactions.map((tx) => (
+                  {groupedTransactions.items.map((tx) => (
                     <TransactionItem
                       key={tx.id}
                       transaction={tx}
@@ -1030,6 +1102,31 @@ export function ExpensesPage() {
                       onReveal={setRevealedTransactionId}
                       categoriesMap={categoriesMap}
                     />
+                  ))}
+                </div>
+              ) : groupedTransactions.type === 'grouped' && groupedTransactions.groups.length > 0 ? (
+                <div className="space-y-4">
+                  {groupedTransactions.groups.map((group) => (
+                    <div key={group.key} className="space-y-2">
+                      <div className="flex items-center justify-between px-1">
+                        <h3 className="text-sm font-semibold text-muted-foreground">{group.key}</h3>
+                        <span className="text-sm font-medium text-foreground">{formatAmount(group.total)}</span>
+                      </div>
+                      <div className="space-y-2 bg-card/50 rounded-xl p-2">
+                        {group.transactions.map((tx) => (
+                          <TransactionItem
+                            key={tx.id}
+                            transaction={tx}
+                            onViewDetails={setViewingTransaction}
+                            onEdit={setEditingTransaction}
+                            onDelete={setDeletingTransaction}
+                            revealedId={revealedTransactionId}
+                            onReveal={setRevealedTransactionId}
+                            categoriesMap={categoriesMap}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (

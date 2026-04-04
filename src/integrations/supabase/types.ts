@@ -959,3 +959,20 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// RPC function definitions for TypeScript support
+export type UpsertCustomCategorySuggestionParams = {
+  p_label: string;
+  p_category_type: 'expense' | 'income';
+  p_user_id: string;
+};
+
+export type RedeemReferralCodeParams = {
+  p_referral_code: string;
+  p_invitee_id: string;
+};
+
+export type RedeemReferralCodeResult = {
+  success: boolean;
+  error?: string;
+};

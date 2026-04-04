@@ -11,6 +11,7 @@ import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
 import { compressForGemini } from '@/lib/imageProcessor';
 import { callGeminiVision } from '@/lib/geminiVision';
+import { parseCurrencyFromString, normalizeCurrency } from '@/lib/currencyUtils';
 
 export interface ScannedReceiptData {
     merchant?: string;
@@ -112,11 +113,16 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
             const { base64, mimeType } = await compressForGemini(file);
             const result = await callGeminiVision(base64, mimeType, userCurrency);
 
+            // Normalize currency from AI result
+            const detectedCurrency = result.currency 
+                ? normalizeCurrency(result.currency, userCurrency)
+                : userCurrency;
+            
             setExtractedData({
                 merchant: result.merchant,
                 amount: result.amount,
                 date: result.date ? new Date(result.date) : undefined,
-                currency: result.currency,
+                currency: detectedCurrency,
                 receiptUrl: dataUrl,
                 receiptPath: file.name,
                 provider: 'gemini-vision',

@@ -168,15 +168,16 @@ export function AddCategoryModal({
 
   return (
     <MobileDialog
+      className="space-y-1 space-x-1 pb-4 pe-4"
       open={open}
       onOpenChange={onOpenChange}
       title={title}
       footer={footer}
     >
-      <div className="space-y-4">
+      <div className="space-y-1 space-x-1 pb-4 pe-4">
         {/* Parent display (sub mode only) */}
         {mode === 'sub' && parentCategory && (
-          <div className="space-y-1">
+          <div className="space-y-1 space-x-1">
             <Label>Parent Category</Label>
             <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
               <span
@@ -189,7 +190,7 @@ export function AddCategoryModal({
         )}
 
         {/* Name */}
-        <div className="space-y-1">
+        <div className="space-y-1 space-x-1 pb-4 pe-4">
           <Label htmlFor="cat-name">Name</Label>
           <Input
             id="cat-name"

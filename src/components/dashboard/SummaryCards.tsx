@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, HandCoinsIcon } from 'lucide-react';
 import { useCurrency } from '@/hooks/useCurrency';
 
 interface SummaryCardsProps {
@@ -37,7 +37,7 @@ export function SummaryCards({ totalExpenses, totalIncome, netBalance, budgetRem
     {
       title: 'Budget Remaining',
       amount: budgetRemaining,
-      icon: PiggyBank,
+      icon: HandCoinsIcon,
       iconBg: budgetRemaining >= 0 ? 'bg-accent/20' : 'bg-destructive/20',
       iconColor: budgetRemaining >= 0 ? 'text-accent' : 'text-destructive',
     },

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
 
 type TabMode = 'share' | 'redeem';
 
@@ -15,49 +16,29 @@ export function ReferralCard() {
     const [redeemInput, setRedeemInput] = useState('');
     const [copied, setCopied] = useState(false);
 
-    const handleCopy = () => {
-        if (referralCode) {
-            const deepLink = `https://hisabify.app/auth?ref=${referralCode}`;
-            navigator.clipboard.writeText(deepLink).catch(() => {
-                navigator.clipboard.writeText(referralCode);
-            });
+    const handleCopy = async () => {
+        if (!referralCode) return;
+        const deepLink = `${APP_BASE_URL}/auth?ref=${referralCode}`;
+        try {
+            await navigator.clipboard.writeText(deepLink);
             setCopied(true);
             toast.success('Invite link copied to clipboard');
             setTimeout(() => setCopied(false), 2000);
+        } catch {
+            toast.error('Could not copy invite link');
         }
     };
 
     const handleShare = async () => {
         if (!referralCode) return;
-        const deepLink = `https://hisabify.app/auth?ref=${referralCode}`;
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'Join me on Hisabify!',
-                    text: `Use my referral code ${referralCode} to get 30 days of Pro features for free!`,
-                    url: deepLink,
-                });
-            } catch (err) {
-                if (err instanceof Error && err.name !== 'AbortError') {
-                    try {
-                        await navigator.clipboard.writeText(deepLink);
-                        setCopied(true);
-                        toast.success('Invite link copied to clipboard');
-                        setTimeout(() => setCopied(false), 2000);
-                    } catch {
-                        toast.error('Could not copy invite link');
-                    }
-                }
-            }
-        } else {
-            try {
-                await navigator.clipboard.writeText(deepLink);
-                setCopied(true);
-                toast.success('Invite link copied to clipboard');
-                setTimeout(() => setCopied(false), 2000);
-            } catch {
-                toast.error('Could not copy invite link');
-            }
+        const deepLink = `${APP_BASE_URL}/auth?ref=${referralCode}`;
+        const result = await shareOrCopy(
+            { title: 'Join me on Hisabify!', text: `Use my referral code ${referralCode} to get 3 days of Pro features for free!`, url: deepLink },
+            'Invite link copied to clipboard',
+        );
+        if (result === 'copied') {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         }
     };
 
@@ -100,7 +81,7 @@ export function ReferralCard() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 text-accent">
                             <Gift className="w-5 h-5" />
-                            <h3 className="font-bold text-sm">Invite friends. You both get 30 days Pro.</h3>
+                            <h3 className="font-bold text-sm">Invite friends. You both get 3 days Pro.</h3>
                         </div>
 
                         <div className="flex items-center gap-3">

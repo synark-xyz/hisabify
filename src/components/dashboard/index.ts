@@ -1,4 +1,5 @@
 // Dashboard component exports
+export { DebtTriageWidget } from './DebtTriageWidget';
 export { SummaryCards } from './SummaryCards';
 export { CategoryBreakdownChart } from './CategoryBreakdownChart';
 export { MonthlyTrendChart } from './MonthlyTrendChart';

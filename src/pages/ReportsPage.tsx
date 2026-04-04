@@ -144,7 +144,7 @@ export default function ReportsPage() {
 
                   <div className="flex items-center justify-between pl-3 border-l-2 border-primary/60">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Expense Analysis</span>
-                    <Link to="/expenses" className="text-xs text-primary hover:underline font-medium">View Expenses →</Link>
+                    <Link to="/transactions" className="text-xs text-primary hover:underline font-medium">View Transactions →</Link>
                   </div>
                   <ReportCharts reportData={reportData} />
 

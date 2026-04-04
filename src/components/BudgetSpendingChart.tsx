@@ -41,7 +41,7 @@ export function BudgetSpendingChart({ budget }: Props) {
   const [loading, setLoading] = useState(false);
 
   const { user } = useAuth();
-  const { currency } = useCurrency();
+  const { currency, formatAmount } = useCurrency();
   const { convertAmount } = useExchangeRate();
 
   const statusColor =
@@ -164,7 +164,7 @@ export function BudgetSpendingChart({ budget }: Props) {
               padding: '6px 10px',
             }}
             formatter={(value: number, name: string) => [
-              value.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+              formatAmount(value as number),
               name === 'cumulative' ? 'Total so far' : 'Daily',
             ]}
             labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: 2 }}

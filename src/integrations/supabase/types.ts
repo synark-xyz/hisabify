@@ -28,6 +28,11 @@ export type Database = {
           updated_at: string
           user_id: string
           year: number
+          alert_threshold: number
+          alert_enabled: boolean
+          is_recurring: boolean
+          is_template: boolean
+          template_name: string | null
         }
         Insert: {
           amount: number
@@ -42,6 +47,11 @@ export type Database = {
           updated_at?: string
           user_id: string
           year: number
+          alert_threshold?: number
+          alert_enabled?: boolean
+          is_recurring?: boolean
+          is_template?: boolean
+          template_name?: string | null
         }
         Update: {
           amount?: number
@@ -56,6 +66,11 @@ export type Database = {
           updated_at?: string
           user_id?: string
           year?: number
+          alert_threshold?: number
+          alert_enabled?: boolean
+          is_recurring?: boolean
+          is_template?: boolean
+          template_name?: string | null
         }
         Relationships: [
           {
@@ -116,6 +131,8 @@ export type Database = {
           icon: string
           id: string
           name: string
+          type: string
+          parent_id: string | null
         }
         Insert: {
           color?: string
@@ -123,6 +140,8 @@ export type Database = {
           icon?: string
           id?: string
           name: string
+          type?: string
+          parent_id?: string | null
         }
         Update: {
           color?: string
@@ -130,8 +149,80 @@ export type Database = {
           icon?: string
           id?: string
           name?: string
+          type?: string
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_category_suggestions: {
+        Row: {
+          category_type: string
+          first_used_at: string
+          label: string
+          last_used_at: string
+          promoted: boolean
+          promoted_at: string | null
+          unique_user_count: number
+          usage_count: number
+        }
+        Insert: {
+          category_type: string
+          first_used_at?: string
+          label: string
+          last_used_at?: string
+          promoted?: boolean
+          promoted_at?: string | null
+          unique_user_count?: number
+          usage_count?: number
+        }
+        Update: {
+          category_type?: string
+          first_used_at?: string
+          label?: string
+          last_used_at?: string
+          promoted?: boolean
+          promoted_at?: string | null
+          unique_user_count?: number
+          usage_count?: number
         }
         Relationships: []
+      }
+      custom_category_user_log: {
+        Row: {
+          category_type: string
+          created_at: string
+          label: string
+          user_id: string
+        }
+        Insert: {
+          category_type: string
+          created_at?: string
+          label: string
+          user_id: string
+        }
+        Update: {
+          category_type?: string
+          created_at?: string
+          label?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_category_user_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exchange_rates: {
         Row: {
@@ -636,6 +727,7 @@ export type Database = {
           created_at: string
           currency_base: string | null
           currency_original: string | null
+          custom_category_label: string | null
           date: string
           exchange_rate: number | null
           exchange_source: string | null
@@ -647,6 +739,10 @@ export type Database = {
           savings_goal_id: string | null
           type: string
           user_id: string
+          tags: string[]
+          status: string
+          parent_transaction_id: string | null
+          is_split_child: boolean
         }
         Insert: {
           amount: number
@@ -658,6 +754,7 @@ export type Database = {
           created_at?: string
           currency_base?: string | null
           currency_original?: string | null
+          custom_category_label?: string | null
           date?: string
           exchange_rate?: number | null
           exchange_source?: string | null
@@ -669,6 +766,10 @@ export type Database = {
           savings_goal_id?: string | null
           type?: string
           user_id: string
+          tags?: string[]
+          status?: string
+          parent_transaction_id?: string | null
+          is_split_child?: boolean
         }
         Update: {
           amount?: number
@@ -680,6 +781,7 @@ export type Database = {
           created_at?: string
           currency_base?: string | null
           currency_original?: string | null
+          custom_category_label?: string | null
           date?: string
           exchange_rate?: number | null
           exchange_source?: string | null
@@ -691,6 +793,10 @@ export type Database = {
           savings_goal_id?: string | null
           type?: string
           user_id?: string
+          tags?: string[]
+          status?: string
+          parent_transaction_id?: string | null
+          is_split_child?: boolean
         }
         Relationships: [
           {
@@ -721,7 +827,101 @@ export type Database = {
             referencedRelation: "savings_goals"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_parent_transaction_id_fkey"
+            columns: ["parent_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      debts: {
+        Row: {
+          id: string
+          user_id: string
+          person_name: string
+          amount: number
+          currency: string
+          type: string
+          due_date: string | null
+          status: string
+          amount_paid: number
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          person_name: string
+          amount: number
+          currency?: string
+          type: string
+          due_date?: string | null
+          status?: string
+          amount_paid?: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          person_name?: string
+          amount?: number
+          currency?: string
+          type?: string
+          due_date?: string | null
+          status?: string
+          amount_paid?: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      activity_log: {
+        Row: {
+          id: string
+          user_id: string
+          activity_type: string
+          entity_type: string
+          entity_id: string
+          description: string
+          amount: number | null
+          currency: string | null
+          metadata: Json | null
+          group_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          activity_type: string
+          entity_type: string
+          entity_id: string
+          description: string
+          amount?: number | null
+          currency?: string | null
+          metadata?: Json | null
+          group_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          activity_type?: string
+          entity_type?: string
+          entity_id?: string
+          description?: string
+          amount?: number | null
+          currency?: string | null
+          metadata?: Json | null
+          group_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -861,3 +1061,20 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// RPC function definitions for TypeScript support
+export type UpsertCustomCategorySuggestionParams = {
+  p_label: string;
+  p_category_type: 'expense' | 'income';
+  p_user_id: string;
+};
+
+export type RedeemReferralCodeParams = {
+  p_referral_code: string;
+  p_invitee_id: string;
+};
+
+export type RedeemReferralCodeResult = {
+  success: boolean;
+  error?: string;
+};

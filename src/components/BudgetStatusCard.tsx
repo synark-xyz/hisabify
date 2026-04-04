@@ -1,5 +1,6 @@
 import { AlertCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface BudgetStatus {
   hasActiveBudget: boolean;
@@ -15,6 +16,7 @@ interface BudgetStatusCardProps {
 }
 
 export function BudgetStatusCard({ status }: BudgetStatusCardProps) {
+  const { formatAmount } = useCurrency();
   if (!status.hasActiveBudget || !status.budget) return null;
 
   const colors = {
@@ -51,8 +53,8 @@ export function BudgetStatusCard({ status }: BudgetStatusCardProps) {
       {status.budget && (
         <div className="mt-2">
           <div className="flex justify-between text-xs mb-1">
-            <span>Spent: ${status.budget.spent.toFixed(2)}</span>
-            <span>Limit: ${status.budget.amount.toFixed(2)}</span>
+            <span>Spent: {formatAmount(status.budget.spent)}</span>
+            <span>Limit: {formatAmount(status.budget.amount)}</span>
           </div>
           <div className="w-full bg-white dark:bg-gray-800 rounded-full h-2">
             <div

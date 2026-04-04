@@ -209,7 +209,8 @@ export async function addPushNotification(
 // Domain-specific notification generators
 // ---------------------------------------------------------------------------
 
-/** Show budget warning (once per day per budget, via localStorage dedup key). */
+/** Show budget warning (once per day per budget, via localStorage dedup key).
+ * Only stores to notification page - no toast (to reduce noise). */
 export async function showBudgetWarning(userId: string, budgetName: string, percentage: number, periodType: string): Promise<void> {
   if (!_budgetAlertsEnabled) return;
   const alertKey = `budget-warning-${budgetName}-${new Date().toDateString()}`;
@@ -217,10 +218,7 @@ export async function showBudgetWarning(userId: string, budgetName: string, perc
 
   localStorage.setItem(alertKey, 'true');
 
-  toast.warning(`Budget Warning: ${budgetName}`, {
-    description: `You've used ${percentage.toFixed(0)}% of your ${periodType} budget.`,
-  });
-
+  // Only store in notification page - no toast to reduce noise
   await insertNotification(userId, {
     type: 'budget_warning',
     title: `Budget Warning: ${budgetName}`,
@@ -229,7 +227,8 @@ export async function showBudgetWarning(userId: string, budgetName: string, perc
   });
 }
 
-/** Show budget exceeded (once per day per budget). */
+/** Show budget exceeded (once per day per budget). 
+ * Shows toast AND stores to notification page (critical alert). */
 export async function showBudgetExceeded(userId: string, budgetName: string, percentage: number, periodType: string): Promise<void> {
   if (!_budgetAlertsEnabled) return;
   const alertKey = `budget-exceeded-${budgetName}-${new Date().toDateString()}`;
@@ -237,6 +236,7 @@ export async function showBudgetExceeded(userId: string, budgetName: string, per
 
   localStorage.setItem(alertKey, 'true');
 
+  // Show toast for critical alert (exceeded)
   toast.error(`Budget Exceeded: ${budgetName}`, {
     description: `You've spent ${percentage.toFixed(0)}% of your ${periodType} budget.`,
   });

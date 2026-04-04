@@ -65,6 +65,7 @@ const renderActiveShape = (props: ActiveShapeProps) => {
 export function ReportCharts({ reportData }: ReportChartsProps) {
   const { formatAmount, currencySymbol } = useCurrency();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [incomeActiveIndex, setIncomeActiveIndex] = useState(0);
 
   // Format daily data for chart (show every nth day if too many)
   const dailyData = reportData.dailyExpenses.length > 30
@@ -76,12 +77,14 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
     dateLabel: format(parseISO(d.date), "MMM d"),
   }));
 
+  const categoryColors = reportData.categoryBreakdown.map((entry) => entry.color);
+  const incomeCategoryColors = reportData.incomeCategoryBreakdown.map((entry) => entry.color);
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {/* Category Breakdown Pie Chart */}
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Expense Category Breakdown Pie Chart */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Spending by Category</CardTitle>
+          <CardTitle className="text-base">Expenses by Category</CardTitle>
         </CardHeader>
         <CardContent>
           {reportData.categoryBreakdown.length > 0 ? (
@@ -105,21 +108,12 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                     {reportData.categoryBreakdown.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={entry.color}
+                        fill={categoryColors[index]}
                         stroke="transparent"
                         style={{ cursor: "pointer" }}
                       />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: number) => formatAmount(value)}
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      color: "hsl(var(--foreground))",
-                    }}
-                  />
                 </PieChart>
               </ResponsiveContainer>
 
@@ -153,6 +147,77 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
           ) : (
             <div className="h-[250px] flex items-center justify-center text-muted-foreground">
               No expense data for selected period
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Income Category Breakdown Pie Chart */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Income Sources</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {reportData.incomeCategoryBreakdown.length > 0 ? (
+            <div>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    activeIndex={incomeActiveIndex}
+                    activeShape={renderActiveShape as (props: unknown) => React.ReactElement}
+                    data={reportData.incomeCategoryBreakdown}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={2}
+                    dataKey="amount"
+                    nameKey="category"
+                    onMouseEnter={(_, index) => setIncomeActiveIndex(index)}
+                    onClick={(_, index) => setIncomeActiveIndex(index)}
+                  >
+                    {reportData.incomeCategoryBreakdown.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={incomeCategoryColors[index]}
+                        stroke="transparent"
+                        style={{ cursor: "pointer" }}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* Legend grid */}
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                {reportData.incomeCategoryBreakdown.map((item, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className={cn(
+                      "flex items-center gap-2 p-2 rounded-lg border text-left transition-colors",
+                      incomeActiveIndex === index
+                        ? "bg-emerald-500/10 border-emerald-500/30"
+                        : "bg-muted/30 border-transparent hover:bg-muted/50"
+                    )}
+                    onMouseEnter={() => setIncomeActiveIndex(index)}
+                    onClick={() => setIncomeActiveIndex(index)}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <div className="min-w-0">
+                      <p className={cn("text-xs font-semibold truncate", incomeActiveIndex === index ? "text-foreground" : "text-foreground/80")}>{item.category}</p>
+                      <p className="text-xs text-muted-foreground">{item.percentage.toFixed(0)}%</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+              No income data for selected period
             </div>
           )}
         </CardContent>
@@ -196,7 +261,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       </Card>
 
       {/* Daily Expenses Area Chart */}
-      <Card className="md:col-span-2">
+      <Card className="lg:col-span-3 md:col-span-2">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Daily Expenses & Income</CardTitle>
         </CardHeader>

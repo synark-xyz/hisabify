@@ -1,82 +1,81 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
-import { ReceiptScannerModal, type ScannedReceiptData } from '@/components/ReceiptScannerModal';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
-import { InputMethodSheet } from '@/components/InputMethodSheet';
-import { VoiceInputFlow } from '@/components/VoiceInputFlow';
 import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberpunkBackground } from '@/components/CyberpunkBackground';
 import { cn } from '@/lib/utils';
+import { emitTransactionUpdated } from '@/lib/transaction-events';
+
+const PAGE_TITLES: Record<string, string> = {
+    '/': 'Dashboard',
+    '/budget': 'Budget',
+    '/savings': 'Budget',
+    '/expenses': 'Transactions',
+    '/transactions': 'Transactions',
+    '/insights': 'Insights',
+    '/reports': 'Insights',
+    '/profile': 'Profile',
+    '/profile/personal': 'Personal Info',
+    '/profile/data': 'Data Management',
+    '/profile/invite': 'Invite Friends',
+    '/analytics': 'Insights',
+    '/debts': 'Debt Tracker',
+    '/activity': 'Activity History',
+    '/categories': 'Categories',
+    '/settings': 'Settings',
+    '/settings/preferences': 'Preferences',
+    '/settings/notifications': 'Notifications',
+    '/more': 'More',
+    '/more/calculator': 'Calculator',
+    '/more/loan': 'Loan Calculator',
+    '/more/discount': 'Discount & Tax',
+    '/more/currency': 'Currency Converter',
+};
+
+const getPageTitle = (pathname: string) => PAGE_TITLES[pathname] ?? 'Hisabify';
 
 export function Layout() {
     const [showManual, setShowManual] = useState(false);
-    const [showScanner, setShowScanner] = useState(false);
-    const [showInputSheet, setShowInputSheet] = useState(false);
-    const [showVoiceInput, setShowVoiceInput] = useState(false);
-    const [smartData, setSmartData] = useState<
-        { merchant?: string; amount?: number; category?: string; receiptUrl?: string | null; date?: Date; type?: 'expense' | 'income' } | undefined
-    >(undefined);
+    const scrollPositions = useRef<Record<string, number>>({});
+    const previousPath = useRef<string>('');
 
     const location = useLocation();
     const { variant } = useTheme();
     const { isKeyboardOpen } = useVisualViewport();
 
     useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        const currentPath = location.pathname;
+        const isNavigatingBack = previousPath.current && previousPath.current !== currentPath;
+        
+        if (isNavigatingBack && scrollPositions.current[previousPath.current]) {
+            window.scrollTo({ top: scrollPositions.current[previousPath.current], behavior: 'auto' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+        
+        scrollPositions.current[previousPath.current] = window.scrollY;
+        previousPath.current = currentPath;
     }, [location.pathname]);
 
     useEffect(() => {
-        const handleOpenInputSheet = () => setShowInputSheet(true);
-        window.addEventListener('open-input-sheet', handleOpenInputSheet);
-        return () => window.removeEventListener('open-input-sheet', handleOpenInputSheet);
+        const handleOpenModal = () => setShowManual(true);
+        window.addEventListener('open-input-sheet', handleOpenModal);
+        return () => window.removeEventListener('open-input-sheet', handleOpenModal);
     }, []);
-
-    // Generic Header Logic
-    const getPageTitle = (pathname: string) => {
-        switch (pathname) {
-            case '/': return 'Dashboard';
-            case '/budget': return 'Budget';
-            case '/savings': return 'Savings';
-            case '/expenses': return 'Expenses';
-            case '/reports': return 'Reports';
-            case '/profile': return 'Profile';
-            case '/profile/personal': return 'Personal Info';
-            case '/profile/data': return 'Data Management';
-            case '/profile/invite': return 'Invite Friends';
-            case '/analytics': return 'Analytics';
-            default: return 'Hisabify';
-        }
-    };
 
     const isProfileSubPage = location.pathname.startsWith('/profile/');
     const isProfileRootPage = location.pathname === '/profile';
-    const shouldShowBack = isProfileSubPage || isProfileRootPage;
-
-    // Input method handlers
-    const handleVoiceInput = () => {
-        setShowInputSheet(false);
-        setShowVoiceInput(true);
-    };
-
-    const handleReceiptInput = () => {
-        setShowInputSheet(false);
-        setShowScanner(true);
-    };
-
-    const handleManualInput = () => {
-        setShowInputSheet(false);
-        setSmartData(undefined);
-        setShowManual(true);
-    };
+    const isDebtPage = location.pathname === '/debts';
+    const isActivityPage = location.pathname === '/activity';
+    const shouldShowBack = isProfileSubPage || isProfileRootPage || isDebtPage || isActivityPage;
 
     return (
         <div className="min-h-screen relative">
-            {/* Common Animating Background (Cyberpunk only) */}
             {variant === 'cyberpunk' && <CyberpunkBackground />}
 
             <Header
@@ -101,11 +100,11 @@ export function Layout() {
 
             <BottomNavigation />
 
-            {/* Floating Action Button — fixed bottom-right, above nav bar */}
+            {/* Floating Action Button */}
             <AnimatePresence>
                 {!isKeyboardOpen && (
                     <motion.button
-                        onClick={() => setShowInputSheet(true)}
+                        onClick={() => setShowManual(true)}
                         aria-label="Add transaction"
                         data-testid="fab-button"
                         className="fixed right-4 z-50 w-14 h-14 rounded-full bg-accent text-white shadow-fab flex items-center justify-center"
@@ -122,55 +121,11 @@ export function Layout() {
                 )}
             </AnimatePresence>
 
-            {/* Input Method Selection Sheet */}
-            <InputMethodSheet
-                open={showInputSheet}
-                onOpenChange={setShowInputSheet}
-                onVoice={handleVoiceInput}
-                onReceipt={handleReceiptInput}
-                onManual={handleManualInput}
-            />
-
-            {/* Manual Entry Modal */}
             <AddTransactionModal
                 open={showManual}
                 onOpenChange={setShowManual}
-                initialType={smartData?.type}
-                initialData={smartData}
                 onSuccess={() => {
-                    window.dispatchEvent(new Event('transaction-updated'));
-                }}
-            />
-
-            {/* Voice Input Flow */}
-            <VoiceInputFlow
-                open={showVoiceInput}
-                onOpenChange={setShowVoiceInput}
-                onComplete={(data) => {
-                    setSmartData({
-                        merchant: data.merchant,
-                        amount: data.amount,
-                        type: data.type
-                    });
-                    setShowVoiceInput(false);
-                    setShowManual(true);
-                }}
-            />
-
-            {/* Receipt Scanner Modal */}
-            <ReceiptScannerModal
-                open={showScanner}
-                onOpenChange={setShowScanner}
-                onScanComplete={(data: ScannedReceiptData) => {
-                    setSmartData({
-                        merchant: data.merchant,
-                        amount: data.amount,
-                        date: data.date,
-                        receiptUrl: data.receiptUrl,
-                        type: 'expense'
-                    });
-                    setShowScanner(false);
-                    setShowManual(true);
+                    emitTransactionUpdated();
                 }}
             />
         </div>

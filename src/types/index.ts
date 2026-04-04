@@ -20,7 +20,21 @@ export interface Category {
   created_at: string;
   is_system_category?: boolean;
   category_type?: string;
+  type: 'expense' | 'income';
+  parent_id?: string | null;
+  usage_count?: number;
 }
+
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'cheque' | 'other';
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: 'Cash',
+  card: 'Card',
+  bank_transfer: 'Bank Transfer',
+  online: 'Online',
+  cheque: 'Cheque',
+  other: 'Other',
+};
 
 export interface Transaction {
   id: string;
@@ -29,7 +43,7 @@ export interface Transaction {
   category_id: string | null;
   merchant: string;
   amount: number;
-  type: 'expense' | 'income' | 'lend' | 'owe';
+  type: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
   date: string;
   note: string | null;
   created_at: string;
@@ -48,6 +62,31 @@ export interface Transaction {
   // Budget linkage
   budget_id?: string | null;
   savings_goal_id?: string | null;
+  custom_category_label?: string | null;
+  // Phase 1 additions
+  tags?: string[];
+  status?: 'cleared' | 'uncleared';
+  parent_transaction_id?: string | null;
+  is_split_child?: boolean;
+  // Phase 2 additions
+  payment_method?: PaymentMethod | null;
+  transfer_to_card_id?: string | null;
+  transfer_fee?: number | null;
+}
+
+export interface Debt {
+  id: string;
+  user_id: string;
+  person_name: string;
+  amount: number;
+  currency: string;
+  type: 'i_owe' | 'they_owe';
+  due_date: string | null;
+  status: 'outstanding' | 'partial' | 'settled';
+  amount_paid: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Budget {
@@ -58,6 +97,12 @@ export interface Budget {
   month: number;
   year: number;
   created_at: string;
+  updated_at: string;
+  name?: string;
+  period_type?: string;
+  start_date?: string;
+  end_date?: string;
+  is_template?: boolean;
   category?: Category;
 }
 
@@ -108,4 +153,45 @@ export interface PaymentReminder {
   note: string | null;
   created_at: string;
   updated_at?: string;
+}
+
+export type ActivityType =
+  | 'transaction_added'
+  | 'transaction_updated'
+  | 'transaction_deleted'
+  | 'debt_created'
+  | 'debt_settled'
+  | 'debt_updated'
+  | 'debt_deleted'
+  | 'budget_created'
+  | 'budget_updated'
+  | 'budget_deleted'
+  | 'savings_goal_created'
+  | 'savings_contribution'
+  | 'savings_goal_completed'
+  | 'savings_goal_archived'
+  | 'payment_reminder_created'
+  | 'payment_reminder_paid'
+  | 'payment_reminder_deleted'
+  | 'card_added'
+  | 'card_updated'
+  | 'card_deleted'
+  | 'recurring_expense_created'
+  | 'recurring_expense_updated'
+  | 'recurring_expense_deleted';
+
+export type EntityType = 'transaction' | 'debt' | 'budget' | 'savings_goal' | 'payment_reminder' | 'card' | 'recurring_expense';
+
+export interface ActivityLog {
+  id: string;
+  user_id: string;
+  activity_type: ActivityType;
+  entity_type: EntityType;
+  entity_id: string;
+  description: string;
+  amount: number | null;
+  currency: string | null;
+  metadata: Record<string, unknown> | null;
+  group_id: string | null;
+  created_at: string;
 }

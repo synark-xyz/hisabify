@@ -16,13 +16,11 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
-import { AnalyticsPage } from "@/pages/AnalyticsPage";
+import { InsightsPage } from "@/pages/InsightsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { AuthPage } from "@/pages/AuthPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { BudgetPage } from "@/pages/BudgetPage";
-import SavingsPage from "@/pages/SavingsPage";
-import ReportsPage from "@/pages/ReportsPage";
 import { InstallPage } from "@/pages/InstallPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -39,6 +37,14 @@ import { FaqPage } from "@/pages/FaqPage";
 import { PersonalPage } from "@/pages/profile/PersonalPage";
 import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
+import { DebtPage } from "@/pages/DebtPage";
+import { ActivityHistoryPage } from "@/pages/ActivityHistoryPage";
+import { CategoriesPage } from "@/pages/CategoriesPage";
+import { MorePage } from "@/pages/MorePage";
+import { CalculatorPage } from "@/pages/more/CalculatorPage";
+import { LoanCalculatorPage } from "@/pages/more/LoanCalculatorPage";
+import { DiscountTaxCalculatorPage } from "@/pages/more/DiscountTaxCalculatorPage";
+import { CurrencyConverterPage } from "@/pages/more/CurrencyConverterPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
@@ -176,15 +182,25 @@ function AppRoutes() {
         }
       >
         <Route path="/" element={<Dashboard />} />
-        <Route path="/expenses" element={<ExpensesPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/transactions" element={<ExpensesPage />} />
+        <Route path="/expenses" element={<Navigate to="/transactions" replace />} />
+        <Route path="/insights" element={<InsightsPage />} />
+        <Route path="/analytics" element={<Navigate to="/insights?tab=analytics" replace />} />
         <Route path="/budget" element={<BudgetPage />} />
-        <Route path="/savings" element={<SavingsPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/savings" element={<Navigate to="/budget?tab=goals" replace />} />
+        <Route path="/reports" element={<Navigate to="/insights?tab=reports" replace />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/personal" element={<PersonalPage />} />
         <Route path="/profile/data" element={<DataPage />} />
         <Route path="/profile/invite" element={<ReferralsPage />} />
+        <Route path="/debts" element={<DebtPage />} />
+        <Route path="/activity" element={<ActivityHistoryPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/more" element={<MorePage />} />
+        <Route path="/more/calculator" element={<CalculatorPage />} />
+        <Route path="/more/loan" element={<LoanCalculatorPage />} />
+        <Route path="/more/discount" element={<DiscountTaxCalculatorPage />} />
+        <Route path="/more/currency" element={<CurrencyConverterPage />} />
       </Route>
 
       {/* Pages without Main Layout (No double header) */}
@@ -276,7 +292,7 @@ function RootLogic() {
   // Clear stale WebView session on fresh install
   useEffect(() => {
     clearStaleSessionOnFreshInstall().catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   // Handle Android back button — navigates back in history; exits on double-back from root
   useAndroidBackButton(navigate);

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { List, HandCoins, Target, LayoutDashboardIcon, FileBarChart } from 'lucide-react';
+import { List, Target, LayoutDashboardIcon, Lightbulb, Grid } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
@@ -8,9 +8,9 @@ import { useVisualViewport } from '@/hooks/useVisualViewport';
 const navItems = [
   { path: '/', icon: LayoutDashboardIcon, label: 'Dashboard' },
   { path: '/budget', icon: Target, label: 'Budget' },
-  { path: '/expenses', icon: List, label: 'Expenses' },
-  { path: '/savings', icon: HandCoins, label: 'Savings' },
-  { path: '/reports', icon: FileBarChart, label: 'Reports' },
+  { path: '/transactions', icon: List, label: 'Transactions' },
+  { path: '/insights', icon: Lightbulb, label: 'Insights' },
+  { path: '/more', icon: Grid, label: 'More' },
 ];
 
 export function BottomNavigation() {
@@ -30,7 +30,7 @@ export function BottomNavigation() {
         >
       <div className="max-w-2xl mx-auto grid grid-cols-5 items-center h-20 md:h-20 relative">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/') && item.path !== '/';
           const Icon = item.icon;
 
           return (

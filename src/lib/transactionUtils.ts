@@ -4,7 +4,9 @@ import { Transaction } from "@/types";
  * Returns true if the transaction is a real expense (not a savings contribution).
  * Savings contributions are stored as type 'expense' but have a savings_goal_id set.
  */
-export function isRealExpense(tx: { type: string; savings_goal_id?: string | null }): boolean {
+export function isRealExpense(tx: { type: string; savings_goal_id?: string | null; is_split_child?: boolean | null }): boolean {
+  // Exclude split children — the parent already carries the total amount
+  if (tx.is_split_child === true) return false;
   return (tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe') && !tx.savings_goal_id;
 }
 

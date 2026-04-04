@@ -176,6 +176,9 @@ export function BudgetHistoryChart() {
                   dot={{ r: 3, strokeWidth: 0, fill: 'hsl(var(--muted-foreground) / 0.75)' }}
                   activeDot={{ r: 5, strokeWidth: 0, fill: 'hsl(var(--muted-foreground) / 0.95)' }}
                   filter="url(#lineGlowMuted)"
+                  isAnimationActive={true}
+                  animationDuration={1500}
+                  animationEasing="ease-out"
                 />
                 <Line
                   dataKey="spent"
@@ -188,6 +191,9 @@ export function BudgetHistoryChart() {
                   dot={{ r: 3.5, strokeWidth: 0, fill: 'hsl(var(--primary))' }}
                   activeDot={{ r: 6, strokeWidth: 0, fill: 'hsl(var(--primary))' }}
                   filter="url(#lineGlowPrimary)"
+                  isAnimationActive={true}
+                  animationDuration={1500}
+                  animationEasing="ease-out"
                 />
               </LineChart>
             </ResponsiveContainer>

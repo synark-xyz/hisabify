@@ -16,8 +16,9 @@ import {
   Buildings,
   CreditCard,
   User,
+  Bell,
 } from '@phosphor-icons/react';
-import { Transaction } from '@/types';
+import { Transaction, Category } from '@/types';
 import { format } from 'date-fns';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
@@ -29,8 +30,11 @@ interface TransactionItemProps {
   index?: number;
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (transaction: Transaction) => void;
+  onAddReminder?: (transaction: Transaction) => void;
+  onViewDetails?: (transaction: Transaction) => void;
   revealedId?: string | null;
   onReveal?: (id: string | null) => void;
+  categoriesMap?: Map<string, Category>;
 }
 
 type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
@@ -52,7 +56,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string, weight?:
   'owe': Bank,
 };
 
-export function TransactionItem({ transaction, index = 0, onEdit, onDelete, revealedId, onReveal }: TransactionItemProps) {
+export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAddReminder, onViewDetails, revealedId, onReveal, categoriesMap }: TransactionItemProps) {
   const { currency, formatAmount } = useCurrency();
   const { variant } = useTheme();
 
@@ -63,6 +67,35 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
 
   const categoryName = getTransactionCategoryName(transaction);
   const categoryColor = getTransactionCategoryColor(transaction);
+
+  // Resolve parent category name for sub-category display
+  const parentCategoryName = (() => {
+    const parentId = transaction.category?.parent_id;
+    if (!parentId || !categoriesMap) return null;
+    return categoriesMap.get(parentId)?.name ?? null;
+  })();
+
+  const displayCategoryLabel = parentCategoryName
+    ? `${parentCategoryName} › ${categoryName}`
+    : categoryName;
+
+  // Parse payer/payee/splitWith from note
+  const noteMeta = (() => {
+    const n = transaction.note || '';
+    const payerMatch = n.match(/\[payer:([^\]]+)\]/);
+    const payeeMatch = n.match(/\[payee:([^\]]+)\]/);
+    const splitMatch = n.match(/\[split_with:([^\]]+)\]/);
+    return {
+      payer: payerMatch?.[1] ?? null,
+      payee: payeeMatch?.[1] ?? null,
+      splitWith: splitMatch?.[1] ?? null,
+    };
+  })();
+
+  // Tags display — limit to first 3 + overflow chip
+  const tags = transaction.tags ?? [];
+  const visibleTags = tags.slice(0, 3);
+  const overflowCount = tags.length - visibleTags.length;
 
   // Map category icons or use defaults based on keywords
   const getIcon = () => {
@@ -218,7 +251,14 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
         dragElastic={0.15}
         dragMomentum={false}
         onDragEnd={handleDragEnd}
-        onClick={() => actualRevealed && (onReveal ? onReveal(null) : setInternalRevealed(false))}
+        onClick={() => {
+          if (actualRevealed) {
+            if (onReveal) onReveal(null);
+            else setInternalRevealed(false);
+          } else {
+            onViewDetails?.(transaction);
+          }
+        }}
       >
         <motion.div
           className="w-12 h-12 rounded-xl flex items-center justify-center shadow-inner"
@@ -236,7 +276,39 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
         </motion.div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-foreground truncate tracking-tight">{transaction.merchant}</p>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-70">{categoryName}</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider opacity-70">{displayCategoryLabel}</p>
+          {(visibleTags.length > 0 || noteMeta.payer || noteMeta.payee || noteMeta.splitWith) && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {noteMeta.payer && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 font-medium">
+                  Payer: {noteMeta.payer}
+                </span>
+              )}
+              {noteMeta.payee && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">
+                  Payee: {noteMeta.payee}
+                </span>
+              )}
+              {noteMeta.splitWith && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-500 font-medium">
+                  Split: {noteMeta.splitWith}
+                </span>
+              )}
+              {visibleTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent/80 font-medium"
+                >
+                  {tag}
+                </span>
+              ))}
+              {overflowCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent/80 font-medium">
+                  +{overflowCount}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="text-right">
           {/* Main amount in user's base currency */}
@@ -252,7 +324,29 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, reve
               ≈ {originalSymbol}{Math.abs(originalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           )}
-          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">{formattedDate}</p>
+          <div className="flex items-center justify-end gap-1.5 mt-0.5">
+            <p className="text-[10px] font-medium text-muted-foreground">{formattedDate}</p>
+            {onAddReminder && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddReminder(transaction);
+                }}
+                className="text-muted-foreground/50 hover:text-accent transition-colors"
+                aria-label="Add reminder"
+              >
+                <Bell className="w-3.5 h-3.5" weight="regular" />
+              </button>
+            )}
+          </div>
+          {transaction.status === 'uncleared' && (
+            <div className="flex justify-end mt-0.5">
+              <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold uppercase tracking-wider">
+                Uncleared
+              </span>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

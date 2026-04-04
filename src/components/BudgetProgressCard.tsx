@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
-import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard, PiggyBank, ArrowUpRight } from 'lucide-react';
+import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard, ArrowUpRight, HandCoins } from 'lucide-react';
 import { BudgetSpendingChart } from '@/components/BudgetSpendingChart';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
-import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -70,8 +70,7 @@ const getStatusLabel = (status: BudgetStatus): string => {
 };
 
 export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransactions, onViewInExpenses, onPayNow, onSaveAsTemplate, onMoveLeftoverToSavings, savingsReserved = 0 }: BudgetProgressCardProps) {
-  const { currency } = useCurrency();
-  const currencySymbol = currencyData[currency]?.symbol || '$';
+  const { formatAmount } = useCurrency();
 
   const Icon = budget.category?.icon
     ? iconMap[budget.category.icon] || CircleDot
@@ -140,7 +139,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
                 {onViewInExpenses && (
                   <DropdownMenuItem onClick={() => onViewInExpenses(budget)}>
                     <ArrowUpRight className="mr-2 h-4 w-4" />
-                    View in Expenses
+                    View in Transactions
                   </DropdownMenuItem>
                 )}
 
@@ -153,7 +152,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
 
                 {onMoveLeftoverToSavings && budget.remaining > 0 && (
                   <DropdownMenuItem onClick={() => onMoveLeftoverToSavings(budget)}>
-                    <PiggyBank className="mr-2 h-4 w-4" />
+                    <HandCoins className="mr-2 h-4 w-4" />
                     Move Leftover to Savings
                   </DropdownMenuItem>
                 )}
@@ -187,19 +186,19 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
           <div className="text-center p-2 rounded-lg bg-muted/50">
             <p className="text-xs text-muted-foreground mb-1">Spent</p>
             <p className="font-bold text-foreground">
-              {currencySymbol}{budget.spent.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              {formatAmount(budget.spent)}
             </p>
           </div>
           <div className="text-center p-2 rounded-lg bg-muted/50">
             <p className="text-xs text-muted-foreground mb-1">Budget</p>
             <p className="font-semibold text-foreground">
-              {currencySymbol}{budget.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              {formatAmount(budget.amount)}
             </p>
           </div>
           <div className={cn("text-center p-2 rounded-lg", isUpcoming ? 'bg-muted/50' : getStatusBgColor(budget.status))}>
             <p className="text-xs text-muted-foreground mb-1">Remaining</p>
             <p className="font-bold" style={{ color: statusColor }}>
-              {currencySymbol}{budget.remaining.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              {formatAmount(budget.remaining)}
             </p>
           </div>
         </div>
@@ -209,7 +208,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Savings Reserved</span>
               <span className="font-semibold text-foreground">
-                {currencySymbol}{savingsReserved.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                {formatAmount(savingsReserved)}
               </span>
             </div>
           </div>

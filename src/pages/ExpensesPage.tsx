@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
@@ -9,7 +9,9 @@ import { ExpenseOverview } from '@/components/ExpenseOverview';
 import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
+import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
+import { AddPaymentReminderModal } from '@/components/AddPaymentReminderModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { getTransactionCategoryName, getTransactionCategoryColor, isRealExpense } from '@/lib/transactionUtils';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,9 +20,11 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTheme } from '@/hooks/useTheme';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
-import { Transaction, CategorySpending, Card, Category } from '@/types';
+import { Transaction, CategorySpending, Card, Category, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
 import { getViewRange, type TransactionViewMode } from '@/lib/transactionDateRange';
+import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
 import { enforceHistoryWindow } from '@/lib/historyLimits';
 import { emitTransactionUpdated } from '@/lib/transaction-events';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
@@ -32,6 +36,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   format,
   isSameDay,
@@ -55,19 +60,29 @@ interface ConvertedTransaction extends Transaction {
 const FILTERABLE_TYPES = ['all', 'expense', 'income', 'lend', 'owe'] as const;
 type FilterType = typeof FILTERABLE_TYPES[number];
 
+export type GroupByOption = 'none' | 'category' | 'paymentMethod' | 'status' | 'merchant';
+
 export function ExpensesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [anchorDate, setAnchorDate] = useState(new Date());
   const [focusedDate, setFocusedDate] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<TransactionViewMode>('week');
+  const [viewMode, setViewMode] = useState<TransactionViewMode>('month');
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
-  const [showTransactionList, setShowTransactionList] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<FilterType>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>('all');
   const [cardFilter, setCardFilter] = useState<string>('all');
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [showUnclearedOnly, setShowUnclearedOnly] = useState(false);
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<PaymentMethod | 'all'>('all');
+  const [groupBy, setGroupBy] = useState<GroupByOption>('none');
+  const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const [reminderTransaction, setReminderTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const latestRequestIdRef = useRef(0);
   const hasShownHistoryClampToastRef = useRef(false);
@@ -80,6 +95,7 @@ export function ExpensesPage() {
   const { variant } = useTheme();
   const { isPremium } = useSubscription();
   const { toast } = useToast();
+  const { categories: allCategories } = useCategories();
 
   // ── Apply URL search params on mount ────────────────────────────────────
   useEffect(() => {
@@ -172,13 +188,22 @@ export function ExpensesPage() {
 
     const { data, error } = await supabase
       .from('transactions')
-      .select('*, category:categories(*), card:cards(*)')
+      .select('*, category:categories(*), card:cards!transactions_card_id_fkey(*)')
       .eq('user_id', user.id)
-      .gte('date', effectiveRange.from.toISOString())
-      .lte('date', effectiveRange.to.toISOString())
+      .gte('date', effectiveRange.from.toISOString().split('T')[0])
+      .lte('date', effectiveRange.to.toISOString().split('T')[0])
       .order('date', { ascending: false });
 
-    if (error || !data || requestId !== latestRequestIdRef.current) {
+    if (error) {
+      console.error('[ExpensesPage] Error fetching transactions:', error);
+      return;
+    }
+
+    if (!data) {
+      return;
+    }
+
+    if (requestId !== latestRequestIdRef.current) {
       return;
     }
 
@@ -243,8 +268,8 @@ export function ExpensesPage() {
   const categoryOptions = useMemo(() => {
     const map = new Map<string, Category>();
     for (const tx of rangeTransactions) {
-      if (tx.category?.id && !map.has(tx.category.id)) {
-        map.set(tx.category.id, tx.category);
+      if (tx.category?.id && !map.has(tx.category.id) && !tx.category.parent_id) {
+        map.set(tx.category.id, tx.category as Category);
       }
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -260,6 +285,30 @@ export function ExpensesPage() {
     return Array.from(map.values()).sort((a, b) => a.card_holder.localeCompare(b.card_holder));
   }, [rangeTransactions]);
 
+  // Build a full category map for TransactionItem parent-name lookups.
+  // Uses allCategories so parent categories outside the current date window are still available.
+  const categoriesMap = useMemo(
+    () => new Map<string, Category>(allCategories.map((c) => [c.id, c])),
+    [allCategories]
+  );
+
+  // Sub-category options — only children of the currently selected parent category
+  const subCategoryOptions = useMemo(() => {
+    if (categoryFilter === 'all') return [];
+    return allCategories.filter((c) => c.parent_id === categoryFilter);
+  }, [allCategories, categoryFilter]);
+
+  // Map of parent category id → child categories, used in filteredTransactions
+  const subCategoriesMap = useMemo(() => {
+    const map = new Map<string, Category[]>();
+    allCategories.filter((c) => c.parent_id).forEach((c) => {
+      const kids = map.get(c.parent_id!) ?? [];
+      kids.push(c);
+      map.set(c.parent_id!, kids);
+    });
+    return map;
+  }, [allCategories]);
+
   // Resolve deferred categoryName filter once categories are loaded
   useEffect(() => {
     if (pendingCategoryNameRef.current && categoryOptions.length > 0) {
@@ -267,10 +316,32 @@ export function ExpensesPage() {
       const match = categoryOptions.find((c) => c.name.toLowerCase() === name);
       if (match) {
         setCategoryFilter(match.id);
+        setShowFilters(true);
       }
       pendingCategoryNameRef.current = null;
     }
   }, [categoryOptions]);
+
+  // Reset sub-category when parent category changes
+  useEffect(() => {
+    setSubCategoryFilter('all');
+  }, [categoryFilter]);
+
+  // Auto-open filters panel when any filter is active
+  useEffect(() => {
+    if (
+      typeFilter !== 'all' ||
+      categoryFilter !== 'all' ||
+      subCategoryFilter !== 'all' ||
+      cardFilter !== 'all' ||
+      filterTags.length > 0 ||
+      showUnclearedOnly ||
+      filterPaymentMethod !== 'all' ||
+      pendingCategoryNameRef.current
+    ) {
+      setShowFilters(true);
+    }
+  }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly, filterPaymentMethod]);
 
   useEffect(() => {
     if (categoryFilter === 'all') {
@@ -302,11 +373,34 @@ export function ExpensesPage() {
         return false;
       }
 
-      if (categoryFilter !== 'all' && tx.category_id !== categoryFilter) {
-        return false;
+      // When a sub-category filter is active, match that sub-category exactly
+      if (subCategoryFilter !== 'all') {
+        if (tx.category_id !== subCategoryFilter) return false;
+      } else if (categoryFilter !== 'all') {
+        // When only parent category filter is active, match parent OR any of its children
+        const childIds = subCategoriesMap.get(categoryFilter)?.map((c) => c.id) ?? [];
+        if (tx.category_id !== categoryFilter && !childIds.includes(tx.category_id ?? '')) return false;
       }
 
       if (cardFilter !== 'all' && tx.card_id !== cardFilter) {
+        return false;
+      }
+
+      // Tag filter — at least one tag must match
+      if (filterTags.length > 0) {
+        const txTags = tx.tags ?? [];
+        if (!filterTags.some((tag) => txTags.includes(tag))) {
+          return false;
+        }
+      }
+
+      // Uncleared only filter
+      if (showUnclearedOnly && tx.status !== 'uncleared') {
+        return false;
+      }
+
+      // Payment method filter
+      if (filterPaymentMethod !== 'all' && tx.payment_method !== filterPaymentMethod) {
         return false;
       }
 
@@ -320,7 +414,7 @@ export function ExpensesPage() {
 
       return merchant.includes(query) || note.includes(query) || categoryName.includes(query);
     });
-  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, cardFilter]);
+  }, [listBaseTransactions, searchQuery, typeFilter, categoryFilter, subCategoryFilter, subCategoriesMap, cardFilter, filterTags, showUnclearedOnly, filterPaymentMethod]);
 
   const totalIncome = filteredTransactions
     .filter((tx) => tx.type === 'income')
@@ -329,6 +423,71 @@ export function ExpensesPage() {
   const totalExpense = filteredTransactions
     .filter(isRealExpense)
     .reduce((sum, tx) => sum + tx.convertedAmount, 0);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (typeFilter !== 'all') count++;
+    if (categoryFilter !== 'all') count++;
+    if (subCategoryFilter !== 'all') count++;
+    if (cardFilter !== 'all') count++;
+    if (filterTags.length > 0) count++;
+    if (showUnclearedOnly) count++;
+    if (filterPaymentMethod !== 'all') count++;
+    return count;
+  }, [typeFilter, categoryFilter, subCategoryFilter, cardFilter, filterTags, showUnclearedOnly, filterPaymentMethod]);
+
+  const groupedTransactions = useMemo(() => {
+    if (groupBy === 'none') {
+      return { type: 'flat' as const, items: filteredTransactions };
+    }
+
+    const groups = new Map<string, ConvertedTransaction[]>();
+    
+    filteredTransactions.forEach((tx) => {
+      let key: string;
+      switch (groupBy) {
+        case 'category':
+          key = tx.category?.name || 'Other';
+          break;
+        case 'paymentMethod':
+          key = tx.payment_method ? PAYMENT_METHOD_LABELS[tx.payment_method] || tx.payment_method : 'Not set';
+          break;
+        case 'status':
+          key = tx.status === 'uncleared' ? 'Uncleared' : 'Cleared';
+          break;
+        case 'merchant':
+          key = tx.merchant || 'Unknown';
+          break;
+        default:
+          key = 'Other';
+      }
+      
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(tx);
+    });
+
+    const sortedGroups = Array.from(groups.entries())
+      .map(([key, txs]) => ({
+        key,
+        transactions: txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        total: txs.reduce((sum, tx) => sum + tx.convertedAmount, 0),
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    return { type: 'grouped' as const, groups: sortedGroups };
+  }, [filteredTransactions, groupBy]);
+
+  const formatAmount = useCallback((amount: number) => {
+    const locale = currency === 'USD' ? 'en-US' : 'en-US';
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: currency === 'JPY' || currency === 'KRW' || currency === 'VND' ? 0 : 2,
+      maximumFractionDigits: currency === 'JPY' || currency === 'KRW' || currency === 'VND' ? 0 : 2,
+    }).format(amount);
+  }, [currency]);
 
   const categoryData: CategorySpending[] = Object.values(
     filteredTransactions
@@ -507,32 +666,9 @@ export function ExpensesPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <motion.button
-                          className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-accent/10 transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <span className="text-xl font-bold text-foreground">{format(anchorDate, 'MMMM')}</span>
-                          <ChevronDown className="w-4 h-4 text-foreground" />
-                        </motion.button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="center" className="max-h-[300px] overflow-y-auto">
-                        {Array.from({ length: 12 }, (_, i) => i).map((monthIndex) => {
-                          const monthDate = setMonth(new Date(), monthIndex);
-                          return (
-                            <DropdownMenuItem
-                              key={monthIndex}
-                              onClick={() => setAnchorDate(setMonth(anchorDate, monthIndex))}
-                              className={anchorDate.getMonth() === monthIndex ? 'bg-accent/10' : ''}
-                            >
-                              {format(monthDate, 'MMMM')}
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <span className="text-xl font-bold text-foreground select-none">
+                      {format(anchorDate, 'MMMM yyyy')}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-full">
@@ -593,52 +729,29 @@ export function ExpensesPage() {
                 </motion.button>
               </div>
 
-              <AnimatePresence mode="wait">
-                {viewMode === 'week' || viewMode === 'day' ? (
-                  <motion.div
-                    key="week-calendar"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                  >
-                    <SwipeableWeekCalendar
-                      currentDate={anchorDate}
-                      selectedDate={effectiveFocusedDate}
-                      onDateSelect={handleDateSelect}
-                      onWeekChange={handleWeekChange}
-                      hasTransactions={hasTransactions}
-                    />
-                  </motion.div>
-                ) : viewMode === 'month' ? (
-                  <motion.div
-                    key="month-calendar"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                  >
-                    <MonthCalendar
-                      currentDate={anchorDate}
-                      selectedDate={effectiveFocusedDate}
-                      onDateSelect={handleDateSelect}
-                      onMonthChange={setAnchorDate}
-                      hasTransactions={hasTransactions}
-                    />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="year-view"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="text-center py-4 text-muted-foreground text-sm"
-                  >
-                    Viewing all transactions for {anchorDate.getFullYear()}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {viewMode === 'week' || viewMode === 'day' ? (
+                <SwipeableWeekCalendar
+                  currentDate={anchorDate}
+                  selectedDate={effectiveFocusedDate}
+                  onDateSelect={handleDateSelect}
+                  onWeekChange={handleWeekChange}
+                  hasTransactions={hasTransactions}
+                  isSelectable={viewMode === 'day'}
+                />
+              ) : viewMode === 'month' ? (
+                <MonthCalendar
+                  currentDate={anchorDate}
+                  selectedDate={effectiveFocusedDate}
+                  onDateSelect={handleDateSelect}
+                  onMonthChange={setAnchorDate}
+                  hasTransactions={hasTransactions}
+                  isSelectable={false}
+                />
+              ) : (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  Viewing all transactions for {anchorDate.getFullYear()}
+                </div>
+              )}
             </motion.div>
 
             <motion.div variants={itemVariants}>
@@ -679,148 +792,434 @@ export function ExpensesPage() {
               <ExpenseOverview totalSalary={totalIncome} totalExpense={totalExpense} />
             </motion.div>
 
+            {/* Spending Breakdown Section - Collapsible */}
             <motion.section variants={itemVariants} className="space-y-3">
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by description, note, or category"
-              />
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <Select value={typeFilter} onValueChange={(value: FilterType) => setTypeFilter(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
-                    <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="lend">Lend</SelectItem>
-                    <SelectItem value="owe">Owe</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-foreground">Spending Breakdown</h2>
+                {categoryData.length > 0 && (
+                  <motion.button
+                    onClick={() => setShowBreakdown(!showBreakdown)}
+                    className="p-2 hover:bg-muted rounded-full transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <ChevronDown className={cn("w-4 h-4 transition-transform", showBreakdown && "rotate-180")} />
+                  </motion.button>
+                )}
+              </div>
 
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categoryOptions.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {categoryData.length === 0 ? (
+                <div className="bg-card rounded-2xl p-6 text-center shadow-card">
+                  <span className="text-4xl">📊</span>
+                  <p className="text-muted-foreground mt-2 text-sm">No expense data to visualize</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Add transactions to see breakdown</p>
+                </div>
+              ) : (
+                <>
+                  {/* Collapsed summary - top 3 categories */}
+                  {!showBreakdown && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="bg-card rounded-2xl p-4 shadow-card"
+                    >
+                      <div className="flex flex-wrap gap-2">
+                        {categoryData.slice(0, 3).map((cat) => (
+                          <div key={cat.name} className="flex items-center gap-1.5">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                            <span className="text-xs font-medium text-muted-foreground">{cat.name}</span>
+                            <span className="text-xs font-semibold">{formatAmount(cat.amount)}</span>
+                          </div>
+                        ))}
+                        {categoryData.length > 3 && (
+                          <span className="text-xs text-muted-foreground">+{categoryData.length - 3} more</span>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
 
-                <Select value={cardFilter} onValueChange={setCardFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Card" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Cards</SelectItem>
-                    {cardOptions.map((card) => (
-                      <SelectItem key={card.id} value={card.id}>
-                        {card.card_holder} •••• {card.last_four || card.card_number.slice(-4)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {/* Expanded chart */}
+                  <AnimatePresence>
+                    {showBreakdown && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <ExpenseDonutChart data={categoryData} timeframeKey={timeframeKey} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
+            </motion.section>
+
+            {/* Search and Filters Section */}
+            <motion.section variants={itemVariants} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search by merchant, keywords etc."
+                  className="flex-1"
+                />
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setTypeFilter('all');
-                    setCategoryFilter('all');
-                    setCardFilter('all');
-                  }}
-                  className="text-sm rounded-md border border-border px-3 py-2 hover:bg-muted transition-colors"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium transition-colors whitespace-nowrap",
+                    showFilters || activeFilterCount > 0 ? "bg-accent/10 border-accent/30" : "hover:bg-muted"
+                  )}
                 >
-                  Clear Filters
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>{activeFilterCount > 0 ? `Filters · ${activeFilterCount}` : 'Filters'}</span>
                 </button>
               </div>
-            </motion.section>
 
-            <motion.section variants={itemVariants}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-foreground">
-                  {isDateFocused
-                    ? 'Daily Analytics'
-                    : viewMode === 'day'
-                      ? 'Daily Analytics'
-                      : viewMode === 'week'
-                        ? 'Weekly Analytics'
-                        : viewMode === 'month'
-                          ? 'Monthly Analytics'
-                          : 'Yearly Analytics'}
-                </h2>
-                <motion.button
-                  onClick={() => setShowTransactionList(!showTransactionList)}
-                  className="text-sm text-muted-foreground hover:text-accent transition-colors"
-                  whileHover={{ x: 4 }}
-                >
-                  {showTransactionList ? 'Show Chart' : 'View All'}
-                </motion.button>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {showTransactionList ? (
+              <AnimatePresence>
+                {showFilters && (
                   <motion.div
-                    key="transaction-list"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-3"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-2"
                   >
-                    {filteredTransactions.length > 0 ? (
-                      filteredTransactions.map((tx, index) => (
-                        <motion.div
-                          key={tx.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <Select
+                        value={typeFilter}
+                        onValueChange={(value: FilterType) => {
+                          setTypeFilter(value);
+                          if (value !== 'all') setShowFilters(true);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="expense">Expense</SelectItem>
+                          <SelectItem value="income">Income</SelectItem>
+                          <SelectItem value="lend">Lend</SelectItem>
+                          <SelectItem value="owe">Owe</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={categoryFilter}
+                        onValueChange={(value) => {
+                          setCategoryFilter(value);
+                          if (value !== 'all') setShowFilters(true);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {categoryOptions.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {subCategoryOptions.length > 0 && (
+                        <Select
+                          value={subCategoryFilter}
+                          onValueChange={(value) => {
+                            setSubCategoryFilter(value);
+                          }}
                         >
-                          <TransactionItem
-                            transaction={tx}
-                            onEdit={setEditingTransaction}
-                            onDelete={setDeletingTransaction}
-                            revealedId={revealedTransactionId}
-                            onReveal={setRevealedTransactionId}
-                          />
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="bg-card rounded-2xl p-8 text-center shadow-card">
-                        <span className="text-5xl">💸</span>
-                        <p className="text-muted-foreground mt-3">No transactions found</p>
-                        <p className="text-sm text-muted-foreground/70 mt-1">Try adjusting your search or filters</p>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sub-category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Sub-categories</SelectItem>
+                            {subCategoryOptions.map((sub) => (
+                              <SelectItem key={sub.id} value={sub.id}>
+                                {sub.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      <Select
+                        value={cardFilter}
+                        onValueChange={(value) => {
+                          setCardFilter(value);
+                          if (value !== 'all') setShowFilters(true);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Card" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Cards</SelectItem>
+                          {cardOptions.map((card) => (
+                            <SelectItem key={card.id} value={card.id}>
+                              {card.card_holder} •••• {card.last_four || card.card_number.slice(-4)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={groupBy}
+                        onValueChange={(value: GroupByOption) => setGroupBy(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Group by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No grouping</SelectItem>
+                          <SelectItem value="category">Category</SelectItem>
+                          <SelectItem value="paymentMethod">Payment Method</SelectItem>
+                          <SelectItem value="status">Status</SelectItem>
+                          <SelectItem value="merchant">Merchant</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Tag filter */}
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">Tags</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {PREDEFINED_TAGS.map((tag) => {
+                          const isActive = filterTags.includes(tag);
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => {
+                                setFilterTags((prev) =>
+                                  isActive ? prev.filter((t) => t !== tag) : [...prev, tag]
+                                );
+                              }}
+                              className={cn(
+                                'text-[11px] px-2 py-1 rounded-full border font-medium transition-colors',
+                                isActive
+                                  ? 'bg-accent/20 border-accent/40 text-accent'
+                                  : 'bg-muted/30 border-border text-muted-foreground hover:border-accent/30 hover:text-foreground'
+                              )}
+                            >
+                              {tag}
+                            </button>
+                          );
+                        })}
                       </div>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="pie-chart"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                  >
-                    {categoryData.length > 0 ? (
-                      <ExpenseDonutChart data={categoryData} timeframeKey={timeframeKey} />
-                    ) : (
-                      <div className="bg-card rounded-2xl p-8 text-center shadow-card">
-                        <span className="text-5xl">📊</span>
-                        <p className="text-muted-foreground mt-3">No data to visualize</p>
-                        <p className="text-sm text-muted-foreground/70 mt-1">Add transactions to see analytics</p>
+                    </div>
+
+                    {/* Payment method filter */}
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">Payment Method</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([method, label]) => (
+                          <button
+                            key={method}
+                            type="button"
+                            onClick={() => setFilterPaymentMethod(filterPaymentMethod === method ? 'all' : method)}
+                            className={cn(
+                              'text-[11px] px-2 py-1 rounded-full border font-medium transition-colors',
+                              filterPaymentMethod === method
+                                ? 'bg-accent/20 border-accent/40 text-accent'
+                                : 'bg-muted/30 border-border text-muted-foreground hover:border-accent/30 hover:text-foreground'
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
                       </div>
-                    )}
+                    </div>
+
+                    {/* Uncleared only toggle */}
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="uncleared-toggle"
+                        className="text-sm font-medium text-foreground cursor-pointer"
+                      >
+                        Show uncleared only
+                      </label>
+                      <Switch
+                        id="uncleared-toggle"
+                        checked={showUnclearedOnly}
+                        onCheckedChange={setShowUnclearedOnly}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setTypeFilter('all');
+                        setCategoryFilter('all');
+                        setSubCategoryFilter('all');
+                        setCardFilter('all');
+                        setFilterTags([]);
+                        setShowUnclearedOnly(false);
+                        setFilterPaymentMethod('all');
+                        setGroupBy('none');
+                        setShowFilters(false);
+                      }}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+                    >
+                      Clear all filters
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.section>
+
+            {/* Transactions Section */}
+            <motion.section variants={itemVariants}>
+              <div className="flex items-center mb-4">
+                <h2 className="text-lg font-bold text-foreground">Transactions</h2>
+                <span className="text-xs text-muted-foreground ml-2">
+                  {viewMode === 'day' || effectiveFocusedDate
+                    ? format(effectiveFocusedDate || anchorDate, 'MMM d, yyyy')
+                    : viewMode === 'week'
+                      ? 'This Week'
+                      : viewMode === 'month'
+                        ? format(anchorDate, 'MMMM yyyy')
+                        : format(anchorDate, 'yyyy')}
+                </span>
+              </div>
+
+              {groupedTransactions.type === 'flat' && groupedTransactions.items.length > 0 ? (
+                <div className="space-y-3">
+                  {groupedTransactions.items.map((tx) => (
+                    <TransactionItem
+                      key={tx.id}
+                      transaction={tx}
+                      onViewDetails={setViewingTransaction}
+                      onEdit={setEditingTransaction}
+                      onDelete={setDeletingTransaction}
+                      revealedId={revealedTransactionId}
+                      onReveal={setRevealedTransactionId}
+                      categoriesMap={categoriesMap}
+                    />
+                  ))}
+                </div>
+              ) : groupedTransactions.type === 'grouped' && groupedTransactions.groups.length > 0 ? (
+                <div className="space-y-4">
+                  {groupedTransactions.groups.map((group) => (
+                    <div key={group.key} className="space-y-2">
+                      <div className="flex items-center justify-between px-1">
+                        <h3 className="text-sm font-semibold text-muted-foreground">{group.key}</h3>
+                        <span className="text-sm font-medium text-foreground">{formatAmount(group.total)}</span>
+                      </div>
+                      <div className="space-y-2 bg-card/50 rounded-xl p-2">
+                        {group.transactions.map((tx) => (
+                          <TransactionItem
+                            key={tx.id}
+                            transaction={tx}
+                            onViewDetails={setViewingTransaction}
+                            onEdit={setEditingTransaction}
+                            onDelete={setDeletingTransaction}
+                            revealedId={revealedTransactionId}
+                            onReveal={setRevealedTransactionId}
+                            categoriesMap={categoriesMap}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-card rounded-2xl p-8 text-center shadow-card">
+                  <span className="text-5xl">💸</span>
+                  <p className="text-muted-foreground mt-3">No transactions found</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    {searchQuery || activeFilterCount > 0 ? 'Try adjusting your search or filters' : 'Add transactions to get started'}
+                  </p>
+
+                  {/* Active filter chips */}
+                  {(searchQuery || activeFilterCount > 0) && (
+                    <div className="flex flex-wrap justify-center gap-2 mt-4">
+                      {searchQuery && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Search: "{searchQuery}"
+                          <button onClick={() => setSearchQuery('')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {typeFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Type: {typeFilter}
+                          <button onClick={() => setTypeFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {categoryFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Category: {categoryOptions.find(c => c.id === categoryFilter)?.name || categoryFilter}
+                          <button onClick={() => setCategoryFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {subCategoryFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Sub: {allCategories.find(c => c.id === subCategoryFilter)?.name || 'Sub-category'}
+                          <button onClick={() => setSubCategoryFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {cardFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Card: {cardOptions.find(c => c.id === cardFilter)?.card_holder || cardFilter}
+                          <button onClick={() => setCardFilter('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {filterTags.map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          Tag: {tag}
+                          <button onClick={() => setFilterTags((prev) => prev.filter((t) => t !== tag))} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                      {showUnclearedOnly && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-amber-500/15 text-amber-400 rounded-full">
+                          Uncleared only
+                          <button onClick={() => setShowUnclearedOnly(false)} className="hover:opacity-70">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {filterPaymentMethod !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
+                          {PAYMENT_METHOD_LABELS[filterPaymentMethod]}
+                          <button onClick={() => setFilterPaymentMethod('all')} className="hover:text-accent-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.section>
           </motion.main>
         </div>
       </PullToRefresh>
+
+      <TransactionDetailsDialog
+        open={!!viewingTransaction}
+        onOpenChange={(open) => !open && setViewingTransaction(null)}
+        transaction={viewingTransaction}
+        onEdit={(tx) => { setViewingTransaction(null); setEditingTransaction(tx); }}
+        onDelete={(tx) => { setViewingTransaction(null); setDeletingTransaction(tx); }}
+      />
 
       <EditTransactionModal
         open={!!editingTransaction}
@@ -834,6 +1233,17 @@ export function ExpensesPage() {
         onOpenChange={(open) => !open && setDeletingTransaction(null)}
         transaction={deletingTransaction}
         onSuccess={handleTransactionMutationSuccess}
+      />
+
+      <AddPaymentReminderModal
+        open={!!reminderTransaction}
+        onOpenChange={(open) => !open && setReminderTransaction(null)}
+        onSuccess={() => setReminderTransaction(null)}
+        initialData={reminderTransaction ? {
+          title: reminderTransaction.merchant,
+          amount: reminderTransaction.amount_original ?? reminderTransaction.amount,
+          currency: reminderTransaction.currency_original ?? reminderTransaction.currency_base ?? undefined,
+        } : undefined}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, Receipt, Trash } from '@phosphor-icons/react';
@@ -21,6 +21,11 @@ import { formatReminderAmount } from '@/lib/reminderAmount';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useState } from 'react';
+import { TargetIcon } from 'lucide-react';
+
+type ReminderItem = 
+    | { type: 'payment'; data: PaymentReminder }
+    | { type: 'budget'; data: AppNotification; status: 'warning' | 'exceeded' };
 
 export function NotificationsPage() {
     const navigate = useNavigate();
@@ -83,6 +88,40 @@ export function NotificationsPage() {
         return r.status === 'upcoming' && isPast(dueDate) && !isToday(dueDate);
     }).length;
 
+    // Get budget alerts for Reminders tab
+    const budgetAlerts = useMemo(() => {
+        return appNotifications.filter(n => n.type === 'budget_warning' || n.type === 'budget_exceeded');
+    }, [appNotifications]);
+
+    const combinedReminders = useMemo<ReminderItem[]>(() => {
+        const items: ReminderItem[] = [];
+        
+        // Add payment reminders
+        reminders.forEach(r => {
+            items.push({ type: 'payment', data: r });
+        });
+        
+        // Add budget alerts (show unread ones first)
+        budgetAlerts.forEach(b => {
+            items.push({ 
+                type: 'budget', 
+                data: b, 
+                status: b.type === 'budget_exceeded' ? 'exceeded' : 'warning' 
+            });
+        });
+        
+        // Sort by date (most recent first)
+        return items.sort((a, b) => {
+            if (a.type === 'payment' && b.type === 'payment') {
+                return new Date(a.data.due_date).getTime() - new Date(b.data.due_date).getTime();
+            }
+            if (a.type === 'budget' && b.type === 'budget') {
+                return new Date(b.data.created_at).getTime() - new Date(a.data.created_at).getTime();
+            }
+            return 0;
+        });
+    }, [reminders, budgetAlerts]);
+
     const getNotificationIcon = (type: AppNotification['type']) => {
         switch (type) {
             case 'budget_warning':
@@ -122,9 +161,9 @@ export function NotificationsPage() {
                             </TabsTrigger>
                             <TabsTrigger value="reminders" className="relative">
                                 Reminders
-                                {overdueCount > 0 && (
+                                {overdueCount + budgetAlerts.filter(b => !b.read).length > 0 && (
                                     <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-destructive text-destructive-foreground">
-                                        {overdueCount}
+                                        {overdueCount + budgetAlerts.filter(b => !b.read).length}
                                     </span>
                                 )}
                             </TabsTrigger>
@@ -227,25 +266,97 @@ export function NotificationsPage() {
 
                         {/* ===== Reminders Tab ===== */}
                         <TabsContent value="reminders">
-                            {loading ? (
+                            {loading || notifLoading ? (
                                 <div className="space-y-4">
                                     {[1, 2, 3].map(i => (
                                         <Skeleton key={i} className="h-20 w-full rounded-2xl" />
                                     ))}
                                 </div>
-                            ) : reminders.length === 0 ? (
+                            ) : combinedReminders.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
                                     <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
                                         <Clock className="w-10 h-10 text-muted-foreground/30" weight="duotone" />
                                     </div>
                                     <h3 className="text-lg font-bold text-foreground mb-2">No Reminders</h3>
                                     <p className="text-muted-foreground max-w-xs">
-                                        You have no payment reminders. Add some to stay on top of your bills.
+                                        You have no reminders. Add payment reminders or create budgets to get alerts.
                                     </p>
                                 </div>
                             ) : (
                                 <div className="space-y-6">
-                                    {/* Attention Needed (overdue) */}
+                                    {/* Budget Alerts Section */}
+                                    {budgetAlerts.length > 0 && (
+                                        <section>
+                                            <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
+                                                <TargetIcon className="w-4 h-4" />
+                                                Budget Alerts
+                                            </h3>
+                                            <div className="space-y-3">
+                                                {budgetAlerts.map((alert, idx) => {
+                                                    const isExceeded = alert.type === 'budget_exceeded';
+                                                    const iconInfo = getNotificationIcon(alert.type);
+                                                    const Icon = iconInfo.icon;
+                                                    
+                                                    return (
+                                                        <motion.div
+                                                            key={alert.id}
+                                                            className={cn(
+                                                                "p-4 rounded-2xl border transition-all cursor-pointer",
+                                                                isExceeded 
+                                                                    ? "bg-destructive/5 border-destructive/20" 
+                                                                    : "bg-amber-500/5 border-amber-500/20",
+                                                                alert.read && "opacity-60"
+                                                            )}
+                                                            initial={{ opacity: 0, y: 20 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: idx * 0.1 }}
+                                                            onClick={() => {
+                                                                if (!alert.read) {
+                                                                    markAsRead(alert.id);
+                                                                }
+                                                                navigate('/budget');
+                                                            }}
+                                                        >
+                                                            <div className="flex items-start gap-4">
+                                                                <div className={cn("p-3 rounded-xl", iconInfo.bg)}>
+                                                                    <Icon className={cn("w-5 h-5", iconInfo.color)} weight="duotone" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-1.5 truncate">
+                                                                        <p className={cn("font-bold truncate text-lg", isExceeded ? "text-destructive" : "text-foreground")}>
+                                                                            {alert.title}
+                                                                        </p>
+                                                                    </div>
+                                                                    {alert.description && (
+                                                                        <p className="text-sm text-muted-foreground mt-1">
+                                                                            {alert.description}
+                                                                        </p>
+                                                                    )}
+                                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-tight font-black mt-1.5 block">
+                                                                        {format(new Date(alert.created_at), 'MMM d, yyyy • h:mm a')}
+                                                                    </span>
+                                                                </div>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    className="shrink-0 h-9 w-9 p-0 rounded-xl text-muted-foreground hover:text-destructive"
+                                                                    aria-label="Delete alert"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        remove(alert.id);
+                                                                    }}
+                                                                >
+                                                                    <Trash className="w-4 h-4" weight="duotone" />
+                                                                </Button>
+                                                            </div>
+                                                        </motion.div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </section>
+                                    )}
+
+                                    {/* Attention Needed (overdue payment reminders) */}
                                     {overdueCount > 0 && (
                                         <section>
                                             <h3 className="text-sm font-black text-destructive uppercase tracking-widest mb-3 px-1 flex items-center gap-2">

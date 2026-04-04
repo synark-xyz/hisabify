@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Sub-categories**: Two-level category hierarchy with parent/child picker in transaction form.
+- **Transaction tags**: Predefined multi-select tags (Tax Deductible, Reimbursable, Business, Personal, Vacation, Medical).
+- **Transaction status**: Cleared/Uncleared toggle for expense and income transactions.
+- **Split transaction**: Split a single expense across multiple categories with automatic parent-child tracking.
+- **Merchant auto-fill**: Debounced autocomplete from transaction history with category pre-fill.
+- **Save & Add Another**: Quickly add multiple transactions without closing the form.
+- **Sub-category filter, tag filter, and Uncleared-only toggle** in Expenses page filter panel.
+- **Uncleared badge, tag chips, and Parent › Sub label** in transaction list items.
 - **Referral — Friends Joined Count**: The Share tab on the Invite Friends screen now shows "X friends joined" when at least one user has signed up via your referral link.
 - **Referral — Loading Skeleton**: Referral code now shows an animated skeleton while the profile is loading instead of the static "--------" placeholder; copy and share buttons are disabled until the code is ready.
 

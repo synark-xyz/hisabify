@@ -18,6 +18,7 @@ import {
 import { useActivityLog } from '@/hooks/useActivityLog';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import type { ActivityLog } from '@/types';
 
 const activityIcons: Record<string, { icon: React.ElementType; bg: string; fg: string }> = {
   transaction_added: { icon: ArrowUpRight, bg: 'bg-rose-500/10', fg: 'text-rose-500' },
@@ -52,7 +53,7 @@ function formatDateHeader(dateStr: string): string {
   return format(date, 'MMMM d, yyyy');
 }
 
-function ActivityItem({ activity }: { activity: any }) {
+function ActivityItem({ activity }: { activity: ActivityLog }) {
   const iconConfig = activityIcons[activity.activity_type] || { icon: Clock, bg: 'bg-gray-500/10', fg: 'text-gray-500' };
   const Icon = iconConfig.icon;
 
@@ -78,7 +79,7 @@ function ActivityItem({ activity }: { activity: any }) {
   );
 }
 
-function ActivityGroup({ dateStr, activities }: { dateStr: string; activities: any[] }) {
+function ActivityGroup({ dateStr, activities }: { dateStr: string; activities: ActivityLog[] }) {
   return (
     <div className="space-y-2">
       <div className="sticky top-0 bg-background py-2 z-10">

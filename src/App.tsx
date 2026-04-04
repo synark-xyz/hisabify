@@ -292,7 +292,7 @@ function RootLogic() {
   // Clear stale WebView session on fresh install
   useEffect(() => {
     clearStaleSessionOnFreshInstall().catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   // Handle Android back button — navigates back in history; exits on double-back from root
   useAndroidBackButton(navigate);

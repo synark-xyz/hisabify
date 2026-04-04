@@ -119,8 +119,8 @@ export function ActivityHistoryPage() {
     <div className="min-h-screen bg-background pb-24">
       <div className="px-4 py-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Activity History</h1>
-          <span className="text-sm text-muted-foreground">{activities.length} activities</span>
+          <h1 className="text-xl font-semibold">History</h1>
+          <span className="text-sm text-muted-foreground">{activities.length} activities recorded</span>
         </div>
 
         {loading ? (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal, ChartBar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
@@ -810,7 +810,7 @@ export function ExpensesPage() {
 
               {categoryData.length === 0 ? (
                 <div className="bg-card rounded-2xl p-6 text-center shadow-card">
-                  <span className="text-4xl">📊</span>
+                  <ChartBar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-2" />
                   <p className="text-muted-foreground mt-2 text-sm">No expense data to visualize</p>
                   <p className="text-xs text-muted-foreground/60 mt-1">Add transactions to see breakdown</p>
                 </div>

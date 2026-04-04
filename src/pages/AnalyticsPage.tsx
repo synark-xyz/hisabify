@@ -149,40 +149,6 @@ export function AnalyticsPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-center gap-2">
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-            </motion.div>
-            <h1 className="text-xl font-bold text-foreground text-glow">Analytics Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {hasTransactionData && (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowWrapModal(true)}
-                  className="rounded-xl font-bold text-xs border-glow gap-1.5"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  Share Month
-                </Button>
-              </motion.div>
-            )}
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={refetch}
-                disabled={loading}
-                className="border-glow"
-              >
-                <RefreshCw className={`w-4 h-4 icon-glow ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-            </motion.div>
-          </div>
         </motion.header>
 
         <motion.main

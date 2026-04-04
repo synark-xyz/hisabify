@@ -28,6 +28,8 @@ export type Database = {
           updated_at: string
           user_id: string
           year: number
+          alert_threshold: number
+          alert_enabled: boolean
         }
         Insert: {
           amount: number
@@ -42,6 +44,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           year: number
+          alert_threshold?: number
+          alert_enabled?: boolean
         }
         Update: {
           amount?: number
@@ -56,6 +60,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           year?: number
+          alert_threshold?: number
+          alert_enabled?: boolean
         }
         Relationships: [
           {

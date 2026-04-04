@@ -27,6 +27,8 @@ export interface Budget {
   is_template: boolean;
   is_recurring: boolean;
   template_name: string | null;
+  alert_threshold: number;
+  alert_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +50,8 @@ export interface CreateBudgetInput {
   is_template?: boolean;
   is_recurring?: boolean;
   template_name?: string;
+  alert_threshold?: number;
+  alert_enabled?: boolean;
 }
 
 export interface UpdateBudgetInput extends Partial<CreateBudgetInput> {
@@ -307,10 +311,17 @@ export function useBudgets() {
       // not on page load, to prevent spam on tab open.
       if (options?.fireAlerts && user) {
         budgetsWithSpending.forEach((budget) => {
+          if (!budget.alert_enabled) return;
+          
           const budgetName = budget.category?.name || budget.name || 'Budget';
+          const threshold = budget.alert_threshold ?? 80;
+          
+          // Check exceeded first (100%+)
           if (budget.status === 'exceeded') {
             showBudgetExceeded(user.id, budgetName, budget.percentage, budget.period_type);
-          } else if (budget.status === 'warning') {
+          } 
+          // Check warning based on configurable threshold
+          else if (budget.percentage >= threshold) {
             showBudgetWarning(user.id, budgetName, budget.percentage, budget.period_type);
           }
         });
@@ -349,6 +360,8 @@ export function useBudgets() {
       is_template: input.is_template || false,
       is_recurring: input.is_recurring || false,
       template_name: input.template_name || null,
+      alert_threshold: input.alert_threshold ?? 80,
+      alert_enabled: input.alert_enabled ?? true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       spent: 0,
@@ -373,7 +386,9 @@ export function useBudgets() {
         year: newBudget.year,
         is_template: input.is_template || false,
         is_recurring: input.is_recurring || false,
-        template_name: input.template_name || null
+        template_name: input.template_name || null,
+        alert_threshold: input.alert_threshold ?? 80,
+        alert_enabled: input.alert_enabled ?? true,
       });
 
       if (error) throw error;
@@ -406,6 +421,8 @@ export function useBudgets() {
       if (input.period_type !== undefined) updateData.period_type = input.period_type;
       if (input.name !== undefined) updateData.name = input.name;
       if (input.is_recurring !== undefined) updateData.is_recurring = input.is_recurring;
+      if (input.alert_enabled !== undefined) updateData.alert_enabled = input.alert_enabled;
+      if (input.alert_threshold !== undefined) updateData.alert_threshold = input.alert_threshold;
 
       if (input.start_date) {
         updateData.start_date = input.start_date.toISOString();

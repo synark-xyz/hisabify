@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Moon, Sun, Monitor, ArrowLeft, Zap, CheckCircle, Lock } from 'lucide-react';
+import { Moon, Sun, Monitor, ArrowLeft, Zap, CheckCircle, Lock, Tag } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -19,6 +20,7 @@ export function PreferencesPage() {
     const { theme, variant, setTheme, setVariant } = useTheme();
     const { currency, setCurrency } = useCurrency();
     const { toast } = useToast();
+    const navigate = useNavigate();
 
     const [preferences, setPreferences] = useState({
         dateFormat: 'DD/MM/YYYY',
@@ -254,7 +256,6 @@ export function PreferencesPage() {
                         </SelectContent>
                     </Select>
                 </div>
-
             </main>
         </div>
     );

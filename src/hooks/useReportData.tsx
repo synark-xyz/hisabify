@@ -24,6 +24,14 @@ export interface ReportData {
     count: number;
     percentage: number;
   }>;
+  incomeCategoryBreakdown: Array<{
+    category: string;
+    categoryId: string | null;
+    color: string;
+    amount: number;
+    count: number;
+    percentage: number;
+  }>;
   dailyExpenses: Array<{
     date: string;
     expenses: number;
@@ -176,7 +184,7 @@ export function useReportData(filters: ReportFilters) {
       averageIncome: income.length > 0 ? totalIncome / income.length : 0,
     };
 
-    // Category breakdown
+    // Category breakdown (expenses)
     const categoryMap = new Map<
       string,
       { amount: number; count: number; color: string; categoryId: string | null }
@@ -205,6 +213,38 @@ export function useReportData(filters: ReportFilters) {
         amount: data.amount,
         count: data.count,
         percentage: totalExpenses > 0 ? (data.amount / totalExpenses) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
+    // Income category breakdown
+    const incomeCategoryMap = new Map<
+      string,
+      { amount: number; count: number; color: string; categoryId: string | null }
+    >();
+
+    income.forEach((t) => {
+      const categoryName = t.category?.name || "Other";
+      const existing = incomeCategoryMap.get(categoryName) || {
+        amount: 0,
+        count: 0,
+        color: t.category?.color || "#22C55E",
+        categoryId: t.category_id,
+      };
+      incomeCategoryMap.set(categoryName, {
+        ...existing,
+        amount: existing.amount + Number(t.amount),
+        count: existing.count + 1,
+      });
+    });
+
+    const incomeCategoryBreakdown = Array.from(incomeCategoryMap.entries())
+      .map(([category, data]) => ({
+        category,
+        categoryId: data.categoryId,
+        color: data.color,
+        amount: data.amount,
+        count: data.count,
+        percentage: totalIncome > 0 ? (data.amount / totalIncome) * 100 : 0,
       }))
       .sort((a, b) => b.amount - a.amount);
 
@@ -341,6 +381,7 @@ export function useReportData(filters: ReportFilters) {
     return {
       summary,
       categoryBreakdown,
+      incomeCategoryBreakdown,
       dailyExpenses,
       budgetPerformance,
       transactions: formattedTransactions,

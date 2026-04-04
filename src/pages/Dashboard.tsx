@@ -648,6 +648,7 @@ export function Dashboard() {
               key="transactions-section"
               initial={{ opacity: 1, y: 0 }}
               style={{ willChange: 'auto' }}
+              className="pb-4"
             >
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
@@ -663,7 +664,7 @@ export function Dashboard() {
                   <ArrowRight className="w-4 h-4" weight="duotone" />
                 </motion.button>
               </div>
-              <div className="space-y-3">
+              <div className="bg-card rounded-2xl p-3 space-y-2 shadow-sm">
                 {transactions.length > 0 ? (
                   transactions.map((tx, idx) => (
                     <TransactionItem
@@ -677,7 +678,7 @@ export function Dashboard() {
                     />
                   ))
                 ) : (
-                  <div className="bg-card/50 rounded-2xl p-8 text-center border border-dashed border-muted-foreground/20">
+                  <div className="py-8 text-center">
                     <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
                       <Sparkle className="w-8 h-8 text-muted-foreground/30" weight="duotone" />
                     </div>

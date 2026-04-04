@@ -28,6 +28,11 @@ export type Database = {
           updated_at: string
           user_id: string
           year: number
+          alert_threshold: number
+          alert_enabled: boolean
+          is_recurring: boolean
+          is_template: boolean
+          template_name: string | null
         }
         Insert: {
           amount: number
@@ -42,6 +47,11 @@ export type Database = {
           updated_at?: string
           user_id: string
           year: number
+          alert_threshold?: number
+          alert_enabled?: boolean
+          is_recurring?: boolean
+          is_template?: boolean
+          template_name?: string | null
         }
         Update: {
           amount?: number
@@ -56,6 +66,11 @@ export type Database = {
           updated_at?: string
           user_id?: string
           year?: number
+          alert_threshold?: number
+          alert_enabled?: boolean
+          is_recurring?: boolean
+          is_template?: boolean
+          template_name?: string | null
         }
         Relationships: [
           {
@@ -959,3 +974,20 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+// RPC function definitions for TypeScript support
+export type UpsertCustomCategorySuggestionParams = {
+  p_label: string;
+  p_category_type: 'expense' | 'income';
+  p_user_id: string;
+};
+
+export type RedeemReferralCodeParams = {
+  p_referral_code: string;
+  p_invitee_id: string;
+};
+
+export type RedeemReferralCodeResult = {
+  success: boolean;
+  error?: string;
+};

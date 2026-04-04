@@ -11,6 +11,7 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { parseCurrencyFromString } from '@/lib/currencyUtils';
 
 interface VoiceInputFlowProps {
   open: boolean;
@@ -85,17 +86,28 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
           body: { mode: 'voice', text, user_currency: userCurrency },
         });
         if (fnError || !data || (!data.merchant && !data.amount)) {
-          throw new Error('AI returned no usable data');
+          throw new Error(fnError?.message || 'AI returned no usable data');
         }
+        // Parse currency from the raw text in case AI didn't detect it
+        const textCurrency = parseCurrencyFromString(text);
+        const extractedCurrency = data.currency || textCurrency || userCurrency;
         setParsed({
           merchant: data.merchant,
           amount: typeof data.amount === 'number' ? data.amount : undefined,
-          currency: data.currency,
+          currency: extractedCurrency,
           type: transactionType,
           confidence: data.confidence,
         });
-      } catch {
-        setParsed(parseCommand(text) as ParsedResult);
+      } catch (err) {
+        console.warn('[VoiceInput] AI parsing failed, falling back to regex:', err);
+        const fallbackResult = parseCommand(text) as ParsedResult;
+        // Try to parse currency from the raw text using symbol/name mapping
+        const textCurrency = parseCurrencyFromString(text);
+        // Use user's default currency as fallback when no currency detected
+        setParsed({
+          ...fallbackResult,
+          currency: fallbackResult.currency || textCurrency || userCurrency,
+        });
       } finally {
         setAiLoading(false);
       }

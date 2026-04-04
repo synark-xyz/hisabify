@@ -36,6 +36,8 @@ const budgetFormSchema = z.object({
   currency: z.string().default('USD'),
   isRecurring: z.boolean().default(false),
   isContinuous: z.boolean().default(false),
+  alertEnabled: z.boolean().default(true),
+  alertThreshold: z.number().min(50).max(100).default(80),
 }).superRefine((data, ctx) => {
   if (!data.isContinuous && !data.endDate) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'End date is required', path: ['endDate'] });
@@ -80,6 +82,9 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
       name: '',
       currency: currency,
       isRecurring: false,
+      isContinuous: false,
+      alertEnabled: true,
+      alertThreshold: 80,
     },
   });
 
@@ -99,6 +104,8 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
           currency: currency,
           isRecurring: editingBudget.is_recurring || false,
           isContinuous: !editingBudget.end_date,
+          alertEnabled: editingBudget.alert_enabled ?? true,
+          alertThreshold: editingBudget.alert_threshold ?? 80,
         });
       } else {
         form.reset({
@@ -111,6 +118,8 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
           currency: currency,
           isRecurring: false,
           isContinuous: false,
+          alertEnabled: true,
+          alertThreshold: 80,
         });
       }
       setIncomeWarning(null);
@@ -234,6 +243,8 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
           end_date: data.isContinuous ? null : data.endDate,
           name: data.name,
           is_recurring: data.isRecurring,
+          alert_enabled: data.alertEnabled,
+          alert_threshold: data.alertThreshold,
         });
       } else {
         await createBudget({
@@ -244,6 +255,8 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
           end_date: data.isContinuous ? null : data.endDate,
           name: data.name,
           is_recurring: data.isRecurring,
+          alert_enabled: data.alertEnabled,
+          alert_threshold: data.alertThreshold,
         });
       }
 
@@ -519,6 +532,68 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                   </FormItem>
                 )}
               />
+
+              {/* Alert Settings Section */}
+              <div className="space-y-3 rounded-xl border border-border p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                      Budget Alerts
+                    </FormLabel>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Get notified when spending reaches a threshold
+                    </p>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="alertEnabled"
+                    render={({ field }) => (
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    )}
+                  />
+                </div>
+
+                {/* Alert Threshold Slider - only show when alerts are enabled */}
+                {form.watch('alertEnabled') && (
+                  <FormField
+                    control={form.control}
+                    name="alertThreshold"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Alert at
+                          </FormLabel>
+                          <span className="text-sm font-bold text-accent">
+                            {field.value}%
+                          </span>
+                        </div>
+                        <FormControl>
+                          <input
+                            type="range"
+                            min="50"
+                            max="100"
+                            step="10"
+                            value={field.value}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-accent"
+                          />
+                        </FormControl>
+                        <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                          <span>50%</span>
+                          <span>100%</span>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button

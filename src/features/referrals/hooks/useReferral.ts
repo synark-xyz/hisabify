@@ -27,7 +27,8 @@ export function useReferral() {
 
         try {
             // Call atomic RPC function that handles all validation and updates
-            const { data, error } = await supabase.rpc('redeem_referral_code', {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data, error } = await (supabase as any).rpc('redeem_referral_code', {
                 p_referral_code: code.toUpperCase(),
                 p_invitee_id: user.id
             });

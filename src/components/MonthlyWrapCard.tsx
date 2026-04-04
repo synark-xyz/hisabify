@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Share2, Check, TrendingDown, PiggyBank, Flame, Calendar } from 'lucide-react';
+import { Share2, Check, TrendingDown, Flame, Calendar, HandCoins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
@@ -97,7 +97,7 @@ export function MonthlyWrapCard({
         {/* Main stat — savings */}
         <div className="rounded-2xl bg-white/[0.05] border border-white/[0.07] p-4">
           <div className="flex items-center gap-2 mb-2">
-            <PiggyBank className="w-4 h-4 text-emerald-400" />
+            <HandCoins className="w-4 h-4 text-emerald-400" />
             <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
               {isSaving ? 'Net Saved' : 'Net Spent'}
             </p>

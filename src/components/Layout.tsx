@@ -25,9 +25,15 @@ const PAGE_TITLES: Record<string, string> = {
     '/profile/invite': 'Invite Friends',
     '/analytics': 'Insights',
     '/debts': 'Debt Tracker',
+    '/categories': 'Categories',
     '/settings': 'Settings',
     '/settings/preferences': 'Preferences',
     '/settings/notifications': 'Notifications',
+    '/more': 'More',
+    '/more/calculator': 'Calculator',
+    '/more/loan': 'Loan Calculator',
+    '/more/discount': 'Discount & Tax',
+    '/more/currency': 'Currency Converter',
 };
 
 const getPageTitle = (pathname: string) => PAGE_TITLES[pathname] ?? 'Hisabify';

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { Loader2, ChevronDown, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info, ArrowLeftRight, Banknote, CreditCard, Building2, Globe, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info, ArrowLeftRight, Banknote, CreditCard, Building2, Globe, FileText } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,12 +23,37 @@ import { useBudgetContext } from '@/hooks/useBudgetContext';
 import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useSmartSuggest } from '@/hooks/useSmartSuggest';
+import { useCategoryMutations } from '@/hooks/useCategoryMutations';
 import { SuggestionBanner } from '@/components/SuggestionBanner';
 import { Transaction, Card as CardType, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
+import { emitTransactionUpdated } from '@/lib/transaction-events';
+
+interface TransactionFormState {
+  type: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
+  merchant: string;
+  amount: string;
+  categoryId: string;
+  date: Date;
+  note: string;
+  currency: string;
+  payer: string;
+  payee: string;
+  splitWith: string;
+  selectedTags: string[];
+  transactionStatus: 'cleared' | 'uncleared';
+  isSplit: boolean;
+  splitRows: Array<{ id: string; categoryId: string; amount: string }>;
+  paymentMethod: string;
+  transferFromCardId: string;
+  transferToCardId: string;
+  transferFee: string;
+  customCategoryLabel: string;
+  selectedParentCategoryId: string;
+}
 
 interface TransactionFormProps {
   onSuccess: () => void;
@@ -47,6 +73,9 @@ interface TransactionFormProps {
   initialBudgetId?: string | null;
   onVoiceRequest?: () => void;
   onScanRequest?: () => void;
+  onNavigateToCategories?: (formState: TransactionFormState) => void;
+  formState?: TransactionFormState;
+  setFormState?: React.Dispatch<React.SetStateAction<TransactionFormState>>;
 }
 
 interface TransactionFormValues {
@@ -101,6 +130,7 @@ export function TransactionForm({
   initialBudgetId,
   onVoiceRequest,
   onScanRequest,
+  onNavigateToCategories,
 }: TransactionFormProps) {
   const [type, setType] = useState<'expense' | 'income' | 'lend' | 'owe' | 'transfer'>(
     initialType || 'expense'
@@ -114,7 +144,6 @@ export function TransactionForm({
 
   /* ─── Phase 2.3: Payment method state ─── */
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
-  const [currencyOpen, setCurrencyOpen] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [convertedPreview, setConvertedPreview] = useState<{ amount: number; rate: number } | null>(null);
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(
@@ -161,6 +190,8 @@ export function TransactionForm({
   const { categories } = useCategories();
   const { budgets, getBudgetsForCategory } = useBudgetContext();
   const { activeGoals } = useSavingsGoals();
+  const { incrementUsageCount } = useCategoryMutations();
+  const navigate = useNavigate();
 
   const [linkedBudgetId, setLinkedBudgetId] = useState<string | null>(
     initialTransaction?.budget_id ?? null
@@ -203,13 +234,6 @@ export function TransactionForm({
     [subCategoriesMap]
   );
 
-  // Sync form currency when useCurrency() resolves from DB — skip if scan already detected a currency
-  useEffect(() => {
-    if (!isEditMode && !initialData?.currency) {
-      form.setValue('currency', currency);
-    }
-  }, [currency]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const form = useForm<TransactionFormValues>({
     defaultValues: {
       merchant: initialData?.merchant || '',
@@ -217,9 +241,16 @@ export function TransactionForm({
       categoryId: initialData?.category || '',
       date: initialData?.date || new Date(),
       note: '',
-      currency,
+      currency: initialData?.currency || currency,
     },
   });
+
+  // Sync form currency when useCurrency() resolves from DB — skip if scan already detected a currency
+  useEffect(() => {
+    if (!isEditMode && !initialData?.currency && currency) {
+      form.setValue('currency', currency);
+    }
+  }, [currency, initialData?.currency, isEditMode, form]);
 
   const watchedAmount = form.watch('amount');
   const watchedCurrency = form.watch('currency');
@@ -441,13 +472,13 @@ export function TransactionForm({
 
   const logCustomCategorySuggestion = (label: string) => {
     if (!isOtherCategory || !label.trim() || !user) return;
+    // Fire-and-forget: log custom category suggestion
     supabase.rpc('upsert_custom_category_suggestion', {
       p_label: label.trim(),
-      // lend/owe treated as expense for suggestion analytics purposes
       p_category_type: type === 'income' ? 'income' : 'expense',
       p_user_id: user.id,
     }).then(({ error }) => {
-      if (error) logger.error(error, { action: 'upsert_custom_category_suggestion' });
+      // Silently ignore errors - this is analytics, not critical
     });
   };
 
@@ -658,6 +689,11 @@ export function TransactionForm({
 
         const parentId = parentData.id;
 
+        // Fire-and-forget: increment category usage count for parent
+        if (data.categoryId) {
+          incrementUsageCount(data.categoryId);
+        }
+
         // Insert split children in parallel
         const childInserts = splitRows.map(async (row) => {
           const childAmount = Number.parseFloat(row.amount);
@@ -736,6 +772,10 @@ export function TransactionForm({
         }).catch(() => {});
         const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow', transfer: 'Transfer' };
         toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
+        // Fire-and-forget: increment category usage count
+        if (data.categoryId) {
+          incrementUsageCount(data.categoryId);
+        }
         // Fire-and-forget: log custom category suggestion
         logCustomCategorySuggestion(customCategoryLabel);
 
@@ -763,6 +803,7 @@ export function TransactionForm({
           due_date: reminderDate.toISOString(),
           status: 'upcoming',
           is_recurring: false,
+          recurring_interval: null,
           notify_before_days: 1,
           note: null,
         }).then(({ error }) => {
@@ -772,6 +813,8 @@ export function TransactionForm({
 
       /* ─── Feature 1.6: Save & Add Another ─── */
       if (keepOpen && onSuccessKeepOpen) {
+        // Emit event so budgets can refetch
+        emitTransactionUpdated();
         onSuccessKeepOpen();
         // Reset form for another entry
         form.reset({
@@ -784,6 +827,8 @@ export function TransactionForm({
         });
         resetFormState();
       } else {
+        // Emit transaction updated event so budgets can refetch
+        emitTransactionUpdated();
         onSuccess();
 
         if (!isEditMode) {
@@ -1070,35 +1115,28 @@ export function TransactionForm({
                     name="currency"
                     render={({ field: currencyField }) =>
                       isPremium ? (
-                        <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                          <PopoverTrigger asChild>
-                            <Button type="button" variant="outline" className="w-20 flex items-center justify-between px-3">
+                        <Select
+                          value={currencyField.value}
+                          onValueChange={(value) => {
+                            currencyField.onChange(value);
+                          }}
+                        >
+                          <SelectTrigger className="w-20">
+                            <SelectValue>
                               <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
-                              <ChevronDown className="w-3 h-3 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-48 p-1 rounded-2xl shadow-xl" align="start">
-                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                              {Object.entries(currencyData).map(([code, { symbol }]) => (
-                                <button
-                                  key={code}
-                                  type="button"
-                                  onClick={() => {
-                                    currencyField.onChange(code);
-                                    setCurrencyOpen(false);
-                                  }}
-                                  className={cn(
-                                    'w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-muted transition-colors',
-                                    currencyField.value === code && 'bg-muted font-bold'
-                                  )}
-                                >
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(currencyData).map(([code, { symbol }]) => (
+                              <SelectItem key={code} value={code}>
+                                <span className="flex items-center gap-2">
                                   <span className="w-6 text-center">{symbol}</span>
                                   <span>{code}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       ) : (
                         <Button
                           type="button"
@@ -1211,17 +1249,56 @@ export function TransactionForm({
                 const isLendOwe = type === 'lend' || type === 'owe';
                 const filteredRootCategories = isLendOwe
                   ? rootCategories.filter((cat) => !cat.is_system_category || !['lend', 'owe'].includes(cat.category_type || ''))
-                  : rootCategories;
+                  : rootCategories.filter((cat) => cat.type === 'expense');
                 const currentSubs = selectedParentCategoryId ? getSubCategories(selectedParentCategoryId) : [];
                 const filteredSubs = isLendOwe
                   ? currentSubs.filter((cat) => !cat.is_system_category || !['lend', 'owe'].includes(cat.category_type || ''))
-                  : currentSubs;
+                  : currentSubs.filter((cat) => cat.type === 'expense');
 
                 return (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      {isLendOwe ? 'Category (optional)' : 'Category'}
-                    </FormLabel>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                        {isLendOwe ? 'Category (optional)' : 'Category'}
+                      </FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                        onClick={() => {
+                          if (onNavigateToCategories) {
+                            onNavigateToCategories({
+                              type,
+                              merchant: form.getValues('merchant'),
+                              amount: form.getValues('amount'),
+                              categoryId: form.getValues('categoryId'),
+                              date: form.getValues('date'),
+                              note: form.getValues('note'),
+                              currency: form.getValues('currency'),
+                              payer,
+                              payee,
+                              splitWith,
+                              selectedTags,
+                              transactionStatus,
+                              isSplit,
+                              splitRows,
+                              paymentMethod: paymentMethod || '',
+                              transferFromCardId,
+                              transferToCardId,
+                              transferFee,
+                              customCategoryLabel,
+                              selectedParentCategoryId,
+                            });
+                          } else {
+                            navigate('/categories');
+                          }
+                        }}
+                      >
+                        <Plus className="h-3 w-3" />
+                        Create New
+                      </Button>
+                    </div>
 
                     {/* Parent category picker */}
                     <Select

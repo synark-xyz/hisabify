@@ -27,6 +27,8 @@ export interface Budget {
   is_template: boolean;
   is_recurring: boolean;
   template_name: string | null;
+  alert_threshold: number;
+  alert_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +50,8 @@ export interface CreateBudgetInput {
   is_template?: boolean;
   is_recurring?: boolean;
   template_name?: string;
+  alert_threshold?: number;
+  alert_enabled?: boolean;
 }
 
 export interface UpdateBudgetInput extends Partial<CreateBudgetInput> {
@@ -156,6 +160,24 @@ export function useBudgets() {
               const nextStart = new Date(prevEnd);
               nextStart.setDate(nextStart.getDate() + 1);
               const { end: nextEnd } = getPeriodDates(budget.period_type as PeriodType, nextStart);
+              const nextMonth = nextStart.getMonth() + 1;
+              const nextYear = nextStart.getFullYear();
+
+              // Check if next period budget already exists
+              const { data: existingRollover } = await supabase
+                .from('budgets')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('category_id', budget.category_id)
+                .eq('month', nextMonth)
+                .eq('year', nextYear)
+                .maybeSingle();
+
+              if (existingRollover) {
+                // Skip if already exists
+                return;
+              }
+
               const { error: rolloverError } = await supabase.from('budgets').insert({
                 user_id: user.id,
                 category_id: budget.category_id,
@@ -164,10 +186,12 @@ export function useBudgets() {
                 start_date: nextStart.toISOString(),
                 end_date: nextEnd.toISOString(),
                 name: budget.name,
-                month: nextStart.getMonth() + 1,
-                year: nextStart.getFullYear(),
+                month: nextMonth,
+                year: nextYear,
                 is_template: false,
                 is_recurring: true,
+                alert_threshold: budget.alert_threshold ?? 80,
+                alert_enabled: budget.alert_enabled ?? true,
               });
               if (!rolloverError) {
                 const budgetName = budget.name || budget.category?.name || 'Budget Payment';
@@ -307,10 +331,17 @@ export function useBudgets() {
       // not on page load, to prevent spam on tab open.
       if (options?.fireAlerts && user) {
         budgetsWithSpending.forEach((budget) => {
+          if (!budget.alert_enabled) return;
+          
           const budgetName = budget.category?.name || budget.name || 'Budget';
+          const threshold = budget.alert_threshold ?? 80;
+          
+          // Check exceeded first (100%+)
           if (budget.status === 'exceeded') {
             showBudgetExceeded(user.id, budgetName, budget.percentage, budget.period_type);
-          } else if (budget.status === 'warning') {
+          } 
+          // Check warning based on configurable threshold
+          else if (budget.percentage >= threshold) {
             showBudgetWarning(user.id, budgetName, budget.percentage, budget.period_type);
           }
         });
@@ -349,6 +380,8 @@ export function useBudgets() {
       is_template: input.is_template || false,
       is_recurring: input.is_recurring || false,
       template_name: input.template_name || null,
+      alert_threshold: input.alert_threshold ?? 80,
+      alert_enabled: input.alert_enabled ?? true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       spent: 0,
@@ -373,7 +406,9 @@ export function useBudgets() {
         year: newBudget.year,
         is_template: input.is_template || false,
         is_recurring: input.is_recurring || false,
-        template_name: input.template_name || null
+        template_name: input.template_name || null,
+        alert_threshold: input.alert_threshold ?? 80,
+        alert_enabled: input.alert_enabled ?? true,
       });
 
       if (error) throw error;
@@ -406,6 +441,8 @@ export function useBudgets() {
       if (input.period_type !== undefined) updateData.period_type = input.period_type;
       if (input.name !== undefined) updateData.name = input.name;
       if (input.is_recurring !== undefined) updateData.is_recurring = input.is_recurring;
+      if (input.alert_enabled !== undefined) updateData.alert_enabled = input.alert_enabled;
+      if (input.alert_threshold !== undefined) updateData.alert_threshold = input.alert_threshold;
 
       if (input.start_date) {
         updateData.start_date = input.start_date.toISOString();
@@ -541,6 +578,26 @@ export function useBudgets() {
       const nextStart = new Date(baseEnd);
       nextStart.setDate(nextStart.getDate() + 1);
       const nextEnd = getPeriodDates(budget.period_type, nextStart).end;
+      const nextMonth = nextStart.getMonth() + 1;
+      const nextYear = nextStart.getFullYear();
+
+      // Check if next period budget already exists (to avoid duplicate key error)
+      const { data: existingBudget } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category_id', budget.category_id)
+        .eq('month', nextMonth)
+        .eq('year', nextYear)
+        .maybeSingle();
+
+      if (existingBudget) {
+        // Next period budget already exists (created by auto-rollover), just refetch
+        toast.info('Budget for next period already exists');
+        await fetchBudgets();
+        emitBudgetSyncEvents();
+        return true;
+      }
 
       const { error } = await supabase.from('budgets').insert({
         user_id: user.id,
@@ -550,9 +607,11 @@ export function useBudgets() {
         start_date: nextStart.toISOString(),
         end_date: nextEnd.toISOString(),
         name: budget.name,
-        month: nextStart.getMonth() + 1,
-        year: nextStart.getFullYear(),
+        month: nextMonth,
+        year: nextYear,
         is_recurring: true,
+        alert_threshold: budget.alert_threshold ?? 80,
+        alert_enabled: budget.alert_enabled ?? true,
       });
 
       if (error) throw error;

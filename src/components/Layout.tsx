@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
@@ -25,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
     '/profile/invite': 'Invite Friends',
     '/analytics': 'Insights',
     '/debts': 'Debt Tracker',
+    '/activity': 'Activity History',
     '/categories': 'Categories',
     '/settings': 'Settings',
     '/settings/preferences': 'Preferences',
@@ -40,13 +41,25 @@ const getPageTitle = (pathname: string) => PAGE_TITLES[pathname] ?? 'Hisabify';
 
 export function Layout() {
     const [showManual, setShowManual] = useState(false);
+    const scrollPositions = useRef<Record<string, number>>({});
+    const previousPath = useRef<string>('');
 
     const location = useLocation();
     const { variant } = useTheme();
     const { isKeyboardOpen } = useVisualViewport();
 
     useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'auto' });
+        const currentPath = location.pathname;
+        const isNavigatingBack = previousPath.current && previousPath.current !== currentPath;
+        
+        if (isNavigatingBack && scrollPositions.current[previousPath.current]) {
+            window.scrollTo({ top: scrollPositions.current[previousPath.current], behavior: 'auto' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+        
+        scrollPositions.current[previousPath.current] = window.scrollY;
+        previousPath.current = currentPath;
     }, [location.pathname]);
 
     useEffect(() => {
@@ -58,7 +71,8 @@ export function Layout() {
     const isProfileSubPage = location.pathname.startsWith('/profile/');
     const isProfileRootPage = location.pathname === '/profile';
     const isDebtPage = location.pathname === '/debts';
-    const shouldShowBack = isProfileSubPage || isProfileRootPage || isDebtPage;
+    const isActivityPage = location.pathname === '/activity';
+    const shouldShowBack = isProfileSubPage || isProfileRootPage || isDebtPage || isActivityPage;
 
     return (
         <div className="min-h-screen relative">

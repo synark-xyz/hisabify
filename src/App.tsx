@@ -38,6 +38,7 @@ import { PersonalPage } from "@/pages/profile/PersonalPage";
 import { DataPage } from "@/pages/profile/DataPage";
 import { ReferralsPage } from "@/pages/profile/ReferralsPage";
 import { DebtPage } from "@/pages/DebtPage";
+import { ActivityHistoryPage } from "@/pages/ActivityHistoryPage";
 import { CategoriesPage } from "@/pages/CategoriesPage";
 import { MorePage } from "@/pages/MorePage";
 import { CalculatorPage } from "@/pages/more/CalculatorPage";
@@ -193,6 +194,7 @@ function AppRoutes() {
         <Route path="/profile/data" element={<DataPage />} />
         <Route path="/profile/invite" element={<ReferralsPage />} />
         <Route path="/debts" element={<DebtPage />} />
+        <Route path="/activity" element={<ActivityHistoryPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/more" element={<MorePage />} />
         <Route path="/more/calculator" element={<CalculatorPage />} />

@@ -836,6 +836,93 @@ export type Database = {
           },
         ]
       }
+      debts: {
+        Row: {
+          id: string
+          user_id: string
+          person_name: string
+          amount: number
+          currency: string
+          type: string
+          due_date: string | null
+          status: string
+          amount_paid: number
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          person_name: string
+          amount: number
+          currency?: string
+          type: string
+          due_date?: string | null
+          status?: string
+          amount_paid?: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          person_name?: string
+          amount?: number
+          currency?: string
+          type?: string
+          due_date?: string | null
+          status?: string
+          amount_paid?: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      activity_log: {
+        Row: {
+          id: string
+          user_id: string
+          activity_type: string
+          entity_type: string
+          entity_id: string
+          description: string
+          amount: number | null
+          currency: string | null
+          metadata: Json | null
+          group_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          activity_type: string
+          entity_type: string
+          entity_id: string
+          description: string
+          amount?: number | null
+          currency?: string | null
+          metadata?: Json | null
+          group_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          activity_type?: string
+          entity_type?: string
+          entity_id?: string
+          description?: string
+          amount?: number | null
+          currency?: string | null
+          metadata?: Json | null
+          group_id?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

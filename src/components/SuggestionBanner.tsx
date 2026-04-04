@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HandCoins, X } from 'lucide-react';
+import { HandCoins, X, ChartBar } from 'lucide-react';
 import type { SmartSuggestion } from '@/hooks/useSmartSuggest';
 import type { BudgetWithSpending } from '@/hooks/useBudgets';
 import type { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
@@ -41,8 +41,14 @@ export function SuggestionBanner({
   const linkedName = linkedBudget?.name || linkedBudget?.category?.name || linkedGoal?.name;
   const linkedIconContent = linkedGoalId ? (
     <HandCoins size={16} className="text-primary" />
+  ) : linkedBudget ? (
+    linkedBudget.category?.icon ? (
+      <span className="text-lg">{linkedBudget.category.icon}</span>
+    ) : (
+      <ChartBar size={16} className="text-muted-foreground" />
+    )
   ) : (
-    linkedBudget?.category?.icon ?? '📊'
+    <ChartBar size={16} className="text-muted-foreground" />
   );
 
   // Show confirmed chip when something is linked

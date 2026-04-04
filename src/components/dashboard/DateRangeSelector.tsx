@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, ChevronDown, Download, Lock } from 'lucide-react';
+import { Calendar, Download, Lock, RotateCw, SlidersHorizontal } from 'lucide-react';
 import { format, subDays, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, isBefore } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DateRange } from 'react-day-picker';
+import { cn } from '@/lib/utils';
 
 interface DateRangeSelectorProps {
   dateRange: { from: Date; to: Date };
@@ -21,6 +22,8 @@ interface DateRangeSelectorProps {
   onUpgradeRequired?: () => void;
   canUseCustomRange?: boolean;
   canExport?: boolean;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 const presetRanges = [
@@ -41,6 +44,8 @@ export function DateRangeSelector({
   onUpgradeRequired,
   canUseCustomRange = true,
   canExport = true,
+  onRefresh,
+  isRefreshing = false,
 }: DateRangeSelectorProps) {
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -86,24 +91,44 @@ export function DateRangeSelector({
 
   return (
     <motion.div
-      className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between"
+      className="flex items-center justify-between gap-2"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex flex-wrap items-center gap-2">
+      <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="h-9 px-2.5 sm:h-10 sm:px-3 gap-2 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30 max-w-[140px] sm:max-w-[200px]">
+            <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span className="text-xs sm:text-sm font-medium truncate">
+              {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d')}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <CalendarComponent
+            initialFocus
+            mode="range"
+            defaultMonth={dateRange.from}
+            selected={{ from: dateRange.from, to: dateRange.to }}
+            onSelect={handleCalendarSelect}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
+
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Calendar className="w-4 h-4" />
-              Quick Select
-              <ChevronDown className="w-4 h-4" />
+            <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30">
+              <SlidersHorizontal className="w-4 h-4 text-violet-500" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
+          <DropdownMenuContent align="end" className="bg-card border-border/60 shadow-lg">
             {presetRanges.map((preset) => (
               <DropdownMenuItem
                 key={preset.label}
                 onClick={() => handlePresetSelect(preset)}
+                className="cursor-pointer hover:bg-accent/50 focus:bg-accent/50"
               >
                 <span className="flex items-center gap-2">
                   {preset.label}
@@ -114,36 +139,34 @@ export function DateRangeSelector({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Popover open={showCalendar} onOpenChange={setShowCalendar}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <span className="text-sm">
-                {format(dateRange.from, 'MMM dd, yyyy')} - {format(dateRange.to, 'MMM dd, yyyy')}
-              </span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <CalendarComponent
-              initialFocus
-              mode="range"
-              defaultMonth={dateRange.from}
-              selected={{ from: dateRange.from, to: dateRange.to }}
-              onSelect={handleCalendarSelect}
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
+        {onRefresh && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30"
+          >
+            <RotateCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+          </Button>
+        )}
+        
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={canExport ? onExportCSV : onUpgradeRequired}
+            className={cn(
+              "h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30",
+              canExport 
+                ? "text-emerald-500" 
+                : "text-muted-foreground"
+            )}
+          >
+            {canExport ? <Download className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+          </Button>
+        </motion.div>
       </div>
-
-      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button
-          onClick={canExport ? onExportCSV : onUpgradeRequired}
-          className="gap-2 bg-primary hover:bg-primary/90"
-        >
-          {canExport ? <Download className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-          {canExport ? 'Export CSV' : 'Export CSV (Pro)'}
-        </Button>
-      </motion.div>
     </motion.div>
   );
 }

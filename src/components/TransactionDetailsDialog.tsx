@@ -13,7 +13,7 @@ import { useBudgets } from '@/hooks/useBudgets';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { getTransactionCategoryName } from '@/lib/transactionUtils';
 import { cn } from '@/lib/utils';
-import { PencilSimple, Trash } from '@phosphor-icons/react';
+import { PencilSimple, Trash, ChartBar } from '@phosphor-icons/react';
 import { AssignmentSheet } from '@/components/AssignmentSheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -221,7 +221,9 @@ export function TransactionDetailsDialog({
             const name = linkedBudget
               ? (linkedBudget.name || linkedBudget.category?.name || 'Budget')
               : linkedGoal!.name;
-            const icon = linkedBudget ? '📊' : linkedGoal!.icon;
+            const icon = linkedBudget 
+              ? <ChartBar size={20} weight="duotone" className="text-primary" />
+              : linkedGoal!.icon;
             const meta = linkedBudget
               ? `${linkedBudget.remaining.toFixed(0)} remaining · ${linkedBudget.percentage}% used`
               : `${linkedGoal!.percentage.toFixed(0)}% saved`;
@@ -234,7 +236,7 @@ export function TransactionDetailsDialog({
                 onClick={() => setAssignSheetOpen(true)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 text-left hover:bg-primary/10 transition-colors"
               >
-                <span className="text-xl flex-shrink-0">{icon}</span>
+                <div className="text-xl flex-shrink-0">{icon}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-primary truncate">{name}</p>
                   <p className="text-xs text-muted-foreground">{meta}</p>

@@ -420,24 +420,42 @@ export function Dashboard() {
                   <div className="text-sm text-foreground">3. Set a savings goal</div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     onClick={() => window.dispatchEvent(new Event('open-input-sheet'))}
-                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                    className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card/50 px-3 py-3 hover:bg-muted/50 transition-all hover:border-accent/30 hover:shadow-sm group"
                   >
-                    Add Transaction
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Plus className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground">Add</span>
                   </button>
                   <button
                     onClick={() => navigate('/budget')}
-                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                    className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card/50 px-3 py-3 hover:bg-muted/50 transition-all hover:border-accent/30 hover:shadow-sm group"
                   >
-                    Create Budget
+                    <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Wallet className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground">Budget</span>
                   </button>
                   <button
                     onClick={() => navigate('/savings')}
-                    className="rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors"
+                    className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card/50 px-3 py-3 hover:bg-muted/50 transition-all hover:border-accent/30 hover:shadow-sm group"
                   >
-                    Add Savings Goal
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <PiggyBank className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground">Goal</span>
+                  </button>
+                  <button
+                    onClick={() => navigate('/debts')}
+                    className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card/50 px-3 py-3 hover:bg-muted/50 transition-all hover:border-accent/30 hover:shadow-sm group"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Handshake className="w-4 h-4 text-rose-500" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground">Debt</span>
                   </button>
                 </div>
               </motion.section>

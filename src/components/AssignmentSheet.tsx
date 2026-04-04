@@ -7,6 +7,7 @@ import {
 import type { BudgetWithSpending } from '@/hooks/useBudgets';
 import type { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
 import { cn } from '@/lib/utils';
+import { ChartBar } from 'lucide-react';
 
 interface AssignmentSheetProps {
   open: boolean;
@@ -62,8 +63,8 @@ export function AssignmentSheet({
                         : 'bg-muted/40 hover:bg-muted/70'
                     )}
                   >
-                    <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center text-base flex-shrink-0">
-                      📊
+                    <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <ChartBar className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{budget.name || budget.category?.name || 'Budget'}</p>

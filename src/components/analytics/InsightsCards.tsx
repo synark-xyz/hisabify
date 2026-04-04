@@ -54,7 +54,7 @@ export function InsightsCards({ insights }: InsightsCardsProps) {
     return (
       <Card className="bg-card shadow-card">
         <CardContent className="p-6 text-center">
-          <span className="text-4xl mb-3 block">📊</span>
+          <BarChart3 className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
           <p className="text-muted-foreground">
             Add more transactions to see personalized insights
           </p>

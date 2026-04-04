@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, HandCoinsIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, HandCoins, HandCoinsIcon } from 'lucide-react';
 import { useCurrency } from '@/hooks/useCurrency';
 
 interface SummaryCardsProps {

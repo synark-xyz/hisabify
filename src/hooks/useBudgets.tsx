@@ -160,6 +160,24 @@ export function useBudgets() {
               const nextStart = new Date(prevEnd);
               nextStart.setDate(nextStart.getDate() + 1);
               const { end: nextEnd } = getPeriodDates(budget.period_type as PeriodType, nextStart);
+              const nextMonth = nextStart.getMonth() + 1;
+              const nextYear = nextStart.getFullYear();
+
+              // Check if next period budget already exists
+              const { data: existingRollover } = await supabase
+                .from('budgets')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('category_id', budget.category_id)
+                .eq('month', nextMonth)
+                .eq('year', nextYear)
+                .maybeSingle();
+
+              if (existingRollover) {
+                // Skip if already exists
+                return;
+              }
+
               const { error: rolloverError } = await supabase.from('budgets').insert({
                 user_id: user.id,
                 category_id: budget.category_id,
@@ -168,10 +186,12 @@ export function useBudgets() {
                 start_date: nextStart.toISOString(),
                 end_date: nextEnd.toISOString(),
                 name: budget.name,
-                month: nextStart.getMonth() + 1,
-                year: nextStart.getFullYear(),
+                month: nextMonth,
+                year: nextYear,
                 is_template: false,
                 is_recurring: true,
+                alert_threshold: budget.alert_threshold ?? 80,
+                alert_enabled: budget.alert_enabled ?? true,
               });
               if (!rolloverError) {
                 const budgetName = budget.name || budget.category?.name || 'Budget Payment';
@@ -558,6 +578,26 @@ export function useBudgets() {
       const nextStart = new Date(baseEnd);
       nextStart.setDate(nextStart.getDate() + 1);
       const nextEnd = getPeriodDates(budget.period_type, nextStart).end;
+      const nextMonth = nextStart.getMonth() + 1;
+      const nextYear = nextStart.getFullYear();
+
+      // Check if next period budget already exists (to avoid duplicate key error)
+      const { data: existingBudget } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category_id', budget.category_id)
+        .eq('month', nextMonth)
+        .eq('year', nextYear)
+        .maybeSingle();
+
+      if (existingBudget) {
+        // Next period budget already exists (created by auto-rollover), just refetch
+        toast.info('Budget for next period already exists');
+        await fetchBudgets();
+        emitBudgetSyncEvents();
+        return true;
+      }
 
       const { error } = await supabase.from('budgets').insert({
         user_id: user.id,
@@ -567,9 +607,11 @@ export function useBudgets() {
         start_date: nextStart.toISOString(),
         end_date: nextEnd.toISOString(),
         name: budget.name,
-        month: nextStart.getMonth() + 1,
-        year: nextStart.getFullYear(),
+        month: nextMonth,
+        year: nextYear,
         is_recurring: true,
+        alert_threshold: budget.alert_threshold ?? 80,
+        alert_enabled: budget.alert_enabled ?? true,
       });
 
       if (error) throw error;

@@ -56,8 +56,10 @@ export function useCategoryMutations() {
     // Fire-and-forget: silently swallow errors
     supabase
       .rpc('increment_category_usage_count', { p_category_id: categoryId })
-      .catch(() => {
-        // Silently ignore errors for fire-and-forget operation
+      .then(({ error }) => {
+        if (error) {
+          // Silently ignore errors for fire-and-forget operation
+        }
       });
   };
 

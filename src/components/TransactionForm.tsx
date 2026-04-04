@@ -30,6 +30,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
+import { emitTransactionUpdated } from '@/lib/transaction-events';
 
 interface TransactionFormState {
   type: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
@@ -471,19 +472,14 @@ export function TransactionForm({
 
   const logCustomCategorySuggestion = (label: string) => {
     if (!isOtherCategory || !label.trim() || !user) return;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).rpc('upsert_custom_category_suggestion', {
-        p_label: label.trim(),
-        // lend/owe treated as expense for suggestion analytics purposes
-        p_category_type: type === 'income' ? 'income' : 'expense',
-        p_user_id: user.id,
-      }).then(({ error }: { error: Error | null }) => {
-        if (error) logger.error(error, { action: 'upsert_custom_category_suggestion' });
-      });
-    } catch (err) {
-      console.warn('[TransactionForm] RPC not available:', err);
-    }
+    // Fire-and-forget: log custom category suggestion
+    supabase.rpc('upsert_custom_category_suggestion', {
+      p_label: label.trim(),
+      p_category_type: type === 'income' ? 'income' : 'expense',
+      p_user_id: user.id,
+    }).then(({ error }) => {
+      // Silently ignore errors - this is analytics, not critical
+    });
   };
 
   /* ─── Feature 1.1: Handle parent category change ─── */
@@ -807,6 +803,7 @@ export function TransactionForm({
           due_date: reminderDate.toISOString(),
           status: 'upcoming',
           is_recurring: false,
+          recurring_interval: null,
           notify_before_days: 1,
           note: null,
         }).then(({ error }) => {
@@ -816,6 +813,8 @@ export function TransactionForm({
 
       /* ─── Feature 1.6: Save & Add Another ─── */
       if (keepOpen && onSuccessKeepOpen) {
+        // Emit event so budgets can refetch
+        emitTransactionUpdated();
         onSuccessKeepOpen();
         // Reset form for another entry
         form.reset({
@@ -828,6 +827,8 @@ export function TransactionForm({
         });
         resetFormState();
       } else {
+        // Emit transaction updated event so budgets can refetch
+        emitTransactionUpdated();
         onSuccess();
 
         if (!isEditMode) {

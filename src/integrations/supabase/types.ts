@@ -30,6 +30,9 @@ export type Database = {
           year: number
           alert_threshold: number
           alert_enabled: boolean
+          is_recurring: boolean
+          is_template: boolean
+          template_name: string | null
         }
         Insert: {
           amount: number
@@ -46,6 +49,9 @@ export type Database = {
           year: number
           alert_threshold?: number
           alert_enabled?: boolean
+          is_recurring?: boolean
+          is_template?: boolean
+          template_name?: string | null
         }
         Update: {
           amount?: number
@@ -62,6 +68,9 @@ export type Database = {
           year?: number
           alert_threshold?: number
           alert_enabled?: boolean
+          is_recurring?: boolean
+          is_template?: boolean
+          template_name?: string | null
         }
         Relationships: [
           {

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard, PiggyBank, ArrowUpRight } from 'lucide-react';
+import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard, ArrowUpRight, HandCoins } from 'lucide-react';
 import { BudgetSpendingChart } from '@/components/BudgetSpendingChart';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -152,7 +152,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
 
                 {onMoveLeftoverToSavings && budget.remaining > 0 && (
                   <DropdownMenuItem onClick={() => onMoveLeftoverToSavings(budget)}>
-                    <PiggyBank className="mr-2 h-4 w-4" />
+                    <HandCoins className="mr-2 h-4 w-4" />
                     Move Leftover to Savings
                   </DropdownMenuItem>
                 )}

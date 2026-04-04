@@ -75,7 +75,7 @@ One minor issue: The filter helper text "No categories selected = all categories
 - Skeleton loading state (`ReportsPage.tsx` lines 117–122) covers the main content area with three stacked skeletons that approximate the actual content height. This prevents layout shift.
 - Two-column sidebar+main layout (`lg:grid-cols-[300px_1fr]`) gives clear visual priority to the report content on large screens.
 - Section dividers using uppercase tracking (`text-sm font-semibold text-muted-foreground uppercase tracking-wide`) create visual rhythm without heavy borders.
-- `ReportSavingsSection.tsx` empty state has a 40px dimmed PiggyBank icon with a CTA link — a clear focal hierarchy.
+- `ReportSavingsSection.tsx` empty state has a 40px dimmed HandCoins icon with a CTA link — a clear focal hierarchy.
 - `BottomNavigation.tsx` uses a sliding `layoutId="nav-indicator"` spring animation on the active tab indicator — polished microinteraction.
 
 **Issues:**

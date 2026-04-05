@@ -146,11 +146,21 @@
     "more": "More"
   },
   "common": {
-    "hisabify": "Hisabify",
-    "helpSupport": "Help & Support",
-    "settings": "Settings",
-    "today": "Today",
-    "yesterday": "Yesterday"
+    "save": "Save",
+    "edit": "Edit",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "updatePassword": "Update Password",
+    "updating": "Updating...",
+    "profileUpdated": "Profile updated successfully",
+    "uploadFailed": "Upload failed",
+    "avatarUpdated": "Avatar updated",
+    "passwordMismatch": "New passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "error": "Error",
+    "passwordUpdated": "Password updated successfully",
+    "invalidPhoneNumber": "Please enter a valid phone number",
+    "helpSupport": "Help & Support"
   },
   "onboarding": {
     "selectLanguage": "Choose your language",
@@ -216,6 +226,10 @@
     "unlockFullInsights": "Unlock Full Insights",
     "unlockFullInsightsDesc": "See exactly where your money goes with advanced analytics and trends.",
     "shareMonthRecap": "Share your {{month}} recap with friends."
+  },
+  "streamingGreeting": {
+    "welcomeFirstTime": "Welcome to Hisabify. Start by adding your first transaction.",
+    "welcomeBack": "Welcome back to your money tracker, Hisabify!"
   },
   "savingsSnapshot": {
     "title": "Savings Snapshot",
@@ -572,7 +586,8 @@
     "privacy": "Privacy",
     "about": "About",
     "logout": "Logout",
-    "deleteAccount": "Delete Account"
+    "deleteAccount": "Delete Account",
+    "signedOut": "Signed out successfully"
   },
   "profile": {
     "title": "Profile",
@@ -894,7 +909,8 @@
   },
   "settingsPage": {
     "general": "General",
-    "support": "Support"
+    "support": "Support",
+    "version": "Hisabify v1.0.0 (Build 240)"
   },
   "profilePersonal": {
     "details": "Details",

@@ -18,7 +18,7 @@ export function SettingsPage() {
 
     const handleSignOut = async () => {
         await signOut();
-        toast({ title: t('settings.signedOut') || 'Signed out successfully' });
+        toast({ title: t('settings.signedOut') });
         navigate('/auth');
     };
 
@@ -95,7 +95,7 @@ export function SettingsPage() {
                 </motion.button>
 
                 <p className="text-center text-xs text-muted-foreground font-mono mt-8">
-                    Hisabify v1.0.0 (Build 240)
+                    {t('settingsPage.version')}
                 </p>
 
             </main>

@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
+import type { ActivityLog } from '@/types';
 import {
   ArrowUpRight,
   ArrowDownLeft,
-  PiggyBank,
+  HandCoins,
   CreditCard,
   Clock,
   Wallet,
@@ -19,7 +21,6 @@ import {
 import { useActivityLog } from '@/hooks/useActivityLog';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import type { ActivityLog } from '@/types';
 
 const activityIcons: Record<string, { icon: React.ElementType; bg: string; fg: string }> = {
   transaction_added: { icon: ArrowUpRight, bg: 'bg-rose-500/10', fg: 'text-rose-500' },
@@ -32,8 +33,8 @@ const activityIcons: Record<string, { icon: React.ElementType; bg: string; fg: s
   budget_created: { icon: Wallet, bg: 'bg-blue-500/10', fg: 'text-blue-500' },
   budget_updated: { icon: Edit3, bg: 'bg-amber-500/10', fg: 'text-amber-500' },
   budget_deleted: { icon: Trash2, bg: 'bg-gray-500/10', fg: 'text-gray-500' },
-  savings_goal_created: { icon: PiggyBank, bg: 'bg-purple-500/10', fg: 'text-purple-500' },
-  savings_contribution: { icon: PiggyBank, bg: 'bg-emerald-500/10', fg: 'text-emerald-500' },
+  savings_goal_created: { icon: HandCoins, bg: 'bg-purple-500/10', fg: 'text-purple-500' },
+  savings_contribution: { icon: HandCoins, bg: 'bg-emerald-500/10', fg: 'text-emerald-500' },
   savings_goal_completed: { icon: CheckCircle2, bg: 'bg-emerald-500/10', fg: 'text-emerald-500' },
   savings_goal_archived: { icon: Archive, bg: 'bg-gray-500/10', fg: 'text-gray-500' },
   payment_reminder_created: { icon: Bell, bg: 'bg-blue-500/10', fg: 'text-blue-500' },
@@ -47,7 +48,7 @@ const activityIcons: Record<string, { icon: React.ElementType; bg: string; fg: s
   recurring_expense_deleted: { icon: Trash2, bg: 'bg-gray-500/10', fg: 'text-gray-500' },
 };
 
-function formatDateHeader(dateStr: string, t: any): string {
+function formatDateHeader(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr);
   if (isToday(date)) return t('common.today');
   if (isYesterday(date)) return t('common.yesterday');
@@ -80,7 +81,7 @@ function ActivityItem({ activity }: { activity: ActivityLog }) {
   );
 }
 
-function ActivityGroup({ dateStr, activities, t }: { dateStr: string; activities: ActivityLog[]; t: any }) {
+function ActivityGroup({ dateStr, activities, t }: { dateStr: string; activities: ActivityLog[]; t: TFunction }) {
   return (
     <div className="space-y-2">
       <div className="sticky top-0 bg-background py-2 z-10">

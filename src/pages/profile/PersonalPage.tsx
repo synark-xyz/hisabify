@@ -58,7 +58,7 @@ export function PersonalPage() {
         if (!user) return;
 
         if (!validatePhone(localProfile.phone)) {
-            setPhoneError('Please enter a valid phone number');
+            setPhoneError(t('common.invalidPhoneNumber'));
             return;
         }
         setPhoneError('');
@@ -77,9 +77,9 @@ export function PersonalPage() {
             }, { onConflict: 'user_id' });
 
         if (error) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+            toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: 'Profile updated successfully' });
+            toast({ title: t('common.profileUpdated') });
             setProfile({
                 ...profile,
                 display_name: sanitizedDisplayName,
@@ -103,7 +103,7 @@ export function PersonalPage() {
             .upload(filePath, file);
 
         if (uploadError) {
-            toast({ title: 'Upload failed', description: uploadError.message, variant: 'destructive' });
+            toast({ title: t('common.uploadFailed'), description: uploadError.message, variant: 'destructive' });
             setLoading(false);
             return;
         }
@@ -113,17 +113,17 @@ export function PersonalPage() {
             .getPublicUrl(filePath);
 
         await updateAvatar(publicUrl);
-        toast({ title: 'Avatar updated' });
+        toast({ title: t('common.avatarUpdated') });
         setLoading(false);
     };
 
     const handleChangePassword = async () => {
         if (passwords.new !== passwords.confirm) {
-            toast({ title: 'Error', description: 'New passwords do not match', variant: 'destructive' });
+            toast({ title: t('common.error'), description: t('common.passwordMismatch'), variant: 'destructive' });
             return;
         }
         if (passwords.new.length < 6) {
-            toast({ title: 'Error', description: 'Password must be at least 6 characters', variant: 'destructive' });
+            toast({ title: t('common.error'), description: t('common.passwordTooShort'), variant: 'destructive' });
             return;
         }
         setPasswordLoading(true);
@@ -131,9 +131,9 @@ export function PersonalPage() {
             password: passwords.new,
         });
         if (error) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+            toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: 'Password updated successfully' });
+            toast({ title: t('common.passwordUpdated') });
             setShowPasswordChange(false);
             setPasswords({ current: '', new: '', confirm: '' });
         }
@@ -184,9 +184,9 @@ export function PersonalPage() {
                             className="text-accent hover:text-accent/80 hover:bg-accent/10"
                         >
                             {isEditing ? (
-                                <><Save className="w-4 h-4 mr-1" /> Save</>
+                                <><Save className="w-4 h-4 mr-1" /> {t('common.save')}</>
                             ) : (
-                                'Edit'
+                                t('common.edit')
                             )}
                         </Button>
                     </div>
@@ -294,7 +294,7 @@ export function PersonalPage() {
                                 disabled={passwordLoading || !passwords.new || !passwords.confirm}
                                 className="w-full"
                             >
-                                {passwordLoading ? 'Updating...' : 'Update Password'}
+                                {passwordLoading ? t('common.updating') : t('common.updatePassword')}
                             </Button>
                         </motion.div>
                     )}

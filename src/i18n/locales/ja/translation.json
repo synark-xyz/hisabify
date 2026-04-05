@@ -1,34 +1,20 @@
 {
   "common": {
     "save": "保存",
-    "cancel": "キャンセル",
-    "delete": "削除",
-    "addTransaction": "取引を追加",
     "edit": "編集",
-    "close": "閉じる",
-    "confirm": "確認",
-    "loading": "読み込み中...",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "パスワード確認",
+    "updatePassword": "パスワード更新",
+    "updating": "更新中...",
+    "profileUpdated": "プロフィールを更新しました",
+    "uploadFailed": "アップロードに失敗しました",
+    "avatarUpdated": "アバターを更新しました",
+    "passwordMismatch": "新しいパスワードが一致しません",
+    "passwordTooShort": "パスワードは6文字以上にしてください",
     "error": "エラー",
-    "success": "成功",
-    "retry": "再試行",
-    "back": "戻る",
-    "next": "次へ",
-    "done": "完了",
-    "skip": "スキップ",
-    "search": "検索",
-    "noResults": "結果が見つかりません",
-    "select": "選択",
-    "language": "言語",
-    "new": "新着",
-    "newTransaction": "新しい取引",
-    "and": "および",
-    "amountPlaceholder": "0.00",
-    "comingSoon": "近日公開",
-    "hisabify": "Hisabify",
-    "helpSupport": "ヘルプ＆サポート",
-    "settings": "設定",
-    "today": "今日",
-    "yesterday": "昨日"
+    "passwordUpdated": "パスワードを更新しました",
+    "invalidPhoneNumber": "有効な電話番号を入力してください",
+    "helpSupport": "ヘルプ＆サポート"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -121,6 +107,10 @@
     "unlockFullInsights": "全ての分析を解放",
     "unlockFullInsightsDesc": "高度な分析とトレンドで、お金の使い道を正確に把握しましょう。",
     "shareMonthRecap": "{{month}}の振り返りを友達とシェアしよう。"
+  },
+  "streamingGreeting": {
+    "welcomeFirstTime": "Hisabifyへようこそ。最初の取引を追加して始めましょう。",
+    "welcomeBack": "おかえりなさい。Hisabifyでお金を追跡しましょう！"
   },
   "savingsSnapshot": {
     "title": "貯金スナップショット",
@@ -446,10 +436,25 @@
   },
   "settings": {
     "preferences": "環境設定",
-    "notifications": "通知"
+    "notifications": "通知",
+    "signedOut": "ログアウトしました",
+    "title": "設定"
   },
   "profile": {
-    "personalInfo": "個人情報"
+    "title": "プロフィール",
+    "editProfile": "プロフィールを編集",
+    "name": "名前",
+    "email": "メール",
+    "phone": "電話",
+    "joined": "{{date}}に参加",
+    "subscription": "サブスクリプション",
+    "personalInformation": "個人情報",
+    "personalInfo": "個人情報",
+    "dataManagement": "データ管理",
+    "inviteEarn": "招待して稼ぐ",
+    "supportDevelopment": "開発を支援",
+    "goPremium": "プレミアムにアップグレード",
+    "unlockAllFeatures": "すべての機能をアンロックしてプロジェクトを支援"
   },
   "auth": {
     "login": "ログイン",
@@ -755,7 +760,8 @@
   },
   "settingsPage": {
     "general": "一般",
-    "support": "サポート"
+    "support": "サポート",
+    "version": "Hisabify v1.0.0 (Build 240)"
   },
   "profilePersonal": {
     "details": "詳細",
@@ -836,5 +842,93 @@
     "activitiesRecorded": "件のアクティビティ記録",
     "noActivityYet": "アクティビティはまだありません",
     "noActivityDesc": "あなたの取引と決済がここに表示されます"
+  },
+  "authCallback": {
+    "authenticating": "認証中...",
+    "completingSignIn": "サインイン完了中...",
+    "error": "エラー",
+    "signInFailed": "サインインに失敗しました。もう一度試してください。",
+    "signInTimedOut": "サインインがタイムアウトしました。もう一度試してください。",
+    "signInNotComplete": "サインインが完了しませんでした。もう一度試してください。",
+    "linkAlreadyUsed": "このサインインリンクはすでに使用されています。もう一度サインインしてください。",
+    "redirectingToSignIn": "サインインにリダイレクト中..."
+  },
+  "deleteAccount": {
+    "title": "アカウントを削除",
+    "desc": "いつでもHisabifyアカウントと関連するすべてのデータの削除をリクエストできます。このページではその方法と、データに何が起こるかについて説明しています。",
+    "method1": {
+      "title": "方法1—アプリで削除（推奨）",
+      "desc": "すべての財務データを即座に削除",
+      "step1": "Hisabifyアプリを開いてアカウントにサインインしてください。",
+      "step2": "ダッシュボードの右上にあるプロフィールアバターをタップします。",
+      "step3": "プロフィールメニューから「データとプライバシー」を選択します。",
+      "step4": "危険ゾーンセクションまでスクロールして「データを削除」をタップします。",
+      "step5": "確認ボックスに「DELETE」と入力し、「データを削除」をタップして確認します。",
+      "note": "財務データはすぐに削除されます。自動的にサインアウトされます。"
+    },
+    "method2": {
+      "title": "方法2—メール経由でリクエスト",
+      "desc": "ログイン認証情報を含む完全なアカウント削除",
+      "step1": "{{email}}にメールを送信してください",
+      "step2": "件名行を使用してください：アカウント削除リクエスト — Hisabify",
+      "step3": "メッセージ本文にHisabifyアカウントに関連付けられたメールアドレスを含めてください。",
+      "note": "30日以内にリクエストを処理し、完了後にメールで確認を送信します。"
+    },
+    "whatGetsDeleted": {
+      "title": "削除されるデータ"
+    }
+  },
+  "install": {
+    "title": "Hisabifyをインストール",
+    "getFullApp": "デバイスでフルアプリエクスペリエンスを取得",
+    "alreadyInstalled": "すでにインストール完了！",
+    "alreadyInstalledDesc": "Hisabifyはご利用可能です",
+    "quickInstall": "クイックインストール",
+    "installDirectly": "ブラウザから直接インストール",
+    "installButton": "Hisabifyをインストール",
+    "installIos": "iPhone/iPadにインストール",
+    "installAndroid": "Androidにインストール",
+    "step1": {
+      "tapShare": "共有ボタンをタップ",
+      "tapShareDesc": "Safariの下部にある共有アイコンを探してください"
+    },
+    "step2": {
+      "addToHome": "ホーム画面に追加",
+      "addToHomeDesc": "下にスクロールして「ホーム画面に追加」をタップ"
+    },
+    "step3": {
+      "tapAdd": "追加をタップ",
+      "tapAddDesc": "ホーム画面にHisabifyを追加することを確認します"
+    },
+    "androidStep1": "ブラウザメニューを開く",
+    "androidStep1Desc": "Chromeの3点ドットをタップ",
+    "androidStep2": "アプリをインストール",
+    "androidStep2Desc": "「アプリをインストール」または「ホーム画面に追加」を選択",
+    "whyInstall": "なぜインストール？",
+    "benefit1": "オフラインで動作 - どこでも経費を追跡",
+    "benefit2": "高速読み込み - 即座にアプリアクセス",
+    "benefit3": "ホーム画面アイコン - クイックアクセス",
+    "benefit4": "フルスクリーン - ブラウザUIなし",
+    "benefit5": "プッシュ通知 - 支払いを忘れない",
+    "backToApp": "アプリに戻る"
+  },
+  "notFound": {
+    "title": "ページが見つかりません",
+    "description": "探しているページは存在しません。",
+    "button": "ホームに戻る",
+    "errorTitle": "404",
+    "oopsPageNotFound": "申し訳ありません！ページが見つかりません",
+    "returnHome": "ホームに戻る"
+  },
+  "resetPassword": {
+    "title": "パスワードをリセット",
+    "enterNewPassword": "新しいパスワードを入力",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "パスワード確認",
+    "updatePassword": "パスワード更新",
+    "passwordUpdated": "パスワードが更新されました！",
+    "redirecting": "アプリにリダイレクト中...",
+    "invalidLink": "無効または期限切れのリンク",
+    "requestNewLink": "新しいパスワードリセットリンクをリクエストしてください。"
   }
 }

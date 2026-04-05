@@ -1,11 +1,18 @@
 import { useNavigate } from 'react-router-dom';
 import { Handshake, ArrowRight, AlertCircle, Plus } from 'lucide-react';
 import { useDebts } from '@/hooks/useDebts';
+import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
 import { isPast } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 
 export function DebtTriageWidget() {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
+  const formatNumber = (n: number) => new Intl.NumberFormat(getLanguageLocale(language)).format(n);
   const navigate = useNavigate();
+  const { formatAmount } = useCurrency();
   const { outstandingDebts, iOwe, theyOwe, totalIOwe, totalTheyOwe, loading } = useDebts();
 
   if (loading) return null;
@@ -18,7 +25,7 @@ export function DebtTriageWidget() {
           <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
             <Handshake className="w-4 h-4 text-accent" />
           </div>
-          <p className="text-sm text-muted-foreground font-medium">No debts tracked</p>
+          <p className="text-sm text-muted-foreground font-medium">{t('debt.noDebtsTracked')}</p>
         </div>
         <button
           type="button"
@@ -26,7 +33,7 @@ export function DebtTriageWidget() {
           className="flex items-center gap-1.5 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-xl hover:bg-accent/20 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          Track a debt
+          {t('debt.trackADebt')}
         </button>
       </div>
     );
@@ -52,15 +59,15 @@ export function DebtTriageWidget() {
           <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
             <Handshake className="w-4 h-4 text-accent" />
           </div>
-          <span className="text-sm font-black tracking-tight">Debts</span>
-          <span className="text-xs text-muted-foreground">{outstandingDebts.length} active</span>
+          <span className="text-sm font-black tracking-tight">{t('debt.debts')}</span>
+          <span className="text-xs text-muted-foreground">{t('debt.activeCount', { count: formatNumber(outstandingDebts.length) })}</span>
         </div>
         <button
           type="button"
           onClick={() => navigate('/debts')}
           className="flex items-center gap-1 text-xs font-bold text-accent hover:text-accent/80 transition-colors"
         >
-          Manage all
+          {t('debt.manageAll')}
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -69,33 +76,33 @@ export function DebtTriageWidget() {
       <div className="grid grid-cols-2 gap-2.5 px-4 py-3">
         {/* To Pay */}
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-rose-400 mb-0.5">To Pay</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-rose-400 mb-0.5">{t('debt.toPay')}</p>
           <p className="text-xl font-black text-rose-500 leading-none mb-0.5">
-            {totalIOwe.toFixed(2)}
+            {formatAmount(totalIOwe)}
           </p>
-          <p className="text-[10px] text-muted-foreground mb-2.5">{iOwe.length} debt{iOwe.length !== 1 ? 's' : ''}</p>
+          <p className="text-[10px] text-muted-foreground mb-2.5">{formatNumber(iOwe.length)} {t('debt.debt')}</p>
           <button
             type="button"
             onClick={() => navigate('/debts?tab=i_owe')}
             className="w-full py-1.5 rounded-xl bg-rose-500/20 text-rose-400 text-[11px] font-bold hover:bg-rose-500/30 transition-colors"
           >
-            Pay Now
+            {t('debt.payNow')}
           </button>
         </div>
 
         {/* To Collect */}
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-0.5">To Collect</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-0.5">{t('debt.toCollect')}</p>
           <p className="text-xl font-black text-emerald-500 leading-none mb-0.5">
-            {totalTheyOwe.toFixed(2)}
+            {formatAmount(totalTheyOwe)}
           </p>
-          <p className="text-[10px] text-muted-foreground mb-2.5">{theyOwe.length} debt{theyOwe.length !== 1 ? 's' : ''}</p>
+          <p className="text-[10px] text-muted-foreground mb-2.5">{formatNumber(theyOwe.length)} {t('debt.debt')}</p>
           <button
             type="button"
             onClick={() => navigate('/debts?tab=they_owe')}
             className="w-full py-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 text-[11px] font-bold hover:bg-emerald-500/30 transition-colors"
           >
-            Remind
+            {t('debt.remind')}
           </button>
         </div>
       </div>
@@ -106,7 +113,7 @@ export function DebtTriageWidget() {
           {overduePeople.length > 0 && (
             <div className="flex items-center gap-1 mr-1 shrink-0">
               <AlertCircle className="w-3 h-3 text-rose-500" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400">Overdue</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400">{t('debt.overdue')}</span>
             </div>
           )}
           <div className="flex items-center gap-1.5 flex-wrap">

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, DollarSign, Bell, RefreshCw, Loader2, ChevronDown, ChevronUp, Receipt, Search, X } from 'lucide-react';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
@@ -33,6 +34,7 @@ interface AddPaymentReminderModalProps {
 }
 
 export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminder, initialData }: AddPaymentReminderModalProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const { currency } = useCurrency();
@@ -326,7 +328,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
                       step="0.01"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.00"
+                      placeholder={t('common.amountPlaceholder')}
                       required
                       className="pl-9 rounded-xl h-12 font-bold"
                     />

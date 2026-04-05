@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
-import { 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  PiggyBank, 
-  CreditCard, 
-  Clock, 
+import { useTranslation } from 'react-i18next';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  PiggyBank,
+  CreditCard,
+  Clock,
   Wallet,
   Trash2,
   CheckCircle2,
@@ -46,10 +47,10 @@ const activityIcons: Record<string, { icon: React.ElementType; bg: string; fg: s
   recurring_expense_deleted: { icon: Trash2, bg: 'bg-gray-500/10', fg: 'text-gray-500' },
 };
 
-function formatDateHeader(dateStr: string): string {
+function formatDateHeader(dateStr: string, t: any): string {
   const date = new Date(dateStr);
-  if (isToday(date)) return 'Today';
-  if (isYesterday(date)) return 'Yesterday';
+  if (isToday(date)) return t('common.today');
+  if (isYesterday(date)) return t('common.yesterday');
   return format(date, 'MMMM d, yyyy');
 }
 
@@ -79,12 +80,12 @@ function ActivityItem({ activity }: { activity: ActivityLog }) {
   );
 }
 
-function ActivityGroup({ dateStr, activities }: { dateStr: string; activities: ActivityLog[] }) {
+function ActivityGroup({ dateStr, activities, t }: { dateStr: string; activities: ActivityLog[]; t: any }) {
   return (
     <div className="space-y-2">
       <div className="sticky top-0 bg-background py-2 z-10">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          {formatDateHeader(dateStr)}
+          {formatDateHeader(dateStr, t)}
         </h3>
       </div>
       <div className="space-y-1">
@@ -98,6 +99,7 @@ function ActivityGroup({ dateStr, activities }: { dateStr: string; activities: A
 
 export function ActivityHistoryPage() {
   const { activities, loading } = useActivityLog();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -119,8 +121,10 @@ export function ActivityHistoryPage() {
     <div className="min-h-screen bg-background pb-24">
       <div className="px-4 py-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">History</h1>
-          <span className="text-sm text-muted-foreground">{activities.length} activities recorded</span>
+          <h1 className="text-xl font-semibold">{t('activity.title')}</h1>
+          <span className="text-sm text-muted-foreground">
+            {activities.length} {t('activity.activitiesRecorded')}
+          </span>
         </div>
 
         {loading ? (
@@ -130,18 +134,19 @@ export function ActivityHistoryPage() {
         ) : activities.length === 0 ? (
           <div className="text-center py-12">
             <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground font-medium">No activity yet</p>
+            <p className="text-muted-foreground font-medium">{t('activity.noActivityYet')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Your transactions and settlements will appear here
+              {t('activity.noActivityDesc')}
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             {sortedDates.map((date) => (
-              <ActivityGroup 
-                key={date} 
-                dateStr={date} 
-                activities={groupedByDate[date]} 
+              <ActivityGroup
+                key={date}
+                dateStr={date}
+                activities={groupedByDate[date]}
+                t={t}
               />
             ))}
           </div>

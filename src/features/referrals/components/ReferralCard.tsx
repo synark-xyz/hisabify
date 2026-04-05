@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
+import { useTranslation } from 'react-i18next';
 
 type TabMode = 'share' | 'redeem';
 
 export function ReferralCard() {
+    const { t } = useTranslation();
     const { referralCode, daysRemaining, hasUsedReferral, friendsInvited, redeemCode, loading, profileLoading } = useReferral();
     const codeLoading = profileLoading && !referralCode;
     const [activeTab, setActiveTab] = useState<TabMode>('share');
@@ -60,7 +62,7 @@ export function ReferralCard() {
                             : 'bg-card text-muted-foreground hover:text-foreground'
                     }`}
                 >
-                    Share Code
+                    {t('referral.shareCode')}
                 </button>
                 <button
                     onClick={() => setActiveTab('redeem')}
@@ -71,7 +73,7 @@ export function ReferralCard() {
                             : 'bg-card text-muted-foreground hover:text-foreground'
                     } ${hasUsedReferral ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                    Redeem Code
+                    {t('referral.redeemCode')}
                 </button>
             </div>
 
@@ -81,7 +83,7 @@ export function ReferralCard() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 text-accent">
                             <Gift className="w-5 h-5" />
-                            <h3 className="font-bold text-sm">Invite friends. You both get 3 days Pro.</h3>
+                            <h3 className="font-bold text-sm">{t('referral.inviteReward')}</h3>
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -91,7 +93,7 @@ export function ReferralCard() {
                             >
                                 <div>
                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                        Your Code
+                                        {t('referral.yourCode')}
                                     </p>
                                     {codeLoading ? (
                                         <div className="animate-pulse bg-muted-foreground/20 rounded h-7 w-32 mt-1" />
@@ -113,19 +115,20 @@ export function ReferralCard() {
                                 className="w-12 h-12 rounded-2xl"
                             >
                                 <Share2 className="w-5 h-5" />
+                                <span className="sr-only">{t('referral.share')}</span>
                             </Button>
                         </div>
 
                         {friendsInvited > 0 && (
                             <p className="text-xs text-muted-foreground font-medium">
-                                {friendsInvited} friend{friendsInvited > 1 ? 's' : ''} joined
+                                {t('referral.friendsJoined', { count: friendsInvited })}
                             </p>
                         )}
 
                         {daysRemaining > 0 && (
                             <div className="flex items-center gap-2 bg-accent/10 text-accent rounded-xl px-3 py-2 w-fit">
                                 <Ticket className="w-4 h-4" />
-                                <span className="text-xs font-bold">{daysRemaining} days Pro remaining</span>
+                                <span className="text-xs font-bold">{t('referral.daysProRemaining', { days: daysRemaining })}</span>
                             </div>
                         )}
                     </div>
@@ -133,17 +136,17 @@ export function ReferralCard() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
                             <Ticket className="w-5 h-5 text-accent" />
-                            <h3 className="font-bold text-sm">Enter friend's code to unlock Pro features</h3>
+                            <h3 className="font-bold text-sm">{t('referral.enterFriendCode')}</h3>
                         </div>
 
                         {hasUsedReferral ? (
                             <p className="text-sm text-muted-foreground">
-                                You have already redeemed a referral code.
+                                {t('referral.alreadyRedeemed')}
                             </p>
                         ) : (
                             <div className="flex gap-2">
                                 <Input
-                                    placeholder="ENTER CODE"
+                                    placeholder={t('referral.enterCodePlaceholder')}
                                     value={redeemInput}
                                     onChange={(e) => setRedeemInput(e.target.value.toUpperCase())}
                                     maxLength={8}
@@ -154,7 +157,7 @@ export function ReferralCard() {
                                     disabled={loading || !redeemInput || redeemInput.length < 8}
                                     className="rounded-2xl h-12 px-6 font-bold"
                                 >
-                                    {loading ? '...' : 'Redeem'}
+                                    {loading ? '...' : t('referral.redeem')}
                                 </Button>
                             </div>
                         )}

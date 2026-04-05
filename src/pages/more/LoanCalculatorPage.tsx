@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTranslation } from 'react-i18next';
 import {
   Select,
   SelectContent,
@@ -83,6 +84,7 @@ const POPULAR_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CA
 export function LoanCalculatorPage() {
   const navigate = useNavigate();
   const { currency: defaultCurrency, formatAmount } = useCurrency();
+  const { t } = useTranslation();
   const { isPremium } = useSubscription();
   const [state, dispatch] = useReducer(loanReducer, initialState);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(defaultCurrency);
@@ -151,7 +153,7 @@ export function LoanCalculatorPage() {
             <Input
               id="principal"
               type="number"
-              placeholder="100000"
+              placeholder={t('loanCalculator.placeholder')}
               value={state.principal}
               onChange={(e) => dispatch({ type: 'setPrincipal', payload: e.target.value })}
             />
@@ -192,16 +194,16 @@ export function LoanCalculatorPage() {
         {state.result && (
           <div className="space-y-4 bg-card rounded-2xl p-6 border border-border/30">
             <div className="text-center mb-4">
-              <p className="text-sm text-muted-foreground mb-1">Monthly EMI</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('loanCalculator.monthlyEmi')}</p>
               <p className="text-3xl font-bold text-primary">{formatWithCurrency(state.result.emi)}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-primary/5 rounded-xl">
-                <p className="text-sm text-muted-foreground">Total Interest</p>
+                <p className="text-sm text-muted-foreground">{t('loanCalculator.totalInterest')}</p>
                 <p className="text-lg font-semibold">{formatWithCurrency(state.result.totalInterest)}</p>
               </div>
               <div className="text-center p-4 bg-primary/5 rounded-xl">
-                <p className="text-sm text-muted-foreground">Total Payment</p>
+                <p className="text-sm text-muted-foreground">{t('loanCalculator.totalPayment')}</p>
                 <p className="text-lg font-semibold">{formatWithCurrency(state.result.totalPayment)}</p>
               </div>
             </div>

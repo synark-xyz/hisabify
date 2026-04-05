@@ -8,6 +8,8 @@ import type { BudgetWithSpending } from '@/hooks/useBudgets';
 import type { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
 import { cn } from '@/lib/utils';
 import { ChartBar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface AssignmentSheetProps {
   open: boolean;
@@ -32,19 +34,21 @@ export function AssignmentSheet({
   onSelectGoal,
   onUnlink,
 }: AssignmentSheetProps) {
+  const { t } = useTranslation();
+  const { formatAmount } = useCurrency();
   const hasSelection = currentBudgetId !== null || currentGoalId !== null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-2xl max-h-[75vh] overflow-y-auto pb-8">
         <SheetHeader className="mb-4">
-          <SheetTitle className="text-base">Link to budget or goal</SheetTitle>
+          <SheetTitle className="text-base">{t('suggestion.sheetTitle')}</SheetTitle>
         </SheetHeader>
 
         {budgets.length > 0 && (
           <div className="mb-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 px-1">
-              Budgets
+              {t('suggestion.budgets')}
             </p>
             <div className="space-y-2">
               {budgets.map(budget => {
@@ -69,7 +73,7 @@ export function AssignmentSheet({
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{budget.name || budget.category?.name || 'Budget'}</p>
                       <p className="text-xs text-muted-foreground">
-                        {budget.remaining.toFixed(0)} remaining · {budget.percentage}% used
+                        {t('budget.remainingUsed', { remaining: formatAmount(budget.remaining), percent: budget.percentage })}
                       </p>
                       <div className="mt-1 h-1 bg-muted rounded-full overflow-hidden">
                         <div
@@ -84,7 +88,7 @@ export function AssignmentSheet({
                     </div>
                     {isLinked && (
                       <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full flex-shrink-0">
-                        linked
+                        {t('suggestion.linked')}
                       </span>
                     )}
                   </button>
@@ -97,7 +101,7 @@ export function AssignmentSheet({
         {goals.filter(g => !g.isArchived && g.percentage < 100).length > 0 && (
           <div className="mb-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 px-1">
-              Savings Goals
+              {t('suggestion.savingsGoals')}
             </p>
             <div className="space-y-2">
               {goals
@@ -127,7 +131,7 @@ export function AssignmentSheet({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{goal.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {goal.percentage.toFixed(0)}% saved · {goal.remaining.toFixed(0)} to go
+                          {t('savingsSnapshot.savedToGo', { percent: goal.percentage.toFixed(0), remaining: formatAmount(goal.remaining) })}
                         </p>
                         <div className="mt-1 h-1 bg-muted rounded-full overflow-hidden">
                           <div
@@ -138,7 +142,7 @@ export function AssignmentSheet({
                       </div>
                       {isLinked && (
                         <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full flex-shrink-0">
-                          linked
+                          {t('suggestion.linked')}
                         </span>
                       )}
                     </button>
@@ -156,13 +160,13 @@ export function AssignmentSheet({
             }}
             className="w-full p-3 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors text-center"
           >
-            Remove link
+            {t('suggestion.removeLink')}
           </button>
         )}
 
         {budgets.length === 0 && goals.filter(g => !g.isArchived).length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-8">
-            No budgets or savings goals yet.
+            {t('suggestion.noBudgetsOrGoals')}
           </p>
         )}
       </SheetContent>

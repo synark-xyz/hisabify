@@ -1,8 +1,10 @@
-import { useRef, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
-import { format, startOfWeek, addDays, isSameDay, isSameMonth } from 'date-fns';
+import { startOfWeek, addDays, isSameDay, isSameMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useFormatDate } from '@/lib/formatDate';
 
 interface SwipeableWeekCalendarProps {
     currentDate: Date;
@@ -23,6 +25,8 @@ export function SwipeableWeekCalendar({
 }: SwipeableWeekCalendarProps) {
     const controls = useAnimation();
     const [dragging, setDragging] = useState(false);
+    const { t } = useTranslation();
+    const { formatDate } = useFormatDate();
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
     const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -50,9 +54,9 @@ export function SwipeableWeekCalendar({
         <div className="relative overflow-hidden bg-card/60 backdrop-blur-md rounded-2xl p-4 border border-border/50 shadow-card card-3d transition-all">
             {/* Day Labels */}
             <div className="grid grid-cols-7 gap-1 mb-3">
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                {days.map((day, i) => (
                     <div key={i} className="text-center text-[10px] font-black uppercase tracking-tighter text-muted-foreground/60">
-                        {day}
+                        {formatDate(day, 'EEEEE')}
                     </div>
                 ))}
             </div>
@@ -91,7 +95,7 @@ export function SwipeableWeekCalendar({
                                 'text-base font-bold tracking-tight',
                                 isSelected ? 'text-glow' : 'text-foreground'
                             )}>
-                                {format(day, 'd')}
+                                {formatDate(day, 'd')}
                             </span>
                             {hasTx && (
                                 <motion.span
@@ -117,7 +121,7 @@ export function SwipeableWeekCalendar({
                     exit={{ opacity: 0, y: -5 }}
                 >
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">
-                        {format(selectedDate, 'MMM dd')} selected
+                        {formatDate(selectedDate, 'MMM dd')} {t('expenses.calendarSelected')}
                     </p>
                     <motion.button
                         onClick={() => selectedDate && onDateSelect(selectedDate)}
@@ -126,13 +130,13 @@ export function SwipeableWeekCalendar({
                         whileTap={{ scale: 0.95 }}
                     >
                         <X className="w-2.5 h-2.5" />
-                        Clear
+                        {t('expenses.clearDate')}
                     </motion.button>
                 </motion.div>
             ) : (
                 <div className="flex justify-between items-center mt-3 px-1 opacity-20 pointer-events-none">
                     <ChevronLeft className="w-3 h-3" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest">Swipe for more</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest">{t('expenses.calendarSwipeHint')}</span>
                     <ChevronRight className="w-3 h-3" />
                 </div>
             )}

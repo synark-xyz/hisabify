@@ -1,22 +1,25 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { List, Target, LayoutDashboardIcon, Lightbulb, Grid } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
 
 
-const navItems = [
-  { path: '/', icon: LayoutDashboardIcon, label: 'Dashboard' },
-  { path: '/budget', icon: Target, label: 'Budget' },
-  { path: '/transactions', icon: List, label: 'Transactions' },
-  { path: '/insights', icon: Lightbulb, label: 'Insights' },
-  { path: '/more', icon: Grid, label: 'More' },
+const getNavItems = (t: (key: string) => string) => [
+  { path: '/', icon: LayoutDashboardIcon, label: t('nav.dashboard') },
+  { path: '/budget', icon: Target, label: t('nav.budget') },
+  { path: '/transactions', icon: List, label: t('nav.expenses') },
+  { path: '/insights', icon: Lightbulb, label: t('nav.insights') },
+  { path: '/more', icon: Grid, label: t('nav.more') },
 ];
 
 export function BottomNavigation() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { isKeyboardOpen } = useVisualViewport();
+  const navItems = getNavItems(t);
 
   return (
     <AnimatePresence>
@@ -46,7 +49,7 @@ export function BottomNavigation() {
               >
                 <Icon className={cn('w-6 h-6', isActive && 'fill-accent/10')} />
                 <span
-                  className={cn('text-[11px] font-semibold', isActive ? 'opacity-100' : 'opacity-60')}
+                  className={cn('text-[11px] font-semibold max-w-full truncate', isActive ? 'opacity-100' : 'opacity-60')}
                 >
                   {item.label}
                 </span>

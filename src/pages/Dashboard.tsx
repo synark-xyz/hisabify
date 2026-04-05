@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown, CheckCircle, Plus, PiggyBank, Handshake, Trash } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { StreamingGreeting } from '@/components/StreamingGreeting';
@@ -59,6 +60,7 @@ export function Dashboard() {
   const { formatAmount, currencyVersion, currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const fetchTransactions = useCallback(async () => {
     if (!user) return;
@@ -331,7 +333,7 @@ export function Dashboard() {
                       >
                         <Wallet className={cn("w-4 h-4", useDarkText ? "text-primary" : "text-white")} weight="fill" />
                       </div>
-                      <span className="text-sm font-medium tracking-wide">Main Balance</span>
+                      <span className="text-sm font-medium tracking-wide">{t('dashboard.mainBalance')}</span>
                     </div>
                     <h2 className={cn("text-3xl font-black tracking-tight mb-1", variant === 'cyberpunk' && !useDarkText && "text-glow")}>
                       {formatAmount(netBalance)}
@@ -346,7 +348,7 @@ export function Dashboard() {
                       style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                     >
                       <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
-                      <span>Today {formatAmount(todayNet)}</span>
+                      <span>{t('dashboard.today')} {formatAmount(todayNet)}</span>
                     </div>
                   </div>
                 </div>
@@ -365,7 +367,7 @@ export function Dashboard() {
                       <div className={cn("p-1.5 rounded-full", useDarkText ? "bg-red-500/20" : "bg-rose-500/20")}>
                         <TrendDown className={cn("w-3.5 h-3.5", useDarkText ? "text-red-600" : "text-rose-300")} weight="bold" />
                       </div>
-                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>Expenses</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>{t('dashboard.expenses')}</span>
                     </div>
                     <p className={cn("text-base font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
                   </div>
@@ -382,7 +384,7 @@ export function Dashboard() {
                       <div className={cn("p-1.5 rounded-full", useDarkText ? "bg-green-500/20" : "bg-emerald-500/20")}>
                         <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
                       </div>
-                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>Income</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>{t('dashboard.income')}</span>
                     </div>
                     <p className={cn("text-base font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
                   </div>
@@ -409,15 +411,15 @@ export function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-card rounded-3xl p-5 border border-border/50 shadow-card"
               >
-                <h2 className="text-lg font-black tracking-tight text-foreground mb-1">Get Started</h2>
+                <h2 className="text-lg font-black tracking-tight text-foreground mb-1">{t('dashboard.gettingStarted')}</h2>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Your account is ready. Add real data with these steps to unlock insights.
+                  {t('dashboard.gettingStartedDesc')}
                 </p>
 
                 <div className="space-y-2 mb-4">
-                  <div className="text-sm text-foreground">1. Add your first transaction</div>
-                  <div className="text-sm text-foreground">2. Create a budget limit</div>
-                  <div className="text-sm text-foreground">3. Set a savings goal</div>
+                  <div className="text-sm text-foreground">{t('dashboard.step1AddTransaction')}</div>
+                  <div className="text-sm text-foreground">{t('dashboard.step2CreateBudget')}</div>
+                  <div className="text-sm text-foreground">{t('dashboard.step3SetSavingsGoal')}</div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -428,7 +430,7 @@ export function Dashboard() {
                     <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Plus className="w-4 h-4 text-emerald-500" />
                     </div>
-                    <span className="text-xs font-semibold text-foreground">Add</span>
+                    <span className="text-xs font-semibold text-foreground">{t('dashboard.addButton')}</span>
                   </button>
                   <button
                     onClick={() => navigate('/budget')}
@@ -437,7 +439,7 @@ export function Dashboard() {
                     <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Wallet className="w-4 h-4 text-violet-500" />
                     </div>
-                    <span className="text-xs font-semibold text-foreground">Budget</span>
+                    <span className="text-xs font-semibold text-foreground">{t('dashboard.budgetButton')}</span>
                   </button>
                   <button
                     onClick={() => navigate('/savings')}
@@ -446,7 +448,7 @@ export function Dashboard() {
                     <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <PiggyBank className="w-4 h-4 text-amber-500" />
                     </div>
-                    <span className="text-xs font-semibold text-foreground">Goal</span>
+                    <span className="text-xs font-semibold text-foreground">{t('dashboard.goalButton')}</span>
                   </button>
                   <button
                     onClick={() => navigate('/debts')}
@@ -455,7 +457,7 @@ export function Dashboard() {
                     <div className="w-9 h-9 rounded-xl bg-rose-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Handshake className="w-4 h-4 text-rose-500" />
                     </div>
-                    <span className="text-xs font-semibold text-foreground">Debt</span>
+                    <span className="text-xs font-semibold text-foreground">{t('dashboard.debtButton')}</span>
                   </button>
                 </div>
               </motion.section>
@@ -490,14 +492,14 @@ export function Dashboard() {
                         >
                           <Crown className="w-5 h-5 text-white" weight="fill" />
                         </div>
-                        <div>
+                          <div>
                           <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="text-base font-bold text-white tracking-tight">Upgrade to Pro</h3>
+                            <h3 className="text-base font-bold text-white tracking-tight">{t('dashboard.upgradeToPro')}</h3>
                             <span className="px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white font-bold uppercase tracking-wide">
-                              New
+                              {t('common.new')}
                             </span>
                           </div>
-                          <p className="text-xs text-white/80 font-medium">Unlock unlimited budgets & insights</p>
+                          <p className="text-xs text-white/80 font-medium">{t('dashboard.unlockInsights')}</p>
                         </div>
                       </div>
 
@@ -540,8 +542,8 @@ export function Dashboard() {
                         <TrendUp className="w-5 h-5 text-indigo-400" weight="duotone" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black text-foreground">New month, new start!</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Share your {format(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1), 'MMMM')} recap with friends.</p>
+                        <p className="text-sm font-black text-foreground">{t('dashboard.newMonthNewStart')}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t('dashboard.shareMonthRecap', { month: format(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1), 'MMMM') })}</p>
                       </div>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -552,7 +554,7 @@ export function Dashboard() {
                         }}
                         className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-indigo-500 text-white text-xs font-black"
                       >
-                        Share
+                        {t('dashboard.share')}
                       </motion.button>
                     </div>
                   </div>
@@ -570,7 +572,7 @@ export function Dashboard() {
                 <div className="flex items-center justify-between mb-3 px-1">
                   <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                     <Bell className="w-5 h-5 text-accent" weight="duotone" />
-                    Reminders
+                    {t('dashboard.reminders')}
                   </h2>
                   <motion.button
                     onClick={() => setShowAddPaymentReminder(true)}
@@ -609,7 +611,7 @@ export function Dashboard() {
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ChartPie className="w-5 h-5 text-accent" weight="duotone" />
-                  Insights
+                  {t('dashboard.insights')}
                 </h2>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -618,7 +620,7 @@ export function Dashboard() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      Year {selectedYear}
+                      {t('dashboard.year', { year: selectedYear })}
                       <CaretDown className="w-4 h-4" weight="duotone" />
                     </motion.button>
                   </DropdownMenuTrigger>
@@ -645,9 +647,9 @@ export function Dashboard() {
                     <div className="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-4 border border-50">
                       <Crown className="w-8 h-8 text-accent fill-accent" weight="duotone" />
                     </div>
-                    <h3 className="text-xl font-black mb-2 text-foreground">Unlock Full Insights</h3>
+                    <h3 className="text-xl font-black mb-2 text-foreground">{t('dashboard.unlockFullInsights')}</h3>
                     <p className="text-sm text-muted-foreground mb-6 max-w-[240px]">
-                      See exactly where your money goes with advanced analytics and trends.
+                      {t('dashboard.unlockFullInsightsDesc')}
                     </p>
                     <motion.button
                       onClick={() => setShowUpgradeModal(true)}
@@ -655,7 +657,7 @@ export function Dashboard() {
                       whileTap={{ scale: 0.95 }}
                       className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black shadow-lg shadow-purple-500/25 flex items-center gap-2"
                     >
-                      Upgrade to Pro
+                      {t('dashboard.upgradeToPro')}
                     </motion.button>
                   </div>
                 )}
@@ -680,9 +682,9 @@ export function Dashboard() {
               <div className="flex items-center justify-between mb-4 px-1">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />
-                  Activity History
+                  {t('dashboard.activityHistory')}
                   <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                    NEW
+                    {t('common.new').toUpperCase()}
                   </span>
                 </h2>
                 <motion.button
@@ -690,7 +692,7 @@ export function Dashboard() {
                   className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-accent transition-colors"
                   whileHover={{ x: 4 }}
                 >
-                  View All
+                  {t('dashboard.viewAll')}
                   <ArrowRight className="w-4 h-4" weight="duotone" />
                 </motion.button>
               </div>
@@ -756,7 +758,7 @@ export function Dashboard() {
                     <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
                       <Sparkle className="w-8 h-8 text-muted-foreground/30" weight="duotone" />
                     </div>
-                    <p className="text-sm font-medium text-muted-foreground">No activity yet. Start adding your expenses!</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('dashboard.noActivityYet')}</p>
                   </div>
                 )}
               </div>

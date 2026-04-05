@@ -14,7 +14,9 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Lightbulb, PieChart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -22,7 +24,7 @@ import {
   AnalyticsInsight,
 } from '@/types';
 import { format, startOfYear, endOfYear, subYears } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, getLocalizedCategoryName } from '@/lib/utils';
 
 interface EnhancedAnalyticsChartProps {
   selectedYear: number;
@@ -61,8 +63,12 @@ export function EnhancedAnalyticsChart({
   selectedMonth,
   onMonthSelect
 }: EnhancedAnalyticsChartProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { formatAmount } = useCurrency();
+  const { language } = useLanguage();
+  const formatPercent = (value: number) =>
+    new Intl.NumberFormat(getLanguageLocale(language), { maximumFractionDigits: 0 }).format(value);
   const [loading, setLoading] = useState(true);
   const [quarterFilter, setQuarterFilter] = useState<QuarterFilter>('All');
   const [chartMode, setChartMode] = useState<ChartMode>('expenses');
@@ -99,7 +105,7 @@ export function EnhancedAnalyticsChart({
       ] = await Promise.all([
         supabase
           .from('transactions')
-          .select('amount, type, date, category:categories(name, color)')
+          .select('amount, type, date, category:categories(name, color, translations)')
           .eq('user_id', user.id)
           .gte('date', start)
           .lte('date', end),
@@ -285,7 +291,7 @@ export function EnhancedAnalyticsChart({
     if (highestExpenseMonth.amount > 0) {
       list.push({
         icon: '💡',
-        message: `${highestExpenseMonth.month} is your highest spending month (${formatAmount(highestExpenseMonth.amount)})`,
+        message: t('analytics.highestSpendingMonth', { month: highestExpenseMonth.month, amount: formatAmount(highestExpenseMonth.amount) }),
         type: 'info',
       });
     }
@@ -293,7 +299,7 @@ export function EnhancedAnalyticsChart({
     if (metrics.currentMonthAmount > metrics.avgMonthly * 1.2) {
       list.push({
         icon: '⚠️',
-        message: `This month's spending is unusually high (${metrics.monthVsAvg.toFixed(0)}% above average)`,
+        message: t('analytics.spendingAboveAverage', { percent: metrics.monthVsAvg.toFixed(0) }),
         type: 'warning',
       });
     }
@@ -302,13 +308,13 @@ export function EnhancedAnalyticsChart({
     if (bestSavingsMonth.savingsAmount > 0) {
       list.push({
         icon: '💰',
-        message: `${bestSavingsMonth.month} is your strongest savings month (${formatAmount(bestSavingsMonth.savingsAmount)})`,
+        message: t('analytics.highestSavingsMonth', { month: bestSavingsMonth.month, amount: formatAmount(bestSavingsMonth.savingsAmount) }),
         type: 'success',
       });
     }
 
     return list.slice(0, 3);
-  }, [formatAmount, fullYearData, metrics.avgMonthly, metrics.currentMonthAmount, metrics.monthVsAvg]);
+  }, [t, formatAmount, fullYearData, metrics.avgMonthly, metrics.currentMonthAmount, metrics.monthVsAvg]);
 
   const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (!active || !payload?.length) {
@@ -370,8 +376,8 @@ export function EnhancedAnalyticsChart({
   if (fullYearData.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-card/60 p-8 text-center">
-        <p className="text-sm font-semibold text-foreground">No analytics for {selectedYear}</p>
-        <p className="mt-1 text-xs text-muted-foreground">Add transactions or savings contributions to unlock insights.</p>
+        <p className="text-sm font-semibold text-foreground">{t('analytics.noAnalytics', { year: selectedYear })}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t('analytics.noAnalyticsDesc')}</p>
       </div>
     );
   }
@@ -380,46 +386,46 @@ export function EnhancedAnalyticsChart({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between" whileHover={{ y: -2 }}>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">Total This Year</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{t('analytics.totalThisYear')}</span>
           <div className="mt-1">
             <h3 className="text-xl font-bold text-foreground">{formatAmount(metrics.totalThisYear)}</h3>
             <p className={cn('text-xs font-medium flex items-center gap-1 mt-0.5', metrics.yoyGrowth > 0 ? 'text-destructive' : 'text-green-500')}>
               {metrics.yoyGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {Math.abs(metrics.yoyGrowth).toFixed(1)}% vs last year
+              {t('analytics.vsLastYear', { value: Math.abs(metrics.yoyGrowth).toFixed(1) })}
             </p>
           </div>
         </motion.div>
 
         <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between" whileHover={{ y: -2 }}>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">Monthly Average</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{t('analytics.monthlyAverage')}</span>
           <div className="mt-1">
             <h3 className="text-xl font-bold text-foreground">{formatAmount(metrics.avgMonthly)}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              This month: <span className="font-bold text-foreground">{formatAmount(metrics.currentMonthAmount)}</span>
+              {t('analytics.thisMonth')}: <span className="font-bold text-foreground">{formatAmount(metrics.currentMonthAmount)}</span>
             </p>
           </div>
         </motion.div>
 
         <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between" whileHover={{ y: -2 }}>
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">
-            Savings Rate · {format(new Date(), 'MMM')}
+            {t('analytics.savingsRate', { month: format(new Date(), 'MMM') })}
           </span>
           <div className="mt-1">
             <h3 className="text-xl font-bold text-emerald-600">{savingsRateMetrics.currentRate.toFixed(1)}%</h3>
             <p className={cn('text-xs mt-0.5', savingsRateMetrics.delta >= 0 ? 'text-emerald-600' : 'text-amber-600')}>
-              {savingsRateMetrics.delta >= 0 ? '+' : ''}{savingsRateMetrics.delta.toFixed(1)} pts vs last month
+              {t('analytics.vsLastMonth', { value: `${savingsRateMetrics.delta >= 0 ? '+' : ''}${savingsRateMetrics.delta.toFixed(1)}` })}
             </p>
           </div>
         </motion.div>
 
         <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between" whileHover={{ y: -2 }}>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">Top Category</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{t('analytics.topCategory')}</span>
           <div className="mt-1">
             <h3 className={cn('text-xl font-bold', metrics.topCat.name === 'Savings' ? 'text-emerald-600' : 'text-primary')}>
-              {metrics.topCat.name}
+              {metrics.topCat.name === 'Savings' ? t('categories.Savings') : metrics.topCat.name}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              <span className="font-bold text-foreground">{metrics.topCat.percentage.toFixed(0)}%</span> of spending
+              <span className="font-bold text-foreground">{metrics.topCat.percentage.toFixed(0)}%</span> {t('analytics.ofSpending')}
             </p>
           </div>
         </motion.div>
@@ -557,14 +563,14 @@ export function EnhancedAnalyticsChart({
       <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between mb-1">
           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-            <Lightbulb className="w-3.5 h-3.5 text-yellow-500" /> Key Insights
+            <Lightbulb className="w-3.5 h-3.5 text-yellow-500" /> {t('analytics.keyInsights')}
           </h4>
           {insights.length > 1 && (
             <button
               onClick={() => setShowAllInsights(!showAllInsights)}
               className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
             >
-              {showAllInsights ? 'Show Less' : 'View all'}
+              {showAllInsights ? t('analytics.showLess') : t('analytics.viewAll')}
             </button>
           )}
         </div>
@@ -586,20 +592,20 @@ export function EnhancedAnalyticsChart({
       <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
         <div className="flex items-center justify-between mb-4">
           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-            <PieChart className="w-3.5 h-3.5 text-secondary" /> Category Breakdown
+            <PieChart className="w-3.5 h-3.5 text-secondary" /> {t('analytics.categoryBreakdown')}
           </h4>
           {categoryBreakdown.length > 1 && (
             <button
               onClick={() => setShowAllCategories(!showAllCategories)}
               className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
             >
-              {showAllCategories ? 'Show Less' : 'View all'}
+              {showAllCategories ? t('analytics.showLess') : t('analytics.viewAll')}
             </button>
           )}
         </div>
 
         {categoryBreakdown.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4 italic">No category data available for this year</p>
+          <p className="text-sm text-muted-foreground text-center py-4 italic">{t('analytics.noCategoryData')}</p>
         ) : (
           <div className="space-y-4">
             {(showAllCategories ? categoryBreakdown : categoryBreakdown.slice(0, 3)).map((cat) => (
@@ -610,8 +616,8 @@ export function EnhancedAnalyticsChart({
                 layout
               >
                 <div className="flex justify-between items-end text-sm">
-                  <span className="font-bold text-foreground/90 group-hover:text-foreground transition-colors">{cat.name}</span>
-                  <span className="font-mono text-muted-foreground">{cat.percentage.toFixed(0)}% • {formatAmount(cat.amount)}</span>
+                  <span className="font-bold text-foreground/90 group-hover:text-foreground transition-colors">{t(`categories.${cat.name}`, cat.name)}</span>
+                  <span className="font-mono text-muted-foreground">{formatPercent(cat.percentage)}% • {formatAmount(cat.amount)}</span>
                 </div>
                 <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
                   <motion.div

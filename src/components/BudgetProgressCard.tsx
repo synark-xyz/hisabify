@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Utensils, ShoppingBag, HeartPulse, Car, Gamepad2, Receipt, Wallet, CircleDot, MoreVertical, Edit, Trash2, Bookmark, CreditCard, ArrowUpRight, HandCoins } from 'lucide-react';
 import { BudgetSpendingChart } from '@/components/BudgetSpendingChart';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
@@ -60,17 +61,18 @@ const getStatusBgColor = (status: BudgetStatus): string => {
   }
 };
 
-const getStatusLabel = (status: BudgetStatus): string => {
-  switch (status) {
-    case 'exceeded': return 'Exceeded';
-    case 'warning':  return 'At Risk';
-    case 'utilized': return 'Paid';
-    default:         return 'On Track';
-  }
-};
-
 export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransactions, onViewInExpenses, onPayNow, onSaveAsTemplate, onMoveLeftoverToSavings, savingsReserved = 0 }: BudgetProgressCardProps) {
   const { formatAmount } = useCurrency();
+  const { t } = useTranslation();
+
+  const getStatusLabel = (status: BudgetStatus): string => {
+    switch (status) {
+      case 'exceeded': return t('budget.statusExceeded');
+      case 'warning':  return t('budget.statusAtRisk');
+      case 'utilized': return t('budget.statusPaid');
+      default:         return t('common.onTrack', 'On Track');
+    }
+  };
 
   const Icon = budget.category?.icon
     ? iconMap[budget.category.icon] || CircleDot
@@ -110,11 +112,11 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
             <div>
               <div className="flex items-center gap-2">
                 <p className="font-bold text-foreground">
-                  {budget.category?.name || budget.name || 'Total Budget'}
+                  {budget.category?.name || budget.name || t('budget.totalBudget')}
                 </p>
                 {budget.is_recurring && (
                   <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-                    Auto-renew
+                    {t('budget.autoRenew')}
                   </span>
                 )}
               </div>
@@ -122,7 +124,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
                 {periodLabel} • {budget.start_date && format(new Date(budget.start_date), 'MMM d')}
                 {budget.end_date
                   ? ` – ${format(new Date(budget.end_date), 'MMM d, yyyy')}`
-                  : ' – Ongoing'}
+                  : ` – ${t('budget.ongoing')}`}
               </p>
             </div>
           </div>
@@ -139,33 +141,33 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
                 {onViewInExpenses && (
                   <DropdownMenuItem onClick={() => onViewInExpenses(budget)}>
                     <ArrowUpRight className="mr-2 h-4 w-4" />
-                    View in Transactions
+                    {t('budget.viewInTransactions')}
                   </DropdownMenuItem>
                 )}
 
                 {onPayNow && (
                   <DropdownMenuItem onClick={() => onPayNow(budget)}>
                     <CreditCard className="mr-2 h-4 w-4" />
-                    Pay Now
+                    {t('budget.payNow')}
                   </DropdownMenuItem>
                 )}
 
                 {onMoveLeftoverToSavings && budget.remaining > 0 && (
                   <DropdownMenuItem onClick={() => onMoveLeftoverToSavings(budget)}>
                     <HandCoins className="mr-2 h-4 w-4" />
-                    Move Leftover to Savings
+                    {t('budget.moveLeftoverToSavings')}
                   </DropdownMenuItem>
                 )}
 
                 <DropdownMenuItem onClick={() => onEdit(budget)}>
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit
+                  {t('common.edit')}
                 </DropdownMenuItem>
 
                 {onSaveAsTemplate && (
                   <DropdownMenuItem onClick={() => onSaveAsTemplate(budget.id)}>
                     <Bookmark className="mr-2 h-4 w-4" />
-                    Save as Template
+                    {t('budget.saveAsTemplate')}
                   </DropdownMenuItem>
                 )}
 
@@ -174,7 +176,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                  {t('common.delete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -184,19 +186,19 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="text-center p-2 rounded-lg bg-muted/50">
-            <p className="text-xs text-muted-foreground mb-1">Spent</p>
+            <p className="text-xs text-muted-foreground mb-1">{t('budget.spent')}</p>
             <p className="font-bold text-foreground">
               {formatAmount(budget.spent)}
             </p>
           </div>
           <div className="text-center p-2 rounded-lg bg-muted/50">
-            <p className="text-xs text-muted-foreground mb-1">Budget</p>
+            <p className="text-xs text-muted-foreground mb-1">{t('budget.title')}</p>
             <p className="font-semibold text-foreground">
               {formatAmount(budget.amount)}
             </p>
           </div>
           <div className={cn("text-center p-2 rounded-lg", isUpcoming ? 'bg-muted/50' : getStatusBgColor(budget.status))}>
-            <p className="text-xs text-muted-foreground mb-1">Remaining</p>
+            <p className="text-xs text-muted-foreground mb-1">{t('budget.remaining')}</p>
             <p className="font-bold" style={{ color: statusColor }}>
               {formatAmount(budget.remaining)}
             </p>
@@ -206,7 +208,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
         {savingsReserved > 0 && (
           <div className="mb-4 rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Savings Reserved</span>
+              <span className="text-muted-foreground">{t('budget.savingsReserved')}</span>
               <span className="font-semibold text-foreground">
                 {formatAmount(savingsReserved)}
               </span>
@@ -230,12 +232,12 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
           <div className="flex justify-between items-center mt-2">
             <span className="text-xs text-muted-foreground">
               {isUpcoming
-                ? `Starts ${format(new Date(budget.start_date!), 'MMM d')}`
+                ? t('budget.startsOn', { date: format(new Date(budget.start_date!), 'MMM d') })
                 : budget.percentage > 100
-                  ? 'Over budget!'
+                  ? t('budget.overBudgetExclaim')
                   : budget.status === 'utilized'
-                    ? '100% utilized'
-                    : `${displayPercentage.toFixed(0)}% used`}
+                    ? t('budget.fullyUtilized')
+                    : t('budget.percentUsed', { percent: displayPercentage.toFixed(0) })}
             </span>
             <span
               className={cn(
@@ -244,7 +246,7 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
               )}
               style={{ color: statusColor }}
             >
-              {isUpcoming ? 'Upcoming' : getStatusLabel(budget.status)}
+              {isUpcoming ? t('budget.upcoming') : getStatusLabel(budget.status)}
             </span>
           </div>
         </div>

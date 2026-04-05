@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
 import type { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
+import { useTranslation } from 'react-i18next';
 
 interface GoalCompletionModalProps {
   goal: SavingsGoalWithProgress;
@@ -26,7 +27,7 @@ function getCardTier(amount: number): CardTier {
 
 const TIER_CONFIG: Record<CardTier, {
   gradient: string;
-  badge: string;
+  badgeKey: string;
   badgeColor: string;
   icon: React.ReactNode;
   textColor: string;
@@ -34,7 +35,7 @@ const TIER_CONFIG: Record<CardTier, {
 }> = {
   platinum: {
     gradient: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-    badge: 'Platinum',
+    badgeKey: 'savings.tier.platinum',
     badgeColor: 'from-slate-300 via-white to-slate-400',
     icon: <Star className="w-5 h-5" />,
     textColor: 'text-white',
@@ -42,7 +43,7 @@ const TIER_CONFIG: Record<CardTier, {
   },
   gold: {
     gradient: 'linear-gradient(135deg, #1a0a00 0%, #3d2200 50%, #1a0a00 100%)',
-    badge: 'Gold',
+    badgeKey: 'savings.tier.gold',
     badgeColor: 'from-yellow-300 via-amber-400 to-yellow-500',
     icon: <Trophy className="w-5 h-5" />,
     textColor: 'text-white',
@@ -50,7 +51,7 @@ const TIER_CONFIG: Record<CardTier, {
   },
   silver: {
     gradient: 'linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%)',
-    badge: 'Silver',
+    badgeKey: 'savings.tier.silver',
     badgeColor: 'from-gray-300 via-slate-400 to-gray-300',
     icon: <Sparkles className="w-5 h-5" />,
     textColor: 'text-white',
@@ -58,7 +59,7 @@ const TIER_CONFIG: Record<CardTier, {
   },
   bronze: {
     gradient: 'linear-gradient(135deg, #1a0f00 0%, #3d2600 50%, #1a0f00 100%)',
-    badge: 'Bronze',
+    badgeKey: 'savings.tier.bronze',
     badgeColor: 'from-orange-400 via-amber-600 to-orange-500',
     icon: <PartyPopper className="w-5 h-5" />,
     textColor: 'text-white',
@@ -70,6 +71,7 @@ const CONFETTI_COLORS = ['#10B981', '#6366F1', '#F59E0B', '#EC4899', '#60A5FA', 
 
 export function GoalCompletionModal({ goal, open, onClose }: GoalCompletionModalProps) {
   const { formatAmount } = useCurrency();
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const tier = getCardTier(goal.current_amount);
@@ -195,7 +197,7 @@ export function GoalCompletionModal({ goal, open, onClose }: GoalCompletionModal
                       className={cn('bg-gradient-to-r', config.badgeColor)}
                       style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
                     >
-                      {config.badge} Achievement
+                      {t(config.badgeKey)} {t('savings.achievement')}
                     </span>
                   </div>
                   <div

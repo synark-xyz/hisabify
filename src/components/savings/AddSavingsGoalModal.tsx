@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
 import { MobileDialog } from "@/components/ui/mobile-dialog";
@@ -31,16 +32,16 @@ import { PremiumGuard } from "@/components/PremiumGuard";
 import { calculateSavingsPace, type SavingsPlanFrequency } from "@/lib/savings";
 
 const goalSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  target_amount: z.coerce.number().positive("Target must be positive"),
-  current_amount: z.coerce.number().min(0, "Cannot be negative").default(0),
+  name: z.string().min(1),
+  target_amount: z.coerce.number().positive(),
+  current_amount: z.coerce.number().min(0).default(0),
   deadline: z.date().optional(),
   color: z.string().default("#10B981"),
   currency: z.string().default("USD"),
   linked_budget_id: z.string().optional(),
-  reserve_amount: z.coerce.number().min(0, "Cannot be negative").default(0),
+  reserve_amount: z.coerce.number().min(0).default(0),
   auto_contribute_enabled: z.boolean().default(false),
-  auto_contribute_amount: z.coerce.number().min(0, "Cannot be negative").nullable().default(null),
+  auto_contribute_amount: z.coerce.number().min(0).nullable().default(null),
   auto_contribute_frequency: z.enum(["weekly", "monthly"]).nullable().default(null),
   plan_enabled: z.boolean().default(false),
   plan_frequency: z.enum(["daily", "weekly", "monthly"]).nullable().default(null),
@@ -76,6 +77,7 @@ export function AddSavingsGoalModal({
   const { currency } = useCurrency();
   const { isPremium } = useSubscription();
   const { budgets } = useBudgetContext();
+  const { t } = useTranslation();
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
 
@@ -224,20 +226,20 @@ export function AddSavingsGoalModal({
     <MobileDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={editingGoal ? "Edit Savings Goal" : "Create Savings Goal"}
+      title={editingGoal ? t('savings.editGoalTitle') : t('savings.createGoalTitle')}
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <FormField
+                <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Goal Name
+                      {t('savings.goalName')}
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Emergency Fund" className="rounded-xl" {...field} />
+                      <Input placeholder={t('savings.goalNamePlaceholder')} className="rounded-xl" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -250,7 +252,7 @@ export function AddSavingsGoalModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Target Amount
+                      {t('savings.targetAmount')}
                     </FormLabel>
                     <div className="flex gap-2">
                       <FormField
@@ -329,7 +331,7 @@ export function AddSavingsGoalModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      {editingGoal ? "Current Saved" : "Starting Amount"}
+                      {editingGoal ? t('savings.currentSaved') : t('savings.startingAmount')}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -344,7 +346,7 @@ export function AddSavingsGoalModal({
                     </FormControl>
                     {editingGoal && (
                       <p className="text-xs text-muted-foreground">
-                        Saved progress is derived from transactions and cannot be edited directly.
+                        {t('savings.savedProgressNote')}
                       </p>
                     )}
                     <FormMessage />
@@ -358,12 +360,12 @@ export function AddSavingsGoalModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      {planEnabled ? "Target Date" : "Target Date (Optional)"}
+                      {planEnabled ? t('savings.targetDate') : t('savings.targetDateOptional')}
                     </FormLabel>
                     <DateSelect value={field.value} onChange={field.onChange} />
                     {planEnabled && (
                       <p className="text-xs text-muted-foreground">
-                        Required to calculate the savings schedule.
+                        {t('savings.targetDateNote')}
                       </p>
                     )}
                     <FormMessage />
@@ -377,19 +379,19 @@ export function AddSavingsGoalModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Reserve From Budget
+                      {t('savings.reserveFromBudget')}
                     </FormLabel>
                     <Select value={field.value || "none"} onValueChange={(value) => field.onChange(value === "none" ? undefined : value)}>
                       <FormControl>
                         <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Optional budget link" />
+                          <SelectValue placeholder={t('savings.optionalBudgetLink')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">No linked budget</SelectItem>
+                        <SelectItem value="none">{t('savings.noLinkedBudget')}</SelectItem>
                         {budgets.map((budget) => (
                           <SelectItem key={budget.id} value={budget.id}>
-                            {budget.category?.name || budget.name || "Budget"}
+                            {budget.category?.name || budget.name || t('budget.budget')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -405,7 +407,7 @@ export function AddSavingsGoalModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Savings Reserved
+                      {t('savings.savingsReserved')}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -701,10 +703,10 @@ export function AddSavingsGoalModal({
                   onClick={() => onOpenChange(false)}
                   className="flex-1 rounded-xl"
                 >
-                  Cancel
+                  {t('savings.cancel')}
                 </Button>
                 <Button type="submit" className="flex-1 rounded-xl">
-                  {editingGoal ? "Update Goal" : "Create Goal"}
+                  {editingGoal ? t('savings.updateGoal') : t('savings.createGoal')}
                 </Button>
               </div>
           </form>

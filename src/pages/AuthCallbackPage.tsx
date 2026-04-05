@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import {
@@ -18,6 +19,7 @@ import {
  * This page listens for the SIGNED_IN auth state change, then navigates to the dashboard.
  */
 export function AuthCallbackPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const settledRef = useRef(false);
@@ -103,8 +105,8 @@ export function AuthCallbackPage() {
           console.error('[OAuthCallback] Code exchange failed:', exchangeError.message);
           completeFailure(
             isDuplicateAuthCodeExchangeError(exchangeError.message)
-              ? 'This sign-in link has already been used. Please try signing in again.'
-              : 'Sign-in failed. Please try again.',
+              ? t('authCallback.linkAlreadyUsed')
+              : t('authCallback.signInFailed'),
           );
           return;
         }
@@ -148,9 +150,9 @@ export function AuthCallbackPage() {
         if (data.session) {
           completeSuccess('safety-timeout-session');
         } else if (parseAuthCallbackParams(window.location.search).code) {
-          completeFailure('Sign-in timed out. Please try again.');
+          completeFailure(t('authCallback.signInTimedOut'));
         } else {
-          completeFailure('Sign-in did not complete. Please try again.');
+          completeFailure(t('authCallback.signInNotComplete'));
         }
       });
     }, 15000);
@@ -168,12 +170,12 @@ export function AuthCallbackPage() {
       {error ? (
         <>
           <div className="text-destructive text-sm text-center max-w-xs">{error}</div>
-          <p className="text-muted-foreground text-xs">Redirecting to sign in...</p>
+          <p className="text-muted-foreground text-xs">{t('authCallback.redirectingToSignIn')}</p>
         </>
       ) : (
         <>
           <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground text-sm">Completing sign in...</p>
+          <p className="text-muted-foreground text-sm">{t('authCallback.completingSignIn')}</p>
         </>
       )}
     </div>

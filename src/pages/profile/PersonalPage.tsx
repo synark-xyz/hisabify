@@ -12,11 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { CustomerCenterTrigger } from '@/components/CustomerCenterTrigger';
 
 export function PersonalPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { user } = useAuth();
     const { profile, setProfile, updateAvatar } = useProfile();
     const { toast } = useToast();
@@ -173,7 +175,7 @@ export function PersonalPage() {
                 {/* Form Section */}
                 <div className="bg-card rounded-2xl p-4 shadow-sm border border-border/50 space-y-4">
                     <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-foreground">Details</h3>
+                        <h3 className="font-semibold text-foreground">{t('profilePersonal.details')}</h3>
                         <Button
                             variant="ghost"
                             size="sm"
@@ -201,7 +203,7 @@ export function PersonalPage() {
                                 }))}
                                 disabled={!isEditing}
                                 className="mt-1"
-                                placeholder="Enter your name"
+                                placeholder={t('profile.name')}
                                 maxLength={100}
                             />
                         </div>
@@ -229,7 +231,7 @@ export function PersonalPage() {
                                 }}
                                 disabled={!isEditing}
                                 className={`mt-1 ${phoneError ? 'border-destructive' : ''}`}
-                                placeholder="+1 234 567 8900"
+                                placeholder={t('profile.phone')}
                                 maxLength={20}
                             />
                             {phoneError && (
@@ -250,8 +252,8 @@ export function PersonalPage() {
                                 <Shield className="w-5 h-5 text-indigo-500" />
                             </div>
                             <div className="text-left">
-                                <p className="font-semibold text-foreground">Change Password</p>
-                                <p className="text-xs text-muted-foreground">Update your security</p>
+                                <p className="font-semibold text-foreground">{t('profilePersonal.changePassword')}</p>
+                                <p className="text-xs text-muted-foreground">{t('profilePersonal.updateSecurity')}</p>
                             </div>
                         </div>
                         <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showPasswordChange ? 'rotate-90' : ''}`} />
@@ -271,7 +273,7 @@ export function PersonalPage() {
                                     value={passwords.new}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, new: e.target.value }))}
                                     className="mt-1"
-                                    placeholder="Enter new password"
+                                    placeholder={t('resetPasswordPage.placeholder')}
                                     minLength={6}
                                 />
                             </div>
@@ -283,7 +285,7 @@ export function PersonalPage() {
                                     value={passwords.confirm}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, confirm: e.target.value }))}
                                     className="mt-1"
-                                    placeholder="Confirm new password"
+                                    placeholder={t('resetPasswordPage.placeholder')}
                                     minLength={6}
                                 />
                             </div>
@@ -300,7 +302,7 @@ export function PersonalPage() {
 
                 {/* Subscription management */}
                 <div className="mt-6 rounded-2xl border border-border/50 bg-card p-4">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Subscription</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{t('profilePersonal.subscription')}</p>
                     <CustomerCenterTrigger variant="row" />
                 </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Loader2, Receipt } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { MobileDialog } from '@/components/ui/mobile-dialog';
 import { TransactionItem } from '@/components/TransactionItem';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
@@ -23,6 +24,7 @@ interface ConvertedTransaction extends Transaction {
 export function BudgetTransactionsSheet({ budget, open, onOpenChange }: BudgetTransactionsSheetProps) {
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const { user } = useAuth();
   const { currency, formatAmount } = useCurrency();
@@ -90,7 +92,7 @@ export function BudgetTransactionsSheet({ budget, open, onOpenChange }: BudgetTr
         <div className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2">
           <span className="text-xs text-muted-foreground">{periodLabel}</span>
           <span className="text-xs font-semibold text-foreground">
-            {formatAmount(totalSpent)} spent
+            {t('budget.totalBudgetSpent', { amount: formatAmount(totalSpent) })}
           </span>
         </div>
 
@@ -111,7 +113,7 @@ export function BudgetTransactionsSheet({ budget, open, onOpenChange }: BudgetTr
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <Receipt className="mb-3 h-10 w-10 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No expenses in this period</p>
+            <p className="text-sm text-muted-foreground">{t('budget.noExpensesInPeriod')}</p>
           </div>
         )}
       </div>

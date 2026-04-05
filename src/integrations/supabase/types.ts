@@ -95,6 +95,7 @@ export type Database = {
           updated_at: string
           user_id: string
           last_four: string | null
+          account_type_id: string | null
         }
         Insert: {
           balance?: number
@@ -108,6 +109,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           last_four?: string | null
+          account_type_id?: string | null
         }
         Update: {
           balance?: number
@@ -121,6 +123,42 @@ export type Database = {
           updated_at?: string
           user_id?: string
           last_four?: string | null
+          account_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_account_type_id_fkey"
+            columns: ["account_type_id"]
+            isOneToOne: false
+            referencedRelation: "account_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      account_types: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          color: string
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          color?: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          color?: string
+          is_active?: boolean
+          created_at?: string
         }
         Relationships: []
       }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Loader2, Lock, Wallet, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ const passwordSchema = z.object({
 });
 
 export function ResetPasswordPage() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,8 +35,8 @@ export function ResetPasswordPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
-          title: 'Invalid or expired link',
-          description: 'Please request a new password reset link.',
+          title: t('resetPassword.invalidLink'),
+          description: t('resetPassword.requestNewLink'),
           variant: 'destructive',
         });
         navigate('/auth');
@@ -73,7 +75,7 @@ export function ResetPasswordPage() {
       }
 
       setSuccess(true);
-      toast({ title: 'Password updated successfully!' });
+      toast({ title: t('resetPassword.passwordUpdated') });
       
       // Redirect to home after 2 seconds
       setTimeout(() => navigate('/'), 2000);
@@ -89,8 +91,8 @@ export function ResetPasswordPage() {
           <div className="w-16 h-16 rounded-full bg-green-500/20 mx-auto flex items-center justify-center">
             <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Password Updated!</h1>
-          <p className="text-muted-foreground">Redirecting you to the app...</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('resetPassword.passwordUpdated')}</h1>
+          <p className="text-muted-foreground">{t('resetPassword.redirecting')}</p>
         </div>
       </div>
     );
@@ -133,15 +135,15 @@ export function ResetPasswordPage() {
           <div className="mx-auto flex items-center justify-center mb-4">
             <HisabifyLogo size={80} showText={false} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-foreground bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Reset Password</h1>
-          <p className="text-muted-foreground mt-2 font-medium">Enter your new password</p>
+          <h1 className="text-2xl font-black tracking-tight text-foreground bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">{t('resetPassword.title')}</h1>
+          <p className="text-muted-foreground mt-2 font-medium">{t('resetPassword.enterNewPassword')}</p>
         </div>
 
         {/* Form */}
         <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-border/50">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">{t('resetPassword.newPassword')}</Label>
               <div className="relative mt-1">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -159,7 +161,7 @@ export function ResetPasswordPage() {
             </div>
 
             <div>
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t('resetPassword.confirmPassword')}</Label>
               <div className="relative mt-1">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -182,7 +184,7 @@ export function ResetPasswordPage() {
               className="w-full h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold shadow-lg hover:shadow-xl transition-all"
             >
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Update Password
+              {t('resetPassword.updatePassword')}
             </Button>
           </form>
         </div>

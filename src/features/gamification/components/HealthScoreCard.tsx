@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 import { ChartPie, Info, TrendingUp, Share2, Check } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useHealthScore } from '../hooks/useHealthScore';
 import { useReferral } from '@/features/referrals/hooks/useReferral';
 import { getMilestoneBadge, getScoreColor } from '../utils/healthScoreLogic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
+import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
 import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
 import {
@@ -20,6 +22,8 @@ export function HealthScoreCard() {
     const { score, loading } = useHealthScore();
     const { referralCode } = useReferral();
     const { variant } = useTheme();
+    const { t } = useTranslation();
+    const { language } = useLanguage();
     const [shareCopied, setShareCopied] = useState(false);
     const [detailOpen, setDetailOpen] = useState(false);
 
@@ -75,8 +79,8 @@ export function HealthScoreCard() {
                         <ChartPie className="w-5 h-5 icon-glow" style={{ color: strokeColor }} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-foreground tracking-tight">Financial Health</h3>
-                        <p className="text-xs text-muted-foreground">Your personal finance score</p>
+                        <h3 className="font-bold text-foreground tracking-tight">{t('healthScore.financialHealth')}</h3>
+                        <p className="text-xs text-muted-foreground">{t('healthScore.personalFinanceScore')}</p>
                     </div>
                 </div>
 
@@ -88,17 +92,17 @@ export function HealthScoreCard() {
                     </PopoverTrigger>
                     <PopoverContent side="left" className="w-auto p-3">
                         <div className="space-y-1.5 min-w-[120px]">
-                            <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Breakdown</p>
+                            <p className="text-xs font-bold text-muted-foreground uppercase mb-2">{t('healthScore.breakdown')}</p>
                             <div className="flex justify-between text-xs gap-4">
-                                <span>Budgeting</span>
+                                <span>{t('healthScore.budgeting')}</span>
                                 <span className="font-mono text-emerald-500">{score.breakdown.budget}</span>
                             </div>
                             <div className="flex justify-between text-xs gap-4">
-                                <span>Savings</span>
+                                <span>{t('healthScore.savings')}</span>
                                 <span className="font-mono text-blue-500">{score.breakdown.savings}</span>
                             </div>
                             <div className="flex justify-between text-xs gap-4">
-                                <span>Activity</span>
+                                <span>{t('healthScore.activity')}</span>
                                 <span className="font-mono text-amber-500">{score.breakdown.activity}</span>
                             </div>
                         </div>
@@ -148,9 +152,9 @@ export function HealthScoreCard() {
                             transition={{ delay: 0.5, type: "spring" }}
                             className="text-4xl font-black tracking-tighter text-glow"
                         >
-                            {score.total}
+                            {new Intl.NumberFormat(getLanguageLocale(language), { maximumFractionDigits: 0 }).format(score.total)}
                         </motion.span>
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-0.5">Score</span>
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mt-0.5">{t('healthScore.score')}</span>
                     </div>
                 </button>
 
@@ -161,8 +165,8 @@ export function HealthScoreCard() {
                         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
                             <span className="text-base leading-none">{milestoneBadge.emoji}</span>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-amber-600">{milestoneBadge.name}</p>
-                                <p className="text-[9px] text-muted-foreground truncate">{milestoneBadge.description}</p>
+                                <p className="text-[10px] font-black uppercase tracking-wider text-amber-600">{t(`healthScore.badge.${milestoneBadge.key}.name`, milestoneBadge.name)}</p>
+                                <p className="text-[9px] text-muted-foreground truncate">{t(`healthScore.badge.${milestoneBadge.key}.description`, milestoneBadge.description)}</p>
                             </div>
                         </div>
                     )}
@@ -175,10 +179,10 @@ export function HealthScoreCard() {
                                 </div>
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-1">
                                     <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                                    Smart Insight
+                                    {t('healthScore.smartInsight')}
                                 </p>
                                 <p className="text-sm font-medium text-foreground leading-relaxed pr-2">
-                                    "{score.insight}"
+                                    "{t(score.insightKey, score.insightParams)}"
                                 </p>
                             </div>
                         </PopoverTrigger>
@@ -186,10 +190,10 @@ export function HealthScoreCard() {
                             <div className="space-y-3">
                                 <h4 className="font-bold text-foreground text-sm flex items-center gap-2">
                                     <Info className="w-4 h-4 text-accent icon-glow" />
-                                    How it works
+                                    {t('healthScore.howItWorks')}
                                 </h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Your Financial Health Score is calculated based on three key factors:
+                                    {t('healthScore.scoreCalculated')}
                                 </p>
                                 <ul className="space-y-2">
                                     <li className="flex items-start gap-2 text-xs">
@@ -197,8 +201,8 @@ export function HealthScoreCard() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-current" />
                                         </div>
                                         <div>
-                                            <span className="font-bold text-emerald-500">Budget Control</span>
-                                            <p className="text-muted-foreground">Staying within your set budgets.</p>
+                                            <span className="font-bold text-emerald-500">{t('healthScore.budgetControl')}</span>
+                                            <p className="text-muted-foreground">{t('healthScore.budgetControlDesc')}</p>
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-2 text-xs">
@@ -206,8 +210,8 @@ export function HealthScoreCard() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-current" />
                                         </div>
                                         <div>
-                                            <span className="font-bold text-blue-500">Savings Signals</span>
-                                            <p className="text-muted-foreground">Goals, pace, contributions, completions, and automation.</p>
+                                            <span className="font-bold text-blue-500">{t('healthScore.savingsSignals')}</span>
+                                            <p className="text-muted-foreground">{t('healthScore.savingsSignalsDesc')}</p>
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-2 text-xs">
@@ -215,8 +219,8 @@ export function HealthScoreCard() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-current" />
                                         </div>
                                         <div>
-                                            <span className="font-bold text-amber-500">Activity</span>
-                                            <p className="text-muted-foreground">Regularly logging transactions.</p>
+                                            <span className="font-bold text-amber-500">{t('healthScore.activityScore')}</span>
+                                            <p className="text-muted-foreground">{t('healthScore.activityScoreDesc')}</p>
                                         </div>
                                     </li>
                                 </ul>
@@ -235,12 +239,12 @@ export function HealthScoreCard() {
                             {shareCopied ? (
                                 <>
                                     <Check className="w-3 h-3" />
-                                    Copied!
+                                    {t('healthScore.copied')}
                                 </>
                             ) : (
                                 <>
                                     <Share2 className="w-3 h-3" />
-                                    Challenge a Friend
+                                    {t('healthScore.challengeAFriend')}
                                 </>
                             )}
                         </Button>

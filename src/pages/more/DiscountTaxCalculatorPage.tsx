@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTranslation } from 'react-i18next';
 import {
   Select,
   SelectContent,
@@ -86,6 +87,7 @@ const POPULAR_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CA
 export function DiscountTaxCalculatorPage() {
   const navigate = useNavigate();
   const { currency: defaultCurrency, formatAmount } = useCurrency();
+  const { t } = useTranslation();
   const { isPremium } = useSubscription();
   const [state, dispatch] = useReducer(discountReducer, initialState);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(defaultCurrency);
@@ -116,7 +118,7 @@ export function DiscountTaxCalculatorPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-semibold flex items-center gap-2">
-            <Percent className="w-5 h-5" /> Discount & Tax
+            <Percent className="w-5 h-5" /> {t('morePage.discountTax')}
           </h1>
         </div>
       </header>
@@ -195,20 +197,20 @@ export function DiscountTaxCalculatorPage() {
         {state.result && (
           <div className="space-y-4 bg-card rounded-2xl p-6 border border-border/30">
             <div className="text-center mb-4">
-              <p className="text-sm text-muted-foreground mb-1">Final Price</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('discountTaxCalculator.finalPrice')}</p>
               <p className="text-3xl font-bold text-primary">{formatWithCurrency(state.result.finalPrice)}</p>
             </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-primary/5 rounded-xl">
-                <span className="text-sm text-muted-foreground">Discount ({state.discountPercent}%)</span>
+                <span className="text-sm text-muted-foreground">{t('discountTaxCalculator.discountPercent', { percent: state.discountPercent })}</span>
                 <span className="font-medium text-green-600">-{formatWithCurrency(state.result.discountAmount)}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-primary/5 rounded-xl">
-                <span className="text-sm text-muted-foreground">Price After Discount</span>
+                <span className="text-sm text-muted-foreground">{t('discountTaxCalculator.priceAfterDiscount')}</span>
                 <span className="font-medium">{formatWithCurrency(state.result.priceAfterDiscount)}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-primary/5 rounded-xl">
-                <span className="text-sm text-muted-foreground">Tax ({state.taxPercent}%)</span>
+                <span className="text-sm text-muted-foreground">{t('discountTaxCalculator.taxPercent', { percent: state.taxPercent })}</span>
                 <span className="font-medium">+{formatWithCurrency(state.result.taxAmount)}</span>
               </div>
             </div>

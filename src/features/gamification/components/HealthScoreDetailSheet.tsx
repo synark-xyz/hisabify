@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Lightbulb } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getMilestoneBadge, generateTips, getScoreColor, SCORE_WEIGHTS } from '../utils/healthScoreLogic';
 import type { HealthScoreResult } from '../utils/healthScoreLogic';
@@ -8,7 +9,7 @@ import { cn } from '@/lib/utils';
 interface HealthScoreDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  score: (HealthScoreResult & { insight: string }) | null;
+  score: HealthScoreResult | null;
 }
 
 const COMPONENTS = [
@@ -25,6 +26,7 @@ const TIP_COLORS: Record<string, string> = {
 };
 
 export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScoreDetailSheetProps) {
+  const { t } = useTranslation();
   if (!score) return null;
 
   const milestoneBadge = getMilestoneBadge(score.total);
@@ -89,9 +91,9 @@ export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScor
                 <span className="text-lg leading-none">{milestoneBadge.emoji}</span>
                 <div>
                   <p className="text-xs font-black uppercase tracking-wider text-amber-600">
-                    {milestoneBadge.name}
+                    {t(`healthScore.badge.${milestoneBadge.key}.name`, milestoneBadge.name)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{milestoneBadge.description}</p>
+                  <p className="text-[10px] text-muted-foreground">{t(`healthScore.badge.${milestoneBadge.key}.description`, milestoneBadge.description)}</p>
                 </div>
               </div>
             ) : (
@@ -99,7 +101,7 @@ export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScor
                 Keep improving your habits to earn a badge!
               </p>
             )}
-            <p className="text-xs text-muted-foreground leading-relaxed">{score.insight}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{t(score.insightKey, score.insightParams)}</p>
           </div>
         </div>
 

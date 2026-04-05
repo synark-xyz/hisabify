@@ -2,8 +2,9 @@ import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { useState } from 'react';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useTranslation } from 'react-i18next';
 import { CategorySpending } from '@/types';
-import { cn } from '@/lib/utils';
+import { cn, getLocalizedCategoryName } from '@/lib/utils';
 import type { PieSectorDataItem } from 'recharts/types/polar/Pie';
 
 interface CategoryBreakdownChartProps {
@@ -91,6 +92,7 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
   const [activeIndex, setActiveIndex] = useState(0);
   const [clickAnimation, setClickAnimation] = useState(false);
   const { formatAmount } = useCurrency();
+  const { t } = useTranslation();
 
   const chartData = data.map((item, index) => ({
     ...item,
@@ -120,7 +122,7 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
       }}
       transition={{ duration: 0.4 }}
     >
-      <h3 className="text-lg font-bold text-foreground mb-4">{title}</h3>
+      <h3 className="text-lg font-bold text-foreground mb-4">{t('analytics.categoryBreakdown', title)}</h3>
 
       <motion.div
         className="h-72 relative"
@@ -198,7 +200,7 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
                 'text-sm font-bold truncate',
                 activeIndex === index ? 'text-accent text-glow' : 'text-foreground'
               )}>
-                {item.category}
+                {t(`categories.${item.category}`, item.category)}
               </p>
               <p className="text-xs font-medium text-muted-foreground">{formatAmount(item.amount)}</p>
             </div>

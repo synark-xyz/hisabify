@@ -12,6 +12,7 @@ import { generateWeeklyHealthNotification, generateWeeklyTip, AppNotification } 
 import { useNotifications } from '@/hooks/useNotifications';
 import { useHealthScore } from '@/features/gamification/hooks/useHealthScore';
 import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
 import { usePaymentReminders } from '@/hooks/usePaymentReminders';
@@ -29,6 +30,7 @@ type ReminderItem =
 
 export function NotificationsPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { user } = useAuth();
     const { formatAmount } = useCurrency();
     const { score } = useHealthScore();
@@ -182,7 +184,7 @@ export function NotificationsPage() {
                                     <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
                                         <Bell className="w-10 h-10 text-muted-foreground/30" weight="duotone" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-foreground mb-2">All Caught Up</h3>
+                                    <h3 className="text-lg font-bold text-foreground mb-2">{t('notificationsPage.allCaughtUp')}</h3>
                                     <p className="text-muted-foreground max-w-xs">
                                         You have no notifications yet. They'll appear here as they come in.
                                     </p>
@@ -277,7 +279,7 @@ export function NotificationsPage() {
                                     <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
                                         <Clock className="w-10 h-10 text-muted-foreground/30" weight="duotone" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-foreground mb-2">No Reminders</h3>
+                                    <h3 className="text-lg font-bold text-foreground mb-2">{t('notificationsPage.noReminders')}</h3>
                                     <p className="text-muted-foreground max-w-xs">
                                         You have no reminders. Add payment reminders or create budgets to get alerts.
                                     </p>

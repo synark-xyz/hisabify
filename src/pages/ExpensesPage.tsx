@@ -20,6 +20,8 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTheme } from '@/hooks/useTheme';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
+import { useFormatDate } from '@/lib/formatDate';
 import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, CategorySpending, Card, Category, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
@@ -38,15 +40,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import {
-  format,
   isSameDay,
-  isSameMonth,
   addMonths,
   subMonths,
   addWeeks,
   subWeeks,
   setYear,
-  setMonth,
   addDays,
   subDays,
   addYears,
@@ -95,6 +94,8 @@ export function ExpensesPage() {
   const { variant } = useTheme();
   const { isPremium } = useSubscription();
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const { formatDate } = useFormatDate();
   const { categories: allCategories } = useCategories();
 
   // ── Apply URL search params on mount ────────────────────────────────────
@@ -181,8 +182,8 @@ export function ExpensesPage() {
     if (enforcement.wasClamped && !hasShownHistoryClampToastRef.current) {
       hasShownHistoryClampToastRef.current = true;
       toast({
-        title: 'History limit reached',
-        description: 'Free plan supports the last 30 days. Upgrade for full history.',
+        title: t('expenses.historyLimitTitle'),
+        description: t('expenses.historyLimitDesc'),
       });
     }
 
@@ -648,7 +649,7 @@ export function ExpensesPage() {
                           whileTap={{ scale: 0.95 }}
                         >
                           <span className="text-sm font-semibold text-muted-foreground">
-                            {format(anchorDate, 'yyyy')}
+                            {formatDate(anchorDate, 'yyyy')}
                           </span>
                           <ChevronDown className="w-3 h-3 text-muted-foreground" />
                         </motion.button>
@@ -667,7 +668,7 @@ export function ExpensesPage() {
                     </DropdownMenu>
 
                     <span className="text-xl font-bold text-foreground select-none">
-                      {format(anchorDate, 'MMMM yyyy')}
+                      {formatDate(anchorDate, 'MMMM yyyy')}
                     </span>
                   </div>
 
@@ -681,7 +682,7 @@ export function ExpensesPage() {
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
-                      Daily
+                      {t('expenses.viewDaily')}
                     </button>
                     <button
                       onClick={() => handleViewModeChange('week')}
@@ -692,7 +693,7 @@ export function ExpensesPage() {
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
-                      Weekly
+                      {t('expenses.viewWeekly')}
                     </button>
                     <button
                       onClick={() => handleViewModeChange('month')}
@@ -703,7 +704,7 @@ export function ExpensesPage() {
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
-                      Monthly
+                      {t('expenses.viewMonthly')}
                     </button>
                     <button
                       onClick={() => handleViewModeChange('year')}
@@ -714,7 +715,7 @@ export function ExpensesPage() {
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
-                      Yearly
+                      {t('expenses.viewYearly')}
                     </button>
                   </div>
                 </div>
@@ -749,7 +750,7 @@ export function ExpensesPage() {
                 />
               ) : (
                 <div className="text-center py-4 text-muted-foreground text-sm">
-                  Viewing all transactions for {anchorDate.getFullYear()}
+                  {t('expenses.viewingYear', { year: anchorDate.getFullYear() })}
                 </div>
               )}
             </motion.div>
@@ -759,18 +760,18 @@ export function ExpensesPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-muted-foreground">
                     {isDateFocused
-                      ? 'Daily Overview'
+                      ? t('expenses.overviewDaily')
                       : viewMode === 'day'
-                        ? 'Daily Overview'
+                        ? t('expenses.overviewDaily')
                         : viewMode === 'week'
-                          ? 'Weekly Overview'
+                          ? t('expenses.overviewWeekly')
                           : viewMode === 'month'
-                            ? 'Monthly Overview'
-                            : 'Yearly Overview'}
+                            ? t('expenses.overviewMonthly')
+                            : t('expenses.overviewYearly')}
                   </span>
                   {isDateFocused && effectiveFocusedDate && (
                     <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium">
-                      {format(effectiveFocusedDate, 'MMM d')}
+                      {formatDate(effectiveFocusedDate, 'MMM d')}
                     </span>
                   )}
                 </div>
@@ -785,7 +786,7 @@ export function ExpensesPage() {
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
                     <X className="w-3 h-3" />
-                    Clear
+                    {t('expenses.clearDate')}
                   </motion.button>
                 )}
               </div>
@@ -795,7 +796,7 @@ export function ExpensesPage() {
             {/* Spending Breakdown Section - Collapsible */}
             <motion.section variants={itemVariants} className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-foreground">Spending Breakdown</h2>
+                <h2 className="text-lg font-bold text-foreground">{t('expenses.spendingBreakdown')}</h2>
                 {categoryData.length > 0 && (
                   <motion.button
                     onClick={() => setShowBreakdown(!showBreakdown)}
@@ -811,8 +812,8 @@ export function ExpensesPage() {
               {categoryData.length === 0 ? (
                 <div className="bg-card rounded-2xl p-6 text-center shadow-card">
                   <ChartBar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-2" />
-                  <p className="text-muted-foreground mt-2 text-sm">No expense data to visualize</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">Add transactions to see breakdown</p>
+                  <p className="text-muted-foreground mt-2 text-sm">{t('expenses.noExpenseData')}</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">{t('expenses.addToSeeBreakdown')}</p>
                 </div>
               ) : (
                 <>
@@ -861,7 +862,7 @@ export function ExpensesPage() {
                 <Input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search by merchant, keywords etc."
+                  placeholder={t('expenses.searchPlaceholder')}
                   className="flex-1"
                 />
 
@@ -874,7 +875,7 @@ export function ExpensesPage() {
                   )}
                 >
                   <SlidersHorizontal className="w-4 h-4" />
-                  <span>{activeFilterCount > 0 ? `Filters · ${activeFilterCount}` : 'Filters'}</span>
+                  <span>{activeFilterCount > 0 ? t('expenses.filtersWithCount', { count: activeFilterCount }) : t('expenses.filters')}</span>
                 </button>
               </div>
 
@@ -899,11 +900,11 @@ export function ExpensesPage() {
                           <SelectValue placeholder="Type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Types</SelectItem>
-                          <SelectItem value="expense">Expense</SelectItem>
-                          <SelectItem value="income">Income</SelectItem>
-                          <SelectItem value="lend">Lend</SelectItem>
-                          <SelectItem value="owe">Owe</SelectItem>
+                          <SelectItem value="all">{t('expenses.allTypes')}</SelectItem>
+                          <SelectItem value="expense">{t('expenses.typeExpense')}</SelectItem>
+                          <SelectItem value="income">{t('expenses.typeIncome')}</SelectItem>
+                          <SelectItem value="lend">{t('expenses.typeLend')}</SelectItem>
+                          <SelectItem value="owe">{t('expenses.typeOwe')}</SelectItem>
                         </SelectContent>
                       </Select>
 
@@ -918,7 +919,7 @@ export function ExpensesPage() {
                           <SelectValue placeholder="Category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Categories</SelectItem>
+                          <SelectItem value="all">{t('expenses.allCategories')}</SelectItem>
                           {categoryOptions.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.name}
@@ -938,7 +939,7 @@ export function ExpensesPage() {
                             <SelectValue placeholder="Sub-category" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Sub-categories</SelectItem>
+                            <SelectItem value="all">{t('expenses.allSubCategories')}</SelectItem>
                             {subCategoryOptions.map((sub) => (
                               <SelectItem key={sub.id} value={sub.id}>
                                 {sub.name}
@@ -959,7 +960,7 @@ export function ExpensesPage() {
                           <SelectValue placeholder="Card" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Cards</SelectItem>
+                          <SelectItem value="all">{t('expenses.allCards')}</SelectItem>
                           {cardOptions.map((card) => (
                             <SelectItem key={card.id} value={card.id}>
                               {card.card_holder} •••• {card.last_four || card.card_number.slice(-4)}
@@ -976,18 +977,18 @@ export function ExpensesPage() {
                           <SelectValue placeholder="Group by" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">No grouping</SelectItem>
-                          <SelectItem value="category">Category</SelectItem>
-                          <SelectItem value="paymentMethod">Payment Method</SelectItem>
-                          <SelectItem value="status">Status</SelectItem>
-                          <SelectItem value="merchant">Merchant</SelectItem>
+                          <SelectItem value="none">{t('expenses.noGrouping')}</SelectItem>
+                          <SelectItem value="category">{t('expenses.groupByCategory')}</SelectItem>
+                          <SelectItem value="paymentMethod">{t('expenses.groupByPaymentMethod')}</SelectItem>
+                          <SelectItem value="status">{t('expenses.groupByStatus')}</SelectItem>
+                          <SelectItem value="merchant">{t('expenses.groupByMerchant')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     {/* Tag filter */}
                     <div className="space-y-1.5">
-                      <p className="text-xs font-medium text-muted-foreground">Tags</p>
+                      <p className="text-xs font-medium text-muted-foreground">{t('expenses.tagsLabel')}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {PREDEFINED_TAGS.map((tag) => {
                           const isActive = filterTags.includes(tag);
@@ -1016,7 +1017,7 @@ export function ExpensesPage() {
 
                     {/* Payment method filter */}
                     <div className="space-y-1.5">
-                      <p className="text-xs font-medium text-muted-foreground">Payment Method</p>
+                      <p className="text-xs font-medium text-muted-foreground">{t('expenses.paymentMethodLabel')}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([method, label]) => (
                           <button
@@ -1042,7 +1043,7 @@ export function ExpensesPage() {
                         htmlFor="uncleared-toggle"
                         className="text-sm font-medium text-foreground cursor-pointer"
                       >
-                        Show uncleared only
+                        {t('expenses.showUnclearedOnly')}
                       </label>
                       <Switch
                         id="uncleared-toggle"
@@ -1067,7 +1068,7 @@ export function ExpensesPage() {
                       }}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
                     >
-                      Clear all filters
+                      {t('expenses.clearAllFilters')}
                     </button>
                   </motion.div>
                 )}
@@ -1077,15 +1078,15 @@ export function ExpensesPage() {
             {/* Transactions Section */}
             <motion.section variants={itemVariants}>
               <div className="flex items-center mb-4">
-                <h2 className="text-lg font-bold text-foreground">Transactions</h2>
+                <h2 className="text-lg font-bold text-foreground">{t('expenses.transactionsTitle')}</h2>
                 <span className="text-xs text-muted-foreground ml-2">
                   {viewMode === 'day' || effectiveFocusedDate
-                    ? format(effectiveFocusedDate || anchorDate, 'MMM d, yyyy')
+                    ? formatDate(effectiveFocusedDate || anchorDate, 'MMM d, yyyy')
                     : viewMode === 'week'
-                      ? 'This Week'
+                      ? t('expenses.thisWeek')
                       : viewMode === 'month'
-                        ? format(anchorDate, 'MMMM yyyy')
-                        : format(anchorDate, 'yyyy')}
+                        ? formatDate(anchorDate, 'MMMM yyyy')
+                        : formatDate(anchorDate, 'yyyy')}
                 </span>
               </div>
 
@@ -1132,9 +1133,9 @@ export function ExpensesPage() {
               ) : (
                 <div className="bg-card rounded-2xl p-8 text-center shadow-card">
                   <span className="text-5xl">💸</span>
-                  <p className="text-muted-foreground mt-3">No transactions found</p>
+                  <p className="text-muted-foreground mt-3">{t('expenses.noTransactionsFound')}</p>
                   <p className="text-sm text-muted-foreground/70 mt-1">
-                    {searchQuery || activeFilterCount > 0 ? 'Try adjusting your search or filters' : 'Add transactions to get started'}
+                    {searchQuery || activeFilterCount > 0 ? t('expenses.tryAdjusting') : t('expenses.addToGetStarted')}
                   </p>
 
                   {/* Active filter chips */}
@@ -1142,7 +1143,7 @@ export function ExpensesPage() {
                     <div className="flex flex-wrap justify-center gap-2 mt-4">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          Search: "{searchQuery}"
+                          {t('expenses.filterSearch', { query: searchQuery })}
                           <button onClick={() => setSearchQuery('')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>
@@ -1150,7 +1151,7 @@ export function ExpensesPage() {
                       )}
                       {typeFilter !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          Type: {typeFilter}
+                          {t('expenses.filterType', { type: typeFilter })}
                           <button onClick={() => setTypeFilter('all')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>
@@ -1158,7 +1159,7 @@ export function ExpensesPage() {
                       )}
                       {categoryFilter !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          Category: {categoryOptions.find(c => c.id === categoryFilter)?.name || categoryFilter}
+                          {t('expenses.filterCategory', { name: categoryOptions.find(c => c.id === categoryFilter)?.name || categoryFilter })}
                           <button onClick={() => setCategoryFilter('all')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>
@@ -1166,7 +1167,7 @@ export function ExpensesPage() {
                       )}
                       {subCategoryFilter !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          Sub: {allCategories.find(c => c.id === subCategoryFilter)?.name || 'Sub-category'}
+                          {t('expenses.filterSub', { name: allCategories.find(c => c.id === subCategoryFilter)?.name || t('expenses.allSubCategories') })}
                           <button onClick={() => setSubCategoryFilter('all')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>
@@ -1174,7 +1175,7 @@ export function ExpensesPage() {
                       )}
                       {cardFilter !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          Card: {cardOptions.find(c => c.id === cardFilter)?.card_holder || cardFilter}
+                          {t('expenses.filterCard', { name: cardOptions.find(c => c.id === cardFilter)?.card_holder || cardFilter })}
                           <button onClick={() => setCardFilter('all')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>
@@ -1182,7 +1183,7 @@ export function ExpensesPage() {
                       )}
                       {filterTags.map((tag) => (
                         <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          Tag: {tag}
+                          {t('expenses.filterTag', { tag })}
                           <button onClick={() => setFilterTags((prev) => prev.filter((t) => t !== tag))} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>
@@ -1190,7 +1191,7 @@ export function ExpensesPage() {
                       ))}
                       {showUnclearedOnly && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-amber-500/15 text-amber-400 rounded-full">
-                          Uncleared only
+                          {t('expenses.unclearedOnly')}
                           <button onClick={() => setShowUnclearedOnly(false)} className="hover:opacity-70">
                             <X className="w-3 h-3" />
                           </button>

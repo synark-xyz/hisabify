@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { FileBarChart, AlertCircle, RefreshCw } from "lucide-react";
 import { format, startOfMonth } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ReportFiltersPanel,
@@ -26,6 +27,7 @@ export default function ReportsPage() {
   const { variant } = useTheme();
   const { isPremium } = useSubscription();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const hasShownClampToastRef = useRef(false);
   const [filters, setFilters] = useState<ReportFilters>({
@@ -85,7 +87,7 @@ export default function ReportsPage() {
           {/* Page header */}
           <div className="flex items-center gap-2.5 pb-1 border-b border-border/50">
             <FileBarChart className="h-5 w-5 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t('reports.title')}</h1>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
@@ -127,8 +129,8 @@ export default function ReportsPage() {
                 <div className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-destructive">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-medium text-sm">Failed to load report data</p>
-                    <p className="text-xs mt-0.5 text-destructive/80">Check your connection and try again.</p>
+                    <p className="font-medium text-sm">{t('reports.failedToLoad')}</p>
+                    <p className="text-xs mt-0.5 text-destructive/80">{t('reports.checkConnection')}</p>
                   </div>
                   <button
                     onClick={handleRefresh}
@@ -143,13 +145,13 @@ export default function ReportsPage() {
                   <ReportSummary summary={reportData.summary} />
 
                   <div className="flex items-center justify-between pl-3 border-l-2 border-primary/60">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Expense Analysis</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t('reports.expenseAnalysis')}</span>
                     <Link to="/transactions" className="text-xs text-primary hover:underline font-medium">View Transactions →</Link>
                   </div>
                   <ReportCharts reportData={reportData} />
 
                   <div className="flex items-center justify-between pl-3 border-l-2 border-primary/60">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Savings Goals</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t('reports.savingsGoals')}</span>
                     <Link to="/budget" className="text-xs text-primary hover:underline font-medium">View Budgets →</Link>
                   </div>
                   <ReportSavingsSection savingsPerformance={reportData.savingsPerformance} />

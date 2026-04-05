@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/Header';
 import {
   Accordion,
@@ -46,9 +47,10 @@ const faqItems = [
 ];
 
 export function FaqPage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background pb-page-content">
-      <Header title="FAQ" showBack />
+      <Header title={t('page.faq')} showBack />
       <main className="px-4 py-6">
         <Accordion type="single" collapsible className="w-full rounded-2xl border border-border/50 bg-card px-4">
           {faqItems.map((item) => (

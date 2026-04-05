@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -17,6 +18,7 @@ interface ChartData {
 type BudgetHistoryCategory = Category & { category_type?: string | null };
 
 export function BudgetHistoryChart() {
+  const { t } = useTranslation();
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -55,7 +57,7 @@ export function BudgetHistoryChart() {
           <p className="font-medium text-foreground mb-2">{label}</p>
           {payload.map((entry, index) => (
             <p key={index} className="text-sm">
-              <span className="text-muted-foreground">{entry.dataKey === 'budget' ? 'Budget' : 'Spent'}: </span>
+              <span className="text-muted-foreground">{entry.dataKey === 'budget' ? t('budget.title') : t('budget.spent')}: </span>
               <span className={entry.dataKey === 'spent' ? 'text-primary font-medium' : 'text-foreground'}>
                 {formatAmount(entry.value)}
               </span>
@@ -102,15 +104,15 @@ export function BudgetHistoryChart() {
     <Card className="rounded-3xl shadow-none border-none bg-accent/5 overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2 px-6 pt-6">
         <div>
-          <CardTitle className="text-lg font-bold">Financial Momentum</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">6-month spending trend</p>
+          <CardTitle className="text-lg font-bold">{t('budget.financialMomentum')}</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">{t('budget.sixMonthTrend')}</p>
         </div>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger className="w-[140px] h-9 text-xs rounded-full border-0 bg-background shadow-sm hover:bg-muted/50 transition-colors">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent align="end" className="rounded-xl shadow-xl border-border/50">
-            <SelectItem value="all" className="rounded-lg text-xs font-medium">✨ All Categories</SelectItem>
+            <SelectItem value="all" className="rounded-lg text-xs font-medium">✨ {t('expenses.allCategories')}</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id} className="rounded-lg text-xs">
                 {cat.name}
@@ -167,7 +169,7 @@ export function BudgetHistoryChart() {
                 />
                 <Line
                   dataKey="budget"
-                  name="Budget"
+                  name={t('budget.title') as string}
                   type="monotone"
                   stroke="hsl(var(--muted-foreground) / 0.45)"
                   strokeWidth={3}
@@ -182,7 +184,7 @@ export function BudgetHistoryChart() {
                 />
                 <Line
                   dataKey="spent"
-                  name="Spent"
+                  name={t('budget.spent') as string}
                   type="monotone"
                   stroke="hsl(var(--primary))"
                   strokeWidth={4}
@@ -203,9 +205,9 @@ export function BudgetHistoryChart() {
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
               <span className="text-xl">📉</span>
             </div>
-            <p className="font-medium text-sm">No momentum yet</p>
+            <p className="font-medium text-sm">{t('budget.noMomentumYet')}</p>
             <p className="text-xs text-muted-foreground/70 mt-1 max-w-[200px] text-center">
-              Create budgets and track expenses to see your financial trend here.
+              {t('budget.noMomentumDesc')}
             </p>
           </div>
         )}

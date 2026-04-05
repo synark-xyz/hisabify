@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Paperclip, Send, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,6 +48,7 @@ function toMailtoLink(
 }
 
 export function SupportPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -205,7 +207,7 @@ export function SupportPage() {
 
   return (
     <div className="min-h-screen bg-background pb-page-content">
-      <Header title="Help & Support" showBack onBack={() => navigate('/settings')} />
+      <Header title={t('page.helpSupport')} showBack onBack={() => navigate('/settings')} />
       <main className="px-4 py-6 space-y-4">
         <Card className="border-border/50">
           <CardContent className="p-4">

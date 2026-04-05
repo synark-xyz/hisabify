@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
-import { format, isSameDay, isSameMonth } from 'date-fns';
+import { isSameDay, isSameMonth } from 'date-fns';
 import { DayPicker, DayContentProps } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
+import { useFormatDate } from '@/lib/formatDate';
 
 interface MonthCalendarProps {
   currentDate: Date;
@@ -22,6 +24,8 @@ export function MonthCalendar({
   hasTransactions,
   isSelectable = true
 }: MonthCalendarProps) {
+  const { t } = useTranslation();
+  const { formatDate, locale } = useFormatDate();
 
   // Custom day content to show transaction indicators
   const CustomDayContent = (props: DayContentProps) => {
@@ -32,7 +36,7 @@ export function MonthCalendar({
 
     return (
       <div className="relative flex flex-col items-center justify-center w-full h-full">
-        <span>{format(date, 'd')}</span>
+        <span>{formatDate(date, 'd')}</span>
         {hasTx && isCurrentMonth && (
           <span
             className={cn(
@@ -59,6 +63,7 @@ export function MonthCalendar({
         month={currentDate}
         onMonthChange={onMonthChange}
         showOutsideDays={true}
+        locale={locale}
         className={cn("p-0 pointer-events-auto w-full")}
         classNames={{
           months: "flex flex-col w-full",
@@ -110,7 +115,7 @@ export function MonthCalendar({
           exit={{ opacity: 0, y: -5 }}
         >
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-70">
-            {format(selectedDate, 'MMM dd, yyyy')} selected
+            {formatDate(selectedDate, 'MMM dd, yyyy')} {t('expenses.calendarSelected')}
           </p>
           <motion.button
             onClick={() => onDateSelect(selectedDate)}
@@ -119,7 +124,7 @@ export function MonthCalendar({
             whileTap={{ scale: 0.95 }}
           >
             <X className="w-2.5 h-2.5" />
-            Clear
+            {t('expenses.clearDate')}
           </motion.button>
         </motion.div>
       )}

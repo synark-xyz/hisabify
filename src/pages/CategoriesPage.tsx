@@ -8,10 +8,12 @@ import { AddCategoryModal } from '@/components/AddCategoryModal';
 import { Category } from '@/types';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 
 export function CategoriesPage() {
   const { categories, loading, refetch } = useCategories();
   const { variant } = useTheme();
+  const { t, i18n } = useTranslation();
 
   const [addParentOpen, setAddParentOpen] = useState(false);
   const [addSubOpen, setAddSubOpen] = useState(false);
@@ -24,6 +26,11 @@ export function CategoriesPage() {
 
   const handleSuccess = async () => {
     await refetch();
+  };
+
+  // Helper to get localized category name
+  const getLocalizedName = (category: Category): string => {
+    return category.translations?.[i18n.language]?.name ?? category.name;
   };
 
   // Separate parents and build sub-lookup
@@ -39,11 +46,11 @@ export function CategoriesPage() {
 
   const expenseParents = parents
     .filter((c) => c.type === 'expense')
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => getLocalizedName(a).localeCompare(getLocalizedName(b)));
 
   const incomeParents = parents
     .filter((c) => c.type === 'income')
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => getLocalizedName(a).localeCompare(getLocalizedName(b)));
 
   const renderSection = (sectionParents: Category[], sectionLabel: string) => (
     <section className="mb-6">
@@ -51,7 +58,7 @@ export function CategoriesPage() {
         {sectionLabel}
       </h2>
       {sectionParents.length === 0 ? (
-        <p className="text-sm text-muted-foreground px-1">No {sectionLabel.toLowerCase()} categories yet.</p>
+        <p className="text-sm text-muted-foreground px-1">{t('categoriesPage.noCategoriesYet', { type: sectionLabel.toLowerCase() })}</p>
       ) : (
         <Accordion type="multiple" className="rounded-lg border bg-card divide-y divide-border overflow-hidden">
           {sectionParents.map((parent) => {
@@ -80,11 +87,11 @@ export function CategoriesPage() {
                       style={{ backgroundColor: parent.color ?? '#6b7280' }}
                     />
                     {/* Name */}
-                    <span className="text-sm font-medium truncate">{parent.name}</span>
+                    <span className="text-sm font-medium truncate">{getLocalizedName(parent)}</span>
                     {/* Sub count badge */}
                     {hasSubs && (
                       <Badge variant="secondary" className="shrink-0 text-xs px-1.5 py-0 h-5">
-                        {subs.length} {subs.length === 1 ? 'sub' : 'subs'}
+                        {t('categoriesPage.subCount', { count: subs.length })}
                       </Badge>
                     )}
                   </div>
@@ -99,17 +106,17 @@ export function CategoriesPage() {
                     }}
                   >
                     <Plus className="h-3 w-3 mr-1" />
-                    Sub
+                    {t('categoriesPage.addSub')}
                   </Button>
                 </AccordionTrigger>
                 {hasSubs && (
                   <AccordionContent className="px-4 pb-3 pt-0">
                     <ul className="space-y-1 pl-6 border-l border-border ml-1.5">
                       {subs
-                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .sort((a, b) => getLocalizedName(a).localeCompare(getLocalizedName(b)))
                         .map((sub) => (
                           <li key={sub.id} className="text-sm text-muted-foreground py-0.5">
-                            {sub.name}
+                            {getLocalizedName(sub)}
                           </li>
                         ))}
                     </ul>
@@ -133,14 +140,14 @@ export function CategoriesPage() {
       <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto pb-page-content px-4 pt-4">
         {/* Page header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold">Categories</h1>
+          <h1 className="text-xl font-bold">{t('categoriesPage.title')}</h1>
           <Button
             size="sm"
             onClick={() => setAddParentOpen(true)}
             className="gap-1.5"
           >
             <Plus className="h-4 w-4" />
-            Add Category
+            {t('categoriesPage.addCategory')}
           </Button>
         </div>
 
@@ -154,15 +161,15 @@ export function CategoriesPage() {
         {/* Empty state */}
         {!loading && categories.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
-            <p className="text-muted-foreground text-sm">No categories yet. Add one!</p>
+            <p className="text-muted-foreground text-sm">{t('categoriesPage.noCategoriesAddOne')}</p>
           </div>
         )}
 
         {/* Sections */}
         {!loading && categories.length > 0 && (
           <>
-            {renderSection(expenseParents, 'Expense')}
-            {renderSection(incomeParents, 'Income')}
+            {renderSection(expenseParents, t('categoriesPage.expense'))}
+            {renderSection(incomeParents, t('categoriesPage.income'))}
           </>
         )}
       </div>

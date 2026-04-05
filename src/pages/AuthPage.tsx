@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   Loader2,
   Mail,
@@ -46,7 +47,7 @@ interface FieldErrors {
 
 // ─── Password strength helper ──────────────────────────────────────────────────
 
-function getPasswordStrength(password: string): {
+function getPasswordStrength(password: string, t: (key: string) => string): {
   score: number;
   label: string;
   color: string;
@@ -59,11 +60,11 @@ function getPasswordStrength(password: string): {
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { score, label: 'Weak', color: '#ef4444' };
-  if (score <= 2) return { score, label: 'Fair', color: '#f97316' };
-  if (score <= 3) return { score, label: 'Good', color: '#eab308' };
-  if (score <= 4) return { score, label: 'Strong', color: '#22c55e' };
-  return { score, label: 'Excellent', color: '#10b981' };
+  if (score <= 1) return { score, label: t('auth.passwordWeak'), color: '#ef4444' };
+  if (score <= 2) return { score, label: t('auth.passwordFair'), color: '#f97316' };
+  if (score <= 3) return { score, label: t('auth.passwordGood'), color: '#eab308' };
+  if (score <= 4) return { score, label: t('auth.passwordStrong'), color: '#22c55e' };
+  return { score, label: t('auth.passwordExcellent'), color: '#10b981' };
 }
 
 // ─── Icon components ───────────────────────────────────────────────────────────
@@ -211,9 +212,10 @@ interface GoogleOAuthButtonProps {
   loading: boolean;
   disabled: boolean;
   onClick: () => void;
+  label: string;
 }
 
-function GoogleOAuthButton({ loading, disabled, onClick }: GoogleOAuthButtonProps) {
+function GoogleOAuthButton({ loading, disabled, onClick, label }: GoogleOAuthButtonProps) {
   return (
     <motion.button
       type="button"
@@ -237,7 +239,7 @@ function GoogleOAuthButton({ loading, disabled, onClick }: GoogleOAuthButtonProp
       ) : (
         <GoogleIcon />
       )}
-      <span>Continue with Google</span>
+      <span>{label}</span>
 
       {/* Subtle shimmer on hover */}
       <span
@@ -370,8 +372,8 @@ function FloatingInput({
 
 // ─── Password strength bar ─────────────────────────────────────────────────────
 
-function PasswordStrengthBar({ password }: { password: string }) {
-  const strength = getPasswordStrength(password);
+function PasswordStrengthBar({ password, t }: { password: string; t: (key: string) => string }) {
+  const strength = getPasswordStrength(password, t);
   if (!password) return null;
 
   return (
@@ -429,6 +431,7 @@ export function AuthPage() {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const shouldReduce = useReducedMotion() ?? false;
+  const { t } = useTranslation();
 
   // Ref to prevent redundant navigation
   const navigatingRef = useRef(false);
@@ -509,11 +512,11 @@ export function AuthPage() {
           redirectTo: getEmailAuthRedirectUrl('/reset-password'),
         });
         if (error) {
-          toast({ title: 'Error', description: error.message, variant: 'destructive' });
-          return;
-        }
-        setResetEmailSent(true);
-        toast({ title: 'Check your email', description: 'We sent you a password reset link.' });
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        return;
+      }
+      setResetEmailSent(true);
+      toast({ title: t('auth.checkYourInbox'), description: t('auth.resetLinkSent') + ' ' + email + '.' });
       } finally {
         setLoading(false);
       }
@@ -532,7 +535,7 @@ export function AuthPage() {
     }
 
     if (mode === 'signup' && !agreePrivacy) {
-      setErrors({ privacy: 'You must agree to the Privacy Policy to create an account.' });
+      setErrors({ privacy: t('auth.privacyRequired') });
       return;
     }
 
@@ -546,25 +549,25 @@ export function AuthPage() {
       if (error) {
         if (error.message.includes('User already registered')) {
           toast({
-            title: 'Account exists',
-            description: 'This email is already registered. Please sign in.',
+            title: t('auth.accountExists'),
+            description: t('auth.accountExistsDesc'),
             variant: 'destructive',
           });
         } else if (error.message.includes('Invalid login credentials')) {
           toast({
-            title: 'Invalid credentials',
-            description: 'Please check your email and password.',
+            title: t('auth.invalidCredentials'),
+            description: t('auth.invalidCredentialsDesc'),
             variant: 'destructive',
           });
         } else {
-          toast({ title: 'Error', description: error.message, variant: 'destructive' });
+          toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
         }
         return;
       }
 
       // Brief success flash before navigation
       setSubmitSuccess(true);
-      if (mode === 'signup') toast({ title: 'Account created!' });
+      if (mode === 'signup') toast({ title: t('auth.accountCreated') });
       setTimeout(() => navigate('/'), 400);
     } finally {
       setLoading(false);
@@ -642,9 +645,9 @@ export function AuthPage() {
             </motion.div>
 
             <div>
-              <h1 className="text-2xl font-black text-white">Check your inbox</h1>
+              <h1 className="text-2xl font-black text-white">{t('auth.checkYourInbox')}</h1>
               <p className="text-white/45 mt-2 text-sm leading-relaxed">
-                We sent a reset link to{' '}
+                {t('auth.resetLinkSent')}{' '}
                 <span className="font-semibold text-white/75">{email}</span>
               </p>
             </div>
@@ -663,7 +666,7 @@ export function AuthPage() {
             <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-blue-500/[0.08] border border-blue-500/15">
               <ShieldCheck className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-white/50 leading-relaxed">
-                The link expires in 1 hour. Check your spam folder if you don't see it.
+                {t('auth.linkExpires')}
               </p>
             </div>
 
@@ -675,7 +678,7 @@ export function AuthPage() {
                 'active:scale-[0.97] transition-all duration-150',
               )}
             >
-              Resend email
+              {t('auth.resendEmail')}
             </button>
           </div>
 
@@ -686,7 +689,7 @@ export function AuthPage() {
             transition={{ duration: 0.15 }}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back to sign in
+            {t('auth.backToSignIn')}
           </motion.button>
         </motion.div>
       </div>
@@ -734,8 +737,8 @@ export function AuthPage() {
               <HisabifyLogo size={56} showText={false} />
             </motion.div>
 
-            <h1 className="text-2xl font-black text-white">Reset password</h1>
-            <p className="text-white/40 text-sm">Enter your email and we'll send a secure link</p>
+            <h1 className="text-2xl font-black text-white">{t('auth.resetPasswordTitle')}</h1>
+            <p className="text-white/40 text-sm">{t('auth.resetPasswordDesc')}</p>
           </div>
 
           {/* Card */}
@@ -753,14 +756,14 @@ export function AuthPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <FloatingInput
                 id="fp-email"
-                label="Email address"
+                label={t('auth.emailAddress')}
                 type="email"
                 value={email}
                 onChange={setEmail}
                 error={errors.email}
                 icon={<Mail className="w-4 h-4" />}
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder={t('auth.enterEmail')}
               />
 
               <motion.button
@@ -793,7 +796,7 @@ export function AuthPage() {
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  'Send Reset Link'
+                  t('auth.sendResetLink')
                 )}
               </motion.button>
             </form>
@@ -806,7 +809,7 @@ export function AuthPage() {
             transition={{ duration: 0.15 }}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back to sign in
+            {t('auth.backToSignIn')}
           </motion.button>
         </motion.div>
       </div>
@@ -885,7 +888,7 @@ export function AuthPage() {
             HISABIFY
           </h1>
           <p className="text-white/35 mt-2 text-[13px] font-medium tracking-wide">
-            Your pulse on prosperity
+            {t('auth.brandTagline')}
           </p>
         </motion.div>
 
@@ -901,7 +904,7 @@ export function AuthPage() {
               border: '1px solid rgba(139,92,246,0.35)',
             }}
           >
-            Your friend scored <span className="font-black text-purple-300">{challengeScore}/100</span>. Can you beat them? 💪
+            {t('auth.challengeScore', { score: challengeScore })}
           </motion.div>
         )}
 
@@ -917,7 +920,7 @@ export function AuthPage() {
               border: '1px solid rgba(16,185,129,0.35)',
             }}
           >
-            You were invited! Sign up with code <span className="font-black text-emerald-300">{pendingRefCode}</span> to unlock 30 days Pro free.
+            {t('auth.referralCode', { code: pendingRefCode })}
           </motion.div>
         )}
 
@@ -972,7 +975,7 @@ export function AuthPage() {
                       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
                     />
                   )}
-                  <span className="relative z-10">{tab === 'login' ? 'Sign In' : 'Sign Up'}</span>
+                  <span className="relative z-10">{tab === 'login' ? t('auth.signIn') : t('auth.signUp')}</span>
                 </button>
               );
             })}
@@ -983,13 +986,14 @@ export function AuthPage() {
             loading={oauthLoading === 'google'}
             disabled={!!oauthLoading || loading}
             onClick={handleGoogleOAuth}
+            label={t('auth.continueWithGoogle')}
           />
 
           {/* ── Divider ───────────────────────────────────────────────────────── */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
             <span className="text-[11px] font-medium text-white/20 tracking-wide">
-              or continue with email
+              {t('auth.orContinueWithEmail')}
             </span>
             <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
           </div>
@@ -1009,14 +1013,14 @@ export function AuthPage() {
               {/* Email field */}
               <FloatingInput
                 id="email"
-                label="Email address"
+                label={t('auth.emailAddress')}
                 type="email"
                 value={email}
                 onChange={setEmail}
                 error={errors.email}
                 icon={<Mail className="w-4 h-4" />}
                 autoComplete={mode === 'login' ? 'email' : 'email'}
-                placeholder="you@example.com"
+                placeholder={t('auth.enterEmail')}
               />
 
               {/* Password field */}
@@ -1024,14 +1028,14 @@ export function AuthPage() {
                 <div className="relative">
                   <FloatingInput
                     id="password"
-                    label="Password"
+                    label={t('auth.password')}
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={setPassword}
                     error={errors.password}
                     icon={<Lock className="w-4 h-4" />}
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    placeholder={showPassword ? 'Your password' : ''}
+                    placeholder={showPassword ? t('auth.yourPassword') : ''}
                     trailingSlot={
                       <button
                         type="button"
@@ -1067,7 +1071,7 @@ export function AuthPage() {
                         backgroundClip: 'text',
                       }}
                     >
-                      Forgot password?
+                      {t('auth.forgotPassword')}
                     </button>
                   </div>
                 )}
@@ -1076,7 +1080,7 @@ export function AuthPage() {
                 {mode === 'signup' && (
                   <AnimatePresence>
                     {password.length > 0 && (
-                      <PasswordStrengthBar password={password} />
+                      <PasswordStrengthBar password={password} t={t} />
                     )}
                   </AnimatePresence>
                 )}
@@ -1115,13 +1119,13 @@ export function AuthPage() {
                         htmlFor="signup-privacy-agreement"
                         className="text-xs leading-relaxed text-white/35 cursor-pointer select-none"
                       >
-                        I have read and agree to the{' '}
+                        {t('auth.privacyAgree')}{' '}
                         <button
                           type="button"
                           onClick={() => { setLegalTab('privacy'); setLegalOpen(true); }}
                           className="font-semibold text-purple-400 underline underline-offset-2 hover:text-pink-400 transition-colors"
                         >
-                          Privacy Policy
+                          {t('auth.privacyPolicy')}
                         </button>
                         .
                       </Label>
@@ -1182,7 +1186,7 @@ export function AuthPage() {
                       className="flex items-center gap-2"
                     >
                       <CheckCircle2 className="w-5 h-5" />
-                      Done
+                      {t('common.done')}
                     </motion.span>
                   ) : loading ? (
                     <motion.span
@@ -1201,7 +1205,7 @@ export function AuthPage() {
                       exit={{ opacity: 0 }}
                       className="relative z-10"
                     >
-                      {mode === 'login' ? 'Sign In' : 'Create Account'}
+                      {mode === 'login' ? t('auth.signInAction') : t('auth.createAccount')}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -1217,12 +1221,12 @@ export function AuthPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+          {mode === 'login' ? t('auth.noAccount') : t('auth.alreadyHaveAccount')}
           <button
             onClick={() => handleModeChange(mode === 'login' ? 'signup' : 'login')}
             className="font-semibold text-white/60 hover:text-white transition-colors duration-150 underline-offset-2 hover:underline"
           >
-            {mode === 'login' ? 'Sign up free' : 'Sign in'}
+            {mode === 'login' ? t('auth.signUpFree') : t('auth.signIn')}
           </button>
         </motion.p>
 
@@ -1233,21 +1237,21 @@ export function AuthPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          By continuing, you agree to our{' '}
+          {t('auth.continueAgree')}{' '}
           <button
             type="button"
             onClick={() => { setLegalTab('terms'); setLegalOpen(true); }}
             className="underline hover:text-white/35 transition-colors"
           >
-            Terms
+            {t('auth.terms')}
           </button>{' '}
-          and{' '}
+          {t('common.and')}{' '}
           <button
             type="button"
             onClick={() => { setLegalTab('privacy'); setLegalOpen(true); }}
             className="underline hover:text-white/35 transition-colors"
           >
-            Privacy Policy
+            {t('auth.privacy')}
           </button>
           .
         </motion.p>

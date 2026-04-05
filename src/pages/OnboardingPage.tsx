@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     ArrowRight, Check, Sparkles, TrendingUp, Shield, Zap,
-    PieChart, Target, Wallet, Bell, Gift, Star, CreditCard, BarChart3
+    PieChart, Target, Wallet, Bell, Gift, Star, CreditCard, BarChart3, Globe
 } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
 import { HisabifyLogo } from '@/components/HisabifyLogo';
 
@@ -22,60 +24,48 @@ const slides = [
     {
         id: 1,
         icon: Wallet,
-        title: "Money Scattered Everywhere?",
-        subtitle: "We bring it all together",
-        description: "Track expenses across multiple cards and accounts in one beautiful place. No more juggling apps.",
         color: "from-blue-500 to-cyan-400",
         bgColor: "bg-blue-500/10",
         features: [
-            { icon: CreditCard, text: "Multi-card tracking" },
-            { icon: Zap, text: "Quick expense logging" },
-            { icon: Shield, text: "Bank-level security" }
+            { icon: CreditCard, textKey: "onboarding.slide1Feature1" },
+            { icon: Zap, textKey: "onboarding.slide1Feature2" },
+            { icon: Shield, textKey: "onboarding.slide1Feature3" }
         ],
         floatingIcons: [CreditCard, Star, Zap]
     },
     {
         id: 2,
         icon: Bell,
-        title: "Tired of Bill Surprises?",
-        subtitle: "Never miss a payment again",
-        description: "Smart reminders for all your bills and subscriptions. Stay on top of due dates effortlessly.",
         color: "from-purple-500 to-pink-400",
         bgColor: "bg-purple-500/10",
         features: [
-            { icon: Bell, text: "Smart notifications" },
-            { icon: Target, text: "Budget alerts" },
-            { icon: Gift, text: "Savings milestones" }
+            { icon: Bell, textKey: "onboarding.slide2Feature1" },
+            { icon: Target, textKey: "onboarding.slide2Feature2" },
+            { icon: Gift, textKey: "onboarding.slide2Feature3" }
         ],
         floatingIcons: [Target, Sparkles, Gift]
     },
     {
         id: 3,
         icon: PieChart,
-        title: "Where Does Money Go?",
-        subtitle: "Crystal clear insights",
-        description: "Beautiful charts show exactly where you spend. Make smarter decisions with real data.",
         color: "from-emerald-500 to-teal-400",
         bgColor: "bg-emerald-500/10",
         features: [
-            { icon: PieChart, text: "Visual analytics" },
-            { icon: BarChart3, text: "Spending trends" },
-            { icon: TrendingUp, text: "Growth tracking" }
+            { icon: PieChart, textKey: "onboarding.slide3Feature1" },
+            { icon: BarChart3, textKey: "onboarding.slide3Feature2" },
+            { icon: TrendingUp, textKey: "onboarding.slide3Feature3" }
         ],
         floatingIcons: [BarChart3, TrendingUp, Sparkles]
     },
     {
         id: 4,
         icon: Target,
-        title: "Ready to Take Control?",
-        subtitle: "Your financial freedom starts here",
-        description: "Join thousands who've simplified their finances. Set goals, track progress, achieve more.",
         color: "from-orange-500 to-amber-400",
         bgColor: "bg-orange-500/10",
         features: [
-            { icon: Target, text: "Goal setting" },
-            { icon: Sparkles, text: "Premium features" },
-            { icon: Star, text: "No hidden fees" }
+            { icon: Target, textKey: "onboarding.slide4Feature1" },
+            { icon: Sparkles, textKey: "onboarding.slide4Feature2" },
+            { icon: Star, textKey: "onboarding.slide4Feature3" }
         ],
         floatingIcons: [Star, Gift, Zap],
         isFinal: true
@@ -91,9 +81,12 @@ interface OnboardingPageProps {
 export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
+    const [showLanguageStep, setShowLanguageStep] = useState(true);
     const navigate = useNavigate();
     const controls = useAnimation();
     const isSmall = useSmallScreen();
+    const { t } = useTranslation();
+    const { language, setLanguage: setLang, isLoading } = useLanguage();
 
     useEffect(() => {
         controls.start({
@@ -101,6 +94,11 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
             transition: { duration: 1, repeat: Infinity, ease: "easeInOut" }
         });
     }, [controls]);
+
+    const handleLanguageSelect = async (lang: 'en' | 'bn' | 'ja') => {
+        await setLang(lang);
+        setShowLanguageStep(false);
+    };
 
     const handleNext = () => {
         if (currentIndex < slides.length - 1) {
@@ -146,6 +144,73 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
     };
 
     const currentSlide = slides[currentIndex];
+
+    if (showLanguageStep) {
+        return (
+            <div className="min-h-screen-dynamic bg-background flex flex-col relative overflow-hidden pt-safe pb-safe">
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <motion.div
+                        className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[140px]"
+                        style={{ background: 'linear-gradient(to bottom right, #3B82F6, #22D3EE)' }}
+                        animate={{ scale: [1, 1.12, 1], opacity: [0.18, 0.28, 0.18] }}
+                        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full blur-[140px]"
+                        style={{ background: 'linear-gradient(to top right, #22D3EE, #60A5FA)' }}
+                        animate={{ scale: [1.12, 1, 1.12], opacity: [0.15, 0.25, 0.15] }}
+                        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+                    />
+                </div>
+
+                <div className="absolute top-0 left-0 z-50 pt-safe pl-6 mt-2">
+                    <HisabifyLogo size={isSmall ? 32 : 40} showText={true} />
+                </div>
+
+                <div className="flex-1 flex flex-col items-center justify-center px-6">
+                    <div className="w-full max-w-md">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="text-center mb-12"
+                        >
+                            <h2 className={cn("font-black tracking-tight text-foreground", isSmall ? "text-2xl" : "text-3xl md:text-4xl")}>
+                                {t('onboarding.selectLanguage')}
+                            </h2>
+                            <p className="text-muted-foreground mt-2">{t('common.select')}</p>
+                        </motion.div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            {(['en', 'bn', 'ja'] as const).map((lang, index) => (
+                                <motion.button
+                                    key={lang}
+                                    onClick={() => handleLanguageSelect(lang)}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 + index * 0.1, duration: 0.4 }}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    className={cn(
+                                        "p-6 rounded-2xl border-2 transition-all text-center",
+                                        language === lang
+                                            ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                                            : "border-border hover:border-primary/50 hover:bg-muted/50"
+                                    )}
+                                >
+                                    <span className={cn("font-bold text-lg", isSmall ? "text-xl" : "text-2xl")}>
+                                        {lang === 'en' && 'English'}
+                                        {lang === 'bn' && 'বাংলা'}
+                                        {lang === 'ja' && '日本語'}
+                                    </span>
+                                </motion.button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen-dynamic bg-background flex flex-col relative overflow-hidden overflow-y-auto pt-safe pb-safe">
@@ -224,7 +289,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                         ease: [0.4, 0, 0.2, 1]
                     }}
                 >
-                    Skip
+                    {t('common.skip')}
                 </motion.button>
             </motion.div>
 
@@ -295,9 +360,9 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
 
                                     // Smooth easing for organic movement
                                     const easings = [
-                                        [0.45, 0, 0.55, 1],
-                                        [0.42, 0, 0.58, 1],
-                                        [0.47, 0, 0.53, 1]
+                                        [0.45, 0, 0.55, 1] as const,
+                                        [0.42, 0, 0.58, 1] as const,
+                                        [0.47, 0, 0.53, 1] as const
                                     ];
 
                                     return (
@@ -408,7 +473,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                 className="mb-2"
                             >
                                 <h2 className={cn("font-black tracking-tight text-foreground", isSmall ? "text-2xl" : "text-3xl md:text-4xl")}>
-                                    {currentSlide.title}
+                                    {t(`onboarding.slide${currentSlide.id}Title`)}
                                 </h2>
                             </motion.div>
 
@@ -427,7 +492,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                     "text-white"
                                 )}
                             >
-                                {currentSlide.subtitle}
+                                {t(`onboarding.slide${currentSlide.id}Subtitle`)}
                             </motion.div>
 
                             {/* Description */}
@@ -441,7 +506,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                 }}
                                 className={cn("text-muted-foreground leading-relaxed max-w-sm", isSmall ? "text-sm mb-4" : "text-base md:text-lg mb-8")}
                             >
-                                {currentSlide.description}
+                                {t(`onboarding.slide${currentSlide.id}Desc`)}
                             </motion.p>
 
                             {/* Feature Pills */}
@@ -482,7 +547,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                         whileTap={{ scale: 0.96 }}
                                     >
                                         <feature.icon className="w-4 h-4" />
-                                        <span className="text-sm font-semibold">{feature.text}</span>
+                                        <span className="text-sm font-semibold">{t(feature.textKey)}</span>
                                     </motion.div>
                                 ))}
                             </motion.div>
@@ -559,7 +624,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                 }}
                                 whileTap={{ scale: 0.95 }}
                             >
-                                Back
+                                {t('common.back')}
                             </motion.button>
                         )}
 
@@ -589,7 +654,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                 transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
                             />
                             <span className="relative z-10">
-                                {currentSlide.isFinal ? 'Get Started Free' : 'Next'}
+                                {currentSlide.isFinal ? t('onboarding.getStarted') : t('common.next')}
                             </span>
                             <motion.div
                                 className="relative z-10"

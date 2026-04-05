@@ -19,7 +19,8 @@ describe('calculateHealthScore', () => {
 
     expect(score.total).toBe(100);
     expect(score.breakdown.savings).toBe(50);
-    expect(score.insight).toContain('Emergency Fund');
+    expect(score.insightKey).toBe('healthScore.insightOnTrack');
+    expect(score.insightParams.goalName).toBe('Emergency Fund');
   });
 
   it('rewards being under budget without requiring every savings signal', () => {
@@ -58,7 +59,8 @@ describe('calculateHealthScore', () => {
     });
 
     expect(score.total).toBe(15);
-    expect(score.insight).toContain('Emergency Fund');
+    expect(score.insightKey).toBe('healthScore.insightBehindContribute');
+    expect(score.insightParams.goalName).toBe('Emergency Fund');
   });
 
   it('uses the no-goals insight when savings has not been started', () => {
@@ -76,7 +78,7 @@ describe('calculateHealthScore', () => {
     });
 
     expect(score.total).toBe(50);
-    expect(score.insight).toBe('Set a savings goal to boost your score.');
+    expect(score.insightKey).toBe('healthScore.insightSetGoal');
   });
 
   it('decays score based on inactivity', () => {

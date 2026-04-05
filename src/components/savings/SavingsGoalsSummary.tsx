@@ -1,6 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Money, Target, TrendUp, CheckCircle } from "@phosphor-icons/react";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useNumberTranslation } from '@/lib/i18nNumber';
+import { useTranslation } from "react-i18next";
 
 interface SavingsGoalsSummaryProps {
   totalSaved: number;
@@ -16,35 +18,37 @@ export function SavingsGoalsSummary({
   completedGoals,
 }: SavingsGoalsSummaryProps) {
   const { formatAmount } = useCurrency();
+  const { tn } = useNumberTranslation();
+  const { t } = useTranslation();
   const overallProgress = totalTarget > 0
     ? Math.round((totalSaved / totalTarget) * 100)
     : 0;
 
   const stats = [
     {
-      label: "Total Saved",
+      label: t("savings.totalSaved"),
       value: formatAmount(totalSaved),
       icon: Money,
       color: "text-green-500",
       bgColor: "bg-green-500/10",
     },
     {
-      label: "Total Target",
+      label: t("savings.totalTarget"),
       value: formatAmount(totalTarget),
       icon: Target,
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
     {
-      label: "Overall Progress",
-      value: `${overallProgress}%`,
+      label: t("savings.overallProgress"),
+      value: `${tn(overallProgress)}%`,
       icon: TrendUp,
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
     },
     {
-      label: "Completed",
-      value: `${completedGoals}/${goalsCount}`,
+      label: t("savings.completed"),
+      value: `${tn(completedGoals)}/${tn(goalsCount)}`,
       icon: CheckCircle,
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",

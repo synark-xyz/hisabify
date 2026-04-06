@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFormatDate } from '@/lib/formatDate';
+import { getLocalizedCategoryName } from '@/lib/utils';
 import { Loader2, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info, ArrowLeftRight, Banknote, CreditCard, Building2, Globe, FileText, Clock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -1239,7 +1240,7 @@ export function TransactionForm({
           {type !== 'transfer' && (
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.paymentMethod')}</label>
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+              <div className="grid grid-cols-6 sm:grid-cols-3 gap-2 sm:gap-1.5">
                 {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([method, label]) => {
                   const icons: Record<PaymentMethod, JSX.Element> = {
                     cash: <Banknote className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
@@ -1249,7 +1250,6 @@ export function TransactionForm({
                     cheque: <FileText className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
                     other: <ArrowLeftRight className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
                   };
-                  // Shorten long labels so all chips fit on one line
                   const shortLabels: Record<PaymentMethod, string> = {
                     cash: t('transaction.paymentMethodCash'),
                     card: t('transaction.paymentMethodCard'),
@@ -1264,15 +1264,14 @@ export function TransactionForm({
                       type="button"
                       onClick={() => setPaymentMethod(paymentMethod === method ? '' : method)}
                       className={cn(
-                        'flex items-center justify-center gap-1 rounded-lg sm:rounded-xl border py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium transition-all h-8 sm:h-9',
+                        'flex items-center justify-center gap-1.5 rounded-lg border text-[11px] sm:text-[12px] font-medium transition-all h-8 sm:h-9 px-0.5 sm:px-1.5 col-span-2',
                         paymentMethod === method
                           ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
                           : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
                       )}
                     >
                       {icons[method]}
-                      <span className="hidden xs:inline">{shortLabels[method]}</span>
-                      <span className="xs:hidden">{shortLabels[method].slice(0, 3)}</span>
+                      <span className="truncate">{shortLabels[method]}</span>
                     </button>
                   );
                 })}
@@ -1390,7 +1389,7 @@ export function TransactionForm({
                       <SelectContent className="rounded-2xl">
                         {filteredRootCategories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                            {t(`categories.${cat.name}`, { defaultValue: cat.name })}
+                            {getLocalizedCategoryName(cat)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1414,7 +1413,7 @@ export function TransactionForm({
                         <SelectContent className="rounded-2xl">
                           {filteredSubs.map((cat) => (
                             <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                              {t(`categories.${cat.name}`, { defaultValue: cat.name })}
+                              {getLocalizedCategoryName(cat)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1475,13 +1474,13 @@ export function TransactionForm({
                           if (subs.length > 0) {
                             return subs.map((sub) => (
                               <SelectItem key={sub.id} value={sub.id} className="rounded-xl">
-                                {t(`categories.${cat.name}`, { defaultValue: cat.name })} &gt; {t(`categories.${sub.name}`, { defaultValue: sub.name })}
+                                {getLocalizedCategoryName(cat)} › {getLocalizedCategoryName(sub)}
                               </SelectItem>
                             ));
                           }
                           return (
                             <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                              {t(`categories.${cat.name}`, { defaultValue: cat.name })}
+                              {getLocalizedCategoryName(cat)}
                             </SelectItem>
                           );
                         })}

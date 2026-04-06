@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
 import { useTheme } from '@/hooks/useTheme';
-import { cn } from '@/lib/utils';
+import { cn, getLocalizedCategoryName } from '@/lib/utils';
 
 interface TransactionItemProps {
   transaction: Transaction & { convertedAmount?: number };
@@ -72,7 +72,8 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
   const parentCategoryName = (() => {
     const parentId = transaction.category?.parent_id;
     if (!parentId || !categoriesMap) return null;
-    return categoriesMap.get(parentId)?.name ?? null;
+    const parent = categoriesMap.get(parentId);
+    return parent ? getLocalizedCategoryName(parent) : null;
   })();
 
   const displayCategoryLabel = parentCategoryName

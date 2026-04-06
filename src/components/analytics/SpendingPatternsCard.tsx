@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
 import type { SpendingPattern } from '@/hooks/useAdvancedAnalytics';
+import { localizeNumber } from '@/lib/i18nNumber';
 
 interface SpendingPatternsCardProps {
   patterns: SpendingPattern;
@@ -13,6 +14,7 @@ interface SpendingPatternsCardProps {
 export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
   const { t } = useTranslation();
   const { formatAmount } = useCurrency();
+  const unusualSpendingRounded = Math.abs(patterns.unusualSpending.percentageAboveNormal);
 
   const stats = [
     {
@@ -38,7 +40,7 @@ export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
     },
     {
       label: t('dashboard.spendingStreak'),
-      value: `${patterns.spendingStreak} ${t('dashboard.days')}`,
+      value: `${localizeNumber(patterns.spendingStreak)} ${t('dashboard.days')}`,
       icon: Flame,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10',
@@ -121,7 +123,7 @@ export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-500" />
               <p className="text-sm text-amber-600 dark:text-amber-400">
-                {t('dashboard.spendingAboveNormal', { percent: patterns.unusualSpending.percentageAboveNormal.toFixed(0) })}
+                {t('dashboard.spendingAboveNormal', { percent: localizeNumber(unusualSpendingRounded) })}
               </p>
             </div>
           </motion.div>

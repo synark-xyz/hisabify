@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal, ChartBar } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getLocalizedCategoryName } from '@/lib/utils';
 import { MonthCalendar } from '@/components/MonthCalendar';
 import { SwipeableWeekCalendar } from '@/components/SwipeableWeekCalendar';
 import { ExpenseOverview } from '@/components/ExpenseOverview';
@@ -21,6 +21,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import { useFormatDate } from '@/lib/formatDate';
 import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
 import { useCategories } from '@/hooks/useCategories';
@@ -274,7 +275,7 @@ export function ExpensesPage() {
         map.set(tx.category.id, tx.category as Category);
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return Array.from(map.values()).sort((a, b) => getLocalizedCategoryName(a).localeCompare(getLocalizedCategoryName(b)));
   }, [rangeTransactions]);
 
   const cardOptions = useMemo(() => {
@@ -315,7 +316,7 @@ export function ExpensesPage() {
   useEffect(() => {
     if (pendingCategoryNameRef.current && categoryOptions.length > 0) {
       const name = pendingCategoryNameRef.current.toLowerCase();
-      const match = categoryOptions.find((c) => c.name.toLowerCase() === name);
+      const match = categoryOptions.find((c) => getLocalizedCategoryName(c).toLowerCase() === name);
       if (match) {
         setCategoryFilter(match.id);
         setShowFilters(true);
@@ -412,7 +413,7 @@ export function ExpensesPage() {
 
       const merchant = tx.merchant.toLowerCase();
       const note = (tx.note || '').toLowerCase();
-      const categoryName = (tx.category?.name || '').toLowerCase();
+      const categoryName = getTransactionCategoryName(tx).toLowerCase();
 
       return merchant.includes(query) || note.includes(query) || categoryName.includes(query);
     });
@@ -449,7 +450,7 @@ export function ExpensesPage() {
       let key: string;
       switch (groupBy) {
         case 'category':
-          key = tx.category?.name || 'Other';
+          key = getTransactionCategoryName(tx);
           break;
         case 'paymentMethod':
           key = tx.payment_method ? PAYMENT_METHOD_LABELS[tx.payment_method] || tx.payment_method : 'Not set';
@@ -461,7 +462,7 @@ export function ExpensesPage() {
           key = tx.merchant || 'Unknown';
           break;
         default:
-          key = 'Other';
+          key = t('transaction.categoryOther');
       }
       
       if (!groups.has(key)) {
@@ -923,7 +924,7 @@ export function ExpensesPage() {
                           <SelectItem value="all">{t('expenses.allCategories')}</SelectItem>
                           {categoryOptions.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
-                              {category.name}
+                              {getLocalizedCategoryName(category)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -943,7 +944,7 @@ export function ExpensesPage() {
                             <SelectItem value="all">{t('expenses.allSubCategories')}</SelectItem>
                             {subCategoryOptions.map((sub) => (
                               <SelectItem key={sub.id} value={sub.id}>
-                                {sub.name}
+                                {getLocalizedCategoryName(sub)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1160,7 +1161,7 @@ export function ExpensesPage() {
                       )}
                       {categoryFilter !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          {t('expenses.filterCategory', { name: categoryOptions.find(c => c.id === categoryFilter)?.name || categoryFilter })}
+                          {t('expenses.filterCategory', { name: getLocalizedCategoryName(categoryOptions.find(c => c.id === categoryFilter)!) || categoryFilter })}
                           <button onClick={() => setCategoryFilter('all')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>
@@ -1168,7 +1169,7 @@ export function ExpensesPage() {
                       )}
                       {subCategoryFilter !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                          {t('expenses.filterSub', { name: allCategories.find(c => c.id === subCategoryFilter)?.name || t('expenses.allSubCategories') })}
+                          {t('expenses.filterSub', { name: getLocalizedCategoryName(allCategories.find(c => c.id === subCategoryFilter)!) || t('expenses.allSubCategories') })}
                           <button onClick={() => setSubCategoryFilter('all')} className="hover:text-accent-foreground">
                             <X className="w-3 h-3" />
                           </button>

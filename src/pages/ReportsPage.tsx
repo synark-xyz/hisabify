@@ -137,7 +137,7 @@ export default function ReportsPage() {
                     className="shrink-0 flex items-center gap-1 text-xs font-medium hover:underline"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
-                    Retry
+                    {t('reports.retry')}
                   </button>
                 </div>
               ) : (
@@ -146,13 +146,13 @@ export default function ReportsPage() {
 
                   <div className="flex items-center justify-between pl-3 border-l-2 border-primary/60">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t('reports.expenseAnalysis')}</span>
-                    <Link to="/transactions" className="text-xs text-primary hover:underline font-medium">View Transactions →</Link>
+                    <Link to="/transactions" className="text-xs text-primary hover:underline font-medium">{t('reports.viewTransactions')}</Link>
                   </div>
                   <ReportCharts reportData={reportData} />
 
                   <div className="flex items-center justify-between pl-3 border-l-2 border-primary/60">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t('reports.savingsGoals')}</span>
-                    <Link to="/budget" className="text-xs text-primary hover:underline font-medium">View Budgets →</Link>
+                    <Link to="/budget" className="text-xs text-primary hover:underline font-medium">{t('reports.viewBudgets')}</Link>
                   </div>
                   <ReportSavingsSection savingsPerformance={reportData.savingsPerformance} />
                 </>

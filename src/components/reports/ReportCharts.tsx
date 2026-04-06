@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   PieChart,
@@ -63,6 +64,7 @@ const renderActiveShape = (props: ActiveShapeProps) => {
 };
 
 export function ReportCharts({ reportData }: ReportChartsProps) {
+  const { t } = useTranslation();
   const { formatAmount, currencySymbol } = useCurrency();
   const [activeIndex, setActiveIndex] = useState(0);
   const [incomeActiveIndex, setIncomeActiveIndex] = useState(0);
@@ -84,7 +86,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       {/* Expense Category Breakdown Pie Chart */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Expenses by Category</CardTitle>
+          <CardTitle className="text-base">{t('reports.charts.expensesByCategory')}</CardTitle>
         </CardHeader>
         <CardContent>
           {reportData.categoryBreakdown.length > 0 ? (
@@ -146,7 +148,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
             </div>
           ) : (
             <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-              No expense data for selected period
+              {t('reports.charts.noExpenseData')}
             </div>
           )}
         </CardContent>
@@ -155,7 +157,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       {/* Income Category Breakdown Pie Chart */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Income Sources</CardTitle>
+          <CardTitle className="text-base">{t('reports.charts.incomeSources')}</CardTitle>
         </CardHeader>
         <CardContent>
           {reportData.incomeCategoryBreakdown.length > 0 ? (
@@ -217,7 +219,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
             </div>
           ) : (
             <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-              No income data for selected period
+              {t('reports.charts.noIncomeData')}
             </div>
           )}
         </CardContent>
@@ -226,7 +228,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       {/* Budget Performance Bar Chart */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Budget Performance</CardTitle>
+          <CardTitle className="text-base">{t('reports.charts.budgetPerformance')}</CardTitle>
         </CardHeader>
         <CardContent>
           {reportData.budgetPerformance.length > 0 ? (
@@ -248,13 +250,13 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                   }}
                 />
                 <Legend />
-                <Bar dataKey="budgeted" name="Budget" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="spent" name="Spent" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="budgeted" name={t('reports.charts.budget')} fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="spent" name={t('reports.charts.spent')} fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-              No budget data for selected period
+              {t('reports.charts.noBudgetData')}
             </div>
           )}
         </CardContent>
@@ -263,7 +265,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       {/* Daily Expenses Area Chart */}
       <Card className="lg:col-span-3 md:col-span-2">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Daily Expenses & Income</CardTitle>
+          <CardTitle className="text-base">{t('reports.charts.dailyExpensesIncome')}</CardTitle>
         </CardHeader>
         <CardContent>
           {formattedDailyData.length > 0 ? (
@@ -278,7 +280,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                 <YAxis tickFormatter={(v) => `${currencySymbol}${v}`} />
                 <Tooltip
                   formatter={(value: number) => formatAmount(value)}
-                  labelFormatter={(label) => `Date: ${label}`}
+                  labelFormatter={(label) => `${t('reports.charts.date')}: ${label}`}
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
@@ -289,7 +291,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                 <Area
                   type="monotone"
                   dataKey="expenses"
-                  name="Expenses"
+                  name={t('reports.charts.expenses')}
                   stroke="hsl(var(--destructive))"
                   fill="hsl(var(--destructive))"
                   fillOpacity={0.2}
@@ -297,7 +299,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                 <Area
                   type="monotone"
                   dataKey="income"
-                  name="Income"
+                  name={t('reports.charts.income')}
                   stroke="hsl(var(--chart-4))"
                   fill="hsl(var(--chart-4))"
                   fillOpacity={0.2}
@@ -306,7 +308,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
             </ResponsiveContainer>
           ) : (
             <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              No data for selected period
+              {t('reports.charts.noData')}
             </div>
           )}
         </CardContent>

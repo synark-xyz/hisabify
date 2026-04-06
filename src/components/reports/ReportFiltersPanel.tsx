@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CalendarIcon, Filter } from "lucide-react";
+import { CalendarIcon, Filter, CheckSquare, X } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ReportFilters } from "@/hooks/useReportTemplates";
@@ -34,13 +35,13 @@ interface ReportFiltersPanelProps {
   categories: Category[];
 }
 
-const presetRanges = [
-  { label: "This Month", getValue: () => ({ from: startOfMonth(new Date()), to: new Date() }) },
-  { label: "Last Month", getValue: () => ({ from: startOfMonth(subMonths(new Date(), 1)), to: endOfMonth(subMonths(new Date(), 1)) }) },
-  { label: "Last 30 Days", getValue: () => ({ from: subDays(new Date(), 30), to: new Date() }) },
-  { label: "Last 90 Days", getValue: () => ({ from: subDays(new Date(), 90), to: new Date() }) },
-  { label: "Last 6 Months", getValue: () => ({ from: subMonths(new Date(), 6), to: new Date() }) },
-  { label: "This Year", getValue: () => ({ from: new Date(new Date().getFullYear(), 0, 1), to: new Date() }) },
+const getPresetRanges = (t: any) => [
+  { key: "thisMonth", getValue: () => ({ from: startOfMonth(new Date()), to: new Date() }) },
+  { key: "lastMonth", getValue: () => ({ from: startOfMonth(subMonths(new Date(), 1)), to: endOfMonth(subMonths(new Date(), 1)) }) },
+  { key: "last30Days", getValue: () => ({ from: subDays(new Date(), 30), to: new Date() }) },
+  { key: "last90Days", getValue: () => ({ from: subDays(new Date(), 90), to: new Date() }) },
+  { key: "last6Months", getValue: () => ({ from: subMonths(new Date(), 6), to: new Date() }) },
+  { key: "thisYear", getValue: () => ({ from: new Date(new Date().getFullYear(), 0, 1), to: new Date() }) },
 ];
 
 export function ReportFiltersPanel({
@@ -48,6 +49,9 @@ export function ReportFiltersPanel({
   onFiltersChange,
   categories,
 }: ReportFiltersPanelProps) {
+  const { t } = useTranslation();
+  const presetRanges = getPresetRanges(t);
+
   const [dateFrom, setDateFrom] = useState<Date | undefined>(
     filters.dateFrom ? new Date(filters.dateFrom) : startOfMonth(new Date())
   );
@@ -117,22 +121,22 @@ export function ReportFiltersPanel({
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Filter className="h-4 w-4" />
-          Report Filters
+          {t('reports.filters')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Date Range Presets */}
         <div className="space-y-2">
-          <Label>Quick Select</Label>
+          <Label>{t('reports.quickSelect')}</Label>
           <div className="flex flex-wrap gap-2">
             {presetRanges.map((preset) => (
               <Button
-                key={preset.label}
+                key={preset.key}
                 variant="outline"
                 size="sm"
                 onClick={() => handlePresetSelect(preset)}
               >
-                {preset.label}
+                {t(`reports.presets.${preset.key}`)}
               </Button>
             ))}
           </div>
@@ -141,7 +145,7 @@ export function ReportFiltersPanel({
         {/* Custom Date Range */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">From</Label>
+            <Label className="text-xs text-muted-foreground">{t('reports.from')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -153,7 +157,7 @@ export function ReportFiltersPanel({
                 >
                   <CalendarIcon className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">
-                    {dateFrom ? format(dateFrom, "MMM d, yyyy") : "Pick date"}
+                    {dateFrom ? format(dateFrom, "MMM d, yyyy") : t('reports.pickDate')}
                   </span>
                 </Button>
               </PopoverTrigger>
@@ -169,7 +173,7 @@ export function ReportFiltersPanel({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">To</Label>
+            <Label className="text-xs text-muted-foreground">{t('reports.to')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -181,7 +185,7 @@ export function ReportFiltersPanel({
                 >
                   <CalendarIcon className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">
-                    {dateTo ? format(dateTo, "MMM d, yyyy") : "Pick date"}
+                    {dateTo ? format(dateTo, "MMM d, yyyy") : t('reports.pickDate')}
                   </span>
                 </Button>
               </PopoverTrigger>
@@ -200,7 +204,7 @@ export function ReportFiltersPanel({
 
         {/* Transaction Type */}
         <div className="space-y-2">
-          <Label>Transaction Type</Label>
+          <Label>{t('reports.transactionType')}</Label>
           <Select
             value={filters.transactionType}
             onValueChange={(value) =>
@@ -214,9 +218,9 @@ export function ReportFiltersPanel({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Transactions</SelectItem>
-              <SelectItem value="expense">Expenses Only</SelectItem>
-              <SelectItem value="income">Income Only</SelectItem>
+              <SelectItem value="all">{t('reports.transactionTypes.all')}</SelectItem>
+              <SelectItem value="expense">{t('reports.transactionTypes.expense')}</SelectItem>
+              <SelectItem value="income">{t('reports.transactionTypes.income')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -224,17 +228,23 @@ export function ReportFiltersPanel({
         {/* Category Selection */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>Categories</Label>
+            <Label>{t('reports.categories')}</Label>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleSelectAllCategories}
+                title={t('reports.selectAll')}
               >
-                Select All
+                <CheckSquare className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleClearCategories}>
-                Clear
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearCategories}
+                title={t('reports.clear')}
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -265,7 +275,7 @@ export function ReportFiltersPanel({
           </ScrollArea>
           {filters.categoryIds.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              Showing all categories. Select specific ones to narrow results.
+              {t('reports.noCategoryMsg')}
             </p>
           )}
         </div>

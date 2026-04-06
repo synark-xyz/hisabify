@@ -11,6 +11,7 @@ interface ExportOptions {
   reportData: ReportData;
   filters: ReportFilters;
   currencySymbol: string;
+  t: (key: string) => string;
 }
 
 export interface DownloadResult {
@@ -141,28 +142,28 @@ async function shareFileAfterSave(blob: Blob, filename: string, type: string): P
   }
 }
 
-export async function exportReportToCSV({ reportData, filters, currencySymbol }: ExportOptions): Promise<DownloadResult> {
+export async function exportReportToCSV({ reportData, filters, currencySymbol, t }: ExportOptions): Promise<DownloadResult> {
   const sections: string[] = [];
 
   // Summary section
-  sections.push("SUMMARY STATISTICS");
+  sections.push(t("reports.exports.summarySection"));
   sections.push(
     Papa.unparse([
-      ["Metric", "Value"],
-      ["Total Expenses", `${currencySymbol}${reportData.summary.totalExpenses.toFixed(2)}`],
-      ["Total Income", `${currencySymbol}${reportData.summary.totalIncome.toFixed(2)}`],
-      ["Net Balance", `${currencySymbol}${reportData.summary.netBalance.toFixed(2)}`],
-      ["Transaction Count", reportData.summary.transactionCount.toString()],
-      ["Average Expense", `${currencySymbol}${reportData.summary.averageExpense.toFixed(2)}`],
-      ["Average Income", `${currencySymbol}${reportData.summary.averageIncome.toFixed(2)}`],
+      [t("reports.exports.tableHeaders.metric"), t("reports.exports.tableHeaders.value")],
+      [t("reports.summary.totalExpenses"), `${currencySymbol}${reportData.summary.totalExpenses.toFixed(2)}`],
+      [t("reports.summary.totalIncome"), `${currencySymbol}${reportData.summary.totalIncome.toFixed(2)}`],
+      [t("reports.summary.netBalance"), `${currencySymbol}${reportData.summary.netBalance.toFixed(2)}`],
+      [t("reports.summary.transactions"), reportData.summary.transactionCount.toString()],
+      [t("reports.summary.avgExpense"), `${currencySymbol}${reportData.summary.averageExpense.toFixed(2)}`],
+      [t("reports.summary.avgIncome"), `${currencySymbol}${reportData.summary.averageIncome.toFixed(2)}`],
     ])
   );
 
   // Category breakdown
-  sections.push("\n\nCATEGORY BREAKDOWN");
+  sections.push(`\n\n${t("reports.exports.categoryBreakdownSection")}`);
   sections.push(
     Papa.unparse([
-      ["Category", "Amount", "Count", "Percentage"],
+      [t("reports.exports.tableHeaders.category"), t("reports.exports.tableHeaders.amount"), t("reports.exports.tableHeaders.count"), t("reports.exports.tableHeaders.percentage")],
       ...reportData.categoryBreakdown.map((c) => [
         c.category,
         `${currencySymbol}${c.amount.toFixed(2)}`,
@@ -173,10 +174,10 @@ export async function exportReportToCSV({ reportData, filters, currencySymbol }:
   );
 
   // Daily expenses
-  sections.push("\n\nDAILY EXPENSES");
+  sections.push(`\n\n${t("reports.exports.dailyExpensesSection")}`);
   sections.push(
     Papa.unparse([
-      ["Date", "Expenses", "Income"],
+      [t("reports.exports.tableHeaders.date"), t("reports.exports.tableHeaders.expenses"), t("reports.exports.tableHeaders.income")],
       ...reportData.dailyExpenses.map((d) => [
         d.date,
         `${currencySymbol}${d.expenses.toFixed(2)}`,
@@ -187,10 +188,10 @@ export async function exportReportToCSV({ reportData, filters, currencySymbol }:
 
   // Budget performance
   if (reportData.budgetPerformance.length > 0) {
-    sections.push("\n\nBUDGET PERFORMANCE");
+    sections.push(`\n\n${t("reports.exports.budgetPerformanceSection")}`);
     sections.push(
       Papa.unparse([
-        ["Name", "Category", "Budgeted", "Spent", "Remaining", "Usage %"],
+        [t("reports.exports.tableHeaders.name"), t("reports.exports.tableHeaders.category"), t("reports.exports.tableHeaders.budgeted"), t("reports.exports.tableHeaders.spent"), t("reports.exports.tableHeaders.remaining"), t("reports.exports.tableHeaders.usage")],
         ...reportData.budgetPerformance.map((b) => [
           b.name,
           b.category,
@@ -204,10 +205,10 @@ export async function exportReportToCSV({ reportData, filters, currencySymbol }:
   }
 
   // Transactions
-  sections.push("\n\nTRANSACTIONS");
+  sections.push(`\n\n${t("reports.exports.transactionsSection")}`);
   sections.push(
     Papa.unparse([
-      ["Date", "Merchant", "Category", "Type", "Amount", "Note"],
+      [t("reports.exports.tableHeaders.date"), t("reports.exports.tableHeaders.merchant"), t("reports.exports.tableHeaders.category"), t("reports.exports.tableHeaders.type"), t("reports.exports.tableHeaders.amount"), t("reports.exports.tableHeaders.note")],
       ...reportData.transactions.map((t) => [
         t.date,
         t.merchant,
@@ -223,39 +224,39 @@ export async function exportReportToCSV({ reportData, filters, currencySymbol }:
   return downloadFile(sections.join("\n"), filename, "text/csv;charset=utf-8;");
 }
 
-export async function exportReportToPDF({ reportData, filters, currencySymbol }: ExportOptions): Promise<DownloadResult> {
+export async function exportReportToPDF({ reportData, filters, currencySymbol, t }: ExportOptions): Promise<DownloadResult> {
   const doc = new jsPDF();
   let yPos = 20;
 
   // Title
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
-  doc.text("Financial Report", 14, yPos);
+  doc.text(t("reports.exports.title"), 14, yPos);
   yPos += 10;
 
   // Date range
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
-  doc.text(`Period: ${filters.dateFrom} to ${filters.dateTo}`, 14, yPos);
+  doc.text(`${t("reports.exports.period")} ${filters.dateFrom} to ${filters.dateTo}`, 14, yPos);
   yPos += 5;
-  doc.text(`Generated: ${format(new Date(), "PPP")}`, 14, yPos);
+  doc.text(`${t("reports.exports.generated")} ${format(new Date(), "PPP")}`, 14, yPos);
   yPos += 15;
 
   // Summary section
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("Summary Statistics", 14, yPos);
+  doc.text(t("reports.exports.summarySection"), 14, yPos);
   yPos += 5;
 
   autoTable(doc, {
     startY: yPos,
-    head: [["Metric", "Value"]],
+    head: [[t("reports.exports.tableHeaders.metric"), t("reports.exports.tableHeaders.value")]],
     body: [
-      ["Total Expenses", `${currencySymbol}${reportData.summary.totalExpenses.toFixed(2)}`],
-      ["Total Income", `${currencySymbol}${reportData.summary.totalIncome.toFixed(2)}`],
-      ["Net Balance", `${currencySymbol}${reportData.summary.netBalance.toFixed(2)}`],
-      ["Transaction Count", reportData.summary.transactionCount.toString()],
-      ["Average Expense", `${currencySymbol}${reportData.summary.averageExpense.toFixed(2)}`],
+      [t("reports.summary.totalExpenses"), `${currencySymbol}${reportData.summary.totalExpenses.toFixed(2)}`],
+      [t("reports.summary.totalIncome"), `${currencySymbol}${reportData.summary.totalIncome.toFixed(2)}`],
+      [t("reports.summary.netBalance"), `${currencySymbol}${reportData.summary.netBalance.toFixed(2)}`],
+      [t("reports.summary.transactions"), reportData.summary.transactionCount.toString()],
+      [t("reports.summary.avgExpense"), `${currencySymbol}${reportData.summary.averageExpense.toFixed(2)}`],
     ],
     theme: "striped",
     headStyles: { fillColor: [124, 58, 237] },
@@ -268,12 +269,12 @@ export async function exportReportToPDF({ reportData, filters, currencySymbol }:
   if (reportData.categoryBreakdown.length > 0) {
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("Category Breakdown", 14, yPos);
+    doc.text(t("reports.exports.categoryBreakdownSection"), 14, yPos);
     yPos += 5;
 
     autoTable(doc, {
       startY: yPos,
-      head: [["Category", "Amount", "Count", "Percentage"]],
+      head: [[t("reports.exports.tableHeaders.category"), t("reports.exports.tableHeaders.amount"), t("reports.exports.tableHeaders.count"), t("reports.exports.tableHeaders.percentage")]],
       body: reportData.categoryBreakdown.map((c) => [
         c.category,
         `${currencySymbol}${c.amount.toFixed(2)}`,
@@ -297,12 +298,12 @@ export async function exportReportToPDF({ reportData, filters, currencySymbol }:
 
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("Budget Performance", 14, yPos);
+    doc.text(t("reports.exports.budgetPerformanceSection"), 14, yPos);
     yPos += 5;
 
     autoTable(doc, {
       startY: yPos,
-      head: [["Name", "Budgeted", "Spent", "Remaining", "Usage"]],
+      head: [[t("reports.exports.tableHeaders.name"), t("reports.exports.tableHeaders.budgeted"), t("reports.exports.tableHeaders.spent"), t("reports.exports.tableHeaders.remaining"), t("reports.exports.tableHeaders.usage")]],
       body: reportData.budgetPerformance.map((b) => [
         b.name,
         `${currencySymbol}${b.budgeted.toFixed(2)}`,
@@ -324,18 +325,18 @@ export async function exportReportToPDF({ reportData, filters, currencySymbol }:
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("Transactions", 14, yPos);
+  doc.text(t("reports.exports.transactionsSection"), 14, yPos);
   yPos += 5;
 
   autoTable(doc, {
     startY: yPos,
-    head: [["Date", "Merchant", "Category", "Type", "Amount"]],
-    body: reportData.transactions.slice(0, 50).map((t) => [
-      t.date,
-      t.merchant.substring(0, 20),
-      t.category,
-      t.type,
-      `${currencySymbol}${t.amount.toFixed(2)}`,
+    head: [[t("reports.exports.tableHeaders.date"), t("reports.exports.tableHeaders.merchant"), t("reports.exports.tableHeaders.category"), t("reports.exports.tableHeaders.type"), t("reports.exports.tableHeaders.amount")]],
+    body: reportData.transactions.slice(0, 50).map((tx) => [
+      tx.date,
+      tx.merchant.substring(0, 20),
+      tx.category,
+      tx.type,
+      `${currencySymbol}${tx.amount.toFixed(2)}`,
     ]),
     theme: "striped",
     headStyles: { fillColor: [124, 58, 237] },
@@ -347,7 +348,7 @@ export async function exportReportToPDF({ reportData, filters, currencySymbol }:
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "italic");
-    doc.text(`... and ${reportData.transactions.length - 50} more transactions`, 14, finalY);
+    doc.text(t("reports.exports.moreTransactions", { count: reportData.transactions.length - 50 }), 14, finalY);
   }
 
   const filename = `report_${filters.dateFrom}_to_${filters.dateTo}.pdf`;

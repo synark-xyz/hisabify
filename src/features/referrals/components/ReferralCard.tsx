@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
 import { useTranslation } from 'react-i18next';
+import { localizeNumber } from '@/lib/i18nNumber';
 
 type TabMode = 'share' | 'redeem';
 
@@ -121,14 +122,14 @@ export function ReferralCard() {
 
                         {friendsInvited > 0 && (
                             <p className="text-xs text-muted-foreground font-medium">
-                                {t('referral.friendsJoined', { count: friendsInvited })}
+                                {t('referral.friendsJoined', { count: localizeNumber(friendsInvited) })}
                             </p>
                         )}
 
                         {daysRemaining > 0 && (
                             <div className="flex items-center gap-2 bg-accent/10 text-accent rounded-xl px-3 py-2 w-fit">
                                 <Ticket className="w-4 h-4" />
-                                <span className="text-xs font-bold">{t('referral.daysProRemaining', { days: daysRemaining })}</span>
+                                <span className="text-xs font-bold">{t('referral.daysProRemaining', { days: localizeNumber(daysRemaining) })}</span>
                             </div>
                         )}
                     </div>

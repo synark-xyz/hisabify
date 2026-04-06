@@ -22,6 +22,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { useFormatDate } from '@/lib/formatDate';
+import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
 import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
 import { Transaction, CategorySpending, Card, Category, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
@@ -661,7 +662,7 @@ export function ExpensesPage() {
                             onClick={() => setAnchorDate(setYear(anchorDate, year))}
                             className={anchorDate.getFullYear() === year ? 'bg-accent/10' : ''}
                           >
-                            {year}
+                            {localizeYear(year)}
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>
@@ -750,7 +751,7 @@ export function ExpensesPage() {
                 />
               ) : (
                 <div className="text-center py-4 text-muted-foreground text-sm">
-                  {t('expenses.viewingYear', { year: anchorDate.getFullYear() })}
+                  {t('expenses.viewingYear', { year: localizeYear(anchorDate.getFullYear()) })}
                 </div>
               )}
             </motion.div>
@@ -875,7 +876,7 @@ export function ExpensesPage() {
                   )}
                 >
                   <SlidersHorizontal className="w-4 h-4" />
-                  <span>{activeFilterCount > 0 ? t('expenses.filtersWithCount', { count: activeFilterCount }) : t('expenses.filters')}</span>
+                  <span>{activeFilterCount > 0 ? t('expenses.filtersWithCount', { count: localizeNumber(activeFilterCount) }) : t('expenses.filters')}</span>
                 </button>
               </div>
 
@@ -897,7 +898,7 @@ export function ExpensesPage() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Type" />
+                          <SelectValue placeholder={t('expenses.allTypes')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">{t('expenses.allTypes')}</SelectItem>
@@ -916,7 +917,7 @@ export function ExpensesPage() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Category" />
+                          <SelectValue placeholder={t('expenses.allCategories')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">{t('expenses.allCategories')}</SelectItem>
@@ -936,7 +937,7 @@ export function ExpensesPage() {
                           }}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Sub-category" />
+                            <SelectValue placeholder={t('expenses.allSubCategories')} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">{t('expenses.allSubCategories')}</SelectItem>
@@ -957,7 +958,7 @@ export function ExpensesPage() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Card" />
+                          <SelectValue placeholder={t('expenses.allCards')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">{t('expenses.allCards')}</SelectItem>
@@ -974,7 +975,7 @@ export function ExpensesPage() {
                         onValueChange={(value: GroupByOption) => setGroupBy(value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Group by" />
+                          <SelectValue placeholder={t('expenses.groupBy')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">{t('expenses.noGrouping')}</SelectItem>

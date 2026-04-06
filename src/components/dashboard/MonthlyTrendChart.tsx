@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend, Area, AreaChart } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { useCurrency } from '@/hooks/useCurrency';
 import type { Props as TooltipProps, Payload, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
@@ -15,6 +16,7 @@ interface MonthlyTrendChartProps {
 }
 
 export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
@@ -46,7 +48,7 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h3 className="text-lg font-bold text-foreground mb-4">Monthly Trend</h3>
+      <h3 className="text-lg font-bold text-foreground mb-4">{t('dashboard.monthlyTrend')}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

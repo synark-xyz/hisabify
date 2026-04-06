@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -12,41 +13,42 @@ interface ComparisonChartsProps {
 }
 
 export function ComparisonCharts({ monthComparison, yearComparison }: ComparisonChartsProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const monthData = [
     {
-      name: 'Income',
-      'Last Month': monthComparison.lastMonth.income,
-      'This Month': monthComparison.currentMonth.income,
+      name: t('analytics.income'),
+      [t('analytics.lastMonth')]: monthComparison.lastMonth.income,
+      [t('analytics.thisMonth')]: monthComparison.currentMonth.income,
     },
     {
-      name: 'Expenses',
-      'Last Month': monthComparison.lastMonth.expenses,
-      'This Month': monthComparison.currentMonth.expenses,
+      name: t('analytics.expenses'),
+      [t('analytics.lastMonth')]: monthComparison.lastMonth.expenses,
+      [t('analytics.thisMonth')]: monthComparison.currentMonth.expenses,
     },
     {
-      name: 'Net',
-      'Last Month': monthComparison.lastMonth.net,
-      'This Month': monthComparison.currentMonth.net,
+      name: t('analytics.net'),
+      [t('analytics.lastMonth')]: monthComparison.lastMonth.net,
+      [t('analytics.thisMonth')]: monthComparison.currentMonth.net,
     },
   ];
 
   const yearData = [
     {
-      name: 'Income',
-      'Last Year': yearComparison.lastYear.income,
-      'This Year': yearComparison.currentYear.income,
+      name: t('analytics.income'),
+      [t('analytics.lastYear')]: yearComparison.lastYear.income,
+      [t('analytics.thisYear')]: yearComparison.currentYear.income,
     },
     {
-      name: 'Expenses',
-      'Last Year': yearComparison.lastYear.expenses,
-      'This Year': yearComparison.currentYear.expenses,
+      name: t('analytics.expenses'),
+      [t('analytics.lastYear')]: yearComparison.lastYear.expenses,
+      [t('analytics.thisYear')]: yearComparison.currentYear.expenses,
     },
     {
-      name: 'Net',
-      'Last Year': yearComparison.lastYear.net,
-      'This Year': yearComparison.currentYear.net,
+      name: t('analytics.net'),
+      [t('analytics.lastYear')]: yearComparison.lastYear.net,
+      [t('analytics.thisYear')]: yearComparison.currentYear.net,
     },
   ];
 
@@ -70,7 +72,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
   ) => (
     <div className="grid grid-cols-3 gap-2 mb-4">
       <div className="p-3 rounded-xl bg-muted/50 text-center card-3d">
-        <p className="text-xs text-muted-foreground">Income</p>
+        <p className="text-xs text-muted-foreground">{t('analytics.income')}</p>
         <p className="text-sm font-bold text-foreground mt-1 text-glow">
           {formatAmount(current.income)}
         </p>
@@ -80,7 +82,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
         </div>
       </div>
       <div className="p-3 rounded-xl bg-muted/50 text-center card-3d">
-        <p className="text-xs text-muted-foreground">Expenses</p>
+        <p className="text-xs text-muted-foreground">{t('analytics.expenses')}</p>
         <p className="text-sm font-bold text-foreground mt-1 text-glow">
           {formatAmount(current.expenses)}
         </p>
@@ -90,7 +92,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
         </div>
       </div>
       <div className="p-3 rounded-xl bg-muted/50 text-center card-3d">
-        <p className="text-xs text-muted-foreground">Net</p>
+        <p className="text-xs text-muted-foreground">{t('analytics.net')}</p>
         <p className="text-sm font-bold text-foreground mt-1 text-glow">
           {formatAmount(current.net)}
         </p>
@@ -106,14 +108,14 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
     <Card className="bg-card shadow-card card-3d transition-all">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold text-foreground text-glow">
-          Comparison Analysis
+          {t('analytics.comparisonAnalysis')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="month" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="month">Month vs Month</TabsTrigger>
-            <TabsTrigger value="year">Year vs Year</TabsTrigger>
+            <TabsTrigger value="month">{t('analytics.monthVsMonth')}</TabsTrigger>
+            <TabsTrigger value="year">{t('analytics.yearVsYear')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="month">
@@ -146,8 +148,8 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
                   <Legend />
-                  <Bar dataKey="Last Month" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="This Month" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={t('analytics.lastMonth')} fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={t('analytics.thisMonth')} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -183,8 +185,8 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
                   <Legend />
-                  <Bar dataKey="Last Year" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="This Year" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={t('analytics.lastYear')} fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={t('analytics.thisYear')} fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -25,6 +25,7 @@ import {
 } from '@/types';
 import { format, startOfYear, endOfYear, subYears } from 'date-fns';
 import { cn, getLocalizedCategoryName } from '@/lib/utils';
+import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
 
 interface EnhancedAnalyticsChartProps {
   selectedYear: number;
@@ -331,15 +332,15 @@ export function EnhancedAnalyticsChart({
         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{label}</p>
         <div className="space-y-1">
           <div className="flex justify-between gap-4">
-            <span className="text-sm text-muted-foreground">Expenses:</span>
+            <span className="text-sm text-muted-foreground">{t('analytics.tooltipExpenses')}</span>
             <span className="text-sm font-bold text-foreground">{formatAmount(data.amount)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-sm text-muted-foreground">Savings:</span>
+            <span className="text-sm text-muted-foreground">{t('analytics.tooltipSavings')}</span>
             <span className="text-sm font-bold text-emerald-600">{formatAmount(data.savingsAmount)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-sm text-muted-foreground">Cumulative saved:</span>
+            <span className="text-sm text-muted-foreground">{t('analytics.tooltipCumulativeSaved')}</span>
             <span className="text-sm font-bold text-foreground">{formatAmount(data.cumulativeSavings)}</span>
           </div>
           {data.completedGoals.length > 0 && (
@@ -352,7 +353,7 @@ export function EnhancedAnalyticsChart({
             </div>
           )}
           <div className="pt-1 mt-1 border-t border-border flex justify-between gap-4">
-            <span className="text-xs text-muted-foreground">vs Last Year:</span>
+            <span className="text-xs text-muted-foreground">{t('analytics.tooltipVsLastYear')}</span>
             <span className={cn('text-xs font-bold', diff > 0 ? 'text-destructive' : 'text-green-500')}>
               {diff > 0 ? '↑' : '↓'} {Math.abs(diff).toFixed(0)}%
             </span>
@@ -376,7 +377,7 @@ export function EnhancedAnalyticsChart({
   if (fullYearData.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-card/60 p-8 text-center">
-        <p className="text-sm font-semibold text-foreground">{t('analytics.noAnalytics', { year: selectedYear })}</p>
+        <p className="text-sm font-semibold text-foreground">{t('analytics.noAnalytics', { year: localizeYear(selectedYear) })}</p>
         <p className="mt-1 text-xs text-muted-foreground">{t('analytics.noAnalyticsDesc')}</p>
       </div>
     );
@@ -422,7 +423,7 @@ export function EnhancedAnalyticsChart({
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{t('analytics.topCategory')}</span>
           <div className="mt-1">
             <h3 className={cn('text-xl font-bold', metrics.topCat.name === 'Savings' ? 'text-emerald-600' : 'text-primary')}>
-              {metrics.topCat.name === 'Savings' ? t('categories.Savings') : metrics.topCat.name}
+              {metrics.topCat.name === 'Savings' ? t('categories.savings') : metrics.topCat.name}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               <span className="font-bold text-foreground">{metrics.topCat.percentage.toFixed(0)}%</span> {t('analytics.ofSpending')}

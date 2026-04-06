@@ -30,6 +30,7 @@ import { format } from 'date-fns';
 import { useCurrency } from '@/hooks/useCurrency';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { cn } from '@/lib/utils';
+import { localizeNumber } from '@/lib/i18nNumber';
 import { GoalThermometer } from './GoalThermometer';
 import { SavingsFundingDialog } from './SavingsFundingDialog';
 import { GoalCompletionModal } from './GoalCompletionModal';
@@ -271,7 +272,7 @@ export function SavingsGoalCard({
                         <Calendar className="w-3 h-3" />
                         <span>
                           {goal.daysLeft !== null && goal.daysLeft >= 0
-                            ? t('savings.daysLeft', { days: goal.daysLeft })
+                            ? t('savings.daysLeft', { days: localizeNumber(goal.daysLeft) })
                             : format(new Date(goal.deadline), 'MMM d')}
                         </span>
                       </div>

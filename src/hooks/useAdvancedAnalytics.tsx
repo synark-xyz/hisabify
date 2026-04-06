@@ -19,6 +19,9 @@ import {
 
 import { Transaction } from '@/types';
 import { isRealExpense } from '@/lib/transactionUtils';
+import { t } from 'i18next';
+import { useNumberTranslation } from '@/lib/i18nNumber';
+import { analytics } from '@/lib/analytics';
 
 interface ConvertedTransaction extends Transaction {
   convertedAmount: number;
@@ -97,6 +100,8 @@ export interface DayOfWeekAnalysis {
 }
 
 export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
+  const { tn } = useNumberTranslation();
+
   // Spending patterns analysis
   const spendingPatterns = useMemo<SpendingPattern>(() => {
     const expenses = transactions.filter(isRealExpense);
@@ -216,18 +221,19 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
 
     if (lastMonthExpenses > 0) {
       const changePercent = ((currentMonthExpenses - lastMonthExpenses) / lastMonthExpenses) * 100;
+      const changePercentRounded = Math.round(changePercent);
       if (Math.abs(changePercent) > 5) {
         insightsList.push({
           id: 'monthly-comparison',
           type: 'comparison',
           icon: changePercent > 0 ? '📈' : '📉',
-          title: changePercent > 0 ? 'Spending Increased' : 'Spending Decreased',
-          description: `You spent ${Math.abs(changePercent).toFixed(0)}% ${changePercent > 0 ? 'more' : 'less'} this month compared to last month`,
+          title: changePercent > 0 ? t('analytics.spendingIncreased') : t('analytics.spendingDecreased'),
+          description: t(changePercent > 0 ? 'analytics.spentMoreThisMonth' : 'analytics.spentLessThisMonth', { percent: tn(changePercentRounded) }),
           value: changePercent,
           trend: changePercent > 0 ? 'up' : 'down',
           suggestion: changePercent > 0
-            ? "Try to identify non-essential expenses from this month to bring your spending back to baseline."
-            : "Great job! Consider moving the leftover balance to your savings goal to maintain this momentum."
+            ? t('analytics.suggestReduceNonEssential')
+            : t('analytics.suggestGreatJobSavings')
         });
       }
     }
@@ -238,11 +244,11 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         id: 'biggest-expense',
         type: 'alert',
         icon: '💸',
-        title: 'Biggest Expense Category',
-        description: `Your biggest spending area is ${spendingPatterns.mostExpensiveCategory.name}`,
+        title: t('analytics.biggestExpenseCategory'),
+        description: t('analytics.yourBiggestSpendingArea', { category: spendingPatterns.mostExpensiveCategory.name }),
         value: spendingPatterns.mostExpensiveCategory.amount,
         trend: 'neutral',
-        suggestion: `To improve your score, try to reduce spending in ${spendingPatterns.mostExpensiveCategory.name} by 10% next week.`
+        suggestion: t('analytics.suggestBiggestExpense', { category: spendingPatterns.mostExpensiveCategory.name })
       });
     }
 
@@ -252,11 +258,11 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         id: 'unusual-spending',
         type: 'alert',
         icon: '⚠️',
-        title: 'Unusual Spending Detected',
-        description: `Your spending is ${spendingPatterns.unusualSpending.percentageAboveNormal.toFixed(0)}% higher than your average`,
+        title: t('analytics.unusualSpendingDetected'),
+        description: t('analytics.spendingHigherThanAverage', { percent: spendingPatterns.unusualSpending.percentageAboveNormal.toFixed(0) }),
         value: spendingPatterns.unusualSpending.percentageAboveNormal,
         trend: 'up',
-        suggestion: "Review your recent high-value transactions to ensure they align with your financial goals."
+        suggestion: t('analytics.suggestReviewTransactions')
       });
     }
 
@@ -266,11 +272,11 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
         id: 'spending-streak',
         type: 'alert',
         icon: '🔥',
-        title: 'Spending Streak',
-        description: `You've spent money for ${spendingPatterns.spendingStreak} consecutive days`,
+        title: t('analytics.spendingStreak'),
+        description: t('analytics.spentForDays', { days: spendingPatterns.spendingStreak }),
         value: spendingPatterns.spendingStreak,
         trend: 'up',
-        suggestion: "Try a 'No Spend Day' tomorrow to break the cycle and boost your savings rate!"
+        suggestion: t('analytics.suggestNoSpendDay')
       });
     }
 
@@ -286,11 +292,11 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
           id: 'savings-achievement',
           type: 'achievement',
           icon: '🎉',
-          title: 'Great Savings!',
-          description: `You're saving ${savingsRate.toFixed(0)}% of your income this month`,
+          title: t('analytics.greatSavings'),
+          description: t('analytics.savingsPercentIncome', { percent: tn(Math.round(savingsRate)) }),
           value: savingsRate,
           trend: 'down',
-          suggestion: "You're ahead of schedule! Consider diversifying your savings into a high-yield account."
+          suggestion: t('analytics.suggestDiversifySavings')
         });
       }
     }
@@ -486,7 +492,15 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
 
   // Day of week analysis
   const dayOfWeekAnalysis = useMemo<DayOfWeekAnalysis[]>(() => {
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayNames = [
+      t('analytics.weekSunday'),
+      t('analytics.weekMonday'),
+      t('analytics.weekTuesday'),
+      t('analytics.weekWednesday'),
+      t('analytics.weekThursday'),
+      t('analytics.weekFriday'),
+      t('analytics.weekSaturday'),
+    ];
     const expenses = transactions.filter(isRealExpense);
 
     // Group by day of week

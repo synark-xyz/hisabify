@@ -23,14 +23,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { PrivacyMask } from '@/components/ui/privacy-mask';
+import { useNumberTranslation } from '@/lib/i18nNumber';
+import { use } from 'i18next';
 
 interface BudgetCategoryOption {
   id: string;
   name: string;
 }
 
+
+/**
+ * BudgetDashboard component
+ *
+ * This component displays the user's active budgets and their
+ * respective spending amounts. It also provides a summary of the
+ * user's total budget, total spent, and total remaining. The
+ * component allows users to add new budgets, edit existing ones,
+ * and delete budgets.
+ *
+ * The component also includes a premium-gated history chart that
+ * displays the user's spending over time.
+ *
+ * The component is a container component that holds all the
+ * budget-related features.
+ */
 export function BudgetDashboard() {
   const { t } = useTranslation();
+  const { tn } = useNumberTranslation();
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetWithSpending | null>(null);
@@ -55,7 +74,7 @@ export function BudgetDashboard() {
           .eq('is_system_category', false);
         if (error) throw error;
         if (data) {
-          setCategories(data.map((row) => ({ id: row.id, name: row.name })));
+          setCategories(data.map((row) => ({ id: row.id, name: row.name } as BudgetCategoryOption)));
         }
       } catch (err) {
         console.error('Error fetching categories:', err);
@@ -202,7 +221,7 @@ export function BudgetDashboard() {
                     </PrivacyMask>
                   </p>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    {overallPercentage.toFixed(0)}% used
+                    {t('budget.used', { amount: overallPercentage.toFixed(0) }) }
                   </p>
                 </div>
                 <div className="hidden sm:flex w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-destructive/10 items-center justify-center flex-shrink-0">
@@ -253,7 +272,7 @@ export function BudgetDashboard() {
           <h2 className="text-lg font-semibold text-foreground">{t('budget.activeBudgets')}</h2>
           {budgets.length > 0 && (
             <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium">
-              {budgets.length} {budgets.length === 1 ? t('budget.budget_singular') : t('budget.budget_plural')}
+              {tn(budgets.length)} {budgets.length === 1 ? t('budget.budget_singular') : t('budget.budget_plural')}
             </span>
           )}
         </div>

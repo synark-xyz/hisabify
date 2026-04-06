@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -19,6 +20,7 @@ const intensityColors = [
 ];
 
 export function SpendingHeatMap({ data }: SpendingHeatMapProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   // Organize data into weeks
@@ -86,7 +88,7 @@ export function SpendingHeatMap({ data }: SpendingHeatMapProps) {
     <Card className="bg-card shadow-card">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold text-foreground">
-          Spending Heat Map
+          {t('analytics.heatMap')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -138,7 +140,7 @@ export function SpendingHeatMap({ data }: SpendingHeatMapProps) {
                           <p className="font-semibold">
                             {format(parseISO(day.date), 'MMM d, yyyy')}
                           </p>
-                          <p>{day.count} transactions</p>
+                          <p>{day.count} {t('analytics.transactions')}</p>
                           <p>{formatAmount(day.amount)}</p>
                         </TooltipContent>
                       </Tooltip>
@@ -152,11 +154,11 @@ export function SpendingHeatMap({ data }: SpendingHeatMapProps) {
 
         {/* Legend */}
         <div className="flex items-center justify-end gap-2 mt-4 text-xs text-muted-foreground">
-          <span>Less</span>
+          <span>{t('analytics.less')}</span>
           {intensityColors.map((color, i) => (
             <div key={i} className={`w-3 h-3 rounded-sm ${color}`} />
           ))}
-          <span>More</span>
+          <span>{t('analytics.more')}</span>
         </div>
       </CardContent>
     </Card>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingDown, TrendingUp, Calculator, Hash, ArrowDownUp } from "lucide-react";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -8,46 +9,47 @@ interface ReportSummaryProps {
 }
 
 export function ReportSummary({ summary }: ReportSummaryProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const stats = [
     {
-      label: "Total Expenses",
+      labelKey: "reports.summary.totalExpenses",
       value: formatAmount(summary.totalExpenses),
       icon: TrendingDown,
       color: "text-destructive",
       bgColor: "bg-destructive/10",
     },
     {
-      label: "Total Income",
+      labelKey: "reports.summary.totalIncome",
       value: formatAmount(summary.totalIncome),
       icon: TrendingUp,
       color: "text-chart-4",
       bgColor: "bg-chart-4/10",
     },
     {
-      label: "Net Balance",
+      labelKey: "reports.summary.netBalance",
       value: formatAmount(summary.netBalance),
       icon: ArrowDownUp,
       color: summary.netBalance >= 0 ? "text-chart-4" : "text-destructive",
       bgColor: summary.netBalance >= 0 ? "bg-chart-4/10" : "bg-destructive/10",
     },
     {
-      label: "Transactions",
+      labelKey: "reports.summary.transactions",
       value: summary.transactionCount.toString(),
       icon: Hash,
       color: "text-chart-1",
       bgColor: "bg-chart-1/10",
     },
     {
-      label: "Avg. Expense",
+      labelKey: "reports.summary.avgExpense",
       value: formatAmount(summary.averageExpense),
       icon: Calculator,
       color: "text-chart-5",
       bgColor: "bg-chart-5/10",
     },
     {
-      label: "Avg. Income",
+      labelKey: "reports.summary.avgIncome",
       value: formatAmount(summary.averageIncome),
       icon: Calculator,
       color: "text-chart-4",
@@ -58,18 +60,18 @@ export function ReportSummary({ summary }: ReportSummaryProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">Summary</CardTitle>
+        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">{t('reports.summary.title')}</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-border/50">
           {stats.map((stat, i) => (
-            <div key={stat.label} className={`flex flex-col items-center gap-2 px-3 py-2 ${i < 2 ? "md:border-b lg:border-b-0 border-b border-border/50" : ""}`}>
+            <div key={stat.labelKey} className={`flex flex-col items-center gap-2 px-3 py-2 ${i < 2 ? "md:border-b lg:border-b-0 border-b border-border/50" : ""}`}>
               <div className={`w-8 h-8 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
                 <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </div>
               <div className="text-center">
                 <p className={`text-base font-semibold tabular-nums leading-tight ${stat.color}`}>{stat.value}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{stat.label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{t(stat.labelKey)}</p>
               </div>
             </div>
           ))}

@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Transaction, ActivityLog } from '@/types';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, getMonth, getYear } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -620,7 +621,7 @@ export function Dashboard() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      {t('dashboard.year', { year: selectedYear })}
+                      {t('dashboard.year', { year: localizeYear(selectedYear) })}
                       <CaretDown className="w-4 h-4" weight="duotone" />
                     </motion.button>
                   </DropdownMenuTrigger>
@@ -631,7 +632,7 @@ export function Dashboard() {
                         onClick={() => setSelectedYear(year)}
                         className={cn(selectedYear === year ? 'bg-accent text-white' : '', "rounded-xl m-1")}
                       >
-                        {year}
+                        {localizeYear(year)}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>

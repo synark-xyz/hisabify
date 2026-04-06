@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Shield, ChevronRight, Camera } from 'lucide-react';
+import { Save, Shield, ChevronRight, Camera, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
@@ -186,14 +186,14 @@ export function PersonalPage() {
                             {isEditing ? (
                                 <><Save className="w-4 h-4 mr-1" /> {t('common.save')}</>
                             ) : (
-                                t('common.edit')
+                                <Edit className="w-4 h-4" />
                             )}
                         </Button>
                     </div>
 
                     <div className="space-y-4">
                         <div>
-                            <Label htmlFor="displayName">Display Name</Label>
+                            <Label htmlFor="displayName">{t('profilePersonal.displayName')}</Label>
                             <Input
                                 id="displayName"
                                 value={localProfile.display_name}
@@ -209,7 +209,7 @@ export function PersonalPage() {
                         </div>
 
                         <div>
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('profilePersonal.email')}</Label>
                             <Input
                                 id="email"
                                 value={user?.email || ''}
@@ -219,7 +219,7 @@ export function PersonalPage() {
                         </div>
 
                         <div>
-                            <Label htmlFor="phone">Phone Number</Label>
+                            <Label htmlFor="phone">{t('profilePersonal.phoneNumber')}</Label>
                             <Input
                                 id="phone"
                                 type="tel"

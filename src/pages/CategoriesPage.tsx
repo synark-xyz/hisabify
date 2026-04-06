@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +10,10 @@ import { Category } from '@/types';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
+import { localizeNumber } from '@/lib/i18nNumber';
 
 export function CategoriesPage() {
+  const navigate = useNavigate();
   const { categories, loading, refetch } = useCategories();
   const { variant } = useTheme();
   const { t, i18n } = useTranslation();
@@ -91,7 +94,7 @@ export function CategoriesPage() {
                     {/* Sub count badge */}
                     {hasSubs && (
                       <Badge variant="secondary" className="shrink-0 text-xs px-1.5 py-0 h-5">
-                        {t('categoriesPage.subCount', { count: subs.length })}
+                        {t('categoriesPage.subCount', { count: localizeNumber(subs.length) })}
                       </Badge>
                     )}
                   </div>
@@ -140,7 +143,12 @@ export function CategoriesPage() {
       <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto pb-page-content px-4 pt-4">
         {/* Page header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold">{t('categoriesPage.title')}</h1>
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/more')} className="p-2 -ml-2 hover:bg-accent/10 rounded-lg">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-xl font-bold">{t('categoriesPage.title')}</h1>
+          </div>
           <Button
             size="sm"
             onClick={() => setAddParentOpen(true)}

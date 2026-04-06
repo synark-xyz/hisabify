@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useCategoryMutations } from '@/hooks/useCategoryMutations';
 import { Category } from '@/types';
+import { getLocalizedCategoryName } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export interface AddCategoryModalProps {
   open: boolean;
@@ -34,6 +36,7 @@ export function AddCategoryModal({
 }: AddCategoryModalProps) {
   const { toast } = useToast();
   const { addCategory } = useCategoryMutations();
+  const { t } = useTranslation();
 
   // Parent mode fields
   const [name, setName] = useState('');
@@ -63,7 +66,7 @@ export function AddCategoryModal({
     let valid = true;
 
     if (!name.trim()) {
-      setNameError('Name is required');
+      setNameError(t('addCategoryModal.nameRequired'));
       valid = false;
     } else {
       setNameError('');
@@ -107,7 +110,7 @@ export function AddCategoryModal({
           type: parentCategory.type,
           parent_id: parentCategory.id,
         });
-        toast({ title: 'Category added', description: `"${created.name}" was created.` });
+        toast({ title: t('addCategoryModal.categoryAdded'), description: `"${created.name}" ${t('addCategoryModal.wasCreated')}` });
         onSuccess?.(created);
         onOpenChange(false);
       } else {
@@ -136,33 +139,33 @@ export function AddCategoryModal({
           const failures = subResults.filter((r) => r.status === 'rejected').length;
           if (failures > 0) {
             toast({
-              title: 'Partially saved',
-              description: `Category created, but ${failures} sub-categor${failures === 1 ? 'y' : 'ies'} failed. You can add them manually.`,
+              title: t('addCategoryModal.partiallySaved'),
+              description: t('addCategoryModal.categorySavedSubFailed', { count: failures, s: failures === 1 ? '' : 's' }),
               variant: 'destructive',
             });
           } else {
-            toast({ title: `Category added with ${subEntries.length} sub-categor${subEntries.length === 1 ? 'y' : 'ies'}` });
+            toast({ title: t('addCategoryModal.categoryAddedWithSubs', { count: subEntries.length }) });
           }
         } else {
-          toast({ title: 'Category added' });
+          toast({ title: t('addCategoryModal.categoryAdded') });
         }
         onSuccess?.(parentCreated);
         onOpenChange(false);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong';
-      toast({ title: 'Error', description: message, variant: 'destructive' });
+      const message = err instanceof Error ? err.message : t('addCategoryModal.somethingWrong');
+      toast({ title: t('addCategoryModal.error'), description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  const title = mode === 'sub' ? 'Add Sub-Category' : 'Add Category';
+  const title = mode === 'sub' ? t('addCategoryModal.addSubCategory') : t('addCategoryModal.addCategory');
 
   const footer = (
     <Button onClick={handleSubmit} disabled={loading} className="w-full">
       {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {loading ? 'Saving…' : 'Add Category'}
+      {loading ? t('addCategoryModal.saving') : t('addCategoryModal.addCategory')}
     </Button>
   );
 
@@ -178,20 +181,20 @@ export function AddCategoryModal({
         {/* Parent display (sub mode only) */}
         {mode === 'sub' && parentCategory && (
           <div className="space-y-1 space-x-1">
-            <Label>Parent Category</Label>
+            <Label>{t('addCategoryModal.parentCategory')}</Label>
             <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
               <span
                 className="h-3 w-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: parentCategory.color }}
               />
-              <span>{parentCategory.name}</span>
+              <span>{getLocalizedCategoryName(parentCategory)}</span>
             </div>
           </div>
         )}
 
         {/* Name */}
         <div className="space-y-1 space-x-1 pb-4 pe-4">
-          <Label htmlFor="cat-name">Name</Label>
+          <Label htmlFor="cat-name">{t('addCategoryModal.name')}</Label>
           <Input
             id="cat-name"
             placeholder="e.g. Groceries"
@@ -209,7 +212,7 @@ export function AddCategoryModal({
         {mode === 'parent' && (
           <div className="flex gap-3">
             <div className="flex-1 space-y-1">
-              <Label htmlFor="cat-icon">Icon</Label>
+              <Label htmlFor="cat-icon">{t('addCategoryModal.icon')}</Label>
               <Input
                 id="cat-icon"
                 placeholder="e.g. shopping-bag"
@@ -217,10 +220,10 @@ export function AddCategoryModal({
                 onChange={e => setIcon(e.target.value)}
                 disabled={loading}
               />
-              <p className="text-xs text-muted-foreground">Lucide icon name</p>
+              <p className="text-xs text-muted-foreground">{t('addCategoryModal.iconHint')}</p>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="cat-color">Color</Label>
+              <Label htmlFor="cat-color">{t('addCategoryModal.color')}</Label>
               <div className="flex items-center gap-2">
                 <input
                   id="cat-color"
@@ -238,7 +241,7 @@ export function AddCategoryModal({
         {/* Type (parent mode only) */}
         {mode === 'parent' && (
           <div className="space-y-1">
-            <Label htmlFor="cat-type">Type</Label>
+            <Label htmlFor="cat-type">{t('addCategoryModal.type')}</Label>
             <Select
               value={type}
               onValueChange={(val: 'expense' | 'income') => {
@@ -247,11 +250,11 @@ export function AddCategoryModal({
               disabled={loading}
             >
               <SelectTrigger id="cat-type">
-                <SelectValue placeholder="Select type" />
+                <SelectValue placeholder={t('addCategoryModal.selectType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="expense">Expense</SelectItem>
-                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">{t('addCategoryModal.expense')}</SelectItem>
+                <SelectItem value="income">{t('addCategoryModal.income')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -260,7 +263,7 @@ export function AddCategoryModal({
         {/* Sub-categories (parent mode only) */}
         {mode === 'parent' && (
           <div className="space-y-2">
-            <Label>Sub-categories (optional)</Label>
+            <Label>{t('addCategoryModal.subCategories')}</Label>
 
             {subEntries.length > 0 && (
               <ul className="space-y-1">
@@ -286,7 +289,7 @@ export function AddCategoryModal({
 
             <div className="flex gap-2">
               <Input
-                placeholder="Sub-category name"
+                placeholder={t('addCategoryModal.subCategoryPlaceholder')}
                 value={subInput}
                 onChange={e => setSubInput(e.target.value)}
                 onKeyDown={handleSubInputKeyDown}
@@ -299,7 +302,7 @@ export function AddCategoryModal({
                 size="icon"
                 onClick={handleAddSubEntry}
                 disabled={loading || !subInput.trim()}
-                aria-label="Add sub-category"
+                aria-label={t('addCategoryModal.addSubCategory')}
               >
                 <Plus className="h-4 w-4" />
               </Button>

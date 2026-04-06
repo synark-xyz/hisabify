@@ -4,6 +4,8 @@ import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { t } from 'i18next';
+import { getTransactionCategoryName } from '@/lib/transactionUtils';
 
 interface TopExpensesTableProps {
   transactions: Transaction[];
@@ -57,7 +59,7 @@ export function TopExpensesTable({ transactions }: TopExpensesTableProps) {
                         color: tx.category?.color 
                       }}
                     >
-                      {tx.category?.name || 'Other'}
+                      {getTransactionCategoryName(tx) || t('transaction.categoryOther')}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

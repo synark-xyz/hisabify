@@ -19,6 +19,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { getTransactionCategoryName } from '@/lib/transactionUtils';
 import {
   CategorySpending,
   AnalyticsInsight,
@@ -142,7 +143,7 @@ export function EnhancedAnalyticsChart({
       const completedGoals = completedGoalsResult.data || [];
 
       const expenseTransactions = currentTransactions.filter((tx) => tx.type === 'expense' && !tx.savings_goal_id);
-      const savingsTransactions = currentTransactions.filter((tx) => tx.type === 'expense' && tx.category?.name === 'Savings');
+      const savingsTransactions = currentTransactions.filter((tx) => tx.type === 'expense' && getTransactionCategoryName(tx) === 'Savings');
       const incomeTransactions = currentTransactions.filter((tx) => tx.type === 'income');
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -155,7 +156,7 @@ export function EnhancedAnalyticsChart({
 
         const categories: Record<string, number> = {};
         monthExpenses.forEach((tx) => {
-          const categoryName = tx.category?.name || 'Other';
+          const categoryName = getTransactionCategoryName(tx);
           categories[categoryName] = (categories[categoryName] || 0) + Number(tx.amount);
         });
 
@@ -186,7 +187,7 @@ export function EnhancedAnalyticsChart({
       };
 
       expenseTransactions.forEach((tx) => {
-        const name = tx.category?.name || 'Other';
+        const name = tx.category?.name || t('transaction.categoryOther');
         const color = name === 'Savings' ? SAVINGS_COLOR : tx.category?.color || '#6B7280';
         if (!categoryMap[name]) {
           categoryMap[name] = { amount: 0, color };

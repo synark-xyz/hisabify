@@ -17,7 +17,7 @@ import { useTransactionsForReminders } from '@/hooks/useTransactionsForReminders
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { PaymentReminder } from '@/types';
 import { format, addMonths } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, getLocalizedCategoryName } from '@/lib/utils';
 
 interface ReminderInitialData {
   title?: string;
@@ -90,10 +90,12 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
   }, [reminder, initialData, open, currency, resetForm]);
 
   // Filter transactions based on search query
-  const filteredTransactions = transactions.filter(tx =>
-    tx.merchant.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tx.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTransactions = transactions.filter(tx => {
+    const merchantMatch = tx.merchant.toLowerCase().includes(searchQuery.toLowerCase());
+    const categoryName = tx.category?.name?.toLowerCase() ?? '';
+    const categoryMatch = categoryName.includes(searchQuery.toLowerCase());
+    return merchantMatch || categoryMatch;
+  });
 
   // Auto-fill form from selected transaction
   const handleSelectTransaction = (transaction: typeof transactions[0]) => {

@@ -21,13 +21,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CalendarIcon, Filter, CheckSquare, X } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, subDays } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, getLocalizedCategoryName } from "@/lib/utils";
 import { ReportFilters } from "@/hooks/useReportTemplates";
 
 interface Category {
   id: string;
   name: string;
   color: string;
+  translations?: Record<string, { name: string }>;
 }
 
 interface ReportFiltersPanelProps {
@@ -268,7 +269,7 @@ export function ReportFiltersPanel({
                     htmlFor={category.id}
                     className="text-sm cursor-pointer"
                   >
-                    {category.name}
+                    {getLocalizedCategoryName(category)}
                   </label>
                 </div>
               ))}

@@ -1,4 +1,5 @@
 import { Transaction } from "@/types";
+import i18n from "@/i18n";
 
 /**
  * Returns true if the transaction is a real expense (not a savings contribution).
@@ -10,8 +11,18 @@ export function isRealExpense(tx: { type: string; savings_goal_id?: string | nul
   return (tx.type === 'expense' || tx.type === 'lend' || tx.type === 'owe') && !tx.savings_goal_id;
 }
 
+function getLocalizedCategoryName(name: string, translations?: Record<string, { name: string }>): string {
+  const currentLocale = i18n.language || 'en';
+  if (translations && translations[currentLocale]?.name?.trim()) {
+    return translations[currentLocale].name;
+  }
+  return name;
+}
+
 export const getTransactionCategoryName = (tx: Transaction): string => {
-    if (tx.category?.name) return tx.category.name;
+    if (tx.category?.name) {
+        return getLocalizedCategoryName(tx.category.name, tx.category.translations);
+    }
 
     if (tx.savings_goal_id) {
         return tx.type === 'income' ? 'Savings Return' : 'Savings';

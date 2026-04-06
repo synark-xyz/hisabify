@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFormatDate } from '@/lib/formatDate';
+import { getLocalizedCategoryName } from '@/lib/utils';
 import { Loader2, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info, ArrowLeftRight, Banknote, CreditCard, Building2, Globe, FileText, Clock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -1390,7 +1391,7 @@ export function TransactionForm({
                       <SelectContent className="rounded-2xl">
                         {filteredRootCategories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                            {t(`categories.${cat.name}`, { defaultValue: cat.name })}
+                            {getLocalizedCategoryName(cat)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1414,7 +1415,7 @@ export function TransactionForm({
                         <SelectContent className="rounded-2xl">
                           {filteredSubs.map((cat) => (
                             <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                              {t(`categories.${cat.name}`, { defaultValue: cat.name })}
+                              {getLocalizedCategoryName(cat)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1475,13 +1476,13 @@ export function TransactionForm({
                           if (subs.length > 0) {
                             return subs.map((sub) => (
                               <SelectItem key={sub.id} value={sub.id} className="rounded-xl">
-                                {t(`categories.${cat.name}`, { defaultValue: cat.name })} &gt; {t(`categories.${sub.name}`, { defaultValue: sub.name })}
+                                {getLocalizedCategoryName(cat)} › {getLocalizedCategoryName(sub)}
                               </SelectItem>
                             ));
                           }
                           return (
                             <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                              {t(`categories.${cat.name}`, { defaultValue: cat.name })}
+                              {getLocalizedCategoryName(cat)}
                             </SelectItem>
                           );
                         })}

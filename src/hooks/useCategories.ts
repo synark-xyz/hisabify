@@ -18,7 +18,7 @@ export function useCategories() {
 
       const { data, error: fetchError } = await supabase
         .from('categories')
-        .select('*')
+        .select('*, translations:translations')
         .order('name', { ascending: true });
 
       if (fetchError) {
@@ -26,7 +26,9 @@ export function useCategories() {
       }
 
       if (data) {
-        const sorted = (data as Category[]).sort((a, b) => {
+        // Cast to Category[] - translations column exists but may not be in generated types
+        const categoriesData = data as unknown as Category[];
+        const sorted = categoriesData.sort((a, b) => {
           const aSystem = a.is_system_category ? 1 : 0;
           const bSystem = b.is_system_category ? 1 : 0;
 

@@ -131,13 +131,13 @@ export function useAdvancedAnalytics(transactions: ConvertedTransaction[]) {
 
     // Most expensive category
     const categoryMap: Record<string, { amount: number; color: string }> = {};
-    expenses.forEach(t => {
-      const catName = t.category?.name || 'Other';
-      const catColor = t.category?.color || '#6B7280';
+    expenses.forEach(tx => {
+      const catName = tx.category?.name || t('transaction.categoryOther');
+      const catColor = tx.category?.color || '#6B7280';
       if (!categoryMap[catName]) {
         categoryMap[catName] = { amount: 0, color: catColor };
       }
-      categoryMap[catName].amount += t.convertedAmount;
+      categoryMap[catName].amount += tx.convertedAmount;
     });
 
     const sortedCategories = Object.entries(categoryMap)

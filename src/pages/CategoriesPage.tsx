@@ -94,7 +94,12 @@ export function CategoriesPage() {
                     {/* Sub count badge */}
                     {hasSubs && (
                       <Badge variant="secondary" className="shrink-0 text-xs px-1.5 py-0 h-5">
-                        {t('categoriesPage.subCount', { count: localizeNumber(subs.length) })}
+                        {t(
+                          subs.length === 1
+                            ? 'categoriesPage.subCount_one'
+                            : 'categoriesPage.subCount_other',
+                          { count: localizeNumber(subs.length) }
+                        )}
                       </Badge>
                     )}
                   </div>

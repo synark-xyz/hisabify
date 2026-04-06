@@ -6,6 +6,7 @@ import { useSubscription } from "./useSubscription";
 import { format, eachDayOfInterval, parseISO } from "date-fns";
 import { ReportFilters } from "./useReportTemplates";
 import { enforceHistoryWindowForFilters } from "@/lib/historyLimits";
+import { t } from "i18next";
 
 export interface ReportData {
   summary: {
@@ -190,17 +191,17 @@ export function useReportData(filters: ReportFilters) {
       { amount: number; count: number; color: string; categoryId: string | null }
     >();
 
-    expenses.forEach((t) => {
-      const categoryName = t.category?.name || "Other";
+    expenses.forEach((tx) => {
+      const categoryName = tx.category?.name || t('transaction.categoryOther');
       const existing = categoryMap.get(categoryName) || {
         amount: 0,
         count: 0,
-        color: t.category?.color || "#6B7280",
-        categoryId: t.category_id,
+        color: tx.category?.color || "#6B7280",
+        categoryId: tx.category_id,
       };
       categoryMap.set(categoryName, {
         ...existing,
-        amount: existing.amount + Number(t.amount),
+        amount: existing.amount + Number(tx.amount),
         count: existing.count + 1,
       });
     });
@@ -222,17 +223,17 @@ export function useReportData(filters: ReportFilters) {
       { amount: number; count: number; color: string; categoryId: string | null }
     >();
 
-    income.forEach((t) => {
-      const categoryName = t.category?.name || "Other";
+    income.forEach((tx) => {
+      const categoryName = tx.category?.name || t('transaction.categoryOther');
       const existing = incomeCategoryMap.get(categoryName) || {
         amount: 0,
         count: 0,
-        color: t.category?.color || "#22C55E",
-        categoryId: t.category_id,
+        color: tx.category?.color || "#22C55E",
+        categoryId: tx.category_id,
       };
       incomeCategoryMap.set(categoryName, {
         ...existing,
-        amount: existing.amount + Number(t.amount),
+        amount: existing.amount + Number(tx.amount),
         count: existing.count + 1,
       });
     });
@@ -340,14 +341,14 @@ export function useReportData(filters: ReportFilters) {
     });
 
     // Formatted transactions
-    const formattedTransactions = transactions.map((t) => ({
-      id: t.id,
-      date: format(new Date(t.date), "yyyy-MM-dd"),
-      merchant: t.merchant,
-      category: t.category?.name || "Other",
-      type: t.type,
-      amount: Number(t.amount),
-      note: t.note,
+    const formattedTransactions = transactions.map((tx) => ({
+      id: tx.id,
+      date: format(new Date(tx.date), "yyyy-MM-dd"),
+      merchant: tx.merchant,
+      category: tx.category?.name || t('transaction.categoryOther'),
+      type: tx.type,
+      amount: Number(tx.amount),
+      note: tx.note,
     }));
 
     // Savings performance — derive currentAmount from all-time savings transactions,

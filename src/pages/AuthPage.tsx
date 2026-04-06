@@ -271,6 +271,8 @@ interface FloatingInputProps {
   autoComplete?: string;
   placeholder?: string;
   trailingSlot?: React.ReactNode;
+  suggestions?: string[];
+  listId?: string;
 }
 
 function FloatingInput({
@@ -284,10 +286,19 @@ function FloatingInput({
   autoComplete,
   placeholder,
   trailingSlot,
+  suggestions = [],
+  listId,
 }: FloatingInputProps) {
   const [focused, setFocused] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const hasValue = value.length > 0;
   const floated = focused || hasValue;
+  const showDropdown = focused && suggestions.length > 0 && type === 'email';
+
+  const handleSelectSuggestion = (email: string) => {
+    onChange(email);
+    setShowSuggestions(false);
+  };
 
   return (
     <div className="space-y-1.5">
@@ -323,10 +334,11 @@ function FloatingInput({
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={() => { setFocused(true); setShowSuggestions(true); }}
+          onBlur={() => { setFocused(false); setTimeout(() => setShowSuggestions(false), 150); }}
           autoComplete={autoComplete}
           placeholder={floated ? placeholder : undefined}
+          list={listId && showSuggestions ? listId : undefined}
           className={cn(
             'h-14 pl-10 pr-4 pt-5 pb-2',
             'bg-white/[0.06] border-white/[0.1] text-white text-sm',
@@ -349,6 +361,23 @@ function FloatingInput({
           </span>
         )}
       </div>
+
+      {/* Suggestions dropdown */}
+      {showSuggestions && suggestions.length > 0 && type === 'email' && (
+        <div className="absolute z-50 w-full mt-1 bg-[#1a1d29] border border-white/10 rounded-xl shadow-lg overflow-hidden">
+          {suggestions.map((email, index) => (
+            <button
+              key={email}
+              type="button"
+              onClick={() => handleSelectSuggestion(email)}
+              className="w-full px-4 py-2.5 text-left text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-2"
+            >
+              <Mail className="w-3.5 h-3.5 text-white/30" />
+              {email}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Error message with shake animation */}
       <AnimatePresence mode="wait">
@@ -425,6 +454,7 @@ export function AuthPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [legalTab, setLegalTab] = useState<LegalTab>('terms');
   const [legalOpen, setLegalOpen] = useState(false);
+  const [savedEmails, setSavedEmails] = useState<string[]>([]);
 
   const { signIn, signUp, signInWithOAuth, user } = useAuth();
   const navigate = useNavigate();
@@ -432,6 +462,26 @@ export function AuthPage() {
   const { toast } = useToast();
   const shouldReduce = useReducedMotion() ?? false;
   const { t } = useTranslation();
+
+  const [listId] = useState(() => `email-suggestions-${Math.random().toString(36).slice(2, 9)}`);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('hisabify_previous_emails');
+    if (stored) {
+      try {
+        const emails = JSON.parse(stored) as string[];
+        setSavedEmails(emails.slice(0, 5));
+      } catch {}
+    }
+  }, []);
+
+  const saveEmail = useCallback((emailToSave: string) => {
+    if (!emailToSave || !emailToSave.includes('@')) return;
+    const current = savedEmails.filter(e => e.toLowerCase() !== emailToSave.toLowerCase());
+    const updated = [emailToSave, ...current].slice(0, 5);
+    setSavedEmails(updated);
+    localStorage.setItem('hisabify_previous_emails', JSON.stringify(updated));
+  }, [savedEmails]);
 
   // Ref to prevent redundant navigation
   const navigatingRef = useRef(false);
@@ -568,6 +618,7 @@ export function AuthPage() {
       // Brief success flash before navigation
       setSubmitSuccess(true);
       if (mode === 'signup') toast({ title: t('auth.accountCreated') });
+      if (mode === 'login') saveEmail(email);
       setTimeout(() => navigate('/'), 400);
     } finally {
       setLoading(false);
@@ -1021,6 +1072,8 @@ export function AuthPage() {
                 icon={<Mail className="w-4 h-4" />}
                 autoComplete={mode === 'login' ? 'email' : 'email'}
                 placeholder={t('auth.enterEmail')}
+                suggestions={savedEmails}
+                listId={listId}
               />
 
               {/* Password field */}

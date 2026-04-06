@@ -14,7 +14,8 @@
     "error": "ত্রুটি",
     "passwordUpdated": "পাসওয়ার্ড আপডেট হয়েছে",
     "invalidPhoneNumber": "অনুগ্রহ করে একটি বৈধ ফোন নম্বর প্রবেশ করান",
-    "helpSupport": "সাহায্য ও সহায়তা"
+    "helpSupport": "সাহায্য ও সহায়তা",
+    "savings": "সঞ্চয়"
   },
   "nav": {
     "dashboard": "ড্যাশবোর্ড",
@@ -25,11 +26,22 @@
     "settings": "সেটিংস",
     "profile": "প্রোফাইল",
     "transactions": "লেনদেন",
-    "insights": "অন্তর্দৃষ্টি",
+    "insights": "বিশ্লেষণ",
     "more": "আরও"
   },
   "referral": {
-    "yourCode": "আপনার কোড"
+    "yourCode": "আপনার কোড",
+    "alreadyRedeemed": "আপনি ইতিমধ্যে একটি রেফারেল কোড রিডিম করেছেন।",
+    "daysProRemaining": "{{days}} দিন Pro বাকি",
+    "enterCodePlaceholder": "কোড প্রবেশ করুন",
+    "enterFriendCode": "Pro বৈশিষ্ট্য আনলক করতে বন্ধুর কোড প্রবেশ করুন",
+    "friendsJoined": "{{count}} জন বন্ধু যোগ দিয়েছে",
+    "friendsJoined_plural": "{{count}} জন বন্ধু যোগ দিয়েছে",
+    "inviteReward": "বন্ধুদের আমন্ত্রণ জানান। উভয়ই 3 দিন Pro পান।",
+    "redeem": "রিডিম করুন",
+    "redeemCode": "কোড রিডিম করুন",
+    "share": "শেয়ার করুন",
+    "shareCode": "কোড শেয়ার করুন"
   },
   "page": {
     "faq": "প্রশ্নোত্তর",
@@ -96,9 +108,9 @@
     "goalButton": "লক্ষ্য",
     "debtButton": "ঋণ",
     "upgradeToPro": "প্রো আপগ্রেড করুন",
-    "unlockInsights": "অসীম বাজেট ও অন্তর্দৃষ্টি আনলক করুন",
+    "unlockInsights": "আনলিমিটেড বাজেট ও বিশ্লেষণ আনলক করুন",
     "reminders": "রিমাইন্ডার",
-    "insights": "অন্তর্দৃষ্টি",
+    "insights": "বিশ্লেষণ",
     "activityHistory": "কার্যকলাপ ইতিহাস",
     "noActivityYet": "এখনও কোনো কার্যকলাপ নেই। খরচ যোগ করা শুরু করুন!",
     "share": "শেয়ার",
@@ -438,11 +450,53 @@
     "preferences": "পছন্দগুলি",
     "notifications": "বিজ্ঞপ্তি",
     "signedOut": "সফলভাবে লগ আউট হয়েছেন",
-    "title": "সেটিংস"
+    "title": "সেটিংস",
+    "about": "সম্পর্কে",
+    "currency": "মুদ্রা",
+    "currencyDesc": "আপনার পছন্দের মুদ্রা নির্বাচন করুন",
+    "dateFormat": "তারিখ ফর্ম্যাট",
+    "dateFormatDesc": "কীভাবে তারিখ প্রদর্শিত হয়",
+    "deleteAccount": "অ্যাকাউন্ট মুছে ফেলুন",
+    "errorSaving": "পছন্দ সংরক্ষণে ত্রুটি",
+    "language": "ভাষা",
+    "languageDesc": "আপনার পছন্দের ভাষা নির্বাচন করুন",
+    "logout": "লগ আউট",
+    "privacy": "গোপনীয়তা",
+    "proFeatureLocked": "Pro বৈশিষ্ট্য লক করা",
+    "proFeatureLockedDesc": "Cyberpunk থিম আনলক করতে Pro-তে আপগ্রেড করুন!",
+    "security": "নিরাপত্তা",
+    "styleCyberpunk": "সাইবারপাঙ্ক",
+    "styleCyberpunkDesc": "ভবিষ্যত স্বর্ণ এবং নীল-সবুজ",
+    "styleDefault": "ডিফল্ট",
+    "styleDefaultDesc": "পরিষ্কার এবং আধুনিক",
+    "theme": "থিম",
+    "themeDark": "অন্ধকার",
+    "themeDesc": "আপনার পছন্দের থিম বেছে নিন",
+    "themeLight": "হালকা",
+    "themeSystem": "সিস্টেম",
+    "visualStyle": "ভিজ্যুয়াল স্টাইল",
+    "visualStyleDesc": "অ্যাপ নান্দনিকতা কাস্টমাইজ করুন",
+    "weekMonday": "সোমবার",
+    "weekSaturday": "শনিবার",
+    "weekStartsOn": "সপ্তাহ শুরু হয়",
+    "weekStartsOnDesc": "সপ্তাহের প্রথম দিন",
+    "weekSunday": "রবিবার"
   },
   "profile": {
     "name": "নাম",
-    "phone": "ফোন"
+    "phone": "ফোন",
+    "dataManagement": "ডেটা ব্যবস্থাপনা",
+    "editProfile": "প্রোফাইল সম্পাদনা করুন",
+    "email": "ইমেল",
+    "goPremium": "Pro-তে যান",
+    "inviteEarn": "আমন্ত্রণ জানান এবং অর্জন করুন",
+    "joined": "{{date}} এ যোগ দিয়েছেন",
+    "personalInfo": "ব্যক্তিগত তথ্য",
+    "personalInformation": "ব্যক্তিগত তথ্য",
+    "subscription": "সাবস্ক্রিপশন",
+    "supportDevelopment": "উন্নয়ন সমর্থন করুন",
+    "title": "প্রোফাইল",
+    "unlockAllFeatures": "সমস্ত বৈশিষ্ট্য আনলক করুন এবং প্রকল্প সমর্থন করুন"
   },
   "auth": {
     "login": "লগইন",
@@ -495,7 +549,7 @@
     "orContinueWithEmail": "অথবা ইমেইল দিয়ে চালিয়ে যান",
     "challengeScore": "আপনার বন্ধু স্কোর করেছে {{score}}/১০০। আপনি কি তাদের হারাতে পারবেন?",
     "referralCode": "আমন্ত্রিত! কোড দিয়ে সাইন আপ করুন {{code}} ৩০ দিন প্রো বিনা খরচে পেতে।",
-    "unlockInsights": "অসীম বাজেট ও অন্তর্দৃষ্টি আনলক করুন"
+    "unlockInsights": "আনলিমিটেড বাজেট ও বিশ্লেষণ আনলক করুন"
   },
   "errors": {
     "generic": "কিছু ভুল হয়েছে",
@@ -543,22 +597,26 @@
     "noDataYet": "এখনও কোনো বিশ্লেষণ ডেটা নেই",
     "noDataYetDesc": "প্রথমে লেনদেন যোগ করুন, তারপর আপনার অন্তর্দৃষ্টি এবং প্রবণতা এখানে দেখাবে।",
     "addTransactions": "লেনদেন যোগ করুন",
-    "tabInsights": "অন্তর্দৃষ্টি",
+    "tabInsights": "বিশ্লেষণ",
     "tabOverview": "সংক্ষিপ্ত বিবরণ",
     "tabAdvanced": "উন্নত",
     "noBudgetsSet": "কোনো বাজেট নির্ধারিত নেই",
     "noBudgetsDesc": "আপনি কীভাবে ট্র্যাক করছেন তা দেখতে বাজেট তৈরি করুন",
     "createBudget": "বাজেট তৈরি করুন",
-    "featureAiInsights": "AI অন্তর্দৃষ্টি",
+    "featureAiInsights": "AI বিশ্লেষণ",
     "featureAdvanced": "উন্নত বিশ্লেষণ",
-    "keyInsights": "মূল অন্তর্দৃষ্টি",
+    "keyInsights": "মূল বিশ্লেষণ",
     "categoryBreakdown": "বিভাগ বিশ্লেষণ",
     "highestSpendingMonth": "{{month}} আপনার সবচেয়ে বেশি ব্যয়ের মাস ({{amount}})",
     "highestSavingsMonth": "{{month}} আপনার সবচেয়ে বেশি সঞ্চয়ের মাস ({{amount}})",
     "spendingAboveAverage": "এই মাসে ব্যয় অস্বাভাবিকভাবে বেশি (গড়ের {{percent}}% উপরে)",
     "noCategoryData": "এই বছরের জন্য কোনো বিভাগের তথ্য নেই",
     "showLess": "কম দেখুন",
-    "viewAll": "সব দেখুন"
+    "viewAll": "সব দেখুন",
+    "budgetRemaining": "বাকি বাজেট",
+    "netSavings": "নেট সঞ্চয়",
+    "totalExpenses": "মোট খরচ",
+    "totalIncome": "মোট আয়"
   },
   "debt": {
     "debtTracker": "ঋণ ট্র্যাকার",
@@ -615,7 +673,10 @@
     "noRecurring": "কোনো আবৃত লেনদেন নেই"
   },
   "categories": {
-    "categories": "বিভাগ"
+    "categories": "বিভাগ",
+    "expense": "খরচ",
+    "income": "আয়",
+    "savings": "সঞ্চয়"
   },
   "transaction": {
     "typeExpense": "খরচ",
@@ -863,7 +924,27 @@
       "note": "আমরা ৩০ দিনের মধ্যে আপনার অনুরোধ প্রক্রিয়া করব এবং সম্পূর্ণ হওয়ার পরে আপনার ইমেলে নিশ্চিতকরণ পাঠাব।"
     },
     "whatGetsDeleted": {
-      "title": "কোন ডেটা মোছা হয়"
+      "title": "কোন ডেটা মোছা হয়",
+      "budgets": "বাজেট",
+      "cardsAccounts": "কার্ড এবং অ্যাকাউন্ট",
+      "immediately": "অনুরোধে অবিলম্বে",
+      "loginCredentials": "লগইন শংসাপত্র (ইমেল/পাসওয়ার্ড)",
+      "paymentReminders": "পেমেন্ট রিমাইন্ডার",
+      "profilePreferences": "প্রোফাইল এবং পছন্দগুলি",
+      "recurringExpenses": "পুনরাবৃত্ত খরচ",
+      "reportTemplates": "রিপোর্ট টেম্পলেট",
+      "savingsGoals": "সঞ্চয় লক্ষ্য",
+      "transactionsExpenses": "লেনদেন এবং খরচ",
+      "within30Days": "ইমেল অনুরোধের মধ্যে 30 দিন"
+    },
+    "bySynark": "Synark দ্বারা",
+    "dataRetention": {
+      "desc": "অ্যাপ-মধ্যস্থ মুছে ফেলা অবিলম্বে আপনার ডেটা আমাদের সার্ভার থেকে কোনো ধারণ সময় ছাড়াই সরিয়ে দেয়। ইমেল অনুরোধের মাধ্যমে লগইন শংসাপত্র অপসারণ 30 দিনের মধ্যে প্রক্রিয়া করা হয়। মুছে ফেলার অনুরোধ থেকে 90 দিনের মধ্যে, আমাদের আদর্শ ব্যাকআপ রোটেশন সময়সূচীর অংশ হিসাবে আপনার ডেটা সম্পর্কিত ব্যাকআপগুলি পার্জ করা হয়।",
+      "title": "ডেটা ধারণ"
+    },
+    "footer": {
+      "developedBy": "Hisabify Synark Labs দ্বারা তৈরি · গোপনীয়তা নীতি",
+      "questions": "প্রশ্ন আছে? {{email}} এ যোগাযোগ করুন"
     }
   },
   "install": {

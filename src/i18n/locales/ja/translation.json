@@ -14,7 +14,8 @@
     "error": "エラー",
     "passwordUpdated": "パスワードを更新しました",
     "invalidPhoneNumber": "有効な電話番号を入力してください",
-    "helpSupport": "ヘルプ＆サポート"
+    "helpSupport": "ヘルプ＆サポート",
+    "savings": "貯蓄"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -29,7 +30,18 @@
     "more": "その他"
   },
   "referral": {
-    "yourCode": "あなたのコード"
+    "yourCode": "あなたのコード",
+    "alreadyRedeemed": "すでに紹介コードを引き換えています。",
+    "daysProRemaining": "{{days}}日間のPro残り",
+    "enterCodePlaceholder": "コード入力",
+    "enterFriendCode": "フレンドのコードを入力してProを有効にする",
+    "friendsJoined": "{{count}}人のフレンドが参加しました",
+    "friendsJoined_plural": "{{count}}人のフレンドが参加しました",
+    "inviteReward": "フレンドを招待。両方とも3日間Pro。",
+    "redeem": "引き換える",
+    "redeemCode": "コードを引き換える",
+    "share": "共有",
+    "shareCode": "コードを共有"
   },
   "page": {
     "faq": "よくある質問",
@@ -438,23 +450,53 @@
     "preferences": "環境設定",
     "notifications": "通知",
     "signedOut": "ログアウトしました",
-    "title": "設定"
+    "title": "設定",
+    "about": "について",
+    "currency": "通貨",
+    "currencyDesc": "希望する通貨を選択",
+    "dateFormat": "日付形式",
+    "dateFormatDesc": "日付の表示方法",
+    "deleteAccount": "アカウント削除",
+    "errorSaving": "設定の保存中にエラーが発生しました",
+    "language": "言語",
+    "languageDesc": "希望する言語を選択",
+    "logout": "ログアウト",
+    "privacy": "プライバシー",
+    "proFeatureLocked": "Pro機能ロック",
+    "proFeatureLockedDesc": "Cyberpunkテーマをロック解除するにはProにアップグレード！",
+    "security": "セキュリティ",
+    "styleCyberpunk": "サイバーパンク",
+    "styleCyberpunkDesc": "未来的なゴールド＆ティール",
+    "styleDefault": "デフォルト",
+    "styleDefaultDesc": "クリーン＆モダン",
+    "theme": "テーマ",
+    "themeDark": "ダーク",
+    "themeDesc": "希望するテーマを選択",
+    "themeLight": "ライト",
+    "themeSystem": "システム",
+    "visualStyle": "ビジュアルスタイル",
+    "visualStyleDesc": "アプリの美学をカスタマイズ",
+    "weekMonday": "月曜日",
+    "weekSaturday": "土曜日",
+    "weekStartsOn": "週の開始曜日",
+    "weekStartsOnDesc": "週の最初の日",
+    "weekSunday": "日曜日"
   },
   "profile": {
     "title": "プロフィール",
-    "editProfile": "プロフィールを編集",
+    "editProfile": "プロフィール編集",
     "name": "名前",
     "email": "メール",
     "phone": "電話",
-    "joined": "{{date}}に参加",
+    "joined": "参加日：{{date}}",
     "subscription": "サブスクリプション",
     "personalInformation": "個人情報",
     "personalInfo": "個人情報",
     "dataManagement": "データ管理",
     "inviteEarn": "招待して稼ぐ",
-    "supportDevelopment": "開発を支援",
-    "goPremium": "プレミアムにアップグレード",
-    "unlockAllFeatures": "すべての機能をアンロックしてプロジェクトを支援"
+    "supportDevelopment": "開発をサポート",
+    "goPremium": "Proにする",
+    "unlockAllFeatures": "すべての機能をロック解除してプロジェクトをサポート"
   },
   "auth": {
     "login": "ログイン",
@@ -570,7 +612,11 @@
     "spendingAboveAverage": "今月の支出が異常に高い（平均比{{percent}}%超）",
     "noCategoryData": "今年のカテゴリーデータがありません",
     "showLess": "少なく表示",
-    "viewAll": "すべて表示"
+    "viewAll": "すべて表示",
+    "budgetRemaining": "残りの予算",
+    "netSavings": "純貯蓄",
+    "totalExpenses": "総支出",
+    "totalIncome": "総収入"
   },
   "debt": {
     "debtTracker": "債務トラッカー",
@@ -627,7 +673,10 @@
     "noRecurring": "繰り返し取引はありません"
   },
   "categories": {
-    "categories": "カテゴリー"
+    "categories": "カテゴリー",
+    "expense": "支出",
+    "income": "収入",
+    "savings": "貯蓄"
   },
   "transaction": {
     "typeExpense": "支出",
@@ -875,7 +924,27 @@
       "note": "30日以内にリクエストを処理し、完了後にメールで確認を送信します。"
     },
     "whatGetsDeleted": {
-      "title": "削除されるデータ"
+      "title": "削除されるデータ",
+      "budgets": "予算",
+      "cardsAccounts": "カード＆口座",
+      "immediately": "リクエスト時に即座",
+      "loginCredentials": "ログイン認証情報（メール/パスワード）",
+      "paymentReminders": "支払いリマインダー",
+      "profilePreferences": "プロフィール＆環境設定",
+      "recurringExpenses": "定期的な支出",
+      "reportTemplates": "レポートテンプレート",
+      "savingsGoals": "貯蓄目標",
+      "transactionsExpenses": "トランザクション＆支出",
+      "within30Days": "メール要求後30日以内"
+    },
+    "bySynark": "Synark製",
+    "dataRetention": {
+      "desc": "アプリ内削除はリクエスト時にサーバーからデータを即座に削除します。ログイン認証情報の削除はメール要求の場合30日以内に処理されます。削除リクエストから90日以内に、標準的なバックアップローテーションスケジュールの一環としてデータを含むバックアップが削除されます。",
+      "title": "データ保持"
+    },
+    "footer": {
+      "developedBy": "HisabifyはSynark Labsによって開発されています · プライバシーポリシー",
+      "questions": "ご質問はありますか？{{email}}までお問い合わせください"
     }
   },
   "install": {

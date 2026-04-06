@@ -471,7 +471,9 @@ export function AuthPage() {
       try {
         const emails = JSON.parse(stored) as string[];
         setSavedEmails(emails.slice(0, 5));
-      } catch {}
+      } catch {
+        // Ignore malformed JSON
+      }
     }
   }, []);
 

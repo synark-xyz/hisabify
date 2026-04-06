@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,7 @@ interface ReportFiltersPanelProps {
   categories: Category[];
 }
 
-const getPresetRanges = (t: any) => [
+const getPresetRanges = (t: TFunction) => [
   { key: "thisMonth", getValue: () => ({ from: startOfMonth(new Date()), to: new Date() }) },
   { key: "lastMonth", getValue: () => ({ from: startOfMonth(subMonths(new Date(), 1)), to: endOfMonth(subMonths(new Date(), 1)) }) },
   { key: "last30Days", getValue: () => ({ from: subDays(new Date(), 30), to: new Date() }) },

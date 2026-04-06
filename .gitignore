@@ -42,3 +42,6 @@ android/app/src/staging/google-services.json
 UX-Redesign/
 .superpowers/
 docs/
+*.sql
+*.prefs
+android/.project

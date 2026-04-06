@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
@@ -12,32 +13,32 @@ import { cn } from '@/lib/utils';
 import { emitTransactionUpdated } from '@/lib/transaction-events';
 
 const PAGE_TITLES: Record<string, string> = {
-    '/': 'Dashboard',
-    '/budget': 'Budget',
-    '/savings': 'Budget',
-    '/expenses': 'Transactions',
-    '/transactions': 'Transactions',
-    '/insights': 'Insights',
-    '/reports': 'Insights',
-    '/profile': 'Profile',
-    '/profile/personal': 'Personal Info',
-    '/profile/data': 'Data Management',
-    '/profile/invite': 'Invite Friends',
-    '/analytics': 'Insights',
-    '/debts': 'Debt Tracker',
-    '/activity': 'Activity History',
-    '/categories': 'Categories',
-    '/settings': 'Settings',
-    '/settings/preferences': 'Preferences',
-    '/settings/notifications': 'Notifications',
-    '/more': 'More',
-    '/more/calculator': 'Calculator',
-    '/more/loan': 'Loan Calculator',
-    '/more/discount': 'Discount & Tax',
-    '/more/currency': 'Currency Converter',
+    '/': 'nav.dashboard',
+    '/budget': 'nav.budget',
+    '/savings': 'nav.savings',
+    '/expenses': 'nav.expenses',
+    '/transactions': 'nav.transactions',
+    '/insights': 'nav.insights',
+    '/reports': 'nav.analytics',
+    '/profile': 'nav.profile',
+    '/profile/personal': 'profile.personalInfo',
+    '/profile/data': 'profile.dataManagement',
+    '/profile/invite': 'referral.yourCode',
+    '/analytics': 'nav.analytics',
+    '/debts': 'debt.debtTracker',
+    '/activity': 'activity.activityHistory',
+    '/categories': 'categories.categories',
+    '/settings': 'nav.settings',
+    '/settings/preferences': 'settings.preferences',
+    '/settings/notifications': 'settings.notifications',
+    '/more': 'nav.more',
+    '/more/calculator': 'calculator.calculator',
+    '/more/loan': 'calculator.loanCalculator',
+    '/more/discount': 'calculator.discountTax',
+    '/more/currency': 'calculator.currencyConverter',
 };
 
-const getPageTitle = (pathname: string) => PAGE_TITLES[pathname] ?? 'Hisabify';
+const getPageTitle = (pathname: string) => PAGE_TITLES[pathname] ?? 'common.hisabify';
 
 export function Layout() {
     const [showManual, setShowManual] = useState(false);

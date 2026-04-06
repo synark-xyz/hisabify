@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { currencyData } from '@/hooks/useCurrency';
+import { useTranslation } from 'react-i18next';
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ const POPULAR_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CA
 export function CurrencyConverterPage() {
   const navigate = useNavigate();
   const { currency: defaultCurrency, formatAmount } = useCurrency();
+  const { t } = useTranslation();
   const { getExchangeRate, convertAmount, getCachedRate } = useExchangeRate();
 
   const [amount, setAmount] = useState<string>('1');
@@ -77,7 +79,7 @@ export function CurrencyConverterPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-semibold flex items-center gap-2">
-            <ArrowRightLeft className="w-5 h-5" /> Currency Converter
+            <ArrowRightLeft className="w-5 h-5" /> {t('morePage.currencyConverter')}
           </h1>
         </div>
       </header>
@@ -85,7 +87,7 @@ export function CurrencyConverterPage() {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Amount Input */}
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
+          <Label htmlFor="amount">{t('currencyConverter.amount')}</Label>
           <Input
             id="amount"
             type="number"
@@ -97,9 +99,9 @@ export function CurrencyConverterPage() {
         </div>
 
         {/* Currency Selectors */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="from">From</Label>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="from">{t('currencyConverter.from')}</Label>
             <Select value={fromCurrency} onValueChange={setFromCurrency}>
               <SelectTrigger id="from" className="w-full">
                 <SelectValue />
@@ -114,19 +116,17 @@ export function CurrencyConverterPage() {
             </Select>
           </div>
 
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={swapCurrencies}
-              className="rounded-full w-10 h-10"
-            >
-              <ArrowRightLeft className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={swapCurrencies}
+            className="mt-6 rounded-full w-9 h-9 hover:bg-accent"
+          >
+            <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
+          </Button>
 
-          <div className="space-y-2">
-            <Label htmlFor="to">To</Label>
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="to">{t('currencyConverter.to')}</Label>
             <Select value={toCurrency} onValueChange={setToCurrency}>
               <SelectTrigger id="to" className="w-full">
                 <SelectValue />
@@ -144,20 +144,20 @@ export function CurrencyConverterPage() {
 
         {/* Convert Button */}
         <Button className="w-full" onClick={convert} disabled={loading}>
-          {loading ? 'Converting...' : 'Convert'}
+          {loading ? t('currencyConverter.converting') : t('currencyConverter.convert')}
         </Button>
 
         {/* Result Card */}
         {convertedAmount !== null && rate && (
-          <Card className="bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 border-violet-500/20">
-            <CardContent className="p-6 space-y-4">
+          <Card className="bg-gradient-to-r from-violet-500/15 via-purple-500/15 to-fuchsia-500/15 border-violet-500/30">
+            <CardContent className="p-6 space-y-3">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Converted Amount</p>
-                <p className="text-3xl font-bold text-primary">
-                  {formatAmount(convertedAmount)}
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('currencyConverter.convertedAmount')}</p>
+                <p className="text-4xl font-bold text-foreground mt-2">
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: toCurrency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(convertedAmount)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {amount} {fromCurrency} = {convertedAmount.toFixed(2)} {toCurrency}
+                <p className="text-sm text-muted-foreground mt-2 font-mono">
+                  {convertedAmount.toFixed(5)} {toCurrency}
                 </p>
               </div>
 
@@ -169,7 +169,7 @@ export function CurrencyConverterPage() {
               {lastUpdated && (
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Clock className="w-3 h-3" />
-                  <span>Updated {lastUpdated.toLocaleTimeString()}</span>
+                  <span>{t('currencyConverter.updatedAgo', { time: lastUpdated.toLocaleTimeString() })}</span>
                 </div>
               )}
             </CardContent>
@@ -178,7 +178,7 @@ export function CurrencyConverterPage() {
 
         {/* Quick Reference */}
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Popular Conversions</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">{t('currencyConverter.popularConversions')}</h3>
           <div className="grid grid-cols-2 gap-2">
             {POPULAR_CURRENCIES.slice(0, 6).map((curr) => (
               <Button

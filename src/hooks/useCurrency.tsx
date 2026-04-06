@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './useAuth';
+import { useLanguage } from './useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { useExchangeRate } from './useExchangeRate';
 import { startExchangeRateService } from '@/lib/exchangeRateService';
@@ -243,9 +244,25 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   };
 
   const currencySymbol = currencyData[currency]?.symbol || '$';
+  const { language } = useLanguage();
 
   const formatAmount = useCallback((amount: number) => {
-    const locale = currencyData[currency]?.locale || 'en-US';
+    const currencyLocale = currencyData[currency]?.locale || 'en-US';
+    
+    // Use language-based locale for number formatting (gets Bengali/Japanese numerals)
+    // but override with currency locale for currency symbol and formatting rules
+    let locale: string;
+    switch (language) {
+      case 'bn':
+        locale = 'bn-BD';
+        break;
+      case 'ja':
+        locale = 'ja-JP';
+        break;
+      default:
+        locale = currencyLocale;
+    }
+
     // Zero-decimal currencies (no fractional units)
     const zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'KRW'];
     const decimals = zeroDecimalCurrencies.includes(currency) ? 0 : 2;
@@ -255,7 +272,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     }).format(amount);
-  }, [currency]);
+  }, [currency, language]);
 
   return (
     <CurrencyContext.Provider value={{

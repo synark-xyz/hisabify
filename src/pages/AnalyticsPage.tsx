@@ -35,6 +35,7 @@ import { PremiumGuard } from '@/components/PremiumGuard';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 import { canUseFeature } from '@/lib/entitlements';
 import { enforceHistoryWindow, getFreeHistoryStartDate } from '@/lib/historyLimits';
 
@@ -48,6 +49,7 @@ export function AnalyticsPage() {
   const { user } = useAuth();
   const { currency, formatAmount } = useCurrency();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { variant } = useTheme();
   const navigate = useNavigate();
   const hasShownClampToastRef = useRef(false);
@@ -102,8 +104,8 @@ export function AnalyticsPage() {
     if (enforced.wasClamped && !hasShownClampToastRef.current) {
       hasShownClampToastRef.current = true;
       toast({
-        title: 'History limit reached',
-        description: 'Free plan supports the last 30 days. Upgrade for full history.',
+        title: t('analytics.historyLimitTitle'),
+        description: t('analytics.historyLimitDesc'),
       });
     }
   };
@@ -119,12 +121,12 @@ export function AnalyticsPage() {
       if (!hasShownClampToastRef.current) {
         hasShownClampToastRef.current = true;
         toast({
-          title: 'History limit reached',
-          description: 'Free plan supports the last 30 days. Upgrade for full history.',
+          title: t('analytics.historyLimitTitle'),
+          description: t('analytics.historyLimitDesc'),
         });
       }
     }
-  }, [subscriptionLoading, isPremium, dateRange, toast]);
+  }, [subscriptionLoading, isPremium, dateRange, toast, t]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -149,40 +151,6 @@ export function AnalyticsPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-center gap-2">
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-            </motion.div>
-            <h1 className="text-xl font-bold text-foreground text-glow">Analytics Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {hasTransactionData && (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowWrapModal(true)}
-                  className="rounded-xl font-bold text-xs border-glow gap-1.5"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  Share Month
-                </Button>
-              </motion.div>
-            )}
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={refetch}
-                disabled={loading}
-                className="border-glow"
-              >
-                <RefreshCw className={`w-4 h-4 icon-glow ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-            </motion.div>
-          </div>
         </motion.header>
 
         <motion.main
@@ -218,11 +186,11 @@ export function AnalyticsPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <p className="text-base font-semibold text-foreground">No analytics data yet</p>
+                <p className="text-base font-semibold text-foreground">{t('analytics.noDataYet')}</p>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
-                  Add transactions first, then your insights and trends will appear here.
+                  {t('analytics.noDataYetDesc')}
                 </p>
-                <Button onClick={() => navigate('/transactions')}>Add Transactions</Button>
+                <Button onClick={() => navigate('/transactions')}>{t('analytics.addTransactions')}</Button>
               </motion.div>
             ) : (
               <SummaryCards
@@ -239,17 +207,17 @@ export function AnalyticsPage() {
           <motion.section variants={itemVariants}>
             <Tabs defaultValue="insights" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12 card-3d">
-                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-accent data-[state=active]:text-glow">Insights</TabsTrigger>
-                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:text-glow">Overview</TabsTrigger>
+                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-accent data-[state=active]:text-glow">{t('analytics.tabInsights')}</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:text-glow">{t('analytics.tabOverview')}</TabsTrigger>
                 <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-purple-500 data-[state=active]:text-glow relative overflow-hidden">
-                  Advanced
+                  {t('analytics.tabAdvanced')}
                   {!isPremium && !subscriptionLoading && <Lock className="ml-1.5 w-3 h-3 text-muted-foreground/50" />}
                 </TabsTrigger>
               </TabsList>
 
               {/* Insights Tab */}
               <TabsContent value="insights" className="space-y-6">
-                <PremiumGuard featureName="AI Insights">
+                <PremiumGuard featureName={t('analytics.featureAiInsights')}>
                   {loading ? (
                     <>
                       <Skeleton className="h-40 rounded-2xl" />
@@ -315,16 +283,16 @@ export function AnalyticsPage() {
                           animate={{ opacity: 1 }}
                         >
                           <span className="text-5xl mb-3">💰</span>
-                          <p className="text-foreground font-semibold">No Budgets Set</p>
+                          <p className="text-foreground font-semibold">{t('analytics.noBudgetsSet')}</p>
                           <p className="text-muted-foreground text-sm text-center mt-1">
-                            Create budgets to see how you're tracking
+                            {t('analytics.noBudgetsDesc')}
                           </p>
                           <Button
                             variant="outline"
                             className="mt-4"
                             onClick={() => navigate('/budget')}
                           >
-                            Create Budget
+                            {t('analytics.createBudget')}
                           </Button>
                         </motion.div>
                       )}

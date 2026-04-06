@@ -2,13 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Check, Clock, Crown, RotateCcw, Sparkles, Target, Wallet, Loader2 } from 'lucide-react';
+import { ArrowRight, Check, Clock, Crown, RotateCcw, Sparkles, Target, Wallet, Loader2, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
 import { cn } from '@/lib/utils';
 
 const isNativePlatform = Capacitor.isNativePlatform();
+
+// Store links for web users (uses env vars with sensible defaults)
+const PLAY_STORE_URL = (import.meta.env.VITE_PLAY_STORE_URL as string) || 'https://play.google.com/store/apps/details?id=io.synark.hisabify';
+const APP_STORE_URL = (import.meta.env.VITE_APP_STORE_URL as string) || '#';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -111,12 +115,19 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
   const stableShowPaywall = useCallback(showPaywall, [showPaywall]);
   useEffect(() => {
     if (!open || !isNativePlatform) return;
-    stableOnOpenChange(false);
     stableShowPaywall();
+    stableOnOpenChange(false);
   }, [open, stableOnOpenChange, stableShowPaywall]);
 
-  // Don't render the custom modal UI on native — RC handles it
-  if (isNativePlatform) return null;
+  // On native: show loading spinner while RC paywall is launching
+  if (isNativePlatform) {
+    if (!open) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+      </div>
+    );
+  }
 
   const handleUpgrade = async (plan: 'monthly' | 'yearly') => {
     import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
@@ -246,44 +257,37 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               </p>
             </div>
 
+            {/* Web: Store download links */}
             <div className="mt-5 space-y-3">
+              <p className="text-xs text-center text-muted-foreground mb-2">
+                Subscriptions are managed through the mobile app.
+              </p>
               <Button
+                asChild
                 className={cn(
                   'h-12 w-full rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 text-base font-black shadow-lg shadow-purple-500/20 transition-opacity hover:opacity-95'
                 )}
-                disabled={purchaseDisabled}
-                onClick={() => handleUpgrade('monthly')}
               >
-                {checkoutLoading === 'monthly' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Start 7-Day Free Trial — {monthlyPrice}/mo
-                {checkoutLoading !== 'monthly' && <ArrowRight className="ml-2 h-4 w-4" />}
+                <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
+                  <Smartphone className="mr-2 h-4 w-4" />
+                  Get it on Google Play
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </a>
               </Button>
               <Button
+                asChild
                 variant="outline"
                 className="h-10 w-full rounded-2xl font-bold text-sm border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/50"
-                disabled={purchaseDisabled}
-                onClick={() => handleUpgrade('yearly')}
               >
-                {checkoutLoading === 'yearly' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Annual Plan — {yearlyPrice}/year (save 33%)
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-9 w-full rounded-2xl text-xs text-muted-foreground"
-                disabled={purchaseDisabled}
-                onClick={handleRestore}
-              >
-                {checkoutLoading === 'restore' ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-                )}
-                Restore Purchases
+                <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
+                  <Smartphone className="mr-2 h-4 w-4" />
+                  Download on the App Store
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </a>
               </Button>
               <Button
                 variant="ghost"
                 className="w-full rounded-2xl text-muted-foreground"
-                disabled={purchaseDisabled}
                 onClick={() => onOpenChange(false)}
               >
                 Maybe Later

@@ -11,6 +11,7 @@ import {
 import { MobileDialog } from '@/components/ui/mobile-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Archive,
@@ -29,6 +30,7 @@ import { format } from 'date-fns';
 import { useCurrency } from '@/hooks/useCurrency';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { cn } from '@/lib/utils';
+import { localizeNumber } from '@/lib/i18nNumber';
 import { GoalThermometer } from './GoalThermometer';
 import { SavingsFundingDialog } from './SavingsFundingDialog';
 import { GoalCompletionModal } from './GoalCompletionModal';
@@ -87,12 +89,14 @@ export function SavingsGoalCard({
     no_plan: 'text-muted-foreground',
   };
 
+  const { t } = useTranslation();
+
   const statusLabels = {
-    completed: 'Completed',
-    on_track: 'On Track',
-    ahead: 'Ahead',
-    behind: 'Behind',
-    no_plan: 'No Plan',
+    completed: t('savings.status.completed'),
+    on_track: t('savings.status.on_track'),
+    ahead: t('savings.status.ahead'),
+    behind: t('savings.status.behind'),
+    no_plan: t('savings.status.no_plan'),
   };
 
   const chartData = goal.contributionHistory
@@ -158,7 +162,7 @@ export function SavingsGoalCard({
                   )}
                   {goal.isUrgent && (
                     <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600">
-                      Due Soon
+                      {t('savings.dueSoon')}
                     </span>
                   )}
                   {linkedBudgetName && (
@@ -181,27 +185,27 @@ export function SavingsGoalCard({
                 {goal.status !== 'completed' ? (
                   <DropdownMenuItem onClick={() => setShowFunding(true)}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Funds
+                    {t('savings.addFunds')}
                   </DropdownMenuItem>
                 ) : (
                   <>
                     <DropdownMenuItem onClick={() => onArchive(goal.id)}>
                       <Archive className="mr-2 h-4 w-4" />
-                      Archive Goal
+                      {t('savings.archiveGoal')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowRedeploy(true)}>
                       <ArrowRightLeft className="mr-2 h-4 w-4" />
-                      Redeploy Funds
+                      {t('savings.redeployFunds')}
                     </DropdownMenuItem>
                   </>
                 )}
                 <DropdownMenuItem onClick={() => onEdit(goal)}>
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit Goal
+                  {t('savings.editGoal')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="text-destructive focus:text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Goal
+                  {t('savings.deleteGoal')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -212,18 +216,18 @@ export function SavingsGoalCard({
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2 rounded-2xl h-10">
               <TabsTrigger value="overview" className="rounded-xl text-[10px] font-bold uppercase tracking-wider">
-                Overview
+                {t("savings.overview")}
               </TabsTrigger>
               <TabsTrigger value="history" className="rounded-xl text-[10px] font-bold uppercase tracking-wider">
-                History
+                {t("savings.history")}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
-              {goal.status === 'completed' && (
+                  {goal.status === 'completed' && (
                 <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-emerald-700">
                   <Sparkles className="h-4 w-4 animate-pulse" />
-                  <p className="text-xs font-semibold">Goal completed. Archive it or redeploy the funds.</p>
+                  <p className="text-xs font-semibold">{t('savings.goalCompleted')}</p>
                 </div>
               )}
 
@@ -233,7 +237,7 @@ export function SavingsGoalCard({
                 <div className="flex-1 space-y-4">
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      <span>Progress</span>
+                      <span>{t('savings.progress')}</span>
                       <span className="text-foreground">{goal.percentage}%</span>
                     </div>
                     <Progress
@@ -245,19 +249,19 @@ export function SavingsGoalCard({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Saved</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('savings.saved')}</p>
                       <p className="text-sm font-black text-foreground">{formatAmount(goal.current_amount)}</p>
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Target</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('savings.targetLabel')}</p>
                       <p className="text-sm font-black text-foreground/70">{formatAmount(goal.target_amount)}</p>
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">This Month</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('savings.thisMonth')}</p>
                       <p className="text-sm font-black text-foreground/70">{formatAmount(goal.thisMonthContribution)}</p>
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Reserve</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('savings.reserve')}</p>
                       <p className="text-sm font-black text-foreground/70">{formatAmount(goal.reserve_amount || 0)}</p>
                     </div>
                   </div>
@@ -268,7 +272,7 @@ export function SavingsGoalCard({
                         <Calendar className="w-3 h-3" />
                         <span>
                           {goal.daysLeft !== null && goal.daysLeft >= 0
-                            ? `${goal.daysLeft} d left`
+                            ? t('savings.daysLeft', { days: localizeNumber(goal.daysLeft) })
                             : format(new Date(goal.deadline), 'MMM d')}
                         </span>
                       </div>
@@ -281,7 +285,7 @@ export function SavingsGoalCard({
                         onClick={() => setShowFunding(true)}
                       >
                         <Plus className="mr-1 h-3 w-3" />
-                        Funds
+                        {t('savings.funds')}
                       </Button>
                     )}
                   </div>
@@ -289,11 +293,11 @@ export function SavingsGoalCard({
                   {goal.status === 'completed' ? (
                     <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Ready to redeploy</span>
+                        <span className="text-muted-foreground">{t('savings.readyToRedeploy')}</span>
                         <span className="font-semibold text-foreground">{formatAmount(goal.availableToRedeploy)}</span>
                       </div>
                       <div className="mt-1 flex items-center justify-between">
-                        <span className="text-muted-foreground">Completed</span>
+                        <span className="text-muted-foreground">{t('savings.completedAt')}</span>
                         <span className="font-semibold text-foreground">
                           {format(new Date(goal.completed_at || goal.updated_at), 'MMM d, yyyy')}
                         </span>
@@ -302,19 +306,19 @@ export function SavingsGoalCard({
                   ) : (
                     <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Projected completion</span>
+                        <span className="text-muted-foreground">{t('savings.projectedCompletion')}</span>
                         <span className="font-semibold text-foreground">
                           {goal.suggestedDeadline
                             ? format(new Date(goal.suggestedDeadline), 'MMM d, yyyy')
-                            : goal.projectedCompletionLabel || 'Needs more data'}
+                            : goal.projectedCompletionLabel || t('savings.needsMoreData')}
                         </span>
                       </div>
                       <div className="mt-1 flex items-center justify-between">
-                        <span className="text-muted-foreground">Auto-contribute</span>
+                        <span className="text-muted-foreground">{t('savings.autoContribute')}</span>
                         <span className="font-semibold text-foreground">
                           {goal.auto_contribute_enabled
                             ? `${formatAmount(goal.auto_contribute_amount || 0)} / ${goal.auto_contribute_frequency}`
-                            : 'Off'}
+                            : t('savings.off')}
                         </span>
                       </div>
                     </div>
@@ -323,7 +327,7 @@ export function SavingsGoalCard({
                   {goal.planEnabled && goal.status !== 'completed' && (
                     <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/10 p-3 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Required this {goal.periodLabel}</span>
+                        <span className="text-muted-foreground">{t('savings.requiredThis', { period: goal.periodLabel })}</span>
                         <span className="font-semibold text-foreground">{formatAmount(goal.requiredPerPeriod)}</span>
                       </div>
 
@@ -331,14 +335,14 @@ export function SavingsGoalCard({
                         <div className={cn('rounded-xl border px-3 py-2', paceToneClass)}>
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-semibold">
-                              {goal.paceStatus === 'ahead' ? 'Ahead of schedule' : goal.paceStatus === 'behind' ? 'Behind pace' : 'On track'}
+                              {goal.paceStatus === 'ahead' ? t('savings.paceAhead') : goal.paceStatus === 'behind' ? t('savings.paceBehind') : t('savings.paceOnTrack')}
                             </span>
                             <span>{formatAmount(goal.currentPeriodAmount)}</span>
                           </div>
                           <p className="mt-1 text-[11px]">
                             {goal.paceStatus === 'behind'
-                              ? `${formatAmount(goal.requiredPerPeriod)} needed this ${goal.periodLabel}.`
-                              : `${formatAmount(goal.requiredPerPeriod)} due this ${goal.periodLabel}.`}
+                              ? t('savings.neededThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })
+                              : t('savings.dueThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })}
                           </p>
                         </div>
                       )}
@@ -350,7 +354,7 @@ export function SavingsGoalCard({
                               <XAxis dataKey="label" hide />
                               <YAxis hide />
                               <Tooltip
-                                formatter={(value: number, name: string) => [formatAmount(value), name === 'target' ? 'Required' : 'Saved']}
+                                formatter={(value: number, name: string) => [formatAmount(value), name === 'target' ? t('savings.chartRequired') : t('savings.chartSaved')]}
                                 labelFormatter={(label) => label}
                               />
                               <ReferenceLine y={goal.requiredPerPeriod} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
@@ -363,7 +367,7 @@ export function SavingsGoalCard({
 
                       {goal.paceStatus === 'behind' && goal.suggestedDeadline && (
                         <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-amber-700">
-                          <span>At this pace: {format(new Date(goal.suggestedDeadline), 'MMM d, yyyy')}</span>
+                          <span>{t('savings.paceAtThis', { date: format(new Date(goal.suggestedDeadline), 'MMM d, yyyy') })}</span>
                           <Button
                             type="button"
                             size="sm"
@@ -371,7 +375,7 @@ export function SavingsGoalCard({
                             className="h-7 rounded-lg px-2 text-[11px] font-bold text-amber-700 hover:text-amber-800"
                             onClick={() => onUpdateDeadline(goal.id, goal.suggestedDeadline!)}
                           >
-                            Update Deadline
+                            {t('savings.updateDeadline')}
                           </Button>
                         </div>
                       )}
@@ -404,7 +408,7 @@ export function SavingsGoalCard({
                   <div className="space-y-2">
                     {goal.contributionHistory.length === 0 ? (
                       <p className="rounded-2xl border border-dashed border-border/50 p-4 text-sm text-muted-foreground">
-                        No contributions yet.
+                        {t('savings.noContributions')}
                       </p>
                     ) : (
                       goal.contributionHistory.slice().reverse().map((entry) => (
@@ -415,7 +419,7 @@ export function SavingsGoalCard({
                           </div>
                           <div className="text-right">
                             <p className="font-semibold text-foreground">{formatAmount(entry.amount)}</p>
-                            <p className="text-xs text-muted-foreground">Total {formatAmount(entry.runningTotal)}</p>
+                            <p className="text-xs text-muted-foreground">{t('savings.totalLabel', { amount: formatAmount(entry.runningTotal) })}</p>
                           </div>
                         </div>
                       ))
@@ -424,7 +428,7 @@ export function SavingsGoalCard({
 
                   {goal.missedMonths.length > 0 && (
                     <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700">
-                      Missed {goal.periodLabelPlural}: {goal.missedMonths.join(', ')}
+                      {t('savings.missedMonths', { periods: goal.periodLabelPlural, months: goal.missedMonths.join(', ')})}
                     </div>
                   )}
                 </div>
@@ -455,16 +459,16 @@ export function SavingsGoalCard({
         className="z-[10000]"
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
-        title={`Delete "${goal.name}"?`}
+        title={t('savings.deleteConfirmTitle', { name: goal.name })}
         maxWidth="max-w-[400px]"
       >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            This action cannot be undone. This will permanently delete your savings goal and its progress.
+            {t('savings.deleteConfirmDesc')}
           </p>
           <div className="flex gap-2 pt-2">
             <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => setShowDeleteConfirm(false)}>
-              Cancel
+              {t('savings.cancel')}
             </Button>
             <Button
               className="flex-1 rounded-2xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -473,7 +477,7 @@ export function SavingsGoalCard({
                 setShowDeleteConfirm(false);
               }}
             >
-              Delete
+              {t('savings.delete')}
             </Button>
           </div>
         </div>
@@ -482,19 +486,19 @@ export function SavingsGoalCard({
       <MobileDialog
         open={showRedeploy}
         onOpenChange={setShowRedeploy}
-        title={`Redeploy "${goal.name}"`}
+        title={t('savings.redeployTitle', { name: goal.name })}
         maxWidth="max-w-[400px]"
       >
         <div className="space-y-4">
           <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-sm">
             <p className="flex items-center justify-between">
-              <span className="text-muted-foreground">Available</span>
+              <span>{t('savings.available')}</span>
               <span className="font-semibold text-foreground">{formatAmount(goal.availableToRedeploy)}</span>
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`redeploy-${goal.id}`}>Amount</Label>
+            <Label htmlFor={`redeploy-${goal.id}`}>{t('savings.amount')}</Label>
             <Input
               id={`redeploy-${goal.id}`}
               type="number"
@@ -507,14 +511,14 @@ export function SavingsGoalCard({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`target-${goal.id}`}>Move to another goal</Label>
+            <Label htmlFor={`target-${goal.id}`}>{t('savings.moveToAnotherGoal')}</Label>
             <select
               id={`target-${goal.id}`}
               className="w-full rounded-2xl border border-input bg-background px-3 py-2 text-sm"
               value={redeployTargetId}
               onChange={(event) => setRedeployTargetId(event.target.value)}
             >
-              <option value="">Return to main balance</option>
+              <option value="">{t('savings.returnToMainBalance')}</option>
               {otherActiveGoals.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.name}
@@ -525,7 +529,7 @@ export function SavingsGoalCard({
 
           <div className="flex gap-2 pt-2">
             <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => setShowRedeploy(false)}>
-              Cancel
+              {t('savings.cancel')}
             </Button>
             <Button
               className="flex-1 rounded-2xl font-bold"
@@ -546,12 +550,12 @@ export function SavingsGoalCard({
               {redeployTargetId ? (
                 <>
                   <ArrowRightLeft className="mr-2 h-4 w-4" />
-                  Move Funds
+                  {t('savings.moveFunds')}
                 </>
               ) : (
                 <>
                   <Wallet className="mr-2 h-4 w-4" />
-                  Return Funds
+                  {t('savings.returnFunds')}
                 </>
               )}
             </Button>

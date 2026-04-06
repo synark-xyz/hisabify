@@ -9,11 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import { requestNotificationPermission, sendNotification } from '@/lib/notifications';
 import { setBudgetAlertsEnabled } from '@/lib/notificationManager';
 import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 
 export function NotificationSettingsPage() {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const { toast } = useToast();
     const { variant } = useTheme();
     const currentTokenRef = useRef<string | null>(null);
@@ -153,8 +155,8 @@ export function NotificationSettingsPage() {
                             <AlertTriangle className="w-5 h-5 text-amber-500" />
                         </div>
                         <div>
-                            <p className="font-bold text-foreground">Budget Alerts</p>
-                            <p className="text-sm text-muted-foreground">Get notified when nearing limits</p>
+                            <p className="font-bold text-foreground">{t('notificationSettings.budgetAlerts')}</p>
+                            <p className="text-sm text-muted-foreground">{t('notificationSettings.budgetAlertsDesc')}</p>
                         </div>
                     </div>
                     <Switch
@@ -170,8 +172,8 @@ export function NotificationSettingsPage() {
                             <Bell className="w-5 h-5 text-blue-500" />
                         </div>
                         <div>
-                            <p className="font-bold text-foreground">Email Updates</p>
-                            <p className="text-sm text-muted-foreground">Receive weekly summaries</p>
+                            <p className="font-bold text-foreground">{t('notificationSettings.emailUpdates')}</p>
+                            <p className="text-sm text-muted-foreground">{t('notificationSettings.emailUpdatesDesc')}</p>
                         </div>
                     </div>
                     <Switch
@@ -187,8 +189,8 @@ export function NotificationSettingsPage() {
                             <Smartphone className="w-5 h-5 text-purple-500" />
                         </div>
                         <div>
-                            <p className="font-bold text-foreground">Push Notifications</p>
-                            <p className="text-sm text-muted-foreground">Instant alerts on your device</p>
+                            <p className="font-bold text-foreground">{t('notificationSettings.pushNotifications')}</p>
+                            <p className="text-sm text-muted-foreground">{t('notificationSettings.pushNotificationsDesc')}</p>
                         </div>
                     </div>
                     <Switch

@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
     ArrowRight, Check, Sparkles, TrendingUp, Shield, Zap,
-    PieChart, Target, Wallet, Bell, Gift, Star, CreditCard, BarChart3
+    PieChart, Target, Wallet, Bell, Gift, Star, CreditCard, BarChart3, ChevronDown
 } from 'lucide-react';
+import { Globe } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
 import { HisabifyLogo } from '@/components/HisabifyLogo';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 function useSmallScreen() {
     const [isSmall, setIsSmall] = useState(() => window.innerHeight < 700);
@@ -22,60 +32,48 @@ const slides = [
     {
         id: 1,
         icon: Wallet,
-        title: "Money Scattered Everywhere?",
-        subtitle: "We bring it all together",
-        description: "Track expenses across multiple cards and accounts in one beautiful place. No more juggling apps.",
         color: "from-blue-500 to-cyan-400",
         bgColor: "bg-blue-500/10",
         features: [
-            { icon: CreditCard, text: "Multi-card tracking" },
-            { icon: Zap, text: "Quick expense logging" },
-            { icon: Shield, text: "Bank-level security" }
+            { icon: CreditCard, textKey: "onboarding.slide1Feature1" },
+            { icon: Zap, textKey: "onboarding.slide1Feature2" },
+            { icon: Shield, textKey: "onboarding.slide1Feature3" }
         ],
         floatingIcons: [CreditCard, Star, Zap]
     },
     {
         id: 2,
         icon: Bell,
-        title: "Tired of Bill Surprises?",
-        subtitle: "Never miss a payment again",
-        description: "Smart reminders for all your bills and subscriptions. Stay on top of due dates effortlessly.",
         color: "from-purple-500 to-pink-400",
         bgColor: "bg-purple-500/10",
         features: [
-            { icon: Bell, text: "Smart notifications" },
-            { icon: Target, text: "Budget alerts" },
-            { icon: Gift, text: "Savings milestones" }
+            { icon: Bell, textKey: "onboarding.slide2Feature1" },
+            { icon: Target, textKey: "onboarding.slide2Feature2" },
+            { icon: Gift, textKey: "onboarding.slide2Feature3" }
         ],
         floatingIcons: [Target, Sparkles, Gift]
     },
     {
         id: 3,
         icon: PieChart,
-        title: "Where Does Money Go?",
-        subtitle: "Crystal clear insights",
-        description: "Beautiful charts show exactly where you spend. Make smarter decisions with real data.",
         color: "from-emerald-500 to-teal-400",
         bgColor: "bg-emerald-500/10",
         features: [
-            { icon: PieChart, text: "Visual analytics" },
-            { icon: BarChart3, text: "Spending trends" },
-            { icon: TrendingUp, text: "Growth tracking" }
+            { icon: PieChart, textKey: "onboarding.slide3Feature1" },
+            { icon: BarChart3, textKey: "onboarding.slide3Feature2" },
+            { icon: TrendingUp, textKey: "onboarding.slide3Feature3" }
         ],
         floatingIcons: [BarChart3, TrendingUp, Sparkles]
     },
     {
         id: 4,
         icon: Target,
-        title: "Ready to Take Control?",
-        subtitle: "Your financial freedom starts here",
-        description: "Join thousands who've simplified their finances. Set goals, track progress, achieve more.",
         color: "from-orange-500 to-amber-400",
         bgColor: "bg-orange-500/10",
         features: [
-            { icon: Target, text: "Goal setting" },
-            { icon: Sparkles, text: "Premium features" },
-            { icon: Star, text: "No hidden fees" }
+            { icon: Target, textKey: "onboarding.slide4Feature1" },
+            { icon: Sparkles, textKey: "onboarding.slide4Feature2" },
+            { icon: Star, textKey: "onboarding.slide4Feature3" }
         ],
         floatingIcons: [Star, Gift, Zap],
         isFinal: true
@@ -94,6 +92,8 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
     const navigate = useNavigate();
     const controls = useAnimation();
     const isSmall = useSmallScreen();
+    const { t } = useTranslation();
+    const { language, setLanguage: setLang } = useLanguage();
 
     useEffect(() => {
         controls.start({
@@ -200,33 +200,71 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                 }
             `}</style>
 
-            {/* Skip Button with safe area */}
-            <motion.div
-                className="absolute top-0 right-0 z-50 pt-safe pr-4"
-                initial={{ opacity: 0, x: 15, scale: 0.9 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                transition={{
-                    delay: 0.1,
-                    duration: 0.6,
-                    ease: [0.4, 0, 0.2, 1]
-                }}
-            >
+            {/* Header Controls - Right Side */}
+            <div className="absolute top-0 right-0 z-50 pt-safe pr-4 flex items-center gap-2">
+                {/* Language Selector - First Slide Only */}
+                {currentIndex === 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, x: 15, scale: 0.9 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        transition={{
+                            delay: 0.1,
+                            duration: 0.6,
+                            ease: [0.4, 0, 0.2, 1]
+                        }}
+                    >
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="gap-2 backdrop-blur-sm mt-2 h-9"
+                                >
+                                    <Globe className="w-4 h-4" />
+                                    <span className="text-xs font-semibold">
+                                        {language === 'en' && 'EN'}
+                                        {language === 'bn' && 'BN'}
+                                        {language === 'ja' && 'JA'}
+                                    </span>
+                                    <ChevronDown className="w-3 h-3" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                                {(['en', 'bn', 'ja'] as const).map((lang) => (
+                                    <DropdownMenuItem
+                                        key={lang}
+                                        onClick={() => setLang(lang)}
+                                        className={cn("cursor-pointer", language === lang && "bg-accent")}
+                                    >
+                                        {lang === 'en' && 'English'}
+                                        {lang === 'bn' && 'বাংলা'}
+                                        {lang === 'ja' && '日本語'}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </motion.div>
+                )}
+
+                {/* Skip Button - All slides */}
                 <motion.button
                     onClick={handleComplete}
                     className="text-sm font-bold text-muted-foreground hover:text-foreground px-4 py-3 rounded-full hover:bg-muted/50 mt-2 backdrop-blur-sm"
+                    initial={{ opacity: 0, x: 15, scale: 0.9 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{
+                        delay: 0.1,
+                        duration: 0.6,
+                        ease: [0.4, 0, 0.2, 1]
+                    }}
                     whileHover={{
                         scale: 1.05,
                         backgroundColor: "rgba(0, 0, 0, 0.05)"
                     }}
                     whileTap={{ scale: 0.95 }}
-                    transition={{
-                        duration: 0.2,
-                        ease: [0.4, 0, 0.2, 1]
-                    }}
                 >
-                    Skip
+                    {t('common.skip')}
                 </motion.button>
-            </motion.div>
+            </div>
 
             {/* Logo/Brand */}
             <motion.div
@@ -295,9 +333,9 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
 
                                     // Smooth easing for organic movement
                                     const easings = [
-                                        [0.45, 0, 0.55, 1],
-                                        [0.42, 0, 0.58, 1],
-                                        [0.47, 0, 0.53, 1]
+                                        [0.45, 0, 0.55, 1] as const,
+                                        [0.42, 0, 0.58, 1] as const,
+                                        [0.47, 0, 0.53, 1] as const
                                     ];
 
                                     return (
@@ -408,7 +446,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                 className="mb-2"
                             >
                                 <h2 className={cn("font-black tracking-tight text-foreground", isSmall ? "text-2xl" : "text-3xl md:text-4xl")}>
-                                    {currentSlide.title}
+                                    {t(`onboarding.slide${currentSlide.id}Title`)}
                                 </h2>
                             </motion.div>
 
@@ -427,7 +465,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                     "text-white"
                                 )}
                             >
-                                {currentSlide.subtitle}
+                                {t(`onboarding.slide${currentSlide.id}Subtitle`)}
                             </motion.div>
 
                             {/* Description */}
@@ -441,7 +479,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                 }}
                                 className={cn("text-muted-foreground leading-relaxed max-w-sm", isSmall ? "text-sm mb-4" : "text-base md:text-lg mb-8")}
                             >
-                                {currentSlide.description}
+                                {t(`onboarding.slide${currentSlide.id}Desc`)}
                             </motion.p>
 
                             {/* Feature Pills */}
@@ -482,7 +520,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                         whileTap={{ scale: 0.96 }}
                                     >
                                         <feature.icon className="w-4 h-4" />
-                                        <span className="text-sm font-semibold">{feature.text}</span>
+                                        <span className="text-sm font-semibold">{t(feature.textKey)}</span>
                                     </motion.div>
                                 ))}
                             </motion.div>
@@ -559,7 +597,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                 }}
                                 whileTap={{ scale: 0.95 }}
                             >
-                                Back
+                                {t('common.back')}
                             </motion.button>
                         )}
 
@@ -589,7 +627,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                                 transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
                             />
                             <span className="relative z-10">
-                                {currentSlide.isFinal ? 'Get Started Free' : 'Next'}
+                                {currentSlide.isFinal ? t('onboarding.getStarted') : t('common.next')}
                             </span>
                             <motion.div
                                 className="relative z-10"

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -11,6 +12,7 @@ interface TrendPredictionChartProps {
 }
 
 export function TrendPredictionChart({ prediction }: TrendPredictionChartProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const getTrendIcon = () => {
@@ -46,7 +48,7 @@ export function TrendPredictionChart({ prediction }: TrendPredictionChartProps) 
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Brain className="w-5 h-5 text-primary" />
-            Spending Forecast
+            {t('analytics.spendingForecast')}
           </CardTitle>
           <Badge variant={getTrendColor()} className="flex items-center gap-1">
             {getTrendIcon()}
@@ -61,7 +63,7 @@ export function TrendPredictionChart({ prediction }: TrendPredictionChartProps) 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <p className="text-xs text-muted-foreground">Next Month Prediction</p>
+            <p className="text-xs text-muted-foreground">{t('analytics.nextMonthPrediction')}</p>
             <p className="text-lg font-bold text-foreground mt-1">
               {formatAmount(prediction.nextMonthExpenses)}
             </p>
@@ -72,7 +74,7 @@ export function TrendPredictionChart({ prediction }: TrendPredictionChartProps) 
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <p className="text-xs text-muted-foreground">Confidence Level</p>
+            <p className="text-xs text-muted-foreground">{t('analytics.confidenceLevel')}</p>
             <p className="text-lg font-bold text-foreground mt-1">
               {prediction.confidence.toFixed(0)}%
             </p>
@@ -93,10 +95,10 @@ export function TrendPredictionChart({ prediction }: TrendPredictionChartProps) 
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
               />
-              <Tooltip 
+              <Tooltip
                 formatter={(value: number, name: string) => [
                   formatAmount(value),
-                  name === 'actual' ? 'Actual' : 'Predicted'
+                  name === 'actual' ? t('analytics.actual') : t('analytics.predicted')
                 ]}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
@@ -105,29 +107,29 @@ export function TrendPredictionChart({ prediction }: TrendPredictionChartProps) 
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="actual" 
-                stroke="hsl(var(--primary))" 
+              <Line
+                type="monotone"
+                dataKey="actual"
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
-                name="Actual"
+                name={t('analytics.actual')}
               />
-              <Line 
-                type="monotone" 
-                dataKey="predicted" 
-                stroke="hsl(var(--accent))" 
+              <Line
+                type="monotone"
+                dataKey="predicted"
+                stroke="hsl(var(--accent))"
                 strokeWidth={2}
                 strokeDasharray="5 5"
                 dot={{ fill: 'hsl(var(--accent))', strokeWidth: 2 }}
-                name="Predicted"
+                name={t('analytics.predicted')}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         <p className="text-xs text-muted-foreground text-center">
-          Prediction based on linear regression analysis of your spending history
+          {t('analytics.predictionDesc')}
         </p>
       </CardContent>
     </Card>

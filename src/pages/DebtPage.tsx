@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Handshake, User, Calendar, ChevronDown, ChevronUp, Trash2, CheckCircle2, CircleDollarSign, AlertCircle } from 'lucide-react';
+import { Plus, Handshake, User, Calendar, ChevronDown, ChevronUp, Trash2, CheckCircle2, CircleDollarSign, AlertCircle, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,18 +15,43 @@ import { format, isPast } from 'date-fns';
 import { useDebts } from '@/hooks/useDebts';
 import { useActivityLog } from '@/hooks/useActivityLog';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
+import { Language } from '@/i18n';
 import { Debt } from '@/types';
+import { useTranslation } from 'react-i18next';
+
+const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'VND', 'IDR', 'CLP'];
+
+function formatDebtAmount(amount: number, currencyCode: string, language: Language): string {
+  const locale = getLanguageLocale(language);
+  const decimals = ZERO_DECIMAL_CURRENCIES.includes(currencyCode) ? 0 : 2;
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currencyCode,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(amount);
+}
+
+function formatLocaleNumber(amount: number, language: Language): string {
+  const locale = getLanguageLocale(language);
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
 
 function DebtStatusBadge({ status }: { status: Debt['status'] }) {
-  const map: Record<Debt['status'], { label: string; className: string }> = {
-    outstanding: { label: 'Outstanding', className: 'bg-rose-500/15 text-rose-400' },
-    partial: { label: 'Partial', className: 'bg-amber-500/15 text-amber-400' },
-    settled: { label: 'Settled', className: 'bg-emerald-500/15 text-emerald-500' },
+  const { t } = useTranslation();
+  const map: Record<Debt['status'], { labelKey: string; className: string }> = {
+    outstanding: { labelKey: 'debt.statusOutstanding', className: 'bg-rose-500/15 text-rose-400' },
+    partial: { labelKey: 'debt.statusPartial', className: 'bg-amber-500/15 text-amber-400' },
+    settled: { labelKey: 'debt.statusSettled', className: 'bg-emerald-500/15 text-emerald-500' },
   };
-  const { label, className } = map[status];
+  const { labelKey, className } = map[status];
   return (
     <span className={cn('text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full', className)}>
-      {label}
+      {t(labelKey)}
     </span>
   );
 }
@@ -37,6 +62,8 @@ interface SettleSheetProps {
   onClose: () => void;
 }
 function SettleSheet({ debt, onSettle, onClose }: SettleSheetProps) {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [open, setOpen] = useState(true);
   const remaining = debt.amount - debt.amount_paid;
   const [amount, setAmount] = useState(String(remaining.toFixed(2)));
@@ -52,26 +79,26 @@ function SettleSheet({ debt, onSettle, onClose }: SettleSheetProps) {
     <MobileDialog
       open={open}
       onOpenChange={(isOpen) => !isOpen && handleClose()}
-      title="Settle Debt"
+      title={t('debt.settleDebt')}
       className="z-[10000]"
     >
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Remaining: <span className="font-bold text-foreground">{debt.currency} {remaining.toFixed(2)}</span>
+          {t('debt.remaining')} <span className="font-bold text-foreground">{formatDebtAmount(remaining, debt.currency, language)}</span>
         </p>
         <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Amount Paid</label>
+          <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('debt.amountPaid')}</label>
           <Input
             type="number"
             step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="rounded-xl text-lg font-bold"
-            placeholder="0.00"
+            placeholder={t('common.amountPlaceholder')}
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={handleClose}>Cancel</Button>
+          <Button variant="outline" className="flex-1" onClick={handleClose}>{t('debt.cancel')}</Button>
           <Button
             className="flex-1"
             onClick={() => {
@@ -80,7 +107,7 @@ function SettleSheet({ debt, onSettle, onClose }: SettleSheetProps) {
               handleClose();
             }}
           >
-            Mark Paid
+            {t('debt.markPaid')}
           </Button>
         </div>
         <Button
@@ -89,7 +116,7 @@ function SettleSheet({ debt, onSettle, onClose }: SettleSheetProps) {
           onClick={() => { onSettle(debt.amount); handleClose(); }}
         >
           <CheckCircle2 className="w-4 h-4 mr-2" />
-          Fully Settled
+          {t('debt.fullySettled')}
         </Button>
       </div>
     </MobileDialog>
@@ -108,6 +135,7 @@ interface AddDebtSheetProps {
   onClose: () => void;
 }
 function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
   const { currency } = useCurrency();
   const [personName, setPersonName] = useState('');
@@ -131,38 +159,38 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
     <MobileDialog
       open={open}
       onOpenChange={(isOpen) => !isOpen && handleClose()}
-      title="Add Debt"
+      title={t('debt.addDebt')}
       className="z-[10000]"
     >
       <div className="space-y-4">
         {/* Type selector */}
         <div className="grid grid-cols-2 gap-2">
-          {(['i_owe', 'they_owe'] as const).map((t) => (
+          {(['i_owe', 'they_owe'] as const).map((type) => (
             <button
-              key={t}
+              key={type}
               type="button"
-              onClick={() => setDebtType(t)}
+              onClick={() => setDebtType(type)}
               className={cn(
                 'flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all',
-                debtType === t ? 'border-accent bg-accent/5 ring-1 ring-accent/20' : 'border-border bg-card'
+                debtType === type ? 'border-accent bg-accent/5 ring-1 ring-accent/20' : 'border-border bg-card'
               )}
             >
-              {t === 'i_owe'
+              {type === 'i_owe'
                 ? <CircleDollarSign className="w-5 h-5 text-rose-500" />
                 : <Handshake className="w-5 h-5 text-emerald-500" />
               }
-              <span className="text-xs font-bold">{t === 'i_owe' ? 'I Owe' : 'They Owe Me'}</span>
+              <span className="text-xs font-bold">{type === 'i_owe' ? t('debt.iOwe') : t('debt.theyOweMe')}</span>
             </button>
           ))}
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Person Name</label>
+          <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('debt.personName')}</label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               className="rounded-xl pl-9"
-              placeholder="e.g. John, Alice"
+              placeholder={t('debt.personNamePlaceholder')}
               value={personName}
               onChange={(e) => setPersonName(e.target.value)}
             />
@@ -170,7 +198,7 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Amount</label>
+          <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('debt.amount')}</label>
           <div className="flex gap-2">
             <Select value={debtCurrency} onValueChange={setDebtCurrency}>
               <SelectTrigger className="w-20">
@@ -187,7 +215,7 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
             <Input
               type="number"
               step="0.01"
-              placeholder="0.00"
+              placeholder={t('common.amountPlaceholder')}
               className="flex-1 rounded-xl text-lg font-bold"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -196,12 +224,12 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Due Date (Optional)</label>
+          <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('debt.dueDateOptional')}</label>
           <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start font-normal rounded-xl">
                 <Calendar className="mr-2 h-4 w-4 opacity-50" />
-                {dueDate ? format(dueDate, 'MMM dd, yyyy') : 'No due date'}
+                {dueDate ? format(dueDate, 'MMM dd, yyyy') : t('debt.noDueDate')}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
@@ -216,10 +244,10 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Notes (Optional)</label>
+          <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('debt.notesOptional')}</label>
           <Textarea
             className="rounded-xl resize-none"
-            placeholder="Add context..."
+            placeholder={t('debt.notesPlaceholder')}
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -227,7 +255,7 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
         </div>
 
         <div className="flex gap-2 pt-2">
-          <Button variant="ghost" className="flex-1" onClick={handleClose}>Cancel</Button>
+          <Button variant="ghost" className="flex-1" onClick={handleClose}>{t('debt.cancel')}</Button>
           <Button
             className="flex-1"
             disabled={!canSubmit}
@@ -243,7 +271,7 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
               handleClose();
             }}
           >
-            Add Debt
+            {t('debt.addDebt')}
           </Button>
         </div>
       </div>
@@ -252,6 +280,9 @@ function AddDebtSheet({ onAdd, onClose }: AddDebtSheetProps) {
 }
 
 export function DebtPage() {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const { logActivity } = useActivityLog();
   const { debts, loading, totalIOwe, totalTheyOwe, createDebt, settleDebt, deleteDebt } = useDebts({
     onActivityLog: logActivity,
@@ -261,8 +292,8 @@ export function DebtPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'all' | 'i_owe' | 'they_owe'>(() => {
-    const t = searchParams.get('tab');
-    return (t === 'i_owe' || t === 'they_owe') ? t : 'all';
+    const tab = searchParams.get('tab');
+    return (tab === 'i_owe' || tab === 'they_owe') ? tab : 'all';
   });
 
   const filteredDebts = activeTab === 'all'
@@ -271,31 +302,42 @@ export function DebtPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3 flex-nowrap">
+          <button onClick={() => navigate('/more')} className="p-2 -ml-2 hover:bg-accent/10 rounded-lg shrink-0">
+            <LayoutGrid className="w-5 h-5 text-accent" />
+          </button>
+          <h1 className="text-lg font-semibold truncate">{t('debt.debtTracker')}</h1>
+        </div>
+      </div>
       <div className="px-4 py-4 space-y-4">
         {/* Add button */}
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t('debt.debtTracker')}
+          </h2>
           <Button
             size="sm"
             onClick={() => setShowAdd(true)}
             className="rounded-xl gap-1.5"
           >
             <Plus className="w-4 h-4" />
-            Add Debt
+            {t('debt.addDebt')}
           </Button>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-rose-400 mb-1">I Owe</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-rose-400 mb-1">{t('debt.iOweSummary')}</p>
             <p className="text-2xl font-black text-rose-500">
-              {totalIOwe.toFixed(2)}
+              {formatLocaleNumber(totalIOwe, language)}
             </p>
           </div>
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">Owed to Me</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">{t('debt.owedToMe')}</p>
             <p className="text-2xl font-black text-emerald-500">
-              {totalTheyOwe.toFixed(2)}
+              {formatLocaleNumber(totalTheyOwe, language)}
             </p>
           </div>
         </div>
@@ -313,7 +355,7 @@ export function DebtPage() {
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               )}
             >
-              {tab === 'all' ? 'All' : tab === 'i_owe' ? 'I Owe' : 'Owed to Me'}
+              {tab === 'all' ? t('debt.all') : tab === 'i_owe' ? t('debt.iOwe') : t('debt.owedToMe')}
             </button>
           ))}
         </div>
@@ -332,8 +374,8 @@ export function DebtPage() {
             className="flex flex-col items-center justify-center py-16 text-center"
           >
             <Handshake className="w-12 h-12 text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground font-medium">No debts tracked</p>
-            <p className="text-sm text-muted-foreground/70 mt-1">Tap + Add to track money owed</p>
+            <p className="text-muted-foreground font-medium">{t('debt.noDebtsTracked')}</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">{t('debt.tapAddToTrack')}</p>
           </motion.div>
         ) : (
           <div className="space-y-3">
@@ -376,21 +418,21 @@ export function DebtPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">
-                          {debt.type === 'i_owe' ? 'I owe' : 'Owes me'}
+                          {debt.type === 'i_owe' ? t('debt.iOweLabel') : t('debt.owesMeLabel')}
                         </span>
                         <span className="text-sm font-bold">
-                          {debt.currency} {remaining.toFixed(2)}
+                          {formatDebtAmount(remaining, debt.currency, language)}
                         </span>
                         {debt.amount_paid > 0 && (
                           <span className="text-xs text-muted-foreground">
-                            / {debt.amount.toFixed(2)} total
+                            / {formatDebtAmount(debt.amount, debt.currency, language)} {t('debt.total')}
                           </span>
                         )}
                       </div>
                       {debt.due_date && (
                         <p className={cn('text-xs mt-0.5', isOverdue ? 'text-rose-400' : 'text-muted-foreground')}>
                           <Calendar className="w-3 h-3 inline mr-0.5" />
-                          Due {format(new Date(debt.due_date), 'MMM d, yyyy')}
+                          {t('debt.due')} {format(new Date(debt.due_date), 'MMM d, yyyy')}
                         </p>
                       )}
                     </div>
@@ -418,7 +460,7 @@ export function DebtPage() {
                           {debt.amount_paid > 0 && (
                             <div className="space-y-1">
                               <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Paid: {debt.currency} {debt.amount_paid.toFixed(2)}</span>
+                                <span>{t('debt.paid')} {formatDebtAmount(debt.amount_paid, debt.currency, language)}</span>
                                 <span>{Math.round((debt.amount_paid / debt.amount) * 100)}%</span>
                               </div>
                               <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -439,7 +481,7 @@ export function DebtPage() {
                                 onClick={() => setSettlingDebt(debt)}
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
-                                Settle
+                                {t('debt.settle')}
                               </Button>
                             )}
                             <Button

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useTranslation } from 'react-i18next';
 import {
   Select,
   SelectContent,
@@ -83,6 +84,7 @@ const POPULAR_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CA
 export function LoanCalculatorPage() {
   const navigate = useNavigate();
   const { currency: defaultCurrency, formatAmount } = useCurrency();
+  const { t } = useTranslation();
   const { isPremium } = useSubscription();
   const [state, dispatch] = useReducer(loanReducer, initialState);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(defaultCurrency);
@@ -113,7 +115,7 @@ export function LoanCalculatorPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-semibold flex items-center gap-2">
-            <CreditCard className="w-5 h-5" /> Loan Calculator
+            <CreditCard className="w-5 h-5" /> {t('loanCalculator.title')}
           </h1>
         </div>
       </header>
@@ -122,11 +124,11 @@ export function LoanCalculatorPage() {
         {/* Currency Selector (Pro Feature) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="currency">Currency</Label>
+            <Label htmlFor="currency">{t('loanCalculator.currency')}</Label>
             <div className="flex items-center gap-1">
               {!isPremium && <Crown className="w-3 h-3 text-accent" />}
               <span className={`text-xs ${!isPremium ? 'text-accent' : 'text-muted-foreground'}`}>
-                {isPremium ? 'Customizable' : 'Pro'}
+                {isPremium ? t('loanCalculator.customizable') : t('loanCalculator.pro')}
               </span>
             </div>
           </div>
@@ -147,17 +149,17 @@ export function LoanCalculatorPage() {
         {/* Input Fields */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="principal">Loan Amount</Label>
+            <Label htmlFor="principal">{t('loanCalculator.loanAmount')}</Label>
             <Input
               id="principal"
               type="number"
-              placeholder="100000"
+              placeholder={t('loanCalculator.placeholder')}
               value={state.principal}
               onChange={(e) => dispatch({ type: 'setPrincipal', payload: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rate">Interest Rate (% per annum)</Label>
+            <Label htmlFor="rate">{t('loanCalculator.interestRate')}</Label>
             <Input
               id="rate"
               type="number"
@@ -167,7 +169,7 @@ export function LoanCalculatorPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tenure">Tenure (months)</Label>
+            <Label htmlFor="tenure">{t('loanCalculator.tenureMonths')}</Label>
             <Input
               id="tenure"
               type="number"
@@ -181,10 +183,10 @@ export function LoanCalculatorPage() {
         {/* Buttons */}
         <div className="flex gap-3">
           <Button className="flex-1" onClick={() => dispatch({ type: 'calculate' })}>
-            Calculate EMI
+            {t('loanCalculator.calculateEmi')}
           </Button>
           <Button variant="outline" onClick={() => dispatch({ type: 'reset' })}>
-            Reset
+            {t('loanCalculator.reset')}
           </Button>
         </div>
 
@@ -192,16 +194,16 @@ export function LoanCalculatorPage() {
         {state.result && (
           <div className="space-y-4 bg-card rounded-2xl p-6 border border-border/30">
             <div className="text-center mb-4">
-              <p className="text-sm text-muted-foreground mb-1">Monthly EMI</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('loanCalculator.monthlyEmi')}</p>
               <p className="text-3xl font-bold text-primary">{formatWithCurrency(state.result.emi)}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-primary/5 rounded-xl">
-                <p className="text-sm text-muted-foreground">Total Interest</p>
+                <p className="text-sm text-muted-foreground">{t('loanCalculator.totalInterest')}</p>
                 <p className="text-lg font-semibold">{formatWithCurrency(state.result.totalInterest)}</p>
               </div>
               <div className="text-center p-4 bg-primary/5 rounded-xl">
-                <p className="text-sm text-muted-foreground">Total Payment</p>
+                <p className="text-sm text-muted-foreground">{t('loanCalculator.totalPayment')}</p>
                 <p className="text-lg font-semibold">{formatWithCurrency(state.result.totalPayment)}</p>
               </div>
             </div>

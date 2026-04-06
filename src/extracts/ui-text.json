@@ -1,0 +1,872 @@
+{
+  "meta": {
+    "description": "Complete UI text extraction for Hisabify app - all titles, subtitles, labels, placeholders, buttons, and static text",
+    "version": "1.0.0",
+    "note": "This file contains ALL text visible in the app. Categories are dynamic (stored in DB) and not included."
+  },
+
+  "src/i18n/locales/en/translation.json": {
+    "description": "Main translation file - already i18n keys, reference for structure",
+    "sections": [
+      "common", "nav", "onboarding", "dashboard", "savingsSnapshot", 
+      "healthScore", "expenses", "budget", "savings", "settings", 
+      "profile", "auth", "errors", "notifications", "reports", 
+      "analytics", "debt", "recurring"
+    ],
+    "allKeys": {
+      "common": ["save", "cancel", "delete", "addTransaction", "edit", "close", "confirm", "loading...", "error", "success", "retry", "back", "next", "done", "skip", "search", "noResults", "select", "language", "new", "and"],
+      "nav": ["dashboard", "expenses", "budget", "savings", "analytics", "settings", "profile", "transactions", "insights", "more"],
+      "onboarding": ["selectLanguage", "welcomeTitle", "welcomeDesc", "getStarted", "slide1Title", "slide1Subtitle", "slide1Desc", "slide1Feature1", "slide1Feature2", "slide1Feature3", "slide2Title", "slide2Subtitle", "slide2Desc", "slide2Feature1", "slide2Feature2", "slide2Feature3", "slide3Title", "slide3Subtitle", "slide3Desc", "slide3Feature1", "slide3Feature2", "slide3Feature3", "slide4Title", "slide4Subtitle", "slide4Desc", "slide4Feature1", "slide4Feature2", "slide4Feature3"],
+      "dashboard": ["greeting", "greetingAfternoon", "greetingEvening", "totalBalance", "income", "expenses", "recentTransactions", "viewAll", "noTransactions", "quickAdd", "mainBalance", "today", "gettingStarted", "gettingStartedDesc", "step1AddTransaction", "step2CreateBudget", "step3SetSavingsGoal", "addButton", "budgetButton", "goalButton", "debtButton", "upgradeToPro", "unlockInsights", "reminders", "insights", "activityHistory", "noActivityYet", "share", "newMonthNewStart", "year", "unlockFullInsights", "unlockFullInsightsDesc", "shareMonthRecap"],
+      "healthScore": ["financialHealth", "personalFinanceScore", "breakdown", "budgeting", "savings", "activity", "score", "smartInsight", "howItWorks", "scoreCalculated", "budgetControl", "budgetControlDesc", "savingsSignals", "savingsSignalsDesc", "activityScore", "activityScoreDesc", "challengeAFriend", "copied", "insightSetGoal", "insightCompletedGoal", "insightBehind", "insightBehindContribute", "insightOnTrack", "insightKeepContributing"],
+      "expenses": ["title", "thisMonth", "lastMonth", "categories", "allCategories", "addExpense", "noExpenses", "viewDaily", "viewWeekly", "viewMonthly", "viewYearly", "viewingYear", "overviewDaily", "overviewWeekly", "overviewMonthly", "overviewYearly", "clearDate", "spendingBreakdown", "noExpenseData", "addToSeeBreakdown", "searchPlaceholder", "filtersWithCount", "filters", "allTypes", "typeExpense", "typeIncome", "typeLend", "typeOwe", "allSubCategories", "allCards", "groupBy", "noGrouping", "groupByCategory", "groupByPaymentMethod", "groupByStatus", "groupByMerchant", "tagsLabel", "paymentMethodLabel", "showUnclearedOnly", "clearAllFilters", "transactionsTitle", "thisWeek", "noTransactionsFound", "tryAdjusting", "addToGetStarted", "filterSearch", "filterType", "filterCategory", "filterSub", "filterCard", "filterTag", "unclearedOnly", "historyLimitTitle", "historyLimitDesc"],
+      "budget": ["title", "monthly", "weekly", "remaining", "spent", "ofBudget", "overBudget", "setBudget", "editBudget", "managerLabel", "planYourFinances", "planYourFinancesDesc", "tabBudget", "tabGoals", "unlimitedBudgets", "unlimitedBudgetsDesc", "seePro", "budgetPlanning"],
+      "savings": ["title", "goals", "totalSaved", "addGoal", "noGoals", "target", "current", "progress"],
+      "settings": ["title", "preferences", "currency", "currencyDesc", "language", "languageDesc", "theme", "themeDesc", "themeLight", "themeDark", "themeSystem", "visualStyle", "visualStyleDesc", "styleDefault", "styleDefaultDesc", "styleCyberpunk", "styleCyberpunkDesc", "proFeatureLocked", "proFeatureLockedDesc", "dateFormat", "dateFormatDesc", "weekStartsOn", "weekStartsOnDesc", "weekSunday", "weekMonday", "weekSaturday", "errorSaving", "notifications", "security", "privacy", "about", "logout", "deleteAccount"],
+      "profile": ["title", "editProfile", "name", "email", "phone", "joined", "subscription"],
+      "auth": ["login", "signup", "logout", "email", "password", "forgotPassword", "resetPassword", "continueWithGoogle", "continueWithApple", "orContinueWith", "noAccount", "alreadyHaveAccount", "verifyEmail", "checkInbox", "signIn", "signUp", "signUpFree", "signInAction", "createAccount", "emailAddress", "enterEmail", "yourPassword", "checkYourInbox", "resetLinkSent", "linkExpires", "resendEmail", "backToSignIn", "resetPasswordTitle", "resetPasswordDesc", "sendResetLink", "accountExists", "accountExistsDesc", "invalidCredentials", "invalidCredentialsDesc", "accountCreated", "passwordWeak", "passwordFair", "passwordGood", "passwordStrong", "passwordExcellent", "privacyAgree", "privacyPolicy", "privacyRequired", "terms", "privacy", "continueAgree", "brandTagline", "orContinueWithEmail", "challengeScore", "referralCode", "unlockInsights"],
+      "analytics": ["title", "spendingTrends", "topCategories", "monthlyComparison", "totalThisYear", "vsLastYear", "monthlyAverage", "thisMonth", "savingsRate", "vsLastMonth", "topCategory", "ofSpending", "noAnalytics", "noAnalyticsDesc", "tooltipExpenses", "tooltipSavings", "tooltipCumulativeSaved", "chartModeExpenses", "chartModeSavings", "chartModeBoth", "historyLimitTitle", "historyLimitDesc", "noDataYet", "noDataYetDesc", "addTransactions", "tabInsights", "tabOverview", "tabAdvanced", "noBudgetsSet", "noBudgetsDesc", "createBudget", "featureAiInsights", "featureAdvanced"]
+    }
+  },
+
+  "src/pages/Dashboard.tsx": {
+    "titles": ["Main Balance", "Get Started"],
+    "sectionNames": ["Hero Section - Wallet Overview", "Debt Triage Section", "Getting Started Section", "Upgrade to Pro Banner", "Monthly Wrap Prompt", "Payment Reminders Section", "Savings Snapshot Section", "Analytics Section", "Activity History"],
+    "labels": ["Add", "Budget", "Goal", "Debt", "Upgrade to Pro", "Reminders", "Insights", "Activity History", "Share"],
+    "placeholders": ["Your account is ready. Add real data with these steps to unlock insights."],
+    "steps": ["Add your first transaction", "Create a budget limit", "Set a savings goal"]
+  },
+
+  "src/pages/OnboardingPage.tsx": {
+    "titles": ["Money Scattered Everywhere?", "Tired of Bill Surprises?", "Where Does Money Go?", "Ready to Take Control?"],
+    "subtitles": ["We bring it all together", "Never miss a payment again", "Crystal clear insights", "Your financial freedom starts here"],
+    "descriptions": [
+      "Track expenses across multiple cards and accounts in one beautiful place. No more juggling apps.",
+      "Smart reminders for all your bills and subscriptions. Stay on top of due dates effortlessly.",
+      "Beautiful charts show exactly where you spend. Make smarter decisions with real data.",
+      "Join thousands who've simplified their finances. Set goals, track progress, achieve more."
+    ],
+    "features": {
+      "slide1": ["Multi-card tracking", "Quick expense logging", "Bank-level security"],
+      "slide2": ["Smart notifications", "Budget alerts", "Savings milestones"],
+      "slide3": ["Visual analytics", "Spending trends", "Growth tracking"],
+      "slide4": ["Goal setting", "Premium features", "No hidden fees"]
+    },
+    "languageNames": ["English", "বাংলা", "日本語"],
+    "buttons": ["Skip", "Back", "Next", "Get Started"]
+  },
+
+  "src/pages/AuthPage.tsx": {
+    "brand": {
+      "name": "HISABIFY",
+      "tagline": "Your pulse on prosperity"
+    },
+    "labels": {
+      "emailAddress": "Email address",
+      "yourPassword": "Your password",
+      "enterEmail": "you@example.com",
+      "forgotPassword": "Forgot Password?",
+      "noAccount": "Don't have an account?",
+      "alreadyHaveAccount": "Already have an account?",
+      "signUpFree": "Sign up free",
+      "orContinueWithEmail": "or continue with email",
+      "continueAgree": "By continuing, you agree to our"
+    },
+    "validation": {
+      "passwordWeak": "Weak",
+      "passwordFair": "Fair",
+      "passwordGood": "Good",
+      "passwordStrong": "Strong",
+      "passwordExcellent": "Excellent"
+    },
+    "referral": {
+      "challengeScore": "Your friend scored {{score}}/100. Can you beat them?",
+      "referralCode": "You were invited! Sign up with code {{code}} to unlock 30 days Pro free."
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "description": "Enter your email and we'll send a secure link",
+      "linkExpires": "The link expires in 1 hour. Check your spam folder if you don't see it.",
+      "resendEmail": "Resend email",
+      "backToSignIn": "Back to sign in"
+    },
+    "errorMessages": {
+      "accountExists": "Account exists",
+      "accountExistsDesc": "This email is already registered. Please sign in.",
+      "invalidCredentials": "Invalid credentials",
+      "invalidCredentialsDesc": "Please check your email and password.",
+      "accountCreated": "Account created!"
+    },
+    "legal": ["Terms", "Privacy Policy"]
+  },
+
+  "src/pages/SettingsPage.tsx": {
+    "title": "Settings",
+    "sections": ["General", "Support"],
+    "menuItems": [
+      { "label": "App Preferences", "path": "/settings/preferences" },
+      { "label": "Notifications", "path": "/settings/notifications" },
+      { "label": "Help & Support", "path": "/support" },
+      { "label": "Privacy Policy", "path": "/privacy" },
+      { "label": "FAQ", "path": "/faq" }
+    ],
+    "buttons": ["Sign Out"],
+    "version": "Hisabify v1.0.0 (Build 240)"
+  },
+
+  "src/pages/settings/PreferencesPage.tsx": {
+    "title": "Preferences",
+    "sections": {
+      "visualStyle": {
+        "label": "Visual Style",
+        "description": "Customize app aesthetics",
+        "options": [
+          { "name": "Default", "description": "Clean & Modern" },
+          { "name": "Cyberpunk", "description": "Futuristic Gold & Teal" }
+        ],
+        "proFeatureLocked": "Pro Feature Locked",
+        "proFeatureLockedDesc": "Upgrade to Pro to unlock the Cyberpunk theme!"
+      },
+      "theme": {
+        "label": "Theme",
+        "description": "Choose your preferred theme",
+        "options": ["Light", "Dark", "System"]
+      },
+      "currency": {
+        "label": "Currency",
+        "description": "Select your preferred currency"
+      },
+      "language": {
+        "label": "Language",
+        "description": "Select your preferred language"
+      },
+      "dateFormat": {
+        "label": "Date Format",
+        "description": "How dates are displayed",
+        "options": ["DD/MM/YYYY (31/12/2024)", "MM/DD/YYYY (12/31/2024)", "YYYY-MM-DD (2024-12-31)"]
+      },
+      "weekStartsOn": {
+        "label": "Week Starts On",
+        "description": "First day of the week",
+        "options": ["Sunday", "Monday", "Saturday"]
+      }
+    },
+    "errors": {
+      "errorSaving": "Error saving preferences"
+    }
+  },
+
+  "src/pages/settings/NotificationSettingsPage.tsx": {
+    "title": "Notifications",
+    "settings": [
+      {
+        "label": "Budget Alerts",
+        "description": "Get notified when nearing limits",
+        "key": "budgetAlerts"
+      },
+      {
+        "label": "Email Updates",
+        "description": "Receive weekly summaries",
+        "key": "emailNotifications"
+      },
+      {
+        "label": "Push Notifications",
+        "description": "Instant alerts on your device",
+        "key": "pushNotifications"
+      }
+    ],
+    "messages": {
+      "permissionDenied": "Permission denied",
+      "permissionDeniedDesc": "Enable notifications in your device settings.",
+      "pushEnabled": "Push notifications enabled",
+      "notificationsActive": "Notifications Active!",
+      "notificationsActiveDesc": "You'll now receive alerts for your payments and budgets.",
+      "permissionPending": "Permission pending or denied",
+      "permissionPendingDesc": "Please check your browser notification settings.",
+      "errorSaving": "Error saving settings",
+      "enableFailed": "Failed to enable notifications"
+    }
+  },
+
+  "src/pages/ProfilePage.tsx": {
+    "title": "Profile",
+    "menuItems": [
+      { "label": "Personal Information", "path": "/profile/personal" },
+      { "label": "Invite & Earn", "path": "/profile/invite" },
+      { "label": "Data Management", "path": "/profile/data" }
+    ],
+    "subscription": {
+      "supportLabel": "Support Development",
+      "upgradeTitle": "Go Premium",
+      "upgradeDesc": "Unlock all features & support the project"
+    },
+    "labels": {
+      "subscription": "Subscription"
+    }
+  },
+
+  "src/pages/profile/PersonalPage.tsx": {
+    "title": "Personal Information",
+    "sections": {
+      "details": "Details",
+      "changePassword": {
+        "label": "Change Password",
+        "description": "Update your security",
+        "fields": {
+          "newPassword": "New Password",
+          "confirmPassword": "Confirm Password"
+        }
+      }
+    },
+    "fields": {
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Enter your name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "phonePlaceholder": "+1 234 567 8900"
+    },
+    "buttons": ["Edit", "Save", "Update Password"],
+    "validation": {
+      "validPhone": "Please enter a valid phone number"
+    },
+    "messages": {
+      "profileUpdated": "Profile updated successfully",
+      "avatarUpdated": "Avatar updated",
+      "uploadFailed": "Upload failed",
+      "passwordMismatch": "New passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordUpdated": "Password updated successfully"
+    }
+  },
+
+  "src/pages/profile/DataPage.tsx": {
+    "sections": {
+      "yourData": "Your Data",
+      "dangerZone": "Danger Zone"
+    },
+    "actions": {
+      "exportData": {
+        "title": "Export Data",
+        "description": "Download all transactions, budgets, cards & goals as JSON",
+        "button": "Download JSON",
+        "loading": "Exporting…"
+      },
+      "deleteFinancialData": {
+        "title": "Delete Financial Data",
+        "description": "Erase all records — your login account is kept",
+        "button": "Delete Data",
+        "confirmTitle": "Delete all financial data?",
+        "confirmDescription": "This permanently removes all transactions, budgets, cards, savings goals, and reminders. Your login account stays active. This cannot be undone.",
+        "confirmPlaceholder": "Type DELETE to confirm"
+      },
+      "deleteAccount": {
+        "title": "Delete Account",
+        "description": "Permanently remove your account and all data",
+        "button": "Delete Account",
+        "confirmTitle": "Permanently delete your account?",
+        "confirmDescription": "This removes your account and everything in it — transactions, budgets, cards, goals, and login credentials. You will not be able to sign in again. This cannot be undone.",
+        "confirmPlaceholder": "Type DELETE ACCOUNT to confirm",
+        "deleteButton": "Delete My Account"
+      }
+    },
+    "messages": {
+      "exportComplete": "Export complete",
+      "exportCompleteDesc": "Your data has been downloaded.",
+      "exportFailed": "Export failed",
+      "exportFailedDesc": "Could not export data",
+      "dataDeleted": "Data deleted",
+      "dataDeletedDesc": "All your financial data has been removed.",
+      "accountDeleted": "Account deleted",
+      "accountDeletedDesc": "Your account and all data have been permanently removed.",
+      "deleteError": "Could not delete account data"
+    }
+  },
+
+  "src/pages/profile/ReferralsPage.tsx": {
+    "referralCard": {
+      "shareTab": "Share Code",
+      "redeemTab": "Redeem Code",
+      "inviteReward": "Invite friends. You both get 3 days Pro.",
+      "yourCode": "Your Code",
+      "friendsJoined": "{{count}} friend(s) joined",
+      "daysProRemaining": "{{count}} days Pro remaining",
+      "redeemDescription": "Enter friend's code to unlock Pro features",
+      "alreadyRedeemed": "You have already redeemed a referral code.",
+      "enterCode": "ENTER CODE",
+      "redeemButton": "Redeem",
+      "shareMessage": "Join me on Hisabify!",
+      "shareReferralMessage": "Use my referral code {{code}} to get 3 days of Pro features for free!"
+    },
+    "toasts": {
+      "linkCopied": "Invite link copied to clipboard",
+      "copyFailed": "Could not copy invite link"
+    }
+  },
+
+  "src/pages/CategoriesPage.tsx": {
+    "title": "Categories",
+    "buttons": ["Add Category"],
+    "sections": ["Expense", "Income"],
+    "emptyState": "No {{section}} categories yet.",
+    "labels": {
+      "sub": "sub",
+      "subs": "subs"
+    },
+    "dynamicNote": "Categories are user-defined and stored in the database"
+  },
+
+  "src/pages/BudgetPage.tsx": {
+    "hero": {
+      "title": "Plan Your Finances",
+      "description": "Set goals, track spending, stay on target",
+      "label": "Budget Manager"
+    },
+    "tabs": ["Budget", "Goals"],
+    "proBanner": {
+      "label": "Pro",
+      "title": "Unlimited Budgets",
+      "description": "Create more than one budget and unlock budget history.",
+      "seePro": "See Pro"
+    },
+    "budgetPlanning": "Budget Planning"
+  },
+
+  "src/pages/AnalyticsPage.tsx": {
+    "tabs": ["Insights", "Overview", "Advanced"],
+    "lockedFeatures": ["AI Insights", "Advanced Analytics"],
+    "emptyState": {
+      "title": "No analytics data yet",
+      "description": "Add transactions first, then your insights and trends will appear here.",
+      "button": "Add Transactions"
+    },
+    "noBudgets": {
+      "title": "No Budgets Set",
+      "description": "Create budgets to see how you're tracking",
+      "button": "Create Budget"
+    }
+  },
+
+  "src/pages/InsightsPage.tsx": {
+    "tabs": ["Analytics", "Reports"]
+  },
+
+  "src/pages/ReportsPage.tsx": {
+    "title": "Reports",
+    "sections": {
+      "expenseAnalysis": "Expense Analysis",
+      "savingsGoals": "Savings Goals"
+    },
+    "links": ["View Transactions →", "View Budgets →"],
+    "errorState": {
+      "title": "Failed to load report data",
+      "description": "Check your connection and try again.",
+      "retry": "Retry"
+    },
+    "historyLimit": {
+      "title": "History limit reached",
+      "description": "Free plan supports the last 30 days. Upgrade for full history."
+    }
+  },
+
+  "src/pages/ExpensesPage.tsx": {
+    "viewModes": ["Daily", "Weekly", "Monthly", "Yearly"],
+    "filters": {
+      "placeholder": "Search by merchant, keywords etc.",
+      "allTypes": "All Types",
+      "allCategories": "All Categories",
+      "allSubCategories": "All Sub-categories",
+      "allCards": "All Cards",
+      "groupBy": "Group by",
+      "noGrouping": "No grouping",
+      "tags": "Tags",
+      "paymentMethod": "Payment Method",
+      "showUnclearedOnly": "Show uncleared only",
+      "clearAllFilters": "Clear all filters"
+    },
+    "emptyState": {
+      "noData": "No expense data to visualize",
+      "noDataHint": "Add transactions to see breakdown",
+      "noTransactions": "No transactions found",
+      "tryAdjusting": "Try adjusting your search or filters",
+      "getStarted": "Add transactions to get started"
+    },
+    "labels": {
+      "overviewDaily": "Daily Overview",
+      "overviewWeekly": "Weekly Overview",
+      "overviewMonthly": "Monthly Overview",
+      "overviewYearly": "Yearly Overview",
+      "spendingBreakdown": "Spending Breakdown",
+      "transactions": "Transactions"
+    },
+    "statusLabels": {
+      "uncleared": "Uncleared",
+      "cleared": "Cleared"
+    }
+  },
+
+  "src/pages/DebtPage.tsx": {
+    "title": "Debt",
+    "summaryLabels": ["I Owe", "Owed to Me"],
+    "tabs": ["All", "I Owe", "Owed to Me"],
+    "statusLabels": {
+      "outstanding": "Outstanding",
+      "partial": "Partial",
+      "settled": "Settled"
+    },
+    "emptyState": {
+      "title": "No debts tracked",
+      "description": "Tap + Add to track money owed"
+    },
+    "modals": {
+      "addDebt": {
+        "title": "Add Debt",
+        "typeLabels": {
+          "iOwe": "I Owe",
+          "theyOwe": "They Owe Me"
+        },
+        "fields": {
+          "personName": "Person Name",
+          "personNamePlaceholder": "e.g. John, Alice",
+          "amount": "Amount",
+          "dueDate": "Due Date (Optional)",
+          "dueDatePlaceholder": "No due date",
+          "notes": "Notes (Optional)",
+          "notesPlaceholder": "Add context..."
+        },
+        "buttons": ["Cancel", "Add Debt"]
+      },
+      "settleDebt": {
+        "title": "Settle Debt",
+        "remaining": "Remaining:",
+        "amountPaid": "Amount Paid",
+        "amountPaidPlaceholder": "0.00",
+        "buttons": ["Cancel", "Mark Paid", "Fully Settled"]
+      }
+    },
+    "actions": {
+      "addDebt": "Add Debt",
+      "settle": "Settle"
+    },
+    "labels": {
+      "due": "Due",
+      "paid": "Paid:",
+      "total": "total"
+    }
+  },
+
+  "src/pages/SavingsPage.tsx": {
+    "title": "Savings",
+    "sections": ["Goals", "Total Saved"],
+    "buttons": ["Add Goal"],
+    "emptyState": "No savings goals yet"
+  },
+
+  "src/pages/MorePage.tsx": {
+    "sections": {
+      "tools": "Tools",
+      "appPreferences": "App Preferences",
+      "financeTracking": "Finance Tracking"
+    },
+    "items": [
+      { "label": "Calculator", "description": "Basic calculations" },
+      { "label": "Loan Calculator", "description": "EMI & interest" },
+      { "label": "Discount & Tax", "description": "Price calculations" },
+      { "label": "Currency Converter", "description": "Live exchange rates" },
+      { "label": "Categories", "description": "Manage expense & income categories" },
+      { "label": "Debt Tracker", "description": "Track money owed to/from people" },
+      { "label": "Activity History", "description": "View all transactions and settlements" }
+    ]
+  },
+
+  "src/pages/more/CalculatorPage.tsx": {
+    "title": "Calculator",
+    "buttons": ["AC", "+/-", "%", "÷", "×", "-", "+", "=", "0", "."],
+    "operations": ["+", "-", "×", "÷"]
+  },
+
+  "src/pages/more/LoanCalculatorPage.tsx": {
+    "title": "Loan Calculator",
+    "currency": {
+      "label": "Currency",
+      "pro": "Pro",
+      "customizable": "Customizable"
+    },
+    "fields": {
+      "loanAmount": "Loan Amount",
+      "interestRate": "Interest Rate (% per annum)",
+      "tenure": "Tenure (months)"
+    },
+    "buttons": ["Calculate EMI", "Reset"],
+    "results": {
+      "monthlyEmi": "Monthly EMI",
+      "totalInterest": "Total Interest",
+      "totalPayment": "Total Payment"
+    }
+  },
+
+  "src/pages/more/DiscountTaxCalculatorPage.tsx": {
+    "title": "Discount & Tax",
+    "currency": {
+      "label": "Currency",
+      "pro": "Pro",
+      "customizable": "Customizable"
+    },
+    "fields": {
+      "originalPrice": "Original Price",
+      "discount": "Discount (%)",
+      "tax": "Tax (%)"
+    },
+    "buttons": ["Calculate", "Reset"],
+    "results": {
+      "finalPrice": "Final Price",
+      "discount": "Discount ({{percent}}%)",
+      "priceAfterDiscount": "Price After Discount",
+      "tax": "Tax ({{percent}}%)"
+    }
+  },
+
+  "src/pages/more/CurrencyConverterPage.tsx": {
+    "title": "Currency Converter",
+    "fields": {
+      "amount": "Amount",
+      "from": "From",
+      "to": "To"
+    },
+    "buttons": ["Convert", "Converting..."],
+    "labels": {
+      "convertedAmount": "Converted Amount",
+      "rate": "1 {{from}} = {{rate}} {{to}}",
+      "updated": "Updated {{time}}",
+      "popularConversions": "Popular Conversions"
+    }
+  },
+
+  "src/components/TransactionForm.tsx": {
+    "types": {
+      "expense": "Expense",
+      "income": "Income",
+      "lend": "Lend",
+      "owe": "Borrow",
+      "transfer": "Transfer"
+    },
+    "fields": {
+      "payer": "Payer (Optional)",
+      "payerPlaceholder": "Who paid? e.g. John",
+      "payee": "Payee (Optional)",
+      "payeePlaceholder": "Paid by whom? e.g. Client",
+      "description": "Description",
+      "descriptionPlaceholder": "What was this for?",
+      "lendDescription": "Name or @handle",
+      "oweDescription": "Name or @handle",
+      "transferDescription": "Description (Optional)",
+      "transferDescriptionPlaceholder": "e.g. Monthly savings transfer",
+      "amount": "Amount",
+      "amountPlaceholder": "0.00",
+      "date": "Date",
+      "note": "Note (Optional)",
+      "notePlaceholder": "Add a note...",
+      "category": "Category",
+      "paymentMethod": "Payment Method",
+      "splitTransaction": "Split Transaction",
+      "splitWith": "Split With (Optional)",
+      "splitWithPlaceholder": "Who are you splitting with? e.g. Alice",
+      "fromAccount": "From Account",
+      "toAccount": "To Account",
+      "transferFee": "Transfer Fee (Optional)",
+      "budget": "Budget",
+      "goal": "Savings Goal"
+    },
+    "placeholders": {
+      "selectSource": "Select source account",
+      "selectDestination": "Select destination account"
+    },
+    "buttons": {
+      "voiceFill": "Voice Fill",
+      "scanReceipt": "Scan Receipt",
+      "addReminder": "Add Reminder",
+      "quickAdd": "Quick Add"
+    },
+    "validation": {
+      "descriptionRequired": "Description is required.",
+      "amountRequired": "Amount must be greater than 0.",
+      "dateRequired": "Date is required.",
+      "fromAccountRequired": "From account required",
+      "toAccountRequired": "To account required",
+      "selectFrom": "Please select the source account.",
+      "selectTo": "Please select the destination account.",
+      "invalidTransfer": "From and To accounts must be different.",
+      "categoryRequired": "Category is required.",
+      "describeCategory": "Please describe this category"
+    },
+    "split": {
+      "error": "Split Error",
+      "amountMismatch": "Split amounts must equal the total ({{total}}). Difference: {{diff}}",
+      "invalidRows": "Each split row needs a category and amount greater than 0."
+    },
+    "success": {
+      "expenseAdded": "Expense added!",
+      "incomeAdded": "Income added!",
+      "lendAdded": "Lend added!",
+      "borrowAdded": "Borrow added!",
+      "transferAdded": "Transfer added!",
+      "transactionUpdated": "Transaction updated!",
+      "partialSplitSaved": "Partial split saved",
+      "partialSplitDesc": "Parent transaction saved but some split rows failed.",
+      "splitExpenseAdded": "Split expense added!"
+    },
+    "quickFill": {
+      "voice": "Voice Fill",
+      "scan": "Scan Receipt"
+    },
+    "paymentMethods": {
+      "cash": "Cash",
+      "card": "Card",
+      "bankTransfer": "Bank",
+      "online": "Online",
+      "cheque": "Cheque",
+      "other": "Other"
+    },
+    "tags": "Tags"
+  },
+
+  "src/components/AddCategoryModal.tsx": {
+    "title": {
+      "addParent": "Add Category",
+      "addSub": "Add Sub-category"
+    },
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "e.g. Groceries",
+      "type": "Type",
+      "color": "Color"
+    },
+    "types": ["Expense", "Income"],
+    "buttons": ["Cancel", "Add"]
+  },
+
+  "src/components/AddBudgetModal.tsx": {
+    "title": "Create Budget",
+    "editTitle": "Edit Budget",
+    "fields": {
+      "name": "Budget Name",
+      "namePlaceholder": "e.g. Monthly Food",
+      "amount": "Budget Amount",
+      "amountPlaceholder": "0.00",
+      "category": "Category (Optional)",
+      "period": "Period",
+      "startDate": "Start Date"
+    },
+    "periods": ["Weekly", "Monthly", "Yearly"],
+    "buttons": ["Cancel", "Create Budget", "Save Changes"]
+  },
+
+  "src/components/AddTransactionModal.tsx": {
+    "title": "Add Transaction",
+    "buttons": ["Cancel", "Add"]
+  },
+
+  "src/components/EditTransactionModal.tsx": {
+    "title": "Edit Transaction"
+  },
+
+  "src/components/DeleteTransactionDialog.tsx": {
+    "title": "Delete Transaction",
+    "description": "Are you sure you want to delete this transaction? This action cannot be undone.",
+    "buttons": ["Cancel", "Delete"]
+  },
+
+  "src/components/BudgetDashboard.tsx": {
+    "emptyState": {
+      "title": "No budgets yet",
+      "description": "Create your first budget to start tracking your spending"
+    },
+    "actions": ["Set Budget", "Create Budget"]
+  },
+
+  "src/components/UpgradeModal.tsx": {
+    "proFeatures": {
+      "unlimitedBudgets": "Unlimited Budgets",
+      "aiInsights": "AI Insights",
+      "advancedAnalytics": "Advanced Analytics",
+      "exportReports": "Export Reports",
+      "customThemes": "Custom Themes",
+      "multiCurrency": "Multi-Currency"
+    },
+    "buttons": ["Upgrade to Pro", "Start Free Trial", "Maybe Later"],
+    "yearly": {
+      "badge": "Best Value",
+      "savings": "Save {{percent}}"
+    }
+  },
+
+  "src/components/PremiumGuard.tsx": {
+    "lockedTitle": "Premium Feature",
+    "upgradeButton": "Upgrade to Unlock"
+  },
+
+  "src/components/HealthScoreCard.tsx": {
+    "title": "Financial Health",
+    "subtitle": "Your personal finance score",
+    "breakdown": {
+      "budgeting": "Budgeting",
+      "savings": "Savings",
+      "activity": "Activity"
+    },
+    "smartInsight": "Smart Insight",
+    "howItWorks": "How it works",
+    "challengeButton": "Challenge a Friend",
+    "copied": "Copied!"
+  },
+
+  "src/components/SavingsSnapshotCard.tsx": {
+    "title": "Savings Snapshot",
+    "saved": "saved",
+    "viewAll": "View All",
+    "startFirst": "Start your first savings goal →",
+    "status": {
+      "behind": "Behind",
+      "onTrack": "On Track",
+      "urgent": "Urgent"
+    },
+    "progress": {
+      "complete": "{{percent}}% complete",
+      "daysLeft": "{{days}} days left",
+      "dueThis": "due this {{period}}"
+    },
+    "totals": {
+      "totalSaved": "Total saved",
+      "totalTarget": "Total target",
+      "overallProgress": "Overall progress"
+    },
+    "emptyState": "No savings goals yet"
+  },
+
+  "src/components/DebtTriageWidget.tsx": {
+    "title": "Debt Tracker",
+    "quickActions": "Quick Actions",
+    "buttons": ["Add I Owe", "Add They Owe"]
+  },
+
+  "src/components/PaymentReminderCarousel.tsx": {
+    "emptyState": "No upcoming reminders"
+  },
+
+  "src/components/ManageRemindersModal.tsx": {
+    "title": "Manage Reminders",
+    "emptyState": "No reminders set"
+  },
+
+  "src/components/AddPaymentReminderModal.tsx": {
+    "title": "Add Payment Reminder",
+    "fields": {
+      "title": "Reminder Title",
+      "titlePlaceholder": "e.g. Netflix Subscription",
+      "amount": "Amount",
+      "dueDate": "Due Date"
+    }
+  },
+
+  "src/features/gamification/components/HealthScoreCard.tsx": {
+    "seeDetails": "View health score details"
+  },
+
+  "src/features/referrals/components/ReferralCard.tsx": {
+    "shareCode": "Share Code",
+    "redeemCode": "Redeem Code",
+    "inviteReward": "Invite friends. You both get 3 days Pro.",
+    "yourCode": "Your Code",
+    "share": "Share",
+    "redeem": "Redeem"
+  },
+
+  "src/pages/FaqPage.tsx": {
+    "title": "FAQ"
+  },
+
+  "src/pages/SupportPage.tsx": {
+    "title": "Help & Support"
+  },
+
+  "src/pages/PrivacyPolicyPage.tsx": {
+    "title": "Privacy Policy"
+  },
+
+  "src/pages/DeleteAccountPage.tsx": {
+    "title": "Delete Account"
+  },
+
+  "src/pages/ResetPasswordPage.tsx": {
+    "title": "Reset Password"
+  },
+
+  "src/pages/AuthCallbackPage.tsx": {
+    "title": "Authenticating..."
+  },
+
+  "src/pages/InstallPage.tsx": {
+    "title": "Install App"
+  },
+
+  "src/pages/NotFound.tsx": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist.",
+    "button": "Go Home"
+  },
+
+  "src/components/BottomNavigation.tsx": {
+    "navItems": ["Dashboard", "Expenses", "Budget", "Savings", "More"]
+  },
+
+  "src/components/Header.tsx": {
+    "defaultTitle": "Hisabify"
+  },
+
+  "paymentMethods": {
+    "cash": "Cash",
+    "card": "Card",
+    "bank_transfer": "Bank Transfer",
+    "online": "Online",
+    "cheque": "Cheque",
+    "other": "Other"
+  },
+
+  "transactionTypes": {
+    "expense": "Expense",
+    "income": "Income",
+    "lend": "Lend",
+    "owe": "Borrow",
+    "transfer": "Transfer"
+  },
+
+  "dateFormats": {
+    "displayFormats": [
+      "DD/MM/YYYY",
+      "MM/DD/YYYY", 
+      "YYYY-MM-DD"
+    ]
+  },
+
+  "weekStarts": {
+    "options": ["Sunday", "Monday", "Saturday"]
+  },
+
+  "currencies": {
+    "supported": ["USD", "EUR", "GBP", "JPY", "CNY", "INR", "AUD", "CAD", "CHF", "HKD", "SGD", "KRW"]
+  },
+
+  "languages": {
+    "supported": [
+      { "code": "en", "name": "English" },
+      { "code": "bn", "name": "বাংলা" },
+      { "code": "ja", "name": "日本語" }
+    ]
+  },
+
+  "notes": {
+    "dynamicCategories": "Categories are user-defined and stored in the database - they should be extracted from the categories table, not hardcoded",
+    "dynamicMerchants": "Merchants come from transaction history",
+    "dynamicGoals": "Savings goal names are user-defined",
+    "dynamicDebtNames": "Person names in debt tracker are user-defined",
+    "dynamicCards": "Card names come from user's saved cards"
+  }
+}

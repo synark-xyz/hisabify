@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/Header';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
@@ -13,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 
 export function ProfilePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { profile } = useProfile();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
@@ -22,12 +24,9 @@ export function ProfilePage() {
   const subscriptionStatusLabel = (profile.subscription_status || 'inactive').replace('_', ' ');
 
   const menuItems = [
-    { id: 'personal', icon: User, label: 'Personal Information', path: '/profile/personal', color: 'bg-blue-500/10 text-blue-500' },
-    // { id: 'invite', icon: Gift, label: 'Invite & Earn', path: '/profile/invite', color: 'bg-emerald-500/10 text-emerald-500' },
-    // The user moved "Invite" to Profile, let's keep it here.
-    { id: 'invite', icon: Gift, label: 'Invite & Earn', path: '/profile/invite', color: 'bg-pink-500/10 text-pink-500' },
-    { id: 'data', icon: Database, label: 'Data Management', path: '/profile/data', color: 'bg-orange-500/10 text-orange-500' },
-    // { id: 'debts', icon: Handshake, label: 'Debt Tracker', path: '/debts', color: 'bg-rose-500/10 text-rose-500' },
+    { id: 'personal', icon: User, label: t('profile.personalInformation'), path: '/profile/personal', color: 'bg-blue-500/10 text-blue-500' },
+    { id: 'invite', icon: Gift, label: t('profile.inviteEarn'), path: '/profile/invite', color: 'bg-pink-500/10 text-pink-500' },
+    { id: 'data', icon: Database, label: t('profile.dataManagement'), path: '/profile/data', color: 'bg-orange-500/10 text-orange-500' },
   ];
 
   return (
@@ -58,7 +57,7 @@ export function ProfilePage() {
             </h2>
             <p className="text-muted-foreground text-sm">{user?.email}</p>
             <p className="text-xs mt-1 text-muted-foreground capitalize">
-              Subscription: {subscriptionStatusLabel}
+              {t('profile.subscription')}: {subscriptionStatusLabel}
             </p>
           </motion.div>
 
@@ -74,12 +73,12 @@ export function ProfilePage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
               <div className="relative z-10 flex items-center justify-between">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Crown className="w-4 h-4 text-yellow-400 fill-yellow-400 icon-glow" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white/80">Support Development</span>
-                  </div>
-                  <h3 className="text-lg font-black text-glow">Go Premium</h3>
-                  <p className="text-xs text-white/70 font-medium">Unlock all features & support the project</p>
+<div className="flex items-center gap-2 mb-1">
+                      <Crown className="w-4 h-4 text-yellow-400 fill-yellow-400 icon-glow" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/80">{t('profile.supportDevelopment')}</span>
+                    </div>
+                    <h3 className="text-lg font-black text-glow">{t('profile.goPremium')}</h3>
+                    <p className="text-xs text-white/70 font-medium">{t('profile.unlockAllFeatures')}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                   <ChevronRight className="w-5 h-5 text-white" />

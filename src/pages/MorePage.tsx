@@ -1,70 +1,29 @@
 import { Calculator, CreditCard, Percent, ArrowRightLeft, Tag, Handshake, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
-const tools = [
-  {
-    id: 'calculator',
-    icon: Calculator,
-    label: 'Calculator',
-    description: 'Basic calculations',
-    path: '/more/calculator',
-  },
-  {
-    id: 'loan',
-    icon: CreditCard,
-    label: 'Loan Calculator',
-    description: 'EMI & interest',
-    path: '/more/loan',
-  },
-  {
-    id: 'discount',
-    icon: Percent,
-    label: 'Discount & Tax',
-    description: 'Price calculations',
-    path: '/more/discount',
-  },
-  {
-    id: 'currency',
-    icon: ArrowRightLeft,
-    label: 'Currency Converter',
-    description: 'Live exchange rates',
-    path: '/more/currency',
-  },
-];
-
-const appPreferences = [
-  {
-    id: 'categories',
-    icon: Tag,
-    label: 'Categories',
-    description: 'Manage expense & income categories',
-    path: '/categories',
-    color: 'bg-blue-500/10 text-blue-500',
-  },
-];
-
-const financeTracking = [
-  {
-    id: 'debts',
-    icon: Handshake,
-    label: 'Debt Tracker',
-    description: 'Track money owed to/from people',
-    path: '/debts',
-    color: 'bg-rose-500/10 text-rose-500',
-  },
-  {
-    id: 'activity',
-    icon: Clock,
-    label: 'Activity History',
-    description: 'View all transactions and settlements',
-    path: '/activity',
-    color: 'bg-purple-500/10 text-purple-500',
-  },
-];
+const iconMap = { Calculator, CreditCard, Percent, ArrowRightLeft, Tag, Handshake, Clock };
 
 export function MorePage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const tools = [
+    { id: 'calculator', icon: 'Calculator', label: t('morePage.calculator'), description: t('morePage.basicCalculations'), path: '/more/calculator' },
+    { id: 'loan', icon: 'CreditCard', label: t('morePage.loanCalculator'), description: t('morePage.emiInterest'), path: '/more/loan' },
+    { id: 'discount', icon: 'Percent', label: t('morePage.discountTax'), description: t('morePage.priceCalculations'), path: '/more/discount' },
+    { id: 'currency', icon: 'ArrowRightLeft', label: t('morePage.currencyConverter'), description: t('morePage.liveExchangeRates'), path: '/more/currency' },
+  ];
+
+  const appPreferences = [
+    { id: 'categories', icon: 'Tag', label: t('morePage.categories'), description: t('morePage.manageCategories'), path: '/categories', color: 'bg-blue-500/10 text-blue-500' },
+  ];
+
+  const financeTracking = [
+    { id: 'debts', icon: 'Handshake', label: t('morePage.debtTracker'), description: t('morePage.trackDebts'), path: '/debts', color: 'bg-rose-500/10 text-rose-500' },
+    { id: 'activity', icon: 'Clock', label: t('morePage.activityHistory'), description: t('morePage.viewActivity'), path: '/activity', color: 'bg-purple-500/10 text-purple-500' },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -73,10 +32,10 @@ export function MorePage() {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Tools Section */}
         <section>
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">Tools</h2>
+          <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('morePage.tools')}</h2>
           <div className="grid grid-cols-1 gap-3">
             {tools.map((tool) => {
-              const Icon = tool.icon;
+              const Icon = iconMap[tool.icon as keyof typeof iconMap];
               return (
                 <button
                   key={tool.id}
@@ -101,10 +60,10 @@ export function MorePage() {
 
         {/* App Preferences Section */}
         <section>
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">App Preferences</h2>
+          <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('morePage.appPreferences')}</h2>
           <div className="grid grid-cols-1 gap-3">
             {appPreferences.map((item) => {
-              const Icon = item.icon;
+              const Icon = iconMap[item.icon as keyof typeof iconMap];
               return (
                 <button
                   key={item.id}
@@ -129,10 +88,10 @@ export function MorePage() {
 
         {/* Finance Tracking Section */}
         <section>
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">Finance Tracking</h2>
+          <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('morePage.financeTracking')}</h2>
           <div className="grid grid-cols-1 gap-3">
             {financeTracking.map((item) => {
-              const Icon = item.icon;
+              const Icon = iconMap[item.icon as keyof typeof iconMap];
               return (
                 <button
                   key={item.id}

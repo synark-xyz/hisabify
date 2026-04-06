@@ -6,6 +6,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 export function SettingsPage() {
@@ -13,32 +14,33 @@ export function SettingsPage() {
     const { signOut } = useAuth();
     const { toast } = useToast();
     const { variant } = useTheme();
+    const { t } = useTranslation();
 
     const handleSignOut = async () => {
         await signOut();
-        toast({ title: 'Signed out successfully' });
+        toast({ title: t('settings.signedOut') });
         navigate('/auth');
     };
 
     const menuItems = [
-        { id: 'preferences', icon: Settings, label: 'App Preferences', path: '/settings/preferences', color: 'bg-blue-500/10 text-blue-500' },
-        { id: 'notifications', icon: Bell, label: 'Notifications', path: '/settings/notifications', color: 'bg-indigo-500/10 text-indigo-500' },
+        { id: 'preferences', icon: Settings, label: t('settings.preferences'), path: '/settings/preferences', color: 'bg-blue-500/10 text-blue-500' },
+        { id: 'notifications', icon: Bell, label: t('notifications.notifications'), path: '/settings/notifications', color: 'bg-indigo-500/10 text-indigo-500' },
     ];
 
     const supportItems = [
-        { id: 'help', icon: Headset, label: 'Help & Support', path: '/support', color: 'bg-emerald-500/10 text-emerald-500' },
-        { id: 'privacy', icon: Shield, label: 'Privacy Policy', path: '/privacy', color: 'bg-emerald-500/10 text-emerald-500' },
-        { id: 'faq', icon: CircleHelp, label: 'FAQ', path: '/faq', color: 'bg-emerald-500/10 text-emerald-500' },
+        { id: 'help', icon: Headset, label: t('common.helpSupport'), path: '/support', color: 'bg-emerald-500/10 text-emerald-500' },
+        { id: 'privacy', icon: Shield, label: t('page.privacyPolicy'), path: '/privacy', color: 'bg-emerald-500/10 text-emerald-500' },
+        { id: 'faq', icon: CircleHelp, label: t('page.faq'), path: '/faq', color: 'bg-emerald-500/10 text-emerald-500' },
     ];
 
     return (
         <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Settings" showBack />
+            <Header title={t('settings.title')} showBack />
             <main className="px-4 py-6 space-y-8">
 
                 {/* General Settings */}
                 <section className="space-y-4">
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">General</h3>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">{t('settingsPage.general')}</h3>
                     <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm card-3d transition-all">
                         {menuItems.map((item, idx) => (
                             <motion.div
@@ -61,7 +63,7 @@ export function SettingsPage() {
 
                 {/* Support */}
                 <section className="space-y-4">
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">Support</h3>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">{t('settingsPage.support')}</h3>
                     <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm card-3d transition-all">
                         {supportItems.map((item, idx) => (
                             <motion.div
@@ -89,11 +91,11 @@ export function SettingsPage() {
                     whileTap={{ scale: 0.95 }}
                 >
                     <LogOut className="w-5 h-5" />
-                    Sign Out
+                    {t('auth.logout')}
                 </motion.button>
 
                 <p className="text-center text-xs text-muted-foreground font-mono mt-8">
-                    Hisabify v1.0.0 (Build 240)
+                    {t('settingsPage.version')}
                 </p>
 
             </main>

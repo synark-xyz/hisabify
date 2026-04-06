@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
 import { TransactionForm } from '@/components/TransactionForm';
 import { VoiceInputFlow } from '@/components/VoiceInputFlow';
@@ -7,7 +8,7 @@ import { ReceiptScannerModal, ScannedReceiptData } from '@/components/ReceiptSca
 import { useCurrency } from '@/hooks/useCurrency';
 
 interface TransactionFormState {
-  type: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
+  type: 'expense' | 'income' | 'transfer';
   merchant: string;
   amount: string;
   categoryId: string;
@@ -22,8 +23,8 @@ interface TransactionFormState {
   isSplit: boolean;
   splitRows: Array<{ id: string; categoryId: string; amount: string }>;
   paymentMethod: string;
-  transferFromCardId: string;
-  transferToCardId: string;
+  transferFromAccountTypeId: string;
+  transferToAccountTypeId: string;
   transferFee: string;
   customCategoryLabel: string;
   selectedParentCategoryId: string;
@@ -33,7 +34,7 @@ interface AddTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  initialType?: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
+  initialType?: 'expense' | 'income' | 'transfer';
   initialData?: {
     merchant?: string;
     amount?: number;
@@ -46,7 +47,7 @@ interface AddTransactionModalProps {
 }
 
 const getInitialFormState = (props: {
-  initialType?: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
+  initialType?: 'expense' | 'income' | 'transfer';
   initialData?: {
     merchant?: string;
     amount?: number;
@@ -72,8 +73,8 @@ const getInitialFormState = (props: {
   isSplit: false,
   splitRows: [],
   paymentMethod: '',
-  transferFromCardId: '',
-  transferToCardId: '',
+  transferFromAccountTypeId: '',
+  transferToAccountTypeId: '',
   transferFee: '',
   customCategoryLabel: '',
   selectedParentCategoryId: '',
@@ -88,6 +89,7 @@ export function AddTransactionModal({
   initialBudgetId,
 }: AddTransactionModalProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { currency: defaultCurrency } = useCurrency();
   const [showVoice, setShowVoice] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -151,7 +153,7 @@ export function AddTransactionModal({
       <ResponsiveDrawer
         open={open}
         onOpenChange={onOpenChange}
-        title="New Transaction"
+        title={t('common.newTransaction')}
         className="max-h-[90vh]"
       >
         <TransactionForm

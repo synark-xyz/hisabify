@@ -333,9 +333,19 @@ export function useRevenueCat(): UseRevenueCatReturn {
       }
     }
 
+    if (!offering) {
+      logger.error('[useRevenueCat] presentPaywall: no offering found');
+      toast({
+        title: 'Subscription unavailable',
+        description: 'No subscription options are available right now. Please try again later.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       await ui.RevenueCatUI.presentPaywall({
-        ...(offering ? { offering } : {}),
+        offering,
         displayCloseButton: true,
         listener: {
           onPurchaseCompleted: async ({ customerInfo: info }) => {
@@ -364,7 +374,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
 
     // Always refresh after paywall closes to capture any state changes
     await refreshCustomerInfo();
-  }, [user, updatePremiumState, refreshCustomerInfo]);
+  }, [user, updatePremiumState, refreshCustomerInfo, toast]);
 
   return {
     isPremium,

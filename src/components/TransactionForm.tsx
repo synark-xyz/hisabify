@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info, ArrowLeftRight, Banknote, CreditCard, Building2, Globe, FileText } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useFormatDate } from '@/lib/formatDate';
+import { Loader2, Calendar, ArrowUpRight, ArrowDownLeft, Handshake, Landmark, Plus, X, Split, Bell, CalendarIcon, Mic, Camera, Info, ArrowLeftRight, Banknote, CreditCard, Building2, Globe, FileText, Clock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +27,7 @@ import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useSmartSuggest } from '@/hooks/useSmartSuggest';
 import { useCategoryMutations } from '@/hooks/useCategoryMutations';
 import { SuggestionBanner } from '@/components/SuggestionBanner';
-import { Transaction, Card as CardType, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
+import { Transaction, Card as CardType, PaymentMethod, PAYMENT_METHOD_LABELS, AccountType } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -48,8 +50,8 @@ interface TransactionFormState {
   isSplit: boolean;
   splitRows: Array<{ id: string; categoryId: string; amount: string }>;
   paymentMethod: string;
-  transferFromCardId: string;
-  transferToCardId: string;
+  transferFromAccountTypeId: string;
+  transferToAccountTypeId: string;
   transferFee: string;
   customCategoryLabel: string;
   selectedParentCategoryId: string;
@@ -138,8 +140,9 @@ export function TransactionForm({
 
   /* ─── Phase 2.1: Transfer state ─── */
   const [cards, setCards] = useState<CardType[]>([]);
-  const [transferFromCardId, setTransferFromCardId] = useState<string>('');
-  const [transferToCardId, setTransferToCardId] = useState<string>('');
+  const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
+  const [transferFromAccountTypeId, setTransferFromAccountTypeId] = useState<string>('');
+  const [transferToAccountTypeId, setTransferToAccountTypeId] = useState<string>('');
   const [transferFee, setTransferFee] = useState<string>('');
 
   /* ─── Phase 2.3: Payment method state ─── */
@@ -175,6 +178,9 @@ export function TransactionForm({
   const [reminderDate, setReminderDate] = useState<Date | undefined>(undefined);
   const [reminderDateOpen, setReminderDateOpen] = useState(false);
 
+  /* ─── Feature 2.x: Transfer disabled state (coming soon) ─── */
+  const transferDisabled = true;
+
   /* ─── Feature 1.5: Auto-fill merchant suggestions state ─── */
   const [merchantSuggestions, setMerchantSuggestions] = useState<Array<{ merchant: string; category_id: string | null; type: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -192,6 +198,13 @@ export function TransactionForm({
   const { activeGoals } = useSavingsGoals();
   const { incrementUsageCount } = useCategoryMutations();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const { formatDate } = useFormatDate();
+
+  const toLocaleNum = useCallback((n: number) => {
+    const locale = i18n.language === 'bn' ? 'bn-BD' : i18n.language === 'ja' ? 'ja-JP' : 'en-US';
+    return new Intl.NumberFormat(locale, { useGrouping: false }).format(n);
+  }, [i18n.language]);
 
   const [linkedBudgetId, setLinkedBudgetId] = useState<string | null>(
     initialTransaction?.budget_id ?? null
@@ -202,16 +215,32 @@ export function TransactionForm({
 
   const isEditMode = mode === 'edit' && !!initialTransaction;
 
-  /* ─── Phase 2.1: Fetch user cards for transfer accounts ─── */
+  /* ─── Phase 2.1: Fetch user account types for transfer ─── */
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log('[Transfer] No user, skipping account_types fetch');
+      return;
+    }
+    console.log('[Transfer] Fetching account_types for user:', user.id);
     supabase
-      .from('cards')
+      .from('account_types')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true })
-      .then(({ data }) => {
-        if (data) setCards(data as CardType[]);
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('[Transfer] Error fetching account_types:', error);
+          return;
+        }
+        console.log('[Transfer] Account types data:', data);
+        if (data && data.length > 0) {
+          setAccountTypes(data as AccountType[]);
+          const personal = data.find((at) => at.name === 'Personal');
+          if (personal) {
+            setTransferFromAccountTypeId(personal.id);
+            setTransferToAccountTypeId(personal.id);
+          }
+        }
       });
   }, [user]);
 
@@ -308,8 +337,8 @@ export function TransactionForm({
     setPayee('');
     setSplitWith('');
     /* ─── Phase 2.1 / 2.3 reset ─── */
-    setTransferFromCardId('');
-    setTransferToCardId('');
+    setTransferFromAccountTypeId('');
+    setTransferToAccountTypeId('');
     setTransferFee('');
     setPaymentMethod('');
   }, []);
@@ -372,8 +401,8 @@ export function TransactionForm({
 
     /* ─── Phase 2.1: Initialize transfer fields ─── */
     if (initialTransaction.type === 'transfer') {
-      setTransferFromCardId(initialTransaction.card_id || '');
-      setTransferToCardId(initialTransaction.transfer_to_card_id || '');
+      setTransferFromAccountTypeId(initialTransaction.card_id || '');
+      setTransferToAccountTypeId(initialTransaction.transfer_to_card_id || '');
       setTransferFee(initialTransaction.transfer_fee ? String(initialTransaction.transfer_fee) : '');
     }
 
@@ -550,7 +579,7 @@ export function TransactionForm({
     const hasValidDate = data.date instanceof Date && !Number.isNaN(data.date.getTime());
 
     if (!merchant && type !== 'transfer') {
-      form.setError('merchant', { type: 'manual', message: 'Description is required.' });
+      form.setError('merchant', { type: 'manual', message: t('transaction.validationDescription') });
       return;
     }
     // For transfers, default description if blank
@@ -562,44 +591,44 @@ export function TransactionForm({
     }
 
     if (!hasValidDate) {
-      form.setError('date', { type: 'manual', message: 'Date is required.' });
+      form.setError('date', { type: 'manual', message: t('transaction.validationDate') });
       return;
     }
 
     /* ─── Phase 2.1: Transfer validation ─── */
     if (type === 'transfer') {
-      if (!transferFromCardId) {
-        toast({ title: 'From account required', description: 'Please select the source account.', variant: 'destructive' });
+      if (!transferFromAccountTypeId) {
+        toast({ title: t('transaction.validationFromAccount'), description: t('transaction.validationFromAccountDesc'), variant: 'destructive' });
         return;
       }
-      if (!transferToCardId) {
-        toast({ title: 'To account required', description: 'Please select the destination account.', variant: 'destructive' });
+      if (!transferToAccountTypeId) {
+        toast({ title: t('transaction.validationToAccount'), description: t('transaction.validationToAccountDesc'), variant: 'destructive' });
         return;
       }
-      if (transferFromCardId === transferToCardId) {
-        toast({ title: 'Invalid transfer', description: 'From and To accounts must be different.', variant: 'destructive' });
+      if (transferFromAccountTypeId === transferToAccountTypeId) {
+        toast({ title: t('transaction.validationSameAccount'), description: t('transaction.validationSameAccountDesc'), variant: 'destructive' });
         return;
       }
     }
 
     /* ─── Feature 1.4: Skip category validation when split ─── */
     if (type === 'expense' && !isSplit && !data.categoryId) {
-      form.setError('categoryId', { type: 'manual', message: 'Category is required.' });
+      form.setError('categoryId', { type: 'manual', message: t('transaction.validationCategory') });
       return;
     }
 
     if (isOtherCategory && !customCategoryLabel.trim()) {
-      setCustomCategoryError('Please describe this category');
+      setCustomCategoryError(t('transaction.validationCustomCategory'));
       return;
     }
 
     /* ─── Feature 1.4: Split validation ─── */
     if (isSplit && !splitIsValid) {
       toast({
-        title: 'Split Error',
+        title: t('transaction.validationSplitError'),
         description: splitDifference >= 0.01
-          ? `Split amounts must equal the total (${formatAmount(totalAmount)}). Difference: ${formatAmount(splitDifference)}`
-          : 'Each split row needs a category and amount greater than 0.',
+          ? t('transaction.validationSplitAmounts', { total: formatAmount(totalAmount), diff: formatAmount(splitDifference) })
+          : t('transaction.validationSplitRowsEmpty'),
         variant: 'destructive',
       });
       return;
@@ -638,7 +667,7 @@ export function TransactionForm({
         : (type === 'expense' || type === 'lend' || type === 'owe') ? (data.categoryId || null) : null,
       budget_id: (type === 'expense' || type === 'lend' || type === 'owe') ? linkedBudgetId : null,
       savings_goal_id: type === 'transfer' ? null : linkedGoalId,
-      card_id: type === 'transfer' ? (transferFromCardId || null) : null,
+      card_id: type === 'transfer' ? (transferFromAccountTypeId || null) : null,
       note: (() => {
         const metaParts: string[] = [];
         if (type === 'expense' && payer.trim()) metaParts.push(`[payer:${payer.trim()}]`);
@@ -657,7 +686,7 @@ export function TransactionForm({
       is_split_child: false,
       parent_transaction_id: null,
       /* ─── Phase 2.1: Transfer fields ─── */
-      transfer_to_card_id: type === 'transfer' ? (transferToCardId || null) : null,
+      transfer_to_card_id: type === 'transfer' ? (transferToAccountTypeId || null) : null,
       transfer_fee: type === 'transfer' && transferFee ? Number.parseFloat(transferFee) || null : null,
       /* ─── Phase 2.3: Payment method ─── */
       payment_method: (type !== 'transfer' && paymentMethod) ? paymentMethod : null,
@@ -672,7 +701,7 @@ export function TransactionForm({
         import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
           analytics.logEvent(AnalyticsEvents.EDIT_TRANSACTION, { type });
         }).catch(() => {});
-        toast({ title: 'Transaction updated!' });
+        toast({ title: t('transaction.toastUpdated') });
         // Fire-and-forget: log custom category suggestion
         logCustomCategorySuggestion(customCategoryLabel);
       } else if (isSplit && type === 'expense') {
@@ -736,12 +765,12 @@ export function TransactionForm({
           logger.error(childError.error, { action: 'insert_split_children' });
           // Parent was inserted, warn user
           toast({
-            title: 'Partial split saved',
-            description: 'Parent transaction saved but some split rows failed.',
+            title: t('transaction.toastPartialSplit'),
+            description: t('transaction.toastPartialSplitDesc'),
             variant: 'destructive',
           });
         } else {
-          toast({ title: 'Split expense added!' });
+          toast({ title: t('transaction.toastSplitAdded') });
         }
 
         import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
@@ -770,8 +799,8 @@ export function TransactionForm({
         import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
           analytics.logEvent(AnalyticsEvents.ADD_TRANSACTION, { type, category: data.categoryId || 'uncategorized' });
         }).catch(() => {});
-        const typeLabels: Record<string, string> = { expense: 'Expense', income: 'Income', lend: 'Lend', owe: 'Borrow', transfer: 'Transfer' };
-        toast({ title: `${typeLabels[type] || 'Transaction'} added!` });
+        const typeLabels: Record<string, string> = { expense: t('transaction.typeExpense'), income: t('transaction.typeIncome'), lend: t('transaction.typeLend'), owe: t('transaction.typeBorrow'), transfer: t('transaction.typeTransfer') };
+        toast({ title: t('transaction.toastAdded', { type: typeLabels[type] || '' }) });
         // Fire-and-forget: increment category usage count
         if (data.categoryId) {
           incrementUsageCount(data.categoryId);
@@ -852,84 +881,99 @@ export function TransactionForm({
   const baseCurrencySymbol = currencyData[currency]?.symbol || '$';
 
   return (
-    <div className="overflow-y-auto px-4 pb-safe-nav h-full">
+    <div className="overflow-y-auto px-3 sm:px-4 pb-safe-nav h-full -mx-1 sm:mx-0">
       {/* ─── Type selector: Tabs in create mode; legacy 4-button grid for lend/owe edit ─── */}
       {isEditMode && (type === 'lend' || type === 'owe') ? (
         <div className="grid grid-cols-4 gap-2 mb-4">
           {[
-            { id: 'expense', name: 'Expense', icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-            { id: 'income', name: 'Income', icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-            { id: 'lend', name: 'Lend', icon: Handshake, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-            { id: 'owe', name: 'Borrow', icon: Landmark, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+            { id: 'expense', name: t('transaction.typeExpense'), icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+            { id: 'income', name: t('transaction.typeIncome'), icon: ArrowDownLeft, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+            { id: 'lend', name: t('transaction.typeLend'), icon: Handshake, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
+            { id: 'owe', name: t('transaction.typeBorrow'), icon: Landmark, color: 'text-amber-500', bg: 'bg-amber-500/10' },
           ].map((opt) => (
             <button
               key={opt.id}
               type="button"
               onClick={() => setType(opt.id as typeof type)}
               className={cn(
-                'flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all card-3d',
+                'flex flex-col items-center gap-1.5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border transition-all card-3d',
                 type === opt.id ? 'border-accent bg-accent/5 ring-1 ring-accent/20 border-glow' : 'border-border bg-card hover:bg-muted'
               )}
             >
-              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', opt.bg)}>
-                <opt.icon className={cn('w-5 h-5', opt.color, 'icon-glow')} />
+              <div className={cn('w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center', opt.bg)}>
+                <opt.icon className={cn('w-4 h-4 sm:w-5 sm:h-5', opt.color, 'icon-glow')} />
               </div>
-              <span className={cn('text-[10px] font-bold uppercase tracking-wider', type === opt.id && 'text-glow')}>
+              <span className={cn('text-[9px] sm:text-[10px] font-bold uppercase tracking-wider truncate w-full text-center', type === opt.id && 'text-glow')}>
                 {opt.name}
               </span>
             </button>
           ))}
         </div>
       ) : (
-        <Tabs
-          value={type === 'income' ? 'income' : type === 'transfer' ? 'transfer' : 'expense'}
-          onValueChange={(v) => {
-            const newType = v as 'expense' | 'income' | 'transfer';
-            setType(newType);
-            if (isSplit && newType !== 'expense') {
-              setIsSplit(false);
-              setSplitRows([]);
-            }
-            setPayer('');
-            setPayee('');
-            setPaymentMethod('');
-          }}
-          className="mb-4"
-        >
-          <TabsList className="w-full h-12 rounded-2xl p-1">
-            <TabsTrigger
-              value="expense"
-              className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-rose-500"
-            >
-              <ArrowUpRight className="w-4 h-4" />
-              Expense
-            </TabsTrigger>
-            <TabsTrigger
-              value="income"
-              className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-emerald-500"
-            >
-              <ArrowDownLeft className="w-4 h-4" />
-              Income
-            </TabsTrigger>
-            <TabsTrigger
-              value="transfer"
-              className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-blue-500"
-            >
-              <ArrowLeftRight className="w-4 h-4" />
-              Transfer
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="relative">
+          {type === 'transfer' && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm rounded-2xl p-6">
+              <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-blue-500" />
+              </div>
+              <p className="text-lg font-bold text-foreground text-center">{t('common.comingSoon')}</p>
+              <p className="text-sm text-muted-foreground text-center mt-1">{t('transaction.transferComingSoon')}</p>
+            </div>
+          )}
+          <Tabs
+            value={type === 'income' ? 'income' : type === 'transfer' ? 'transfer' : 'expense'}
+            onValueChange={(v) => {
+              const newType = v as 'expense' | 'income' | 'transfer';
+              if (transferDisabled && newType === 'transfer') {
+                return;
+              }
+              setType(newType);
+              if (isSplit && newType !== 'expense') {
+                setIsSplit(false);
+                setSplitRows([]);
+              }
+              setPayer('');
+              setPayee('');
+              setPaymentMethod('');
+            }}
+            className="mb-4"
+          >
+            <TabsList className="w-full h-12 rounded-2xl p-1">
+              <TabsTrigger
+                value="expense"
+                className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-rose-500"
+              >
+                <ArrowUpRight className="w-4 h-4" />
+                {t('transaction.typeExpense')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="income"
+                className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-emerald-500"
+              >
+                <ArrowDownLeft className="w-4 h-4" />
+                {t('transaction.typeIncome')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="transfer"
+                disabled={transferDisabled}
+                className="flex-1 rounded-xl font-bold gap-2 data-[state=active]:text-blue-500 data-[disabled]:opacity-50"
+              >
+                <ArrowLeftRight className="w-4 h-4" />
+                {t('transaction.typeTransfer')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       )}
 
       {/* ─── PAYER / PAYEE contextual field ─── */}
       {type === 'expense' && (
         <div className="space-y-1.5 mb-2">
-          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Payer (Optional)</label>
+          <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.payerOptional')}</label>
           <input
             type="text"
-            placeholder="Who paid? e.g. John"
-            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder={t('transaction.payerPlaceholder')}
+            className="w-full rounded-lg sm:rounded-xl border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             value={payer}
             onChange={(e) => setPayer(e.target.value)}
           />
@@ -937,11 +981,11 @@ export function TransactionForm({
       )}
       {type === 'income' && (
         <div className="space-y-1.5 mb-2">
-          <label className="text-xs font-bold uppercase tracking-wider opacity-70">Payee (Optional)</label>
+          <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.payeeOptional')}</label>
           <input
             type="text"
-            placeholder="Paid by whom? e.g. Client"
-            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder={t('transaction.payeePlaceholder')}
+            className="w-full rounded-lg sm:rounded-xl border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             value={payee}
             onChange={(e) => setPayee(e.target.value)}
           />
@@ -949,44 +993,74 @@ export function TransactionForm({
       )}
 
       {/* ─── Phase 2.1: Transfer account fields ─── */}
-      {type === 'transfer' && (
-        <div className="space-y-3 mb-2">
+      {type === 'transfer' && !transferDisabled && (
+        <div className="space-y-4 mb-2">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider opacity-70">From Account</label>
-            <select
-              value={transferFromCardId}
-              onChange={(e) => setTransferFromCardId(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">Select source account</option>
-              {cards.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.card_holder} •••• {c.last_four || c.card_number.slice(-4)}
-                </option>
-              ))}
-            </select>
+            <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.fromAccount')}</label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {accountTypes.length === 0 ? (
+                <div className="col-span-3 text-center py-2 text-xs text-muted-foreground">No accounts found</div>
+              ) : (
+                accountTypes.map((at) => (
+                  <button
+                    key={at.id}
+                    type="button"
+                    onClick={() => setTransferFromAccountTypeId(at.id)}
+                    className={cn(
+                      'flex flex-col items-center justify-center gap-0.5 rounded-lg border py-1.5 text-[10px] font-medium transition-all',
+                      transferFromAccountTypeId === at.id
+                        ? 'border-accent bg-accent/10 ring-1 ring-accent/30'
+                        : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                    )}
+                  >
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
+                      style={{ backgroundColor: at.color || '#7C3AED' }}
+                    >
+                      {at.name.charAt(0)}
+                    </div>
+                    <span className="truncate max-w-full">{at.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider opacity-70">To Account</label>
-            <select
-              value={transferToCardId}
-              onChange={(e) => setTransferToCardId(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="">Select destination account</option>
-              {cards.filter((c) => c.id !== transferFromCardId).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.card_holder} •••• {c.last_four || c.card_number.slice(-4)}
-                </option>
-              ))}
-            </select>
+            <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.toAccount')}</label>
+            <div className="grid grid-cols-3 gap-1.5">
+              {accountTypes.filter((at) => at.id !== transferFromAccountTypeId).length === 0 ? (
+                <div className="col-span-3 text-center py-2 text-xs text-muted-foreground">No other accounts</div>
+              ) : (
+                accountTypes.filter((at) => at.id !== transferFromAccountTypeId).map((at) => (
+                  <button
+                    key={at.id}
+                    type="button"
+                    onClick={() => setTransferToAccountTypeId(at.id)}
+                    className={cn(
+                      'flex flex-col items-center justify-center gap-0.5 rounded-lg border py-1.5 text-[10px] font-medium transition-all',
+                      transferToAccountTypeId === at.id
+                        ? 'border-accent bg-accent/10 ring-1 ring-accent/30'
+                        : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                    )}
+                  >
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
+                      style={{ backgroundColor: at.color || '#7C3AED' }}
+                    >
+                      {at.name.charAt(0)}
+                    </div>
+                    <span className="truncate max-w-full">{at.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider opacity-70">Transfer Fee (Optional)</label>
+            <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.transferFeeOptional')}</label>
             <input
               type="number"
               step="0.01"
-              placeholder="0.00"
+              placeholder={t('common.amountPlaceholder')}
               className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               value={transferFee}
               onChange={(e) => setTransferFee(e.target.value)}
@@ -997,25 +1071,25 @@ export function TransactionForm({
 
       {/* ─── Voice / Scan quick-fill row ─── */}
       {(onVoiceRequest || onScanRequest) && (
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-1.5 sm:gap-2 mb-2">
           {onVoiceRequest && (
             <button
               type="button"
               onClick={onVoiceRequest}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
             >
-              <Mic className="w-4 h-4 text-accent" />
-              <span className="text-sm font-semibold">Voice Fill</span>
+              <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
+              <span className="text-xs sm:text-sm font-semibold">{t('transaction.voiceFill')}</span>
             </button>
           )}
           {onScanRequest && (
             <button
               type="button"
               onClick={onScanRequest}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
             >
-              <Camera className="w-4 h-4 text-accent" />
-              <span className="text-sm font-semibold">Scan Receipt</span>
+              <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
+              <span className="text-xs sm:text-sm font-semibold">{t('transaction.scanReceipt')}</span>
             </button>
           )}
         </div>
@@ -1033,11 +1107,11 @@ export function TransactionForm({
             render={({ field }) => (
               <FormItem className="relative">
                 <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                  {type === 'lend' ? 'Who are you lending to?' : type === 'owe' ? 'Who are you borrowing from?' : type === 'transfer' ? 'Description (Optional)' : 'Description'}
+                  {type === 'lend' ? t('transaction.descriptionLend') : type === 'owe' ? t('transaction.descriptionBorrow') : type === 'transfer' ? t('transaction.descriptionTransfer') : t('transaction.description')}
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={type === 'lend' ? 'Name or @handle' : type === 'owe' ? 'Name or @handle' : type === 'transfer' ? 'e.g. Monthly savings transfer' : 'What was this for?'}
+                    placeholder={type === 'lend' ? t('transaction.descriptionPlaceholderLendBorrow') : type === 'owe' ? t('transaction.descriptionPlaceholderLendBorrow') : type === 'transfer' ? t('transaction.descriptionPlaceholderTransfer') : t('transaction.descriptionPlaceholder')}
                     className="rounded-xl"
                     {...field}
                     ref={(el) => {
@@ -1108,7 +1182,7 @@ export function TransactionForm({
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Amount</FormLabel>
+                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.amount')}</FormLabel>
                 <div className="flex gap-2">
                   <FormField
                     control={form.control}
@@ -1150,7 +1224,7 @@ export function TransactionForm({
                     }
                   />
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" className="flex-1 rounded-xl text-lg font-bold" {...field} />
+                    <Input type="number" step="0.01" placeholder={t('common.amountPlaceholder')} className="flex-1 rounded-xl text-lg font-bold" {...field} />
                   </FormControl>
                 </div>
                 {convertedPreview && (
@@ -1164,25 +1238,25 @@ export function TransactionForm({
           {/* ─── Phase 2.3: Payment Method picker ─── */}
           {type !== 'transfer' && (
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider opacity-70">Payment Method</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.paymentMethod')}</label>
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                 {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([method, label]) => {
                   const icons: Record<PaymentMethod, JSX.Element> = {
-                    cash: <Banknote className="w-3.5 h-3.5 shrink-0" />,
-                    card: <CreditCard className="w-3.5 h-3.5 shrink-0" />,
-                    bank_transfer: <Building2 className="w-3.5 h-3.5 shrink-0" />,
-                    online: <Globe className="w-3.5 h-3.5 shrink-0" />,
-                    cheque: <FileText className="w-3.5 h-3.5 shrink-0" />,
-                    other: <ArrowLeftRight className="w-3.5 h-3.5 shrink-0" />,
+                    cash: <Banknote className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
+                    card: <CreditCard className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
+                    bank_transfer: <Building2 className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
+                    online: <Globe className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
+                    cheque: <FileText className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
+                    other: <ArrowLeftRight className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
                   };
                   // Shorten long labels so all chips fit on one line
                   const shortLabels: Record<PaymentMethod, string> = {
-                    cash: 'Cash',
-                    card: 'Card',
-                    bank_transfer: 'Bank',
-                    online: 'Online',
-                    cheque: 'Cheque',
-                    other: 'Other',
+                    cash: t('transaction.paymentMethodCash'),
+                    card: t('transaction.paymentMethodCard'),
+                    bank_transfer: t('transaction.paymentMethodBank'),
+                    online: t('transaction.paymentMethodOnline'),
+                    cheque: t('transaction.paymentMethodCheque'),
+                    other: t('transaction.paymentMethodOther'),
                   };
                   return (
                     <button
@@ -1190,14 +1264,15 @@ export function TransactionForm({
                       type="button"
                       onClick={() => setPaymentMethod(paymentMethod === method ? '' : method)}
                       className={cn(
-                        'flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-all h-9',
+                        'flex items-center justify-center gap-1 rounded-lg sm:rounded-xl border py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium transition-all h-8 sm:h-9',
                         paymentMethod === method
                           ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
                           : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
                       )}
                     >
                       {icons[method]}
-                      <span>{shortLabels[method]}</span>
+                      <span className="hidden xs:inline">{shortLabels[method]}</span>
+                      <span className="xs:hidden">{shortLabels[method].slice(0, 3)}</span>
                     </button>
                   );
                 })}
@@ -1208,9 +1283,9 @@ export function TransactionForm({
           {/* ─── Feature 1.4: Split toggle (expense only, create mode only) ─── */}
           {type !== 'transfer' && type === 'expense' && !isEditMode && (
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Split className="w-4 h-4 text-muted-foreground" />
-                <span className="text-xs font-bold uppercase tracking-wider opacity-70">Split Transaction</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Split className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.splitTransaction')}</span>
               </div>
               <Switch
                 checked={isSplit}
@@ -1229,11 +1304,11 @@ export function TransactionForm({
           {/* ─── Split With field ─── */}
           {isSplit && (
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider opacity-70">Split With (Optional)</label>
+              <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.splitWithOptional')}</label>
               <input
                 type="text"
-                placeholder="Who are you splitting with? e.g. Alice"
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder={t('transaction.splitWithPlaceholder')}
+                className="w-full rounded-lg sm:rounded-xl border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={splitWith}
                 onChange={(e) => setSplitWith(e.target.value)}
               />
@@ -1259,7 +1334,7 @@ export function TransactionForm({
                   <FormItem>
                     <div className="flex items-center justify-between mb-1.5">
                       <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                        {isLendOwe ? 'Category (optional)' : 'Category'}
+                        {isLendOwe ? t('transaction.categoryOptional') : t('transaction.category')}
                       </FormLabel>
                       <Button
                         type="button"
@@ -1284,8 +1359,8 @@ export function TransactionForm({
                               isSplit,
                               splitRows,
                               paymentMethod: paymentMethod || '',
-                              transferFromCardId,
-                              transferToCardId,
+                              transferFromAccountTypeId,
+                              transferToAccountTypeId,
                               transferFee,
                               customCategoryLabel,
                               selectedParentCategoryId,
@@ -1296,7 +1371,7 @@ export function TransactionForm({
                         }}
                       >
                         <Plus className="h-3 w-3" />
-                        Create New
+                        {t('transaction.createNew')}
                       </Button>
                     </div>
 
@@ -1309,13 +1384,13 @@ export function TransactionForm({
                     >
                       <FormControl>
                         <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder={isLendOwe ? 'Select category (optional)' : 'Select category'} />
+                          <SelectValue placeholder={isLendOwe ? t('transaction.selectCategoryOptional') : t('transaction.selectCategory')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="rounded-2xl">
                         {filteredRootCategories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                            {cat.name}
+                            {t(`categories.${cat.name}`, { defaultValue: cat.name })}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1334,12 +1409,12 @@ export function TransactionForm({
                         }}
                       >
                         <SelectTrigger className="rounded-xl mt-2">
-                          <SelectValue placeholder="Select sub-category" />
+                          <SelectValue placeholder={t('transaction.selectSubCategory')} />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl">
                           {filteredSubs.map((cat) => (
                             <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                              {cat.name}
+                              {t(`categories.${cat.name}`, { defaultValue: cat.name })}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1383,16 +1458,16 @@ export function TransactionForm({
           {/* ─── Feature 1.4: Split rows (when split is active) ─── */}
           {isSplit && type === 'expense' && (
             <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wider opacity-70">Split Details</p>
+              <p className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.splitDetails')}</p>
               {splitRows.map((row, idx) => (
-                <div key={row.id} className="flex items-start gap-2 p-3 rounded-2xl border border-border bg-card">
+                <div key={row.id} className="flex items-start gap-2 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-border bg-card">
                   <div className="flex-1 space-y-2">
                     <Select
                       value={row.categoryId}
                       onValueChange={(val) => updateSplitRow(row.id, 'categoryId', val)}
                     >
-                      <SelectTrigger className="rounded-xl text-xs h-9">
-                        <SelectValue placeholder="Category" />
+                      <SelectTrigger className="rounded-xl text-xs h-8 sm:h-9">
+                        <SelectValue placeholder={t('transaction.category')} />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl">
                         {rootCategories.map((cat) => {
@@ -1400,13 +1475,13 @@ export function TransactionForm({
                           if (subs.length > 0) {
                             return subs.map((sub) => (
                               <SelectItem key={sub.id} value={sub.id} className="rounded-xl">
-                                {cat.name} &gt; {sub.name}
+                                {t(`categories.${cat.name}`, { defaultValue: cat.name })} &gt; {t(`categories.${sub.name}`, { defaultValue: sub.name })}
                               </SelectItem>
                             ));
                           }
                           return (
                             <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
-                              {cat.name}
+                              {t(`categories.${cat.name}`, { defaultValue: cat.name })}
                             </SelectItem>
                           );
                         })}
@@ -1415,8 +1490,8 @@ export function TransactionForm({
                     <Input
                       type="number"
                       step="0.01"
-                      placeholder="0.00"
-                      className="rounded-xl text-sm h-9"
+                      placeholder={t('common.amountPlaceholder')}
+                      className="rounded-xl text-xs sm:text-sm h-8 sm:h-9"
                       value={row.amount}
                       onChange={(e) => updateSplitRow(row.id, 'amount', e.target.value)}
                     />
@@ -1426,10 +1501,10 @@ export function TransactionForm({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                      className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 text-muted-foreground hover:text-destructive"
                       onClick={() => removeSplitRow(row.id)}
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   )}
                 </div>
@@ -1443,7 +1518,7 @@ export function TransactionForm({
                 onClick={addSplitRow}
               >
                 <Plus className="w-4 h-4 mr-1" />
-                Add Split
+                {t('transaction.addSplit')}
               </Button>
 
               {/* Split total validation */}
@@ -1453,11 +1528,11 @@ export function TransactionForm({
                   ? 'bg-emerald-500/10 text-emerald-600'
                   : 'bg-destructive/10 text-destructive'
               )}>
-                <span>Split Total: {formatAmount(splitTotal)}</span>
+                <span>{t('transaction.splitTotal')}: {formatAmount(splitTotal)}</span>
                 <span>
                   {splitIsValid
-                    ? 'Balanced'
-                    : `Remaining: ${formatAmount(totalAmount - splitTotal)}`
+                    ? t('transaction.balanced')
+                    : `${t('transaction.splitRemaining')}: ${formatAmount(totalAmount - splitTotal)}`
                   }
                 </span>
               </div>
@@ -1467,10 +1542,10 @@ export function TransactionForm({
           {isOtherCategory && !isSplit && (
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider opacity-70">
-                {type === 'income' ? 'What is this income for?' : 'What is this expense for?'}
+                {type === 'income' ? t('transaction.whatIncomeFor') : t('transaction.whatExpenseFor')}
               </label>
               <Input
-                placeholder="e.g. Pet supplies, Wedding gift…"
+                placeholder={t('transaction.customCategoryPlaceholder')}
                 className="rounded-xl"
                 value={customCategoryLabel}
                 maxLength={100}
@@ -1491,7 +1566,7 @@ export function TransactionForm({
           {/* Budget chip suggestions — Feature 1 & 4 */}
           {(type === 'expense' || type === 'lend' || type === 'owe') && !isSplit && matchingBudgets.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider opacity-70">Apply to Budget</p>
+              <p className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.applyToBudget')}</p>
               <div className="flex flex-wrap gap-2">
                 {matchingBudgets.map((b) => (
                   <button
@@ -1522,19 +1597,19 @@ export function TransactionForm({
                         : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
                     )}
                   >
-                    <span>{b.category?.name || b.name || 'Total Budget'}</span>
+                    <span>{b.category?.name || b.name || t('budget.totalBudget')}</span>
                     <span className={cn(
                       'tabular-nums text-[10px]',
                       b.remaining <= 0 ? 'text-destructive' : 'opacity-60'
                     )}>
-                      {formatAmount(b.remaining)} left
+                      {formatAmount(b.remaining)} {t('transaction.budgetLeft')}
                     </span>
                   </button>
                 ))}
               </div>
               {!selectedBudgetId && (
                 <p className="text-[10px] text-muted-foreground">
-                  No budget selected — expense will be unbudgeted
+                  {t('transaction.noBudgetSelected')}
                 </p>
               )}
             </div>
@@ -1543,8 +1618,8 @@ export function TransactionForm({
           {/* ─── Feature 1.2: Transaction Tags ─── */}
           {type !== 'transfer' && (
             <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider opacity-70">Tags</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.tags')}</p>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {PREDEFINED_TAGS.map((tag) => {
                   const isSelected = selectedTags.includes(tag);
                   return (
@@ -1553,13 +1628,13 @@ export function TransactionForm({
                       type="button"
                       onClick={() => toggleTag(tag)}
                       className={cn(
-                        'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                        'rounded-full border px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium transition-all',
                         isSelected
                           ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
                           : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
                       )}
                     >
-                      {tag}
+                      {t(`transaction.tag${tag.replace(/\s+/g, '').replace(/[^a-zA-Z]/g, '')}`, { defaultValue: tag })}
                     </button>
                   );
                 })}
@@ -1571,20 +1646,20 @@ export function TransactionForm({
           {(type === 'expense' || type === 'income') && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider opacity-70">
-                  {transactionStatus === 'cleared' ? 'Cleared' : 'Uncleared'}
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">
+                  {transactionStatus === 'cleared' ? t('transaction.cleared') : t('transaction.uncleared')}
                 </span>
                 <button
                   type="button"
                   className="focus:outline-none"
                   onClick={() => toastInfo(
-                    transactionStatus === 'cleared' ? 'Cleared' : 'Uncleared',
+                    transactionStatus === 'cleared' ? t('transaction.cleared') : t('transaction.uncleared'),
                     transactionStatus === 'cleared'
-                      ? 'This transaction has been confirmed against your bank — the money has moved.'
-                      : "This transaction hasn't been confirmed yet — it may still be pending in your bank.",
+                      ? t('transaction.clearedTooltip')
+                      : t('transaction.unclearedTooltip'),
                   )}
                 >
-                  <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                  <Info className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
                 </button>
               </div>
               <Switch
@@ -1601,13 +1676,13 @@ export function TransactionForm({
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Date</FormLabel>
+                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.date')}</FormLabel>
                 <Popover open={dateOpen} onOpenChange={setDateOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button variant="outline" className="w-full justify-start text-left font-normal">
                         <Calendar className="mr-2 h-4 w-4 opacity-50" />
-                        {field.value ? format(field.value, 'MMM dd, yyyy') : 'Pick date'}
+                        {field.value ? format(field.value, 'MMM dd, yyyy') : t('transaction.pickDate')}
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
@@ -1633,9 +1708,9 @@ export function TransactionForm({
             name="note"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Note (Optional)</FormLabel>
+                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.noteOptional')}</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Add details..." className="resize-none rounded-xl" rows={2} {...field} />
+                  <Textarea placeholder={t('transaction.notePlaceholder')} className="resize-none rounded-lg sm:rounded-xl text-xs sm:text-sm" rows={2} {...field} />
                 </FormControl>
               </FormItem>
             )}
@@ -1646,7 +1721,7 @@ export function TransactionForm({
             <div className="space-y-3 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5" /> Set Reminder
+                  <Bell className="w-3.5 h-3.5" /> {t('transaction.setReminder')}
                 </label>
                 <Switch
                   checked={reminderEnabled}
@@ -1661,7 +1736,7 @@ export function TransactionForm({
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
                       <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                      {reminderDate ? format(reminderDate, 'MMM dd, yyyy') : 'Remind me on...'}
+                      {reminderDate ? format(reminderDate, 'MMM dd, yyyy') : t('transaction.remindMeOn')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl" align="end">
@@ -1680,7 +1755,7 @@ export function TransactionForm({
 
           <div className="flex gap-2 pt-6 pb-2">
             <Button type="button" variant="ghost" onClick={onCancel} className="flex-1">
-              Cancel
+              {t('common.cancel')}
             </Button>
             {/* ─── Feature 1.6: Save & Add Another (create mode only) ─── */}
             {!isEditMode && onSuccessKeepOpen && (
@@ -1694,7 +1769,7 @@ export function TransactionForm({
                 {form.formState.isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  'Save & New'
+                  t('transaction.saveAndNew')
                 )}
               </Button>
             )}
@@ -1702,7 +1777,7 @@ export function TransactionForm({
               {form.formState.isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                'Save'
+                t('common.save')
               )}
             </Button>
           </div>

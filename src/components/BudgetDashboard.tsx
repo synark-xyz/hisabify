@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -22,13 +23,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { PrivacyMask } from '@/components/ui/privacy-mask';
+import { useNumberTranslation } from '@/lib/i18nNumber';
+import { use } from 'i18next';
 
 interface BudgetCategoryOption {
   id: string;
   name: string;
 }
 
+
+/**
+ * BudgetDashboard component
+ *
+ * This component displays the user's active budgets and their
+ * respective spending amounts. It also provides a summary of the
+ * user's total budget, total spent, and total remaining. The
+ * component allows users to add new budgets, edit existing ones,
+ * and delete budgets.
+ *
+ * The component also includes a premium-gated history chart that
+ * displays the user's spending over time.
+ *
+ * The component is a container component that holds all the
+ * budget-related features.
+ */
 export function BudgetDashboard() {
+  const { t } = useTranslation();
+  const { tn } = useNumberTranslation();
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<BudgetWithSpending | null>(null);
@@ -53,7 +74,7 @@ export function BudgetDashboard() {
           .eq('is_system_category', false);
         if (error) throw error;
         if (data) {
-          setCategories(data.map((row) => ({ id: row.id, name: row.name })));
+          setCategories(data.map((row) => ({ id: row.id, name: row.name } as BudgetCategoryOption)));
         }
       } catch (err) {
         console.error('Error fetching categories:', err);
@@ -169,7 +190,7 @@ export function BudgetDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm text-muted-foreground">Budget</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{t('budget.title')}</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
                     <PrivacyMask>
                       {formatAmount(totalBudget)}
@@ -193,14 +214,14 @@ export function BudgetDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm text-muted-foreground">Spent</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{t('budget.spent')}</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground truncate">
                     <PrivacyMask>
                       {formatAmount(totalSpent)}
                     </PrivacyMask>
                   </p>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">
-                    {overallPercentage.toFixed(0)}% used
+                    {t('budget.used', { amount: overallPercentage.toFixed(0) }) }
                   </p>
                 </div>
                 <div className="hidden sm:flex w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-destructive/10 items-center justify-center flex-shrink-0">
@@ -220,7 +241,7 @@ export function BudgetDashboard() {
             <CardContent className="p-3 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm text-muted-foreground">Left</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{t('budget.left')}</p>
                   <p className={cn(
                     "text-lg sm:text-2xl font-bold truncate",
                     totalRemaining >= 0 ? "text-green-500" : "text-destructive"
@@ -248,10 +269,10 @@ export function BudgetDashboard() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-foreground">Active Budgets</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('budget.activeBudgets')}</h2>
           {budgets.length > 0 && (
             <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium">
-              {budgets.length} {budgets.length === 1 ? 'budget' : 'budgets'}
+              {tn(budgets.length)} {budgets.length === 1 ? t('budget.budget_singular') : t('budget.budget_plural')}
             </span>
           )}
         </div>
@@ -266,7 +287,7 @@ export function BudgetDashboard() {
           size="sm"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Budget
+          {t('budget.addBudget')}
         </Button>
       </div>
 
@@ -274,15 +295,15 @@ export function BudgetDashboard() {
         <Card className="border-border/50">
           <CardContent className="flex flex-col gap-3 p-4">
             <div>
-              <p className="text-sm font-semibold text-foreground">
-                You have {formatAmount(endedBudgetWithRemaining.remaining)} unspent in {endedBudgetWithRemaining.category?.name || endedBudgetWithRemaining.name || 'this budget'}.
-              </p>
-              <p className="text-xs text-muted-foreground">Move to savings?</p>
+<p className="text-sm font-semibold text-foreground">
+  {t('budget.youHaveUnspent', { amount: formatAmount(endedBudgetWithRemaining.remaining), category: endedBudgetWithRemaining.category?.name || endedBudgetWithRemaining.name || t('budget.totalBudget') })}
+</p>
+<p className="text-xs text-muted-foreground">{t('budget.moveToSavings')}</p>
             </div>
             {activeGoals.length === 0 ? (
-              <Button variant="outline" size="sm" className="w-fit rounded-full" onClick={() => navigate('/savings')}>
-                Create a savings goal to move funds →
-              </Button>
+<Button variant="outline" size="sm" className="w-fit rounded-full" onClick={() => navigate('/savings')}>
+  {t('budget.createSavingsGoal')}
+</Button>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {activeGoals.slice(0, 3).map((goal) => (
@@ -325,14 +346,14 @@ export function BudgetDashboard() {
         <Card>
           <CardContent className="py-12 text-center">
             <Wallet className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">No Budgets Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first budget to start tracking your spending.
-            </p>
-            <Button onClick={() => setShowAddBudget(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Budget
-            </Button>
+<h3 className="text-lg font-medium text-foreground mb-2">{t('budget.noBudgetsYet')}</h3>
+<p className="text-muted-foreground mb-4">
+  {t('budget.createFirstBudget')}
+</p>
+<Button onClick={() => setShowAddBudget(true)}>
+  <Plus className="w-4 h-4 mr-2" />
+  {t('budget.createBudget')}
+</Button>
           </CardContent>
         </Card>
       )}

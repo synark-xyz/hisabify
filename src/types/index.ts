@@ -10,6 +10,16 @@ export interface Card {
   balance: number;
   created_at: string;
   updated_at: string;
+  account_type_id?: string | null;
+}
+
+export interface AccountType {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface Category {
@@ -23,6 +33,7 @@ export interface Category {
   type: 'expense' | 'income';
   parent_id?: string | null;
   usage_count?: number;
+  translations?: Record<string, { name: string }>;
 }
 
 export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online' | 'cheque' | 'other';

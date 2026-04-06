@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -29,6 +30,7 @@ const cardVariants = {
 
 export function DataPage() {
     const { variant } = useTheme();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, signOut } = useAuth();
     const { profile } = useProfile();
@@ -152,7 +154,7 @@ export function DataPage() {
                             <FileJson className="w-5 h-5 text-blue-500" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-foreground text-sm">Export Data</p>
+                            <p className="font-semibold text-foreground text-sm">{t('profileData.exportData')}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                                 Download all transactions, budgets, cards &amp; goals as JSON
                             </p>
@@ -194,7 +196,7 @@ export function DataPage() {
                             <Trash2 className="w-5 h-5 text-amber-500" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-foreground text-sm">Delete Financial Data</p>
+                            <p className="font-semibold text-foreground text-sm">{t('profileData.deleteFinancialData')}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                                 Erase all records — your login account is kept
                             </p>
@@ -228,12 +230,12 @@ export function DataPage() {
                                 </AlertDialogHeader>
                                 <div className="py-3 space-y-1.5">
                                     <Label className="text-sm">
-                                        Type <span className="font-mono font-bold">DELETE</span> to confirm
+                                        {t('profileData.typeDeleteConfirm')}
                                     </Label>
                                     <Input
                                         value={deleteConfirmText}
                                         onChange={(e) => setDeleteConfirmText(e.target.value)}
-                                        placeholder="DELETE"
+                                        placeholder={t('profileData.deletePlaceholder')}
                                         autoComplete="off"
                                     />
                                 </div>
@@ -293,12 +295,12 @@ export function DataPage() {
                                 </AlertDialogHeader>
                                 <div className="py-3 space-y-1.5">
                                     <Label className="text-sm">
-                                        Type <span className="font-mono font-bold">DELETE ACCOUNT</span> to confirm
+                                        {t('profileData.typeDeleteAccountConfirm')}
                                     </Label>
                                     <Input
                                         value={deleteAccountConfirmText}
                                         onChange={(e) => setDeleteAccountConfirmText(e.target.value)}
-                                        placeholder="DELETE ACCOUNT"
+                                        placeholder={t('profileData.deleteAccountPlaceholder')}
                                         autoComplete="off"
                                     />
                                 </div>

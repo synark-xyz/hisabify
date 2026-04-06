@@ -12,6 +12,7 @@ import {
 } from "@/components/savings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 import { useTheme } from '@/hooks/useTheme';
 import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
@@ -26,6 +27,7 @@ export function SavingsTabContent() {
   const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
   const [mainBalance, setMainBalance] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation();
 
   const {
     goals,
@@ -197,36 +199,11 @@ export function SavingsTabContent() {
 
       <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
         <motion.div
-          className="px-4 pb-4 space-y-6"
+          className="px-4 pb-4 pt-4 space-y-6"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          {/* Hero Section */}
-          <motion.div
-            variants={itemVariants}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6 shadow-xl"
-          >
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-            <div className="relative z-10 flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5 text-white/80" />
-                  <span className="text-white/80 text-sm font-medium">Goal Tracking</span>
-                </div>
-                <h1 className="text-2xl font-bold text-white mb-1">Your Savings</h1>
-                <p className="text-white/70 text-sm">Build your wealth, one goal at a time</p>
-              </div>
-              <motion.div
-                className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
-                whileHover={{ scale: 1.05, rotate: -5 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <HandCoins className="w-8 h-8 text-white" />
-              </motion.div>
-            </div>
-          </motion.div>
-
           {/* Stats Summary */}
           <motion.div variants={itemVariants}>
             <SavingsGoalsSummary
@@ -248,8 +225,8 @@ export function SavingsTabContent() {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground">Unlimited Savings Goals</p>
-                  <p className="text-xs text-muted-foreground">Upgrade to Pro to create more than one goal</p>
+                  <p className="text-sm font-bold text-foreground">{t('savings.unlimitedGoals')}</p>
+                  <p className="text-xs text-muted-foreground">{t('savings.upgradeForMoreGoals')}</p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -257,16 +234,16 @@ export function SavingsTabContent() {
           )}
 
           <motion.div variants={itemVariants} className="flex items-center justify-between pt-2">
-            <h2 className="text-lg font-semibold">My Goals</h2>
+            <h2 className="text-lg font-semibold">{t("savings.myGoals")}</h2>
             <div className="flex items-center gap-2">
               {!isPremium && activeGoals.length >= 1 && (
                 <span className="rounded-full bg-purple-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-500">
-                  1/1 Free
+                  {t('savings.freeLimit')}
                 </span>
               )}
               <Button onClick={handleAddGoal} size="sm">
                 <Plus className="mr-2 h-4 w-4" />
-                New Goal
+                {t('savings.newGoal')}
               </Button>
             </div>
           </motion.div>
@@ -276,13 +253,13 @@ export function SavingsTabContent() {
               <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
                 <HandCoins className="h-10 w-10 text-accent" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">No savings goals yet</h2>
+              <h2 className="text-xl font-semibold mb-2">{t('savings.noGoals')}</h2>
               <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
-                Start building your future by creating your first savings goal today.
+                {t('savings.startBuilding')}
               </p>
               <Button onClick={handleAddGoal} className="rounded-full px-6">
                 <Plus className="mr-2 h-4 w-4" />
-                Create Your First Goal
+                {t('savings.createFirstGoal')}
               </Button>
             </motion.div>
           ) : (
@@ -310,7 +287,7 @@ export function SavingsTabContent() {
                     const budget = budgets.find((entry) => entry.id === budgetId);
                     transferBudgetLeftover.mutate({
                       budgetId,
-                      budgetName: budget?.category?.name || budget?.name || 'Budget',
+                      budgetName: budget?.category?.name || budget?.name || t('budget.budget'),
                       budgetCategoryId: budget?.category_id || null,
                       goalId,
                       amount,

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { isSameDay, isSameMonth } from 'date-fns';
-import { DayPicker, DayContentProps } from 'react-day-picker';
+import { isSameDay, isSameMonth, format } from 'date-fns';
+import { DayPicker, DayContentProps, CaptionProps } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
@@ -14,6 +14,16 @@ interface MonthCalendarProps {
   onMonthChange: (date: Date) => void;
   hasTransactions?: (date: Date) => boolean;
   isSelectable?: boolean;
+}
+
+function CustomCaption(props: CaptionProps) {
+  const { displayMonth } = props;
+  const { formatDate } = useFormatDate();
+  return (
+    <div className="text-base font-bold text-foreground text-glow uppercase tracking-wider">
+      {formatDate(displayMonth, 'MMMM yyyy')}
+    </div>
+  );
 }
 
 export function MonthCalendar({
@@ -105,6 +115,7 @@ export function MonthCalendar({
           IconLeft: () => <ChevronLeft className="h-5 w-5" />,
           IconRight: () => <ChevronRight className="h-5 w-5" />,
           DayContent: CustomDayContent,
+          Caption: CustomCaption,
         }}
       />
       {selectedDate && (

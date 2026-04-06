@@ -4,11 +4,19 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
     ArrowRight, Check, Sparkles, TrendingUp, Shield, Zap,
-    PieChart, Target, Wallet, Bell, Gift, Star, CreditCard, BarChart3, Globe
+    PieChart, Target, Wallet, Bell, Gift, Star, CreditCard, BarChart3, ChevronDown
 } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
 import { HisabifyLogo } from '@/components/HisabifyLogo';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 function useSmallScreen() {
     const [isSmall, setIsSmall] = useState(() => window.innerHeight < 700);
@@ -81,12 +89,11 @@ interface OnboardingPageProps {
 export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [direction, setDirection] = useState(0);
-    const [showLanguageStep, setShowLanguageStep] = useState(true);
     const navigate = useNavigate();
     const controls = useAnimation();
     const isSmall = useSmallScreen();
     const { t } = useTranslation();
-    const { language, setLanguage: setLang, isLoading } = useLanguage();
+    const { language, setLanguage: setLang } = useLanguage();
 
     useEffect(() => {
         controls.start({
@@ -94,11 +101,6 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
             transition: { duration: 1, repeat: Infinity, ease: "easeInOut" }
         });
     }, [controls]);
-
-    const handleLanguageSelect = async (lang: 'en' | 'bn' | 'ja') => {
-        await setLang(lang);
-        setShowLanguageStep(false);
-    };
 
     const handleNext = () => {
         if (currentIndex < slides.length - 1) {
@@ -144,73 +146,6 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
     };
 
     const currentSlide = slides[currentIndex];
-
-    if (showLanguageStep) {
-        return (
-            <div className="min-h-screen-dynamic bg-background flex flex-col relative overflow-hidden pt-safe pb-safe">
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <motion.div
-                        className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[140px]"
-                        style={{ background: 'linear-gradient(to bottom right, #3B82F6, #22D3EE)' }}
-                        animate={{ scale: [1, 1.12, 1], opacity: [0.18, 0.28, 0.18] }}
-                        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                    <motion.div
-                        className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full blur-[140px]"
-                        style={{ background: 'linear-gradient(to top right, #22D3EE, #60A5FA)' }}
-                        animate={{ scale: [1.12, 1, 1.12], opacity: [0.15, 0.25, 0.15] }}
-                        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-                    />
-                </div>
-
-                <div className="absolute top-0 left-0 z-50 pt-safe pl-6 mt-2">
-                    <HisabifyLogo size={isSmall ? 32 : 40} showText={true} />
-                </div>
-
-                <div className="flex-1 flex flex-col items-center justify-center px-6">
-                    <div className="w-full max-w-md">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="text-center mb-12"
-                        >
-                            <h2 className={cn("font-black tracking-tight text-foreground", isSmall ? "text-2xl" : "text-3xl md:text-4xl")}>
-                                {t('onboarding.selectLanguage')}
-                            </h2>
-                            <p className="text-muted-foreground mt-2">{t('common.select')}</p>
-                        </motion.div>
-
-                        <div className="grid grid-cols-1 gap-4">
-                            {(['en', 'bn', 'ja'] as const).map((lang, index) => (
-                                <motion.button
-                                    key={lang}
-                                    onClick={() => handleLanguageSelect(lang)}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 + index * 0.1, duration: 0.4 }}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className={cn(
-                                        "p-6 rounded-2xl border-2 transition-all text-center",
-                                        language === lang
-                                            ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                                    )}
-                                >
-                                    <span className={cn("font-bold text-lg", isSmall ? "text-xl" : "text-2xl")}>
-                                        {lang === 'en' && 'English'}
-                                        {lang === 'bn' && 'বাংলা'}
-                                        {lang === 'ja' && '日本語'}
-                                    </span>
-                                </motion.button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen-dynamic bg-background flex flex-col relative overflow-hidden overflow-y-auto pt-safe pb-safe">
@@ -265,33 +200,71 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps = {}) {
                 }
             `}</style>
 
-            {/* Skip Button with safe area */}
-            <motion.div
-                className="absolute top-0 right-0 z-50 pt-safe pr-4"
-                initial={{ opacity: 0, x: 15, scale: 0.9 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                transition={{
-                    delay: 0.1,
-                    duration: 0.6,
-                    ease: [0.4, 0, 0.2, 1]
-                }}
-            >
+            {/* Header Controls - Right Side */}
+            <div className="absolute top-0 right-0 z-50 pt-safe pr-4 flex items-center gap-2">
+                {/* Language Selector - First Slide Only */}
+                {currentIndex === 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, x: 15, scale: 0.9 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        transition={{
+                            delay: 0.1,
+                            duration: 0.6,
+                            ease: [0.4, 0, 0.2, 1]
+                        }}
+                    >
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="gap-2 backdrop-blur-sm mt-2 h-9"
+                                >
+                                    <Globe className="w-4 h-4" />
+                                    <span className="text-xs font-semibold">
+                                        {language === 'en' && 'EN'}
+                                        {language === 'bn' && 'BN'}
+                                        {language === 'ja' && 'JA'}
+                                    </span>
+                                    <ChevronDown className="w-3 h-3" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                                {(['en', 'bn', 'ja'] as const).map((lang) => (
+                                    <DropdownMenuItem
+                                        key={lang}
+                                        onClick={() => setLang(lang)}
+                                        className={cn("cursor-pointer", language === lang && "bg-accent")}
+                                    >
+                                        {lang === 'en' && 'English'}
+                                        {lang === 'bn' && 'বাংলা'}
+                                        {lang === 'ja' && '日本語'}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </motion.div>
+                )}
+
+                {/* Skip Button - All slides */}
                 <motion.button
                     onClick={handleComplete}
                     className="text-sm font-bold text-muted-foreground hover:text-foreground px-4 py-3 rounded-full hover:bg-muted/50 mt-2 backdrop-blur-sm"
+                    initial={{ opacity: 0, x: 15, scale: 0.9 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{
+                        delay: 0.1,
+                        duration: 0.6,
+                        ease: [0.4, 0, 0.2, 1]
+                    }}
                     whileHover={{
                         scale: 1.05,
                         backgroundColor: "rgba(0, 0, 0, 0.05)"
                     }}
                     whileTap={{ scale: 0.95 }}
-                    transition={{
-                        duration: 0.2,
-                        ease: [0.4, 0, 0.2, 1]
-                    }}
                 >
                     {t('common.skip')}
                 </motion.button>
-            </motion.div>
+            </div>
 
             {/* Logo/Brand */}
             <motion.div

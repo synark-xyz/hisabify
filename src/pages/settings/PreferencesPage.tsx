@@ -84,7 +84,7 @@ export function PreferencesPage() {
 
     return (
         <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Preferences" showBack />
+            <Header title={t('settings.preferences')} showBack />
             <main className="px-4 py-6 space-y-6">
 
                 {/* Theme Style Selection */}

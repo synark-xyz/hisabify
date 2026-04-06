@@ -79,7 +79,7 @@ export function CurrencyConverterPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-semibold flex items-center gap-2">
-            <ArrowRightLeft className="w-5 h-5" /> Currency Converter
+            <ArrowRightLeft className="w-5 h-5" /> {t('morePage.currencyConverter')}
           </h1>
         </div>
       </header>
@@ -87,7 +87,7 @@ export function CurrencyConverterPage() {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Amount Input */}
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
+          <Label htmlFor="amount">{t('currencyConverter.amount')}</Label>
           <Input
             id="amount"
             type="number"
@@ -101,7 +101,7 @@ export function CurrencyConverterPage() {
         {/* Currency Selectors */}
         <div className="flex items-center gap-3">
           <div className="flex-1 space-y-2">
-            <Label htmlFor="from">From</Label>
+            <Label htmlFor="from">{t('currencyConverter.from')}</Label>
             <Select value={fromCurrency} onValueChange={setFromCurrency}>
               <SelectTrigger id="from" className="w-full">
                 <SelectValue />
@@ -126,7 +126,7 @@ export function CurrencyConverterPage() {
           </Button>
 
           <div className="flex-1 space-y-2">
-            <Label htmlFor="to">To</Label>
+            <Label htmlFor="to">{t('currencyConverter.to')}</Label>
             <Select value={toCurrency} onValueChange={setToCurrency}>
               <SelectTrigger id="to" className="w-full">
                 <SelectValue />
@@ -144,7 +144,7 @@ export function CurrencyConverterPage() {
 
         {/* Convert Button */}
         <Button className="w-full" onClick={convert} disabled={loading}>
-          {loading ? 'Converting...' : 'Convert'}
+          {loading ? t('currencyConverter.converting') : t('currencyConverter.convert')}
         </Button>
 
         {/* Result Card */}

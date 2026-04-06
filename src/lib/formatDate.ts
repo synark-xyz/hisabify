@@ -10,6 +10,7 @@ const localeMap: Record<string, Locale> = {
 
 const localizedNumerals: Record<string, string[]> = {
   bn: ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'],
+  ja: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
   en: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
 };
 
@@ -27,6 +28,11 @@ function formatWithLocalizedNumerals(date: Date, formatStr: string, lang: string
     if (match.length === 1) return localizedDay;
     return localizedDay.padStart(match.length, '0');
   });
+  const yearNum = date.getFullYear();
+  const localizedYear = localizeNumber(yearNum, lang);
+  result = result.replace(/y+/g, (match) => {
+    return localizedYear;
+  });
   return format(date, result, { locale: localeMap[lang] || enUS });
 }
 
@@ -37,7 +43,7 @@ export function useFormatDate() {
 
   const formatDate = (date: Date | string, formatStr: string) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    if (lang === 'bn') {
+    if (lang === 'bn' || lang === 'ja') {
       return formatWithLocalizedNumerals(dateObj, formatStr, lang);
     }
     return format(dateObj, formatStr, { locale });

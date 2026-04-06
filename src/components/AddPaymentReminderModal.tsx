@@ -118,8 +118,8 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     setShowQuickFill(false);
 
     toast({
-      title: 'Form auto-filled',
-      description: `Data from "${transaction.merchant}" has been filled. You can edit before saving.`,
+      title: t('reminders.formAutoFilled'),
+      description: t('reminders.formAutoFilledDesc', { merchant: transaction.merchant }),
     });
   };
 
@@ -147,13 +147,13 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
           .update(data)
           .eq('id', reminder.id);
         if (error) throw error;
-        toast({ title: 'Reminder updated successfully' });
+        toast({ title: t('reminders.reminderUpdated') });
       } else {
         const { error } = await supabase
           .from('payment_reminders')
           .insert(data);
         if (error) throw error;
-        toast({ title: 'Reminder created successfully' });
+        toast({ title: t('reminders.reminderCreated') });
       }
 
       // Try to schedule local notification if enabled
@@ -184,7 +184,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
     <ResponsiveDrawer
       open={open}
       onOpenChange={onOpenChange}
-      title={reminder ? 'Edit Payment Reminder' : 'Add Payment Reminder'}
+      title={reminder ? t('reminders.editPaymentReminder') : t('reminders.addPaymentReminder')}
     >
       {/* Quick Fill from Transaction Section */}
       {!reminder && (
@@ -196,7 +196,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
           >
             <div className="flex items-center gap-2">
               <Receipt className="w-4 h-4 text-accent" />
-              <span className="text-sm font-semibold">Quick Fill from Transaction</span>
+              <span className="text-sm font-semibold">{t('reminders.quickFillFromTransaction')}</span>
               {filteredTransactions.length > 0 && (
                 <span className="text-xs text-muted-foreground">({filteredTransactions.length})</span>
               )}
@@ -223,7 +223,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
                     <Input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search transactions..."
+                      placeholder={t('reminders.searchTransactions')}
                       className="pl-9 pr-9 rounded-xl h-10 text-sm"
                     />
                     {searchQuery && (
@@ -244,7 +244,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
                     </div>
                   ) : filteredTransactions.length === 0 ? (
                     <div className="text-center py-8 text-sm text-muted-foreground">
-                      {searchQuery ? 'No matching transactions found' : 'No recent transactions without reminders'}
+                      {searchQuery ? t('reminders.noMatchingTransactions') : t('reminders.noRecentTransactions')}
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
@@ -305,12 +305,12 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
       {/* Main Form */}
       <form onSubmit={handleSubmit} className="space-y-5 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider opacity-70">Title</Label>
+              <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider opacity-70">{t('reminders.reminderTitleLabel')}</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Electricity Bill"
+                placeholder={t('reminders.reminderTitlePlaceholder')}
                 required
                 className="rounded-xl h-12"
               />
@@ -318,7 +318,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="amount" className="text-xs font-bold uppercase tracking-wider opacity-70">Amount</Label>
+                <Label htmlFor="amount" className="text-xs font-bold uppercase tracking-wider opacity-70">{t('reminders.reminderAmountLabel')}</Label>
                 <div className="grid grid-cols-[1fr_96px] gap-2">
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -349,7 +349,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="dueDate" className="text-xs font-bold uppercase tracking-wider opacity-70">Due Date</Label>
+                <Label htmlFor="dueDate" className="text-xs font-bold uppercase tracking-wider opacity-70">{t('reminders.reminderDueDateLabel')}</Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -365,7 +365,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="notifyBefore" className="text-xs font-bold uppercase tracking-wider opacity-70">Notify Before (days)</Label>
+              <Label htmlFor="notifyBefore" className="text-xs font-bold uppercase tracking-wider opacity-70">{t('reminders.reminderNotifyBeforeLabel')}</Label>
               <div className="relative">
                 <Bell className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -386,8 +386,8 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
                   <RefreshCw className="w-5 h-5 text-accent" />
                 </div>
                 <div>
-                  <Label className="text-sm font-bold">Recurring Payment</Label>
-                  <p className="text-xs text-muted-foreground">Repeat this payment automatically</p>
+                  <Label className="text-sm font-bold">{t('reminders.reminderRecurringPayment')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('reminders.reminderRecurringDesc')}</p>
                 </div>
               </div>
               <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
@@ -401,7 +401,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
                   exit={{ opacity: 0, height: 0 }}
                   className="space-y-1.5 overflow-hidden"
                 >
-                  <Label htmlFor="interval" className="text-xs font-bold uppercase tracking-wider opacity-70">Repeat Interval</Label>
+                  <Label htmlFor="interval" className="text-xs font-bold uppercase tracking-wider opacity-70">{t('reminders.reminderRepeatInterval')}</Label>
                   <Select value={recurringInterval} onValueChange={setRecurringInterval}>
                     <SelectTrigger className="rounded-xl h-12">
                       <SelectValue />

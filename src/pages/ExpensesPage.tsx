@@ -650,7 +650,7 @@ export function ExpensesPage() {
                           whileTap={{ scale: 0.95 }}
                         >
                           <span className="text-sm font-semibold text-muted-foreground">
-                            {formatDate(anchorDate, 'yyyy')}
+                            {localizeYear(anchorDate.getFullYear())}
                           </span>
                           <ChevronDown className="w-3 h-3 text-muted-foreground" />
                         </motion.button>
@@ -1082,12 +1082,12 @@ export function ExpensesPage() {
                 <h2 className="text-lg font-bold text-foreground">{t('expenses.transactionsTitle')}</h2>
                 <span className="text-xs text-muted-foreground ml-2">
                   {viewMode === 'day' || effectiveFocusedDate
-                    ? formatDate(effectiveFocusedDate || anchorDate, 'MMM d, yyyy')
+                    ? formatDate(effectiveFocusedDate || anchorDate, 'MMM d') + ', ' + localizeYear((effectiveFocusedDate || anchorDate).getFullYear())
                     : viewMode === 'week'
                       ? t('expenses.thisWeek')
                       : viewMode === 'month'
                         ? formatDate(anchorDate, 'MMMM yyyy')
-                        : formatDate(anchorDate, 'yyyy')}
+                        : localizeYear(anchorDate.getFullYear())}
                 </span>
               </div>
 

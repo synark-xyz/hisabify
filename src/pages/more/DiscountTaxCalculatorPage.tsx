@@ -127,11 +127,11 @@ export function DiscountTaxCalculatorPage() {
         {/* Currency Selector (Pro Feature) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="currency">Currency</Label>
+            <Label htmlFor="currency">{t('discountTaxCalculator.currency')}</Label>
             <div className="flex items-center gap-1">
               {!isPremium && <Crown className="w-3 h-3 text-accent" />}
               <span className={`text-xs ${!isPremium ? 'text-accent' : 'text-muted-foreground'}`}>
-                {isPremium ? 'Customizable' : 'Pro'}
+                {isPremium ? t('discountTaxCalculator.customizable') : t('discountTaxCalculator.pro')}
               </span>
             </div>
           </div>
@@ -152,7 +152,7 @@ export function DiscountTaxCalculatorPage() {
         {/* Input Fields */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="price">Original Price</Label>
+            <Label htmlFor="price">{t('discountTaxCalculator.originalPrice')}</Label>
             <Input
               id="price"
               type="number"
@@ -162,7 +162,7 @@ export function DiscountTaxCalculatorPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="discount">Discount (%)</Label>
+            <Label htmlFor="discount">{t('discountTaxCalculator.discount')}</Label>
             <Input
               id="discount"
               type="number"
@@ -172,7 +172,7 @@ export function DiscountTaxCalculatorPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tax">Tax (%)</Label>
+            <Label htmlFor="tax">{t('discountTaxCalculator.tax')}</Label>
             <Input
               id="tax"
               type="number"
@@ -186,10 +186,10 @@ export function DiscountTaxCalculatorPage() {
         {/* Buttons */}
         <div className="flex gap-3">
           <Button className="flex-1" onClick={() => dispatch({ type: 'calculate' })}>
-            Calculate
+            {t('discountTaxCalculator.calculate')}
           </Button>
           <Button variant="outline" onClick={() => dispatch({ type: 'reset' })}>
-            Reset
+            {t('discountTaxCalculator.reset')}
           </Button>
         </div>
 

@@ -161,7 +161,8 @@
     "passwordUpdated": "Password updated successfully",
     "invalidPhoneNumber": "Please enter a valid phone number",
     "helpSupport": "Help & Support",
-    "savings": "Savings"
+    "savings": "Savings",
+    "new": "New"
   },
   "onboarding": {
     "selectLanguage": "Choose your language",
@@ -723,7 +724,7 @@
     "viewAll": "View all",
     "totalExpenses": "Total Expenses",
     "totalIncome": "Total Income",
-    "netSavings": "Net Balance",
+    "netBalance": "Net Balance",
     "budgetRemaining": "Budget Remaining"
   },
   "debt": {

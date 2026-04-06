@@ -15,7 +15,8 @@
     "passwordUpdated": "পাসওয়ার্ড আপডেট হয়েছে",
     "invalidPhoneNumber": "অনুগ্রহ করে একটি বৈধ ফোন নম্বর প্রবেশ করান",
     "helpSupport": "সাহায্য ও সহায়তা",
-    "savings": "সঞ্চয়"
+    "savings": "সঞ্চয়",
+    "new": "নতুন"
   },
   "nav": {
     "dashboard": "ড্যাশবোর্ড",
@@ -614,9 +615,9 @@
     "showLess": "কম দেখুন",
     "viewAll": "সব দেখুন",
     "budgetRemaining": "বাকি বাজেট",
-    "netSavings": "নেট সঞ্চয়",
     "totalExpenses": "মোট খরচ",
-    "totalIncome": "মোট আয়"
+    "totalIncome": "মোট আয়",
+    "netBalance": "নেট সঞ্চয়"
   },
   "debt": {
     "debtTracker": "ঋণ ট্র্যাকার",

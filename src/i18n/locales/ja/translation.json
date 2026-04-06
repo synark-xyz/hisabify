@@ -15,7 +15,8 @@
     "passwordUpdated": "パスワードを更新しました",
     "invalidPhoneNumber": "有効な電話番号を入力してください",
     "helpSupport": "ヘルプ＆サポート",
-    "savings": "貯蓄"
+    "savings": "貯蓄",
+    "new": "新"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -614,9 +615,9 @@
     "showLess": "少なく表示",
     "viewAll": "すべて表示",
     "budgetRemaining": "残りの予算",
-    "netSavings": "純貯蓄",
     "totalExpenses": "総支出",
-    "totalIncome": "総収入"
+    "totalIncome": "総収入",
+    "netBalance": "純貯蓄"
   },
   "debt": {
     "debtTracker": "債務トラッカー",

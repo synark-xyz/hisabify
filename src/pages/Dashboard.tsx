@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown, CheckCircle, Plus, PiggyBank, Handshake, Trash } from '@phosphor-icons/react';
+import { CaretDown, TrendUp, TrendDown, ArrowRight, Wallet, Sparkle, Bell, Faders, ChartPie, ClockCounterClockwise, Crown, CheckCircle, Plus, HandCoins, Handshake, Trash } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { StreamingGreeting } from '@/components/StreamingGreeting';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -447,7 +447,7 @@ export function Dashboard() {
                     className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/60 bg-card/50 px-3 py-3 hover:bg-muted/50 transition-all hover:border-accent/30 hover:shadow-sm group"
                   >
                     <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <PiggyBank className="w-4 h-4 text-amber-500" />
+                      <HandCoins className="w-4 h-4 text-amber-500" />
                     </div>
                     <span className="text-xs font-semibold text-foreground">{t('dashboard.goalButton')}</span>
                   </button>

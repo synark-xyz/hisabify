@@ -81,7 +81,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className={cn("container mx-auto p-4 space-y-6", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+    <div className={cn("container mx-auto p-1space-y-2", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="space-y-6">
           {/* Page header */}

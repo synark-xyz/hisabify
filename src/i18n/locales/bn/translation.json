@@ -1027,6 +1027,15 @@
     "noReminders": "কোনো রিমাইন্ডার নেই"
   },
   "loanCalculator": {
+    "title": "লোন ক্যালকুলেটর",
+    "currency": "মুদ্রা",
+    "customizable": "কাস্টমাইজযোগ্য",
+    "pro": "প্রো",
+    "loanAmount": "লোনের পরিমাণ",
+    "interestRate": "সুদের হার (বার্ষিক %)",
+    "tenureMonths": "মেয়াদ (মাস)",
+    "calculateEmi": "EMI গণনা করুন",
+    "reset": "রিসেট করুন",
     "monthlyEmi": "মাসিক EMI",
     "totalInterest": "মোট সুদ",
     "totalPayment": "মোট পেমেন্ট",
@@ -1036,12 +1045,25 @@
     "finalPrice": "চূড়ান্ত মূল্য",
     "discountPercent": "ডিসকাউন্ট ({{percent}}%)",
     "priceAfterDiscount": "ডিসকাউন্টের পর মূল্য",
-    "taxPercent": "কর ({{percent}}%)"
+    "taxPercent": "কর ({{percent}}%)",
+    "currency": "মুদ্রা",
+    "customizable": "কাস্টমাইজযোগ্য",
+    "pro": "প্রো",
+    "originalPrice": "মূল মূল্য",
+    "discount": "ডিসকাউন্ট (%)",
+    "tax": "ট্যাক্স (%)",
+    "calculate": "গণনা করুন",
+    "reset": "রিসেট করুন"
   },
   "currencyConverter": {
     "convertedAmount": "রূপান্তরিত অর্থ",
     "updatedAgo": "{{time}} আগে আপডেট হয়েছে",
-    "popularConversions": "জনপ্রিয় রূপান্তর"
+    "popularConversions": "জনপ্রিয় রূপান্তর",
+    "amount": "পরিমাণ",
+    "from": "থেকে",
+    "to": "এ",
+    "convert": "রূপান্তর করুন",
+    "converting": "রূপান্তরণ চলছে..."
   },
   "notificationSettings": {
     "budgetAlerts": "বাজেট অ্যালার্ট",

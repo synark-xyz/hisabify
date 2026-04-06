@@ -1020,6 +1020,15 @@
     "noReminders": "リマインダーなし"
   },
   "loanCalculator": {
+    "title": "ローン計算機",
+    "currency": "通貨",
+    "customizable": "カスタマイズ可能",
+    "pro": "プロ",
+    "loanAmount": "ローン金額",
+    "interestRate": "金利（年利％）",
+    "tenureMonths": "期間（月）",
+    "calculateEmi": "EMIを計算",
+    "reset": "リセット",
     "monthlyEmi": "毎月のEMI",
     "totalInterest": "総利息",
     "totalPayment": "総支払額",
@@ -1029,12 +1038,25 @@
     "finalPrice": "最終価格",
     "discountPercent": "割引（{{percent}}%）",
     "priceAfterDiscount": "割引後の価格",
-    "taxPercent": "税金（{{percent}}%）"
+    "taxPercent": "税金（{{percent}}%）",
+    "currency": "通貨",
+    "customizable": "カスタマイズ可能",
+    "pro": "Pro",
+    "originalPrice": "元の価格",
+    "discount": "割引（%）",
+    "tax": "税金（%）",
+    "calculate": "計算",
+    "reset": "リセット"
   },
   "currencyConverter": {
     "convertedAmount": "換算金額",
     "updatedAgo": "{{time}}前に更新",
-    "popularConversions": "人気の換算"
+    "popularConversions": "人気の換算",
+    "amount": "金額",
+    "from": "から",
+    "to": "へ",
+    "convert": "換算",
+    "converting": "換算中..."
   },
   "notificationSettings": {
     "budgetAlerts": "予算アラート",
@@ -1068,6 +1090,17 @@
     "activitiesRecorded": "件のアクティビティ記録",
     "noActivityYet": "アクティビティはまだありません",
     "noActivityDesc": "あなたの取引と決済がここに表示されます"
+  },
+  "calculator": {
+    "ac": "AC",
+    "toggleSign": "+/-",
+    "percent": "%",
+    "divide": "÷",
+    "multiply": "×",
+    "subtract": "-",
+    "add": "+",
+    "decimal": ".",
+    "equals": "="
   },
   "authCallback": {
     "authenticating": "認証中...",

@@ -1133,6 +1133,15 @@
     "noReminders": "No Reminders"
   },
   "loanCalculator": {
+    "title": "Loan Calculator",
+    "currency": "Currency",
+    "customizable": "Customizable",
+    "pro": "Pro",
+    "loanAmount": "Loan Amount",
+    "interestRate": "Interest Rate (% per annum)",
+    "tenureMonths": "Tenure (months)",
+    "calculateEmi": "Calculate EMI",
+    "reset": "Reset",
     "monthlyEmi": "Monthly EMI",
     "totalInterest": "Total Interest",
     "totalPayment": "Total Payment",
@@ -1142,12 +1151,25 @@
     "finalPrice": "Final Price",
     "discountPercent": "Discount ({{percent}}%)",
     "priceAfterDiscount": "Price After Discount",
-    "taxPercent": "Tax ({{percent}}%)"
+    "taxPercent": "Tax ({{percent}}%)",
+    "currency": "Currency",
+    "customizable": "Customizable",
+    "pro": "Pro",
+    "originalPrice": "Original Price",
+    "discount": "Discount (%)",
+    "tax": "Tax (%)",
+    "calculate": "Calculate",
+    "reset": "Reset"
   },
   "currencyConverter": {
     "convertedAmount": "Converted Amount",
     "updatedAgo": "Updated {{time}}",
-    "popularConversions": "Popular Conversions"
+    "popularConversions": "Popular Conversions",
+    "amount": "Amount",
+    "from": "From",
+    "to": "To",
+    "convert": "Convert",
+    "converting": "Converting..."
   },
   "notificationSettings": {
     "budgetAlerts": "Budget Alerts",
@@ -1207,5 +1229,16 @@
     "activitiesRecorded": "activities recorded",
     "noActivityYet": "No activity yet",
     "noActivityDesc": "Your transactions and settlements will appear here"
+  },
+  "calTool": {
+    "ac": "AC",
+    "toggleSign": "+/-",
+    "percent": "%",
+    "divide": "÷",
+    "multiply": "×",
+    "subtract": "-",
+    "add": "+",
+    "decimal": ".",
+    "equals": "="
   }
 }

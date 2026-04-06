@@ -115,7 +115,7 @@ export function LoanCalculatorPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-semibold flex items-center gap-2">
-            <CreditCard className="w-5 h-5" /> Loan Calculator
+            <CreditCard className="w-5 h-5" /> {t('loanCalculator.title')}
           </h1>
         </div>
       </header>
@@ -124,11 +124,11 @@ export function LoanCalculatorPage() {
         {/* Currency Selector (Pro Feature) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="currency">Currency</Label>
+            <Label htmlFor="currency">{t('loanCalculator.currency')}</Label>
             <div className="flex items-center gap-1">
               {!isPremium && <Crown className="w-3 h-3 text-accent" />}
               <span className={`text-xs ${!isPremium ? 'text-accent' : 'text-muted-foreground'}`}>
-                {isPremium ? 'Customizable' : 'Pro'}
+                {isPremium ? t('loanCalculator.customizable') : t('loanCalculator.pro')}
               </span>
             </div>
           </div>
@@ -149,7 +149,7 @@ export function LoanCalculatorPage() {
         {/* Input Fields */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="principal">Loan Amount</Label>
+            <Label htmlFor="principal">{t('loanCalculator.loanAmount')}</Label>
             <Input
               id="principal"
               type="number"
@@ -159,7 +159,7 @@ export function LoanCalculatorPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="rate">Interest Rate (% per annum)</Label>
+            <Label htmlFor="rate">{t('loanCalculator.interestRate')}</Label>
             <Input
               id="rate"
               type="number"
@@ -169,7 +169,7 @@ export function LoanCalculatorPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tenure">Tenure (months)</Label>
+            <Label htmlFor="tenure">{t('loanCalculator.tenureMonths')}</Label>
             <Input
               id="tenure"
               type="number"
@@ -183,10 +183,10 @@ export function LoanCalculatorPage() {
         {/* Buttons */}
         <div className="flex gap-3">
           <Button className="flex-1" onClick={() => dispatch({ type: 'calculate' })}>
-            Calculate EMI
+            {t('loanCalculator.calculateEmi')}
           </Button>
           <Button variant="outline" onClick={() => dispatch({ type: 'reset' })}>
-            Reset
+            {t('loanCalculator.reset')}
           </Button>
         </div>
 

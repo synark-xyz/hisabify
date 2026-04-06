@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X, CheckCircle, Clock, WarningCircle, List, Pencil, Gear, Headset, CaretLeft } from '@phosphor-icons/react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,6 +30,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, showBack, onBack, variant = 'default' }: HeaderProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -36,6 +38,9 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
   const { formatAmount } = useCurrency();
   const { reminders, markAsPaid } = usePaymentReminders();
   const { unreadCount: unreadMessagesCount } = useNotifications();
+  const translatedTitle = title.startsWith('nav.') || title.startsWith('common.') || title.startsWith('profile.') || title.startsWith('referral.') || title.startsWith('debt.') || title.startsWith('activity.') || title.startsWith('categories.') || title.startsWith('settings.') || title.startsWith('calculator.')
+    ? t(title)
+    : title;
   const [open, setOpen] = useState(false);
 
   const userInitial = profile.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
@@ -133,7 +138,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
       >
-        {title}
+        {translatedTitle}
       </motion.h1>
 
       <div className="flex items-center gap-3">
@@ -182,7 +187,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
                 <DropdownMenuItem onClick={() => navigate('/notifications')} className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Bell className="w-4 h-4" weight="duotone" />
-                    <span className="font-medium">Notifications</span>
+                    <span className="font-medium">{t('notifications.notifications')}</span>
                   </div>
                   {notificationCount > 0 && (
                     <span className="min-w-5 h-5 px-2 bg-destructive rounded-full text-white text-[10px] flex items-center justify-center font-bold">
@@ -193,12 +198,12 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
 
                 <DropdownMenuItem onClick={() => navigate('/settings')} className="gap-3">
                   <Gear className="w-4 h-4" weight="duotone" />
-                  <span className="font-medium">Settings</span>
+                  <span className="font-medium">{t('nav.settings')}</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem onClick={() => navigate('/support')} className="gap-3">
                   <Headset className="w-4 h-4" weight="duotone" />
-                  <span className="font-medium">Support</span>
+                  <span className="font-medium">{t('common.helpSupport')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

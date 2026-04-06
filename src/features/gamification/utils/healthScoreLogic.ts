@@ -18,16 +18,17 @@ export function getScoreColor(val: number): string {
 
 export interface MilestoneBadge {
   score: number;
+  key: string;
   name: string;
   emoji: string;
   description: string;
 }
 
 const MILESTONE_BADGES: MilestoneBadge[] = [
-  { score: 100, name: 'Financially Elite', emoji: '🏆', description: 'Perfect score across all categories' },
-  { score: 90, name: 'Money Master', emoji: '💎', description: 'Exceptional financial discipline' },
-  { score: 75, name: 'Budget Pro', emoji: '⭐', description: 'Strong habits across budgeting and savings' },
-  { score: 50, name: 'Getting Steady', emoji: '🌱', description: 'Building solid financial foundations' },
+  { score: 100, key: 'financiallyElite', name: 'Financially Elite', emoji: '🏆', description: 'Perfect score across all categories' },
+  { score: 90, key: 'moneyMaster', name: 'Money Master', emoji: '💎', description: 'Exceptional financial discipline' },
+  { score: 75, key: 'budgetPro', name: 'Budget Pro', emoji: '⭐', description: 'Strong habits across budgeting and savings' },
+  { score: 50, key: 'gettingSteady', name: 'Getting Steady', emoji: '🌱', description: 'Building solid financial foundations' },
 ];
 
 /**
@@ -70,7 +71,8 @@ export interface HealthScoreResult {
     savings: number;
     activity: number;
   };
-  insight: string;
+  insightKey: string;
+  insightParams: Record<string, string>;
 }
 
 export interface HealthScoreTip {
@@ -140,17 +142,23 @@ export function calculateHealthScore(params: HealthScoreParams): HealthScoreResu
     activityScore = Math.max(0, 15 - daysInactive * 2);
   }
 
-  let insight = 'Set a savings goal to boost your score.';
+  let insightKey = 'healthScore.insightSetGoal';
+  let insightParams: Record<string, string> = {};
+
   if (params.completedGoalsCount > 0 && params.latestCompletedGoalName) {
-    insight = `You completed ${params.latestCompletedGoalName}! Start a new goal to keep growing.`;
+    insightKey = 'healthScore.insightCompletedGoal';
+    insightParams = { goalName: params.latestCompletedGoalName };
   } else if (params.hasActiveGoal && params.anyBehindThisPeriod && params.atRiskGoalName) {
-    insight = `You're behind on ${params.atRiskGoalName}. ${params.atRiskGoalRequiredLabel || 'Contribute today.'}`;
+    insightKey = 'healthScore.insightBehind';
+    insightParams = { goalName: params.atRiskGoalName, required: params.atRiskGoalRequiredLabel || '' };
   } else if (params.hasActiveGoal && params.overdueWithoutContribution && params.atRiskGoalName) {
-    insight = `You're behind on ${params.atRiskGoalName}. Contribute today.`;
+    insightKey = 'healthScore.insightBehindContribute';
+    insightParams = { goalName: params.atRiskGoalName };
   } else if (params.anyGoalOnTrack && params.onTrackGoalName) {
-    insight = `${params.onTrackGoalName} is on track — keep it up!`;
+    insightKey = 'healthScore.insightOnTrack';
+    insightParams = { goalName: params.onTrackGoalName };
   } else if (params.hasActiveGoal) {
-    insight = 'Keep contributing to maintain your momentum.';
+    insightKey = 'healthScore.insightKeepContributing';
   }
 
   return {
@@ -160,6 +168,7 @@ export function calculateHealthScore(params: HealthScoreParams): HealthScoreResu
       savings: savingsScore,
       activity: activityScore,
     },
-    insight,
+    insightKey,
+    insightParams,
   };
 }

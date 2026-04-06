@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { HeadphonesIcon, Loader2, ExternalLink } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,7 @@ interface CustomerCenterTriggerProps {
 }
 
 export function CustomerCenterTrigger({ className, variant = 'button' }: CustomerCenterTriggerProps) {
+  const { t } = useTranslation();
   const { showCustomerCenter } = useSubscription();
   const [loading, setLoading] = useState(false);
   const isNative = Capacitor.isNativePlatform();
@@ -48,9 +50,9 @@ export function CustomerCenterTrigger({ className, variant = 'button' }: Custome
             )}
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">Manage Subscription</p>
+            <p className="text-sm font-semibold text-foreground">{t('profilePersonal.manageSubscription')}</p>
             <p className="text-xs text-muted-foreground">
-              {isNative ? 'Cancel, change plan, or get help' : 'Contact support for subscription help'}
+              {isNative ? t('profilePersonal.cancelChangePlanHelp') : t('profilePersonal.contactSupportHelp')}
             </p>
           </div>
         </div>
@@ -71,7 +73,7 @@ export function CustomerCenterTrigger({ className, variant = 'button' }: Custome
       ) : (
         <HeadphonesIcon className="w-4 h-4" />
       )}
-      {isNative ? 'Manage Subscription' : 'Contact Support'}
+      {isNative ? t('profilePersonal.manageSubscription') : t('profilePersonal.contactSupport')}
     </Button>
   );
 }

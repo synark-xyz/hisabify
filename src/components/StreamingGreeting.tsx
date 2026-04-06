@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useTranslation } from 'react-i18next';
 import { Sun, Moon, CloudSun, Sparkle } from '@phosphor-icons/react';
 
 interface StreamingGreetingProps {
@@ -11,6 +12,7 @@ interface StreamingGreetingProps {
 export function StreamingGreeting({ isFirstTimeUser = false }: StreamingGreetingProps) {
     const { user } = useAuth();
     const { profile } = useProfile();
+    const { t } = useTranslation();
     const [greeting, setGreeting] = useState('');
     const [displayText, setDisplayText] = useState('');
     const [index, setIndex] = useState(0);
@@ -20,12 +22,12 @@ export function StreamingGreeting({ isFirstTimeUser = false }: StreamingGreeting
     useEffect(() => {
         const hour = new Date().getHours();
         let currentGreeting = '';
-        if (hour < 12) currentGreeting = 'Good morning';
-        else if (hour < 18) currentGreeting = 'Good afternoon';
-        else currentGreeting = 'Good evening';
+        if (hour < 12) currentGreeting = t('dashboard.greeting', { name: userName });
+        else if (hour < 18) currentGreeting = t('dashboard.greetingAfternoon', { name: userName });
+        else currentGreeting = t('dashboard.greetingEvening', { name: userName });
 
-        setGreeting(`${currentGreeting}, ${userName}`);
-    }, [userName]);
+        setGreeting(currentGreeting);
+    }, [userName, t]);
 
     useEffect(() => {
         setDisplayText('');
@@ -85,7 +87,7 @@ export function StreamingGreeting({ isFirstTimeUser = false }: StreamingGreeting
                     )}
                 </div>
                 <p className="text-[10px] uppercase tracking-[0.2em] font-black text-foreground">
-                    {isFirstTimeUser ? 'Welcome to Hisabify. Start by adding your first transaction.' : 'Welcome back to your money tracker, Hisabify!'}
+                    {isFirstTimeUser ? t('streamingGreeting.welcomeFirstTime') : t('streamingGreeting.welcomeBack')}
                 </p>
             </div>
         </div>

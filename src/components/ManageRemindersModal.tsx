@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2, Calendar, Bell, CheckCircle2, Clock, AlertCircle, Edit } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
@@ -23,6 +24,7 @@ interface ManageRemindersModalProps {
 }
 
 export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh }: ManageRemindersModalProps) {
+    const { t } = useTranslation();
     const { formatAmount } = useCurrency();
     const { toast } = useToast();
     const { markAsPaid } = usePaymentReminders();
@@ -53,7 +55,7 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this reminder?')) return;
+        if (!confirm(t('reminders.deleteConfirm'))) return;
 
         const { error } = await supabase
             .from('payment_reminders')
@@ -61,9 +63,9 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
             .eq('id', id);
 
         if (error) {
-            toast({ title: 'Error deleting reminder', variant: 'destructive' });
+            toast({ title: t('reminders.errorDeleting'), variant: 'destructive' });
         } else {
-            toast({ title: 'Reminder deleted' });
+            toast({ title: t('reminders.deleted') });
             onRefresh();
         }
     };
@@ -77,11 +79,11 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                 .eq('id', reminder.id);
 
             if (error) {
-                toast({ title: 'Error updating status', variant: 'destructive' });
+                toast({ title: t('reminders.errorUpdating'), variant: 'destructive' });
                 return;
             }
 
-            toast({ title: 'Marked as upcoming' });
+            toast({ title: t('reminders.markedUpcoming') });
             onRefresh();
         } else {
             // Mark as paid: use the hook's method for recurring logic
@@ -97,15 +99,15 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
         const diff = differenceInDays(dueDate, new Date());
 
         if (reminder.status === 'paid') {
-            return { label: 'Paid', icon: CheckCircle2, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' };
+            return { label: t('reminders.statusPaid'), icon: CheckCircle2, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' };
         }
         if (isPast(dueDate) && !isToday(dueDate)) {
-            return { label: 'Overdue', icon: AlertCircle, color: 'text-rose-500', bgColor: 'bg-rose-500/10' };
+            return { label: t('reminders.statusOverdue'), icon: AlertCircle, color: 'text-rose-500', bgColor: 'bg-rose-500/10' };
         }
         if (diff <= 2) {
-            return { label: `Due in ${diff}d`, icon: Clock, color: 'text-orange-500', bgColor: 'bg-orange-500/10' };
+            return { label: t('reminders.statusDueIn', { days: diff }), icon: Clock, color: 'text-orange-500', bgColor: 'bg-orange-500/10' };
         }
-        return { label: 'Upcoming', icon: Calendar, color: 'text-blue-500', bgColor: 'bg-blue-500/10' };
+        return { label: t('reminders.statusUpcoming'), icon: Calendar, color: 'text-blue-500', bgColor: 'bg-blue-500/10' };
     };
 
     return (
@@ -126,7 +128,7 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                     <div className="p-6 pb-0">
                         <DrawerHeader className="flex flex-row items-center justify-between mb-6 p-0 pr-10">
                             <DrawerTitle className="text-xl font-extrabold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent pr-3">
-                                Manage Reminders
+                                {t('reminders.title')}
                             </DrawerTitle>
                             <Button
                                 onClick={() => {
@@ -137,7 +139,7 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                                 className="bg-accent hover:bg-accent/90 text-white rounded-full px-4 h-9 gap-2 shadow-lg shadow-accent/20"
                             >
                                 <Plus className="w-4 h-4" />
-                                <span className="text-xs font-bold uppercase tracking-wider">Add New</span>
+                                <span className="text-xs font-bold uppercase tracking-wider">{t('reminders.addNew')}</span>
                             </Button>
                         </DrawerHeader>
                     </div>
@@ -147,7 +149,7 @@ export function ManageRemindersModal({ open, onOpenChange, reminders, onRefresh 
                             {reminders.length === 0 ? (
                                 <div className="text-center py-12 text-muted-foreground">
                                     <Bell className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                                    <p>No reminders yet</p>
+                                    <p>{t('reminders.noRemindersYet')}</p>
                                 </div>
                             ) : (
                                 reminders.map((reminder) => {

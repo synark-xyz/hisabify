@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ export function ReportTemplatesPanel({
   onLoadTemplate,
   onDeleteTemplate,
 }: ReportTemplatesPanelProps) {
+  const { t } = useTranslation();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -58,11 +60,11 @@ export function ReportTemplatesPanel({
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Report Templates
+              {t("reports.templates.title")}
             </CardTitle>
             <Button size="sm" onClick={() => setShowSaveDialog(true)}>
               <Save className="h-4 w-4 mr-1" />
-              Save Current
+              {t("reports.templates.save")}
             </Button>
           </div>
         </CardHeader>
@@ -101,8 +103,8 @@ export function ReportTemplatesPanel({
           ) : (
             <div className="text-center py-6 text-muted-foreground">
               <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No saved templates</p>
-              <p className="text-xs">Save your current filters as a template for quick access</p>
+              <p className="text-sm">{t("reports.templates.empty")}</p>
+              <p className="text-xs">{t("reports.templates.emptyDesc")}</p>
             </div>
           )}
         </CardContent>
@@ -111,13 +113,13 @@ export function ReportTemplatesPanel({
       <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete template?</AlertDialogTitle>
+            <AlertDialogTitle>{t("reports.templates.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This saved filter template will be permanently removed. This action cannot be undone.
+              {t("reports.templates.deleteDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -125,7 +127,7 @@ export function ReportTemplatesPanel({
                 setPendingDeleteId(null);
               }}
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -134,25 +136,25 @@ export function ReportTemplatesPanel({
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent className="max-w-[400px]">
           <DialogHeader>
-            <DialogTitle className="pr-8">Save Report Template</DialogTitle>
+            <DialogTitle className="pr-8">{t("reports.templates.dialogTitle")}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Input
-              placeholder="Template name..."
+              placeholder={t("reports.templates.inputPlaceholder")}
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSave()}
             />
             <p className="text-xs text-muted-foreground mt-2">
-              This will save your current filter settings for quick access later.
+              {t("reports.templates.inputHelper")}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleSave} disabled={!templateName.trim()}>
-              Save Template
+              {t("reports.templates.saveButton")}
             </Button>
           </DialogFooter>
         </DialogContent>

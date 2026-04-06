@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Paperclip, Send, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,6 +48,7 @@ function toMailtoLink(
 }
 
 export function SupportPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -55,14 +57,20 @@ export function SupportPage() {
   const [name, setName] = useState(profile.display_name || user?.email?.split('@')[0] || '');
   const [email, setEmail] = useState(user?.email || '');
   const [subject, setSubject] = useState('');
-  const [category, setCategory] = useState('General');
+  const [category, setCategory] = useState(t('supportPage.categoryGeneral'));
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const supportCategories = useMemo(
-    () => ['General', 'Bug Report', 'Feature Request', 'Billing', 'Account'],
-    []
+    () => [
+      t('supportPage.categoryGeneral'),
+      t('supportPage.categoryBugReport'),
+      t('supportPage.categoryFeatureRequest'),
+      t('supportPage.categoryBilling'),
+      t('supportPage.categoryAccount'),
+    ],
+    [t]
   );
 
   useEffect(() => {
@@ -90,7 +98,7 @@ export function SupportPage() {
     for (const file of selected) {
       if (next.length >= MAX_ATTACHMENTS) {
         toast({
-          title: `You can upload up to ${MAX_ATTACHMENTS} files`,
+          title: t('supportPage.maxFilesMessage', { count: MAX_ATTACHMENTS }),
           variant: 'destructive',
         });
         break;
@@ -98,8 +106,8 @@ export function SupportPage() {
 
       if (file.size > MAX_FILE_SIZE_BYTES) {
         toast({
-          title: `${file.name} is too large`,
-          description: 'Maximum size is 10 MB per file.',
+          title: t('supportPage.fileTooLarge', { filename: file.name }),
+          description: t('supportPage.maxFileSizePerFile'),
           variant: 'destructive',
         });
         continue;
@@ -145,7 +153,7 @@ export function SupportPage() {
 
     if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
       toast({
-        title: 'Please complete all required fields',
+        title: t('supportPage.completeAllFields'),
         variant: 'destructive',
       });
       return;
@@ -158,8 +166,8 @@ export function SupportPage() {
         attachmentUrls = await uploadAttachments();
       } catch {
         toast({
-          title: 'Attachments could not be uploaded',
-          description: 'Sending email without uploaded file links.',
+          title: t('supportPage.attachmentUploadFailed'),
+          description: t('supportPage.sendingWithoutAttachments'),
           variant: 'destructive',
         });
       }
@@ -178,7 +186,7 @@ export function SupportPage() {
       });
 
       if (!error) {
-        toast({ title: 'Support request sent' });
+        toast({ title: t('supportPage.requestSent') });
         setSubject('');
         setMessage('');
         setAttachments([]);
@@ -195,8 +203,8 @@ export function SupportPage() {
       );
 
       toast({
-        title: 'Opening your email client',
-        description: `Email will be prepared for ${SUPPORT_EMAIL}.`,
+        title: t('supportPage.openingEmailClient'),
+        description: t('supportPage.emailPreparedFor', { email: SUPPORT_EMAIL }),
       });
     } finally {
       setSubmitting(false);
@@ -205,53 +213,55 @@ export function SupportPage() {
 
   return (
     <div className="min-h-screen bg-background pb-page-content">
-      <Header title="Help & Support" showBack onBack={() => navigate('/settings')} />
+      <Header title={t('page.helpSupport')} showBack onBack={() => navigate('/settings')} />
       <main className="px-4 py-6 space-y-4">
         <Card className="border-border/50">
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">
-              Need help? Send us a message and we will get back to you at <span className="font-semibold text-foreground">{SUPPORT_EMAIL}</span>.
+              {t('supportPage.helpMessage', { email: SUPPORT_EMAIL }).split(SUPPORT_EMAIL)[0]}
+              <span className="font-semibold text-foreground">{SUPPORT_EMAIL}</span>
+              {t('supportPage.helpMessage', { email: SUPPORT_EMAIL }).split(SUPPORT_EMAIL)[1]}
             </p>
           </CardContent>
         </Card>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="support-name">Name</Label>
+            <Label htmlFor="support-name">{t('supportPage.name')}</Label>
             <Input
               id="support-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
+              placeholder={t('supportPage.yourName')}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="support-email">Email</Label>
+            <Label htmlFor="support-email">{t('supportPage.email')}</Label>
             <Input
               id="support-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t('supportPage.emailPlaceholder')}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="support-subject">Subject</Label>
+            <Label htmlFor="support-subject">{t('supportPage.subject')}</Label>
             <Input
               id="support-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="What can we help you with?"
+              placeholder={t('supportPage.helpWith')}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="support-category">Category</Label>
+            <Label htmlFor="support-category">{t('supportPage.category')}</Label>
             <select
               id="support-category"
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -267,26 +277,26 @@ export function SupportPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="support-message">Message</Label>
+            <Label htmlFor="support-message">{t('supportPage.message')}</Label>
             <Textarea
               id="support-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Describe your issue or request."
+              placeholder={t('supportPage.describeIssue')}
               className="min-h-36"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="support-attachments">Attachments (optional)</Label>
+            <Label htmlFor="support-attachments">{t('supportPage.attachments')}</Label>
             <div className="rounded-xl border border-dashed border-border p-3 space-y-3">
               <label
                 htmlFor="support-attachments"
                 className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors"
               >
                 <Paperclip className="w-4 h-4" />
-                Add files
+                {t('supportPage.addFiles')}
               </label>
               <Input
                 id="support-attachments"
@@ -296,7 +306,7 @@ export function SupportPage() {
                 onChange={handleAttachmentSelect}
               />
               <p className="text-xs text-muted-foreground">
-                Up to {MAX_ATTACHMENTS} files, max 10 MB each.
+                {t('supportPage.attachmentHelp', { count: MAX_ATTACHMENTS })}
               </p>
 
               {attachments.length > 0 && (
@@ -315,7 +325,7 @@ export function SupportPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => removeAttachment(index)}
-                        aria-label={`Remove ${file.name}`}
+                        aria-label={t('supportPage.removeFile', { filename: file.name })}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -328,7 +338,7 @@ export function SupportPage() {
 
           <Button type="submit" className="w-full gap-2" disabled={submitting}>
             <Send className="w-4 h-4" />
-            {submitting ? 'Sending...' : 'Send to Support'}
+            {submitting ? t('supportPage.sending') : t('supportPage.sendButton')}
           </Button>
         </form>
       </main>

@@ -1,6 +1,7 @@
 import { useReducer } from 'react';
 import { ChevronLeft, Calculator } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 
 type CalcState = {
@@ -122,6 +123,7 @@ function calcReducer(state: CalcState, action: CalcAction): CalcState {
 
 export function CalculatorPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [state, dispatch] = useReducer(calcReducer, initialState);
 
   const formatDisplay = (val: string) => {
@@ -141,7 +143,7 @@ export function CalculatorPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-semibold flex items-center gap-2">
-            <Calculator className="w-5 h-5" /> Calculator
+            <Calculator className="w-5 h-5" /> {t('morePage.calculator')}
           </h1>
         </div>
       </header>
@@ -174,16 +176,16 @@ export function CalculatorPage() {
         <div className="grid grid-cols-4 gap-3">
           {/* Row 1 */}
           <Button variant="outline" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'clear' })}>
-            AC
+            {t('calTool.ac')}
           </Button>
           <Button variant="outline" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'toggleSign' })}>
-            +/-
+            {t('calTool.toggleSign')}
           </Button>
           <Button variant="outline" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'percent' })}>
-            %
+            {t('calTool.percent')}
           </Button>
           <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '÷' })}>
-            ÷
+            {t('calTool.divide')}
           </Button>
 
           {/* Row 2 */}
@@ -197,7 +199,7 @@ export function CalculatorPage() {
             9
           </Button>
           <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '×' })}>
-            ×
+            {t('calTool.multiply')}
           </Button>
 
           {/* Row 3 */}
@@ -211,7 +213,7 @@ export function CalculatorPage() {
             6
           </Button>
           <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '-' })}>
-            -
+            {t('calTool.subtract')}
           </Button>
 
           {/* Row 4 */}
@@ -225,7 +227,7 @@ export function CalculatorPage() {
             3
           </Button>
           <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '+' })}>
-            +
+            {t('calTool.add')}
           </Button>
 
           {/* Row 5 */}
@@ -233,10 +235,10 @@ export function CalculatorPage() {
             0
           </Button>
           <Button variant="secondary" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'decimal' })}>
-            .
+            {t('calTool.decimal')}
           </Button>
           <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'equals' })}>
-            =
+            {t('calTool.equals')}
           </Button>
         </div>
       </main>

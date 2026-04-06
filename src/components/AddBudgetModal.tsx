@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -54,6 +55,7 @@ interface AddBudgetModalProps {
 }
 
 export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }: AddBudgetModalProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [incomeWarning, setIncomeWarning] = useState<string | null>(null);
@@ -282,7 +284,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
     <MobileDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={editingBudget ? 'Edit Budget' : 'Create Budget'}
+      title={editingBudget ? t('budget.editBudget') : t('budget.addBudget')}
       className="z-[10000]"
     >
       <Form {...form}>
@@ -294,10 +296,10 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Budget Name (Optional)
+                      {t('budget.budgetNameOptional')}
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Monthly Groceries" className="rounded-xl" {...field} />
+                      <Input placeholder={t('budget.budgetNamePlaceholder')} className="rounded-xl" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -311,16 +313,16 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Category
+                      {t('budget.category')}
                     </FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="All Categories" />
+                          <SelectValue placeholder={t('budget.allCategories')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="all">{t('budget.allCategories')}</SelectItem>
                         {categories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.name}
@@ -340,7 +342,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Budget Amount
+                      {t('budget.budgetAmount')}
                     </FormLabel>
                     <div className="flex gap-2">
                       <FormField
@@ -401,7 +403,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                         <Input
                           type="number"
                           step="0.01"
-                          placeholder="0.00"
+                          placeholder={t('common.amountPlaceholder')}
                           className="rounded-xl flex-1"
                           {...field}
                         />
@@ -419,7 +421,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Budget Period
+                      {t('budget.budgetPeriod')}
                     </FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
@@ -428,9 +430,9 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="yearly">Yearly</SelectItem>
+                        <SelectItem value="weekly">{t('budget.weekly')}</SelectItem>
+                        <SelectItem value="monthly">{t('budget.monthly')}</SelectItem>
+                        <SelectItem value="yearly">{t('budget.yearly')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -445,7 +447,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Start Date
+                      {t('budget.startDate')}
                     </FormLabel>
                     <DateSelect
                       value={field.value}
@@ -467,10 +469,10 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                     <div className="flex items-center justify-between rounded-xl border border-border px-3 py-3">
                       <div>
                         <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                          Continuous
+                          {t('budget.continuous')}
                         </FormLabel>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          No end date — budget runs indefinitely
+                          {t('budget.continuousDesc')}
                         </p>
                       </div>
                       <FormControl>
@@ -489,7 +491,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                        End Date
+                        {t('budget.endDate')}
                       </FormLabel>
                       <DateSelect value={field.value} onChange={field.onChange} />
                       <FormMessage />
@@ -515,10 +517,10 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                     <div className="flex items-center justify-between rounded-xl border border-border px-3 py-3">
                       <div>
                         <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                          Auto-renew each period
+                          {t('budget.autoRenewEachPeriod')}
                         </FormLabel>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Automatically create the next period's budget on expiry
+                          {t('budget.autoRenewDesc')}
                         </p>
                       </div>
                       <FormControl>
@@ -538,10 +540,10 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                 <div className="flex items-center justify-between">
                   <div>
                     <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
-                      Budget Alerts
+                      {t('budget.budgetAlerts')}
                     </FormLabel>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Get notified when spending reaches a threshold
+                      {t('budget.budgetAlertsDesc')}
                     </p>
                   </div>
                   <FormField
@@ -566,9 +568,9 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between">
-                          <FormLabel className="text-xs text-muted-foreground">
-                            Alert at
-                          </FormLabel>
+<FormLabel className="text-xs text-muted-foreground">
+                              {t('budget.alertAt')}
+                            </FormLabel>
                           <span className="text-sm font-bold text-accent">
                             {field.value}%
                           </span>
@@ -602,11 +604,11 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                   onClick={() => onOpenChange(false)}
                   className="flex-1"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" className="flex-1" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editingBudget ? 'Update Budget' : 'Create Budget'}
+                  {editingBudget ? t('budget.updateBudget') : t('budget.addBudget')}
                 </Button>
               </div>
           </form>

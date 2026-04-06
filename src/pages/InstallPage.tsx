@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Download, Smartphone, Check, Share, Plus, ArrowLeft } from 'lucide-react';
+import { Download, Smartphone, Check, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallPage() {
+  const { t } = useTranslation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -65,7 +67,7 @@ export function InstallPage() {
           whileTap={{ scale: 0.95 }}
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Back to App</span>
+          <span>{t('install.backToApp')}</span>
         </motion.button>
 
         <motion.div
@@ -78,9 +80,9 @@ export function InstallPage() {
             <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
               <span className="text-4xl">💰</span>
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Install Hisabify</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('install.title')}</h1>
             <p className="text-muted-foreground mt-2">
-              Get the full app experience on your device
+              {t('install.getFullApp')}
             </p>
           </div>
 
@@ -93,9 +95,9 @@ export function InstallPage() {
                     <Check className="w-5 h-5 text-green-500" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Already Installed!</p>
+                    <p className="font-medium text-foreground">{t('install.alreadyInstalled')}</p>
                     <p className="text-sm text-muted-foreground">
-                      Hisabify is ready to use
+                      {t('install.alreadyInstalledDesc')}
                     </p>
                   </div>
                 </div>
@@ -109,16 +111,16 @@ export function InstallPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Download className="w-5 h-5 text-primary" />
-                  Quick Install
+                  {t('install.quickInstall')}
                 </CardTitle>
                 <CardDescription>
-                  Install directly from your browser
+                  {t('install.installDirectly')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button onClick={handleInstall} className="w-full" size="lg">
                   <Smartphone className="w-5 h-5 mr-2" />
-                  Install Hisabify
+                  {t('install.installButton')}
                 </Button>
               </CardContent>
             </Card>
@@ -130,7 +132,7 @@ export function InstallPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Smartphone className="w-5 h-5 text-primary" />
-                  Install on iPhone/iPad
+                  {t('install.installIos')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -139,9 +141,9 @@ export function InstallPage() {
                     <span className="text-sm font-medium text-primary">1</span>
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Tap the Share button</p>
+                    <p className="font-medium text-foreground">{t('install.step1.tapShare')}</p>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      Look for <Share className="w-4 h-4" /> at the bottom of Safari
+                      {t('install.step1.tapShareDesc')}
                     </p>
                   </div>
                 </div>
@@ -151,9 +153,9 @@ export function InstallPage() {
                     <span className="text-sm font-medium text-primary">2</span>
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Add to Home Screen</p>
+                    <p className="font-medium text-foreground">{t('install.step2.addToHome')}</p>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      Scroll down and tap <Plus className="w-4 h-4" /> "Add to Home Screen"
+                      {t('install.step2.addToHomeDesc')}
                     </p>
                   </div>
                 </div>
@@ -163,9 +165,9 @@ export function InstallPage() {
                     <span className="text-sm font-medium text-primary">3</span>
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Tap Add</p>
+                    <p className="font-medium text-foreground">{t('install.step3.tapAdd')}</p>
                     <p className="text-sm text-muted-foreground">
-                      Confirm to add Hisabify to your home screen
+                      {t('install.step3.tapAddDesc')}
                     </p>
                   </div>
                 </div>
@@ -179,7 +181,7 @@ export function InstallPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Smartphone className="w-5 h-5 text-primary" />
-                  Install on Android
+                  {t('install.installAndroid')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -188,9 +190,9 @@ export function InstallPage() {
                     <span className="text-sm font-medium text-primary">1</span>
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Open browser menu</p>
+                    <p className="font-medium text-foreground">{t('install.androidStep1')}</p>
                     <p className="text-sm text-muted-foreground">
-                      Tap the three dots (⋮) in Chrome
+                      {t('install.androidStep1Desc')}
                     </p>
                   </div>
                 </div>
@@ -200,9 +202,9 @@ export function InstallPage() {
                     <span className="text-sm font-medium text-primary">2</span>
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">Install app</p>
+                    <p className="font-medium text-foreground">{t('install.androidStep2')}</p>
                     <p className="text-sm text-muted-foreground">
-                      Select "Install app" or "Add to Home screen"
+                      {t('install.androidStep2Desc')}
                     </p>
                   </div>
                 </div>
@@ -213,16 +215,16 @@ export function InstallPage() {
           {/* Benefits */}
           <Card>
             <CardHeader>
-              <CardTitle>Why Install?</CardTitle>
+              <CardTitle>{t('install.whyInstall')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
                 {[
-                  'Works offline - track expenses anywhere',
-                  'Faster loading - instant app access',
-                  'Home screen icon - quick access',
-                  'Full screen - no browser UI',
-                  'Push notifications - never miss a payment'
+                  t('install.benefit1'),
+                  t('install.benefit2'),
+                  t('install.benefit3'),
+                  t('install.benefit4'),
+                  t('install.benefit5'),
                 ].map((benefit, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm">
                     <Check className="w-4 h-4 text-green-500 flex-shrink-0" />

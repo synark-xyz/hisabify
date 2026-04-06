@@ -626,3 +626,61 @@ npx cap open android # Opens Android Studio
 - **Log errors** with Logger service
 - **Request permissions contextually** before using camera/microphone (mobile)
 - **Test on real devices** for mobile-specific features (permissions, camera, voice)
+
+## Internationalization (i18n) & Translation Workflow
+
+**Goal:** Ensure all hardcoded strings are extracted to translation files for full multi-language support (English, Japanese, Bengali).
+
+**Translation Process:**
+When you say `"translate <file_path> page"`, follow these steps:
+
+1. **Audit for Hardcoded Strings**
+   - Search for all quoted strings in the component
+   - Identify UI text that should be translatable
+   - Skip: variable names, object keys, technical strings, comments
+
+2. **Consolidate & Deduplicate**
+   - Check existing `src/i18n/locales/en/translation.json` for similar keys
+   - Reuse existing keys when possible to avoid duplication
+   - Organize new keys under logical sections (page name, feature, etc.)
+
+3. **Add to English Translation**
+   - Add new keys to `en/translation.json`
+   - Use camelCase for keys: `settings.preferences`, `common.save`, etc.
+   - Provide clear English text as values
+
+4. **Add to Japanese & Bengali**
+   - Translate all new keys to Japanese (`ja/translation.json`)
+   - Translate all new keys to Bengali (`bn/translation.json`)
+   - Maintain consistent terminology across translations
+
+5. **Update Component Code**
+   - Replace hardcoded strings with `t('key')` calls
+   - Ensure `useTranslation()` hook is imported: `const { t } = useTranslation();`
+   - Provide fallback text (rarely used): `t('key') || 'Fallback Text'`
+
+6. **Verify & Test**
+   - All keys exist in all three language files (en, ja, bn)
+   - No empty values in translation files
+   - Component renders correctly with translated strings
+   - Language switcher changes text appropriately
+
+**Tools:**
+- Use the **translate skill** (`/skills translate`) for automated assistance with the translation workflow
+- Or follow the manual process above
+
+**File References:**
+- English: `src/i18n/locales/en/translation.json`
+- Japanese: `src/i18n/locales/ja/translation.json`
+- Bengali: `src/i18n/locales/bn/translation.json`
+- Hook: `useTranslation()` from `react-i18next`
+
+**Key Patterns:**
+```typescript
+// ✓ Good - Using i18n
+const { t } = useTranslation();
+const label = t('settings.preferences');
+
+// ✗ Bad - Hardcoded
+const label = 'Preferences';
+```

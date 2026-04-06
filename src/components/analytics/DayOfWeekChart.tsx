@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrency } from '@/hooks/useCurrency';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -20,6 +21,7 @@ const dayColors = [
 ];
 
 export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const chartData = data.map(d => ({
@@ -34,7 +36,7 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
     <Card className="bg-card shadow-card">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold text-foreground">
-          Spending by Day of Week
+          {t('analytics.dayOfWeek')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -44,7 +46,7 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <p className="text-xs text-muted-foreground">Highest Spending Day</p>
+            <p className="text-xs text-muted-foreground">{t('analytics.highestSpendingDay')}</p>
             <p className="font-semibold text-foreground mt-1">{maxDay?.dayName || 'N/A'}</p>
             <p className="text-sm text-muted-foreground">
               {formatAmount(maxDay?.totalSpent || 0)}
@@ -55,7 +57,7 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <p className="text-xs text-muted-foreground">Lowest Spending Day</p>
+            <p className="text-xs text-muted-foreground">{t('analytics.lowestSpendingDay')}</p>
             <p className="font-semibold text-foreground mt-1">{minDay?.dayName || 'N/A'}</p>
             <p className="text-sm text-muted-foreground">
               {formatAmount(minDay?.totalSpent || 0)}
@@ -77,10 +79,10 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
                 tick={{ fill: 'hsl(var(--muted-foreground))' }}
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
               />
-              <Tooltip 
+              <Tooltip
                 formatter={(value: number, _name: string, _props: Payload<number, string>) => [
                   formatAmount(value),
-                  'Total Spent'
+                  t('analytics.totalSpent')
                 ]}
                 labelFormatter={(label: string) => {
                   const day = data.find(d => d.dayName.startsWith(label));
@@ -93,16 +95,16 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
                       <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
                         <p className="font-semibold text-foreground">{day?.dayName}</p>
                         <p className="text-sm text-muted-foreground">
-                          Total: {formatAmount(day?.totalSpent || 0)}
+                          {t('analytics.total')}: {formatAmount(day?.totalSpent || 0)}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Average: {formatAmount(day?.averageSpent || 0)}
+                          {t('analytics.average')}: {formatAmount(day?.averageSpent || 0)}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Transactions: {day?.transactionCount || 0}
+                          {t('analytics.transactions')}: {day?.transactionCount || 0}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Share: {(day?.percentage || 0).toFixed(1)}%
+                          {t('analytics.share')}: {(day?.percentage || 0).toFixed(1)}%
                         </p>
                       </div>
                     );
@@ -124,7 +126,7 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
           {chartData.map((d, i) => (
             <div key={d.name} className="text-center">
               <p>{d.transactionCount}</p>
-              <p className="text-[10px]">txns</p>
+              <p className="text-[10px]">{t('analytics.txns')}</p>
             </div>
           ))}
         </div>

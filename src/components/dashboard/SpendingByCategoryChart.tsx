@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { useCurrency } from '@/hooks/useCurrency';
 import { CategorySpending } from '@/types';
 import type { Props as TooltipProps, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
@@ -31,6 +32,7 @@ type ChartCategoryDatum = CategorySpending & {
 };
 
 export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const chartData = data
@@ -49,7 +51,7 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
         <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg">
           <p className="text-sm font-semibold text-foreground">{tooltipData.category}</p>
           <p className="text-sm text-muted-foreground">{formatAmount(tooltipData.amount)}</p>
-          <p className="text-xs text-muted-foreground">{tooltipData.percentage.toFixed(1)}% of total</p>
+          <p className="text-xs text-muted-foreground">{tooltipData.percentage.toFixed(1)}{t('dashboard.percentOfTotal')}</p>
         </div>
       );
     }
@@ -62,7 +64,7 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h3 className="text-lg font-bold text-foreground mb-4">Spending by Category</h3>
+      <h3 className="text-lg font-bold text-foreground mb-4">{t('dashboard.spendingByCategory')}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart

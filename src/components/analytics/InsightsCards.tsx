@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, AlertTriangle, Trophy, BarChart3 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency } from '@/hooks/useCurrency';
 import type { Insight } from '@/hooks/useAdvancedAnalytics';
@@ -9,6 +10,7 @@ interface InsightsCardsProps {
 }
 
 export function InsightsCards({ insights }: InsightsCardsProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const getIcon = (insight: Insight) => {
@@ -56,7 +58,7 @@ export function InsightsCards({ insights }: InsightsCardsProps) {
         <CardContent className="p-6 text-center">
           <BarChart3 className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
           <p className="text-muted-foreground">
-            Add more transactions to see personalized insights
+            {t('analytics.noInsightsYet')}
           </p>
         </CardContent>
       </Card>

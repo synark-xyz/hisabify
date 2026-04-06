@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, ArrowUpRight, PartyPopper } from 'lucide-react';
 import { MobileDialog } from '@/components/ui/mobile-dialog';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ export function SavingsFundingDialog({
   defaultTab = 'manual',
   defaultBudgetId = null,
 }: SavingsFundingDialogProps) {
+  const { t } = useTranslation();
   const { budgets } = useBudgetContext();
   const { formatAmount, currencySymbol } = useCurrency();
   const [tab, setTab] = useState<'manual' | 'budget'>(defaultTab);
@@ -60,17 +62,17 @@ export function SavingsFundingDialog({
     <MobileDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={`Top Up "${goal.name}"`}
+      title={t('savings.topUp', { name: goal.name })}
       className="z-[10000]"
       maxWidth="max-w-[420px]"
     >
       <Tabs value={tab} onValueChange={(value) => setTab(value as 'manual' | 'budget')} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 rounded-2xl h-11">
           <TabsTrigger value="manual" className="rounded-xl text-xs font-bold uppercase tracking-wider">
-            Add Funds
+            {t('savings.addFunds')}
           </TabsTrigger>
           <TabsTrigger value="budget" className="rounded-xl text-xs font-bold uppercase tracking-wider">
-            From Budget Leftover
+            {t('savings.fromBudget')}
           </TabsTrigger>
         </TabsList>
 
@@ -83,7 +85,7 @@ export function SavingsFundingDialog({
               <Input
                 id="manual-amount"
                 type="number"
-                placeholder="0.00"
+                placeholder={t('common.amountPlaceholder')}
                 className="pl-8 h-12 rounded-2xl font-bold text-lg"
                 value={manualAmount}
                 onChange={(event) => setManualAmount(event.target.value)}
@@ -98,20 +100,20 @@ export function SavingsFundingDialog({
 
           <div className="space-y-2 rounded-2xl border border-border/50 bg-muted/30 p-3">
             <p className="text-xs font-medium flex justify-between">
-              <span>Current balance</span>
+              <span>{t('savings.currentBalance')}</span>
               <span className="font-bold">{formatAmount(mainBalance)}</span>
             </p>
             <p className="text-xs font-medium flex justify-between">
-              <span>Balance after</span>
+              <span>{t('savings.balanceAfter')}</span>
               <span className="font-bold">{formatAmount(projectedBalance)}</span>
             </p>
             <p className="text-xs font-medium flex justify-between">
-              <span>Projected saved</span>
+              <span>{t('savings.projectedSaved')}</span>
               <span className="font-bold">{formatAmount(projectedGoalAmount)}</span>
             </p>
             <p className="text-xs font-medium flex justify-between">
-              <span>Projected completion</span>
-              <span className="font-bold">{goal.projectedCompletionLabel || 'Needs more data'}</span>
+              <span>{t('savings.projectedCompletion')}</span>
+              <span className="font-bold">{goal.projectedCompletionLabel || t('savings.needsMoreData')}</span>
             </p>
           </div>
 
@@ -119,7 +121,7 @@ export function SavingsFundingDialog({
             <div className="flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-700">
               <AlertTriangle className="mt-0.5 h-4 w-4" />
               <p className="text-xs font-medium">
-                This exceeds your current balance of {formatAmount(mainBalance)}
+                {t('savings.exceedsBalance', { amount: formatAmount(mainBalance) })}
               </p>
             </div>
           )}
@@ -127,13 +129,13 @@ export function SavingsFundingDialog({
           {completesGoal && (
             <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-emerald-700">
               <PartyPopper className="h-4 w-4" />
-              <p className="text-xs font-semibold">This contribution completes the goal.</p>
+              <p className="text-xs font-semibold">{t('savings.goalCompletes')}</p>
             </div>
           )}
 
           <div className="flex gap-2 pt-2">
             <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('savings.cancel')}
             </Button>
             <Button
               className="flex-1 rounded-2xl font-bold bg-accent hover:bg-accent/90 shadow-fab"
@@ -146,7 +148,7 @@ export function SavingsFundingDialog({
                 }
               }}
             >
-              Add Funds
+              {t('savings.addFunds')}
               <ArrowUpRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
@@ -155,16 +157,16 @@ export function SavingsFundingDialog({
         <TabsContent value="budget" className="space-y-4">
           <div className="space-y-2">
             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Budget
+              {t('savings.budget')}
             </Label>
             <Select value={selectedBudgetId || undefined} onValueChange={setSelectedBudgetId}>
               <SelectTrigger className="rounded-2xl">
-                <SelectValue placeholder="Select budget" />
+                <SelectValue placeholder={t('savings.selectBudget')} />
               </SelectTrigger>
               <SelectContent>
                 {budgets.filter((budget) => budget.remaining > 0).map((budget) => (
                   <SelectItem key={budget.id} value={budget.id}>
-                    {(budget.category?.name || budget.name || 'Budget') + ` (${formatAmount(budget.remaining)})`}
+                    {(budget.category?.name || budget.name || t('savings.budget')) + ` (${formatAmount(budget.remaining)})`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -174,15 +176,15 @@ export function SavingsFundingDialog({
           {selectedBudget && (
             <div className="space-y-2 rounded-2xl border border-border/50 bg-muted/30 p-3">
               <p className="text-xs font-medium flex justify-between">
-                <span>Budget remaining</span>
+                <span>{t('savings.budgetRemaining')}</span>
                 <span className="font-bold">{formatAmount(selectedBudget.remaining)}</span>
               </p>
               <p className="text-xs font-medium flex justify-between">
-                <span>Goal remaining</span>
+                <span>{t('savings.goalRemaining')}</span>
                 <span className="font-bold">{formatAmount(goal.remaining)}</span>
               </p>
               <p className="text-xs font-medium flex justify-between">
-                <span>Transfer cap</span>
+                <span>{t('savings.transferCap')}</span>
                 <span className="font-bold">{formatAmount(budgetTransferCap)}</span>
               </p>
             </div>
@@ -192,19 +194,19 @@ export function SavingsFundingDialog({
             <div className="flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-700">
               <AlertTriangle className="mt-0.5 h-4 w-4" />
               <p className="text-xs font-medium">
-                This budget period has ended. Remaining funds will be cleared soon.
+                {t('savings.budgetEnded')}
               </p>
             </div>
           )}
 
           <div className="space-y-2">
             <Label htmlFor="budget-amount" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Transfer amount
+              {t('savings.transferAmount')}
             </Label>
             <Input
               id="budget-amount"
               type="number"
-              placeholder="0.00"
+              placeholder={t('common.amountPlaceholder')}
               className="rounded-2xl h-12"
               value={budgetAmount}
               onChange={(event) => setBudgetAmount(event.target.value)}
@@ -216,7 +218,7 @@ export function SavingsFundingDialog({
 
           <div className="flex gap-2 pt-2">
             <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('savings.cancel')}
             </Button>
             <Button
               className="flex-1 rounded-2xl font-bold bg-accent hover:bg-accent/90 shadow-fab"
@@ -230,7 +232,7 @@ export function SavingsFundingDialog({
                 }
               }}
             >
-              Move Leftover
+              {t('savings.moveLeftover')}
             </Button>
           </div>
         </TabsContent>

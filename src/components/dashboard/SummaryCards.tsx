@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Wallet, HandCoins, HandCoinsIcon } from 'lucide-react';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useTranslation } from 'react-i18next';
 
 interface SummaryCardsProps {
   totalExpenses: number;
@@ -11,31 +12,31 @@ interface SummaryCardsProps {
 
 export function SummaryCards({ totalExpenses, totalIncome, netBalance, budgetRemaining }: SummaryCardsProps) {
   const { formatAmount } = useCurrency();
-
+  const { t } = useTranslation();
   const cards = [
     {
-      title: 'Total Expenses',
+      title: t('analytics.totalExpenses'),
       amount: totalExpenses,
       icon: TrendingDown,
       iconBg: 'bg-destructive/20',
       iconColor: 'text-destructive',
     },
     {
-      title: 'Total Income',
+      title: t('analytics.totalIncome'),
       amount: totalIncome,
       icon: TrendingUp,
       iconBg: 'bg-emerald-500/20',
       iconColor: 'text-emerald-500',
     },
     {
-      title: 'Net Balance',
+      title: t('analytics.netBalance'),
       amount: netBalance,
       icon: Wallet,
       iconBg: netBalance >= 0 ? 'bg-primary/20' : 'bg-destructive/20',
       iconColor: netBalance >= 0 ? 'text-primary' : 'text-destructive',
     },
     {
-      title: 'Budget Remaining',
+      title: t('analytics.budgetRemaining'),
       amount: budgetRemaining,
       icon: HandCoinsIcon,
       iconBg: budgetRemaining >= 0 ? 'bg-accent/20' : 'bg-destructive/20',

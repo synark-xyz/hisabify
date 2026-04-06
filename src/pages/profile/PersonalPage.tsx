@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Shield, ChevronRight, Camera } from 'lucide-react';
+import { Save, Shield, ChevronRight, Camera, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,11 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { CustomerCenterTrigger } from '@/components/CustomerCenterTrigger';
 
 export function PersonalPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { user } = useAuth();
     const { profile, setProfile, updateAvatar } = useProfile();
     const { toast } = useToast();
@@ -56,7 +58,7 @@ export function PersonalPage() {
         if (!user) return;
 
         if (!validatePhone(localProfile.phone)) {
-            setPhoneError('Please enter a valid phone number');
+            setPhoneError(t('common.invalidPhoneNumber'));
             return;
         }
         setPhoneError('');
@@ -75,9 +77,9 @@ export function PersonalPage() {
             }, { onConflict: 'user_id' });
 
         if (error) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+            toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: 'Profile updated successfully' });
+            toast({ title: t('common.profileUpdated') });
             setProfile({
                 ...profile,
                 display_name: sanitizedDisplayName,
@@ -101,7 +103,7 @@ export function PersonalPage() {
             .upload(filePath, file);
 
         if (uploadError) {
-            toast({ title: 'Upload failed', description: uploadError.message, variant: 'destructive' });
+            toast({ title: t('common.uploadFailed'), description: uploadError.message, variant: 'destructive' });
             setLoading(false);
             return;
         }
@@ -111,17 +113,17 @@ export function PersonalPage() {
             .getPublicUrl(filePath);
 
         await updateAvatar(publicUrl);
-        toast({ title: 'Avatar updated' });
+        toast({ title: t('common.avatarUpdated') });
         setLoading(false);
     };
 
     const handleChangePassword = async () => {
         if (passwords.new !== passwords.confirm) {
-            toast({ title: 'Error', description: 'New passwords do not match', variant: 'destructive' });
+            toast({ title: t('common.error'), description: t('common.passwordMismatch'), variant: 'destructive' });
             return;
         }
         if (passwords.new.length < 6) {
-            toast({ title: 'Error', description: 'Password must be at least 6 characters', variant: 'destructive' });
+            toast({ title: t('common.error'), description: t('common.passwordTooShort'), variant: 'destructive' });
             return;
         }
         setPasswordLoading(true);
@@ -129,9 +131,9 @@ export function PersonalPage() {
             password: passwords.new,
         });
         if (error) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' });
+            toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
         } else {
-            toast({ title: 'Password updated successfully' });
+            toast({ title: t('common.passwordUpdated') });
             setShowPasswordChange(false);
             setPasswords({ current: '', new: '', confirm: '' });
         }
@@ -173,7 +175,7 @@ export function PersonalPage() {
                 {/* Form Section */}
                 <div className="bg-card rounded-2xl p-4 shadow-sm border border-border/50 space-y-4">
                     <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-foreground">Details</h3>
+                        <h3 className="font-semibold text-foreground">{t('profilePersonal.details')}</h3>
                         <Button
                             variant="ghost"
                             size="sm"
@@ -182,16 +184,16 @@ export function PersonalPage() {
                             className="text-accent hover:text-accent/80 hover:bg-accent/10"
                         >
                             {isEditing ? (
-                                <><Save className="w-4 h-4 mr-1" /> Save</>
+                                <><Save className="w-4 h-4 mr-1" /> {t('common.save')}</>
                             ) : (
-                                'Edit'
+                                <Edit className="w-4 h-4" />
                             )}
                         </Button>
                     </div>
 
                     <div className="space-y-4">
                         <div>
-                            <Label htmlFor="displayName">Display Name</Label>
+                            <Label htmlFor="displayName">{t('profilePersonal.displayName')}</Label>
                             <Input
                                 id="displayName"
                                 value={localProfile.display_name}
@@ -201,13 +203,13 @@ export function PersonalPage() {
                                 }))}
                                 disabled={!isEditing}
                                 className="mt-1"
-                                placeholder="Enter your name"
+                                placeholder={t('profile.name')}
                                 maxLength={100}
                             />
                         </div>
 
                         <div>
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('profilePersonal.email')}</Label>
                             <Input
                                 id="email"
                                 value={user?.email || ''}
@@ -217,7 +219,7 @@ export function PersonalPage() {
                         </div>
 
                         <div>
-                            <Label htmlFor="phone">Phone Number</Label>
+                            <Label htmlFor="phone">{t('profilePersonal.phoneNumber')}</Label>
                             <Input
                                 id="phone"
                                 type="tel"
@@ -229,7 +231,7 @@ export function PersonalPage() {
                                 }}
                                 disabled={!isEditing}
                                 className={`mt-1 ${phoneError ? 'border-destructive' : ''}`}
-                                placeholder="+1 234 567 8900"
+                                placeholder={t('profile.phone')}
                                 maxLength={20}
                             />
                             {phoneError && (
@@ -250,8 +252,8 @@ export function PersonalPage() {
                                 <Shield className="w-5 h-5 text-indigo-500" />
                             </div>
                             <div className="text-left">
-                                <p className="font-semibold text-foreground">Change Password</p>
-                                <p className="text-xs text-muted-foreground">Update your security</p>
+                                <p className="font-semibold text-foreground">{t('profilePersonal.changePassword')}</p>
+                                <p className="text-xs text-muted-foreground">{t('profilePersonal.updateSecurity')}</p>
                             </div>
                         </div>
                         <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showPasswordChange ? 'rotate-90' : ''}`} />
@@ -271,7 +273,7 @@ export function PersonalPage() {
                                     value={passwords.new}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, new: e.target.value }))}
                                     className="mt-1"
-                                    placeholder="Enter new password"
+                                    placeholder={t('resetPasswordPage.placeholder')}
                                     minLength={6}
                                 />
                             </div>
@@ -283,7 +285,7 @@ export function PersonalPage() {
                                     value={passwords.confirm}
                                     onChange={(e) => setPasswords(prev => ({ ...prev, confirm: e.target.value }))}
                                     className="mt-1"
-                                    placeholder="Confirm new password"
+                                    placeholder={t('resetPasswordPage.placeholder')}
                                     minLength={6}
                                 />
                             </div>
@@ -292,7 +294,7 @@ export function PersonalPage() {
                                 disabled={passwordLoading || !passwords.new || !passwords.confirm}
                                 className="w-full"
                             >
-                                {passwordLoading ? 'Updating...' : 'Update Password'}
+                                {passwordLoading ? t('common.updating') : t('common.updatePassword')}
                             </Button>
                         </motion.div>
                     )}
@@ -300,7 +302,7 @@ export function PersonalPage() {
 
                 {/* Subscription management */}
                 <div className="mt-6 rounded-2xl border border-border/50 bg-card p-4">
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Subscription</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{t('profilePersonal.subscription')}</p>
                     <CustomerCenterTrigger variant="row" />
                 </div>
 

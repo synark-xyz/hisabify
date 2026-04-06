@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Crown, Sparkles, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { BudgetDashboard } from '@/components/BudgetDashboard';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -20,6 +21,7 @@ export function BudgetPage() {
   const { refetch } = useBudgets();
   const { isPremium } = useSubscription();
   const { variant } = useTheme();
+  const { t } = useTranslation();
 
   // Scroll to top on page load
   useEffect(() => {
@@ -64,10 +66,10 @@ export function BudgetPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-5 h-5 text-white/80" />
-                    <span className="text-white/80 text-sm font-medium">Budget Manager</span>
+                    <span className="text-white/80 text-sm font-medium">{t('budget.managerLabel')}</span>
                   </div>
-                  <h1 className="text-2xl font-bold text-white mb-1">Plan Your Finances</h1>
-                  <p className="text-white/70 text-sm">Set goals, track spending, stay on target</p>
+                  <h1 className="text-2xl font-bold text-white mb-1">{t('budget.planYourFinances')}</h1>
+                  <p className="text-white/70 text-sm">{t('budget.planYourFinancesDesc')}</p>
                 </div>
                 <motion.div
                   className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
@@ -82,8 +84,8 @@ export function BudgetPage() {
             <Tabs defaultValue={defaultTab} className="w-full">
               <motion.div variants={itemVariants} className="px-4">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="budget">Budget</TabsTrigger>
-                  <TabsTrigger value="goals">Goals</TabsTrigger>
+                  <TabsTrigger value="budget">{t('budget.tabBudget')}</TabsTrigger>
+                  <TabsTrigger value="goals">{t('budget.tabGoals')}</TabsTrigger>
                 </TabsList>
               </motion.div>
 
@@ -108,17 +110,17 @@ export function BudgetPage() {
                                 Pro
                               </span>
                               <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-violet-400">
-                                Budget Planning
+                                {t('budget.budgetPlanning')}
                               </span>
                             </div>
-                            <p className="text-sm font-bold text-foreground">Unlimited Budgets</p>
+                            <p className="text-sm font-bold text-foreground">{t('budget.unlimitedBudgets')}</p>
                             <p className="text-xs text-muted-foreground">
-                              Create more than one budget and unlock budget history.
+                              {t('budget.unlimitedBudgetsDesc')}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-violet-400">
-                          <span className="hidden text-xs font-bold uppercase tracking-wider sm:inline">See Pro</span>
+                          <span className="hidden text-xs font-bold uppercase tracking-wider sm:inline">{t('budget.seePro')}</span>
                           <ArrowRight className="h-4 w-4" />
                         </div>
                       </div>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Calendar, TrendingUp, Flame, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
@@ -10,33 +11,34 @@ interface SpendingPatternsCardProps {
 }
 
 export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
+  const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const stats = [
     {
-      label: 'Daily Average',
+      label: t('dashboard.dailyAverage'),
       value: formatAmount(patterns.dailyAverage),
       icon: Calendar,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
     },
     {
-      label: 'Weekly Average',
+      label: t('dashboard.weeklyAverage'),
       value: formatAmount(patterns.weeklyAverage),
       icon: TrendingUp,
       color: 'text-accent',
       bgColor: 'bg-accent/10',
     },
     {
-      label: 'Monthly Average',
+      label: t('dashboard.monthlyAverage'),
       value: formatAmount(patterns.monthlyAverage),
       icon: Calendar,
       color: 'text-emerald-500',
       bgColor: 'bg-emerald-500/10',
     },
     {
-      label: 'Spending Streak',
-      value: `${patterns.spendingStreak} days`,
+      label: t('dashboard.spendingStreak'),
+      value: `${patterns.spendingStreak} ${t('dashboard.days')}`,
       icon: Flame,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10',
@@ -47,7 +49,7 @@ export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
     <Card className="bg-card shadow-card card-3d transition-all">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold text-foreground text-glow">
-          Spending Patterns
+          {t('dashboard.spendingPatterns')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -78,7 +80,7 @@ export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
           <div className="p-3 rounded-xl bg-muted/50">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Most Expensive Category</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.mostExpensiveCategory')}</p>
                 <p className="font-semibold text-foreground flex items-center gap-2 mt-1">
                   <span
                     className="w-3 h-3 rounded-full"
@@ -98,7 +100,7 @@ export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
           <div className="p-3 rounded-xl bg-muted/50">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Most Expensive Day</p>
+                <p className="text-xs text-muted-foreground">{t('dashboard.mostExpensiveDay')}</p>
                 <p className="font-semibold text-foreground mt-1">
                   {format(new Date(patterns.mostExpensiveDay.date), 'MMM d, yyyy')}
                 </p>
@@ -119,7 +121,7 @@ export function SpendingPatternsCard({ patterns }: SpendingPatternsCardProps) {
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-500" />
               <p className="text-sm text-amber-600 dark:text-amber-400">
-                Spending is {patterns.unusualSpending.percentageAboveNormal.toFixed(0)}% above normal
+                {t('dashboard.spendingAboveNormal', { percent: patterns.unusualSpending.percentageAboveNormal.toFixed(0) })}
               </p>
             </div>
           </motion.div>

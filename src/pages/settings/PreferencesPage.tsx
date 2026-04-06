@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Moon, Sun, Monitor, ArrowLeft, Zap, CheckCircle, Lock, Tag } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Moon, Sun, Monitor, ArrowLeft, Zap, CheckCircle, Lock, Tag, Globe } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
+import { useLanguage, languageNames } from '@/hooks/useLanguage';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +21,9 @@ export function PreferencesPage() {
     const { profile } = useProfile();
     const { theme, variant, setTheme, setVariant } = useTheme();
     const { currency, setCurrency } = useCurrency();
+    const { language, setLanguage } = useLanguage();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     const [preferences, setPreferences] = useState({
@@ -63,7 +67,7 @@ export function PreferencesPage() {
             .eq('user_id', user.id);
 
         if (error) {
-            toast({ title: 'Error saving preferences', description: error.message, variant: 'destructive' });
+            toast({ title: t('settings.errorSaving'), description: error.message, variant: 'destructive' });
         }
     };
 
@@ -80,7 +84,7 @@ export function PreferencesPage() {
 
     return (
         <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
-            <Header title="Preferences" showBack />
+            <Header title={t('settings.preferences')} showBack />
             <main className="px-4 py-6 space-y-6">
 
                 {/* Theme Style Selection */}
@@ -91,8 +95,8 @@ export function PreferencesPage() {
                                 <Zap className="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                                <p className="font-bold text-foreground">Visual Style</p>
-                                <p className="text-sm text-muted-foreground">Customize app aesthetics</p>
+                                <p className="font-bold text-foreground">{t('settings.visualStyle')}</p>
+                                <p className="text-sm text-muted-foreground">{t('settings.visualStyleDesc')}</p>
                             </div>
                         </div>
                     </div>
@@ -105,8 +109,8 @@ export function PreferencesPage() {
                                 : 'border-border hover:border-primary/50'
                                 }`}
                         >
-                            <div className="font-bold text-sm mb-1">Default</div>
-                            <div className="text-xs text-muted-foreground">Clean & Modern</div>
+                            <div className="font-bold text-sm mb-1">{t('settings.styleDefault')}</div>
+                            <div className="text-xs text-muted-foreground">{t('settings.styleDefaultDesc')}</div>
                             {variant === 'default' && <div className="absolute top-3 right-3 text-primary"><CheckCircle className="w-4 h-4" /></div>}
                         </button>
 
@@ -118,8 +122,8 @@ export function PreferencesPage() {
                                     setVariant('cyberpunk');
                                 } else {
                                     toast({
-                                        title: "Pro Feature Locked",
-                                        description: "Upgrade to Pro to unlock the Cyberpunk theme!",
+                                        title: t('settings.proFeatureLocked'),
+                                        description: t('settings.proFeatureLockedDesc'),
                                         variant: "destructive"
                                     });
                                 }
@@ -130,14 +134,14 @@ export function PreferencesPage() {
                                 }`}
                         >
                             <div className="font-bold text-sm mb-1 flex items-center gap-1.5">
-                                <span className={variant === 'cyberpunk' ? "text-accent" : ""}>Cyberpunk</span>
+                                <span className={variant === 'cyberpunk' ? "text-accent" : ""}>{t('settings.styleCyberpunk')}</span>
                                 {profile?.subscription_type !== 'pro' && (
                                     <span className="px-1.5 py-0.5 rounded-md bg-accent text-[10px] text-black font-bold flex items-center gap-0.5">
                                         PRO <Lock className="w-2.5 h-2.5" />
                                     </span>
                                 )}
                             </div>
-                            <div className="text-xs text-muted-foreground">Futuristic Gold & Teal</div>
+                            <div className="text-xs text-muted-foreground">{t('settings.styleCyberpunkDesc')}</div>
 
                             {/* Preview gradient for cyberpunk */}
                             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -158,8 +162,8 @@ export function PreferencesPage() {
                             )}
                         </div>
                         <div>
-                            <p className="font-bold text-foreground">Theme</p>
-                            <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
+                            <p className="font-bold text-foreground">{t('settings.theme')}</p>
+                            <p className="text-sm text-muted-foreground">{t('settings.themeDesc')}</p>
                         </div>
                     </div>
                     <Select value={preferences.themePreference} onValueChange={(v) => handleThemeChange(v as ThemeOption)}>
@@ -169,17 +173,17 @@ export function PreferencesPage() {
                         <SelectContent>
                             <SelectItem value="light">
                                 <span className="flex items-center gap-2">
-                                    <Sun className="w-4 h-4" /> Light
+                                    <Sun className="w-4 h-4" /> {t('settings.themeLight')}
                                 </span>
                             </SelectItem>
                             <SelectItem value="dark">
                                 <span className="flex items-center gap-2">
-                                    <Moon className="w-4 h-4" /> Dark
+                                    <Moon className="w-4 h-4" /> {t('settings.themeDark')}
                                 </span>
                             </SelectItem>
                             <SelectItem value="system">
                                 <span className="flex items-center gap-2">
-                                    <Monitor className="w-4 h-4" /> System
+                                    <Monitor className="w-4 h-4" /> {t('settings.themeSystem')}
                                 </span>
                             </SelectItem>
                         </SelectContent>
@@ -190,8 +194,8 @@ export function PreferencesPage() {
                 <div className="p-4 bg-card rounded-2xl border border-border/50 space-y-3">
                     <div className="flex items-center justify-between mb-1">
                         <div>
-                            <p className="font-bold text-foreground">Currency</p>
-                            <p className="text-sm text-muted-foreground">Select your preferred currency</p>
+                            <p className="font-bold text-foreground">{t('settings.currency')}</p>
+                            <p className="text-sm text-muted-foreground">{t('settings.currencyDesc')}</p>
                         </div>
                     </div>
                     <Select value={currency} onValueChange={setCurrency}>
@@ -211,12 +215,35 @@ export function PreferencesPage() {
                     </Select>
                 </div>
 
+                {/* Language Selector */}
+                <div className="p-4 bg-card rounded-2xl border border-border/50 space-y-3">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-muted rounded-xl">
+                            <Globe className="w-5 h-5 text-foreground" />
+                        </div>
+                        <div>
+                            <p className="font-bold text-foreground">{t('settings.language')}</p>
+                            <p className="text-sm text-muted-foreground">{t('settings.languageDesc')}</p>
+                        </div>
+                    </div>
+                    <Select value={language} onValueChange={(v) => setLanguage(v as 'en' | 'bn' | 'ja')}>
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="en">English</SelectItem>
+                            <SelectItem value="bn">বাংলা</SelectItem>
+                            <SelectItem value="ja">日本語</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 {/* Date Format */}
                 <div className="p-4 bg-card rounded-2xl border border-border/50 space-y-3">
                     <div className="flex items-center justify-between mb-1">
                         <div>
-                            <p className="font-bold text-foreground">Date Format</p>
-                            <p className="text-sm text-muted-foreground">How dates are displayed</p>
+                            <p className="font-bold text-foreground">{t('settings.dateFormat')}</p>
+                            <p className="text-sm text-muted-foreground">{t('settings.dateFormatDesc')}</p>
                         </div>
                     </div>
                     <Select
@@ -238,8 +265,8 @@ export function PreferencesPage() {
                 <div className="p-4 bg-card rounded-2xl border border-border/50 space-y-3">
                     <div className="flex items-center justify-between mb-1">
                         <div>
-                            <p className="font-bold text-foreground">Week Starts On</p>
-                            <p className="text-sm text-muted-foreground">First day of the week</p>
+                            <p className="font-bold text-foreground">{t('settings.weekStartsOn')}</p>
+                            <p className="text-sm text-muted-foreground">{t('settings.weekStartsOnDesc')}</p>
                         </div>
                     </div>
                     <Select
@@ -250,9 +277,9 @@ export function PreferencesPage() {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="sunday">Sunday</SelectItem>
-                            <SelectItem value="monday">Monday</SelectItem>
-                            <SelectItem value="saturday">Saturday</SelectItem>
+                            <SelectItem value="sunday">{t('settings.weekSunday')}</SelectItem>
+                            <SelectItem value="monday">{t('settings.weekMonday')}</SelectItem>
+                            <SelectItem value="saturday">{t('settings.weekSaturday')}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

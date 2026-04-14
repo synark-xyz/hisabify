@@ -14,28 +14,23 @@ type CustomerInfo = import('@revenuecat/purchases-capacitor').CustomerInfo;
 
 /**
  * The RevenueCat entitlement identifier configured in the dashboard.
- * Override with VITE_REVENUECAT_ENTITLEMENT_ID in your .env if needed.
  * Must match exactly what you typed in RevenueCat → Entitlements → Identifier.
+ * Default is 'hisabify-pro' (matching RevenueCat dashboard configuration).
  */
-export const ENTITLEMENT_ID =
-  (import.meta.env.VITE_REVENUECAT_ENTITLEMENT_ID as string | undefined) || 'pro';
+export const ENTITLEMENT_ID = 'hisabify-pro';
 
-export type PlanType = 'monthly' | 'yearly' | 'lifetime' | 'three_month';
+export type PlanType = 'monthly' | 'yearly';
 
 /** Maps app plan names to RevenueCat PackageType strings */
 const PLAN_TO_PACKAGE_TYPE: Record<PlanType, string> = {
   monthly: 'MONTHLY',
   yearly: 'ANNUAL',
-  lifetime: 'LIFETIME',
-  three_month: 'THREE_MONTH',
 };
 
-/** Maps app plan names to RevenueCat default package identifiers */
+/** Maps app plan names to RevenueCat product identifiers (from RevenueCat dashboard) */
 const PLAN_TO_IDENTIFIER: Record<PlanType, string> = {
-  monthly: '$rc_monthly',
-  yearly: '$rc_annual',
-  lifetime: '$rc_lifetime',
-  three_month: '$rc_three_month',
+  monthly: 'monthly:plan-monthly',
+  yearly: 'pro_annual_auto_renew:p-annual-auto',
 };
 
 interface UseRevenueCatReturn {
@@ -192,7 +187,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
       return null;
     }
     try {
-      const { offerings } = await Purchases.getOfferings();
+      const offerings = await Purchases.getOfferings();
       return offerings;
     } catch (err) {
       logger.error('[useRevenueCat] getOfferings failed', { err });
@@ -227,8 +222,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
       // returns null on any error and obscures the real failure reason.
       let offeringsData: PurchasesOfferings;
       try {
-        const result = await Purchases.getOfferings();
-        offeringsData = result.offerings;
+        offeringsData = await Purchases.getOfferings();
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error('[useRevenueCat] purchasePlan: getOfferings failed', { err });
@@ -240,6 +234,12 @@ export function useRevenueCat(): UseRevenueCatReturn {
         offeringsData?.current ??
         offeringsData?.all?.['hisabify-pro'] ??
         (offeringsData?.all ? Object.values(offeringsData.all)[0] : null);
+
+      logger.info('[useRevenueCat] purchasePlan: offerings loaded', {
+        keys: offeringsData?.all ? Object.keys(offeringsData.all) : [],
+        current: offering?.identifier,
+        packages: offering?.availablePackages?.map(p => ({ id: p.identifier, type: p.packageType })) || [],
+      });
 
       if (!offering) {
         logger.error('[useRevenueCat] purchasePlan: no offering found', {
@@ -259,6 +259,12 @@ export function useRevenueCat(): UseRevenueCatReturn {
         CONVENIENCE[plan] ??
         offering.availablePackages.find((p) => p.packageType === PLAN_TO_PACKAGE_TYPE[plan]) ??
         offering.availablePackages.find((p) => p.identifier === PLAN_TO_IDENTIFIER[plan]);
+
+      logger.info('[useRevenueCat] purchasePlan: package resolved', {
+        plan,
+        packageId: pkg?.identifier,
+        packageType: pkg?.packageType,
+      });
 
       if (!pkg) {
         logger.error('[useRevenueCat] purchasePlan: package not found', {
@@ -323,7 +329,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
     const Purchases = pluginRef.current;
     if (Purchases) {
       try {
-        const { offerings } = await Purchases.getOfferings();
+        const offerings = await Purchases.getOfferings();
         offering =
           offerings.current ??
           (offerings.all ? Object.values(offerings.all)[0] : undefined) ??

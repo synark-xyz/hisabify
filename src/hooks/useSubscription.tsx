@@ -35,7 +35,7 @@ export function useSubscription() {
 
   /**
    * Purchase a plan by type. On native, delegates to RevenueCat.
-   * Supported plans: monthly | yearly | lifetime | three_month
+   * Supported plans: monthly | yearly
    */
   const purchasePlan = useCallback(
     async (plan: PlanType): Promise<void> => {

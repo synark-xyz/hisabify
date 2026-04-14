@@ -24,6 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Save, Trash2, FileText } from "lucide-react";
 import { ReportTemplate, ReportFilters } from "@/hooks/useReportTemplates";
 import { format, parseISO } from "date-fns";
+import { Cancel } from "@radix-ui/react-alert-dialog";
 
 interface ReportTemplatesPanelProps {
   templates: ReportTemplate[];
@@ -127,7 +128,7 @@ export function ReportTemplatesPanel({
                 setPendingDeleteId(null);
               }}
             >
-              {t("common.delete")}
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -151,10 +152,10 @@ export function ReportTemplatesPanel({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
-              {t("common.cancel")}
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSave} disabled={!templateName.trim()}>
-              {t("reports.templates.saveButton")}
+              {t('reports.templates.saveButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -168,7 +168,14 @@
     "skip": "Skip",
     "next": "Next",
     "back": "Back",
-    "amountPlaceholder": "0.00"
+    "amountPlaceholder": "0.00",
+    "cancel": "Cancel",
+    "done": "Done",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "hisabify": "Hisabify",
+    "comingSoon": "Coming Soon",
+    "and": "and"
   },
   "onboarding": {
     "selectLanguage": "Choose your language",
@@ -373,6 +380,8 @@
     "title": "Budget",
     "monthly": "Monthly",
     "weekly": "Weekly",
+    "yearly": "Yearly",
+    "budget": "Budget",
     "remaining": "Remaining",
     "remainingUsed": "{{remaining}} remaining · {{percent}}% used",
     "spent": "Spent",

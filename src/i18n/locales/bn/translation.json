@@ -23,7 +23,14 @@
     "skip": "এড়িয়ে যান",
     "next": "পরবর্তী",
     "back": "ফিরে যান",
-    "amountPlaceholder": "০.০০"
+    "amountPlaceholder": "০.০০",
+    "cancel": "বাতিল",
+    "done": "সম্পন্ন",
+    "today": "আজ",
+    "yesterday": "গতকাল",
+    "hisabify": "Hisabify",
+    "comingSoon": "শীঘ্রই আসছে",
+    "and": "এবং"
   },
   "nav": {
     "dashboard": "ড্যাশবোর্ড",
@@ -266,6 +273,8 @@
     "title": "বাজেট",
     "monthly": "মাসিক",
     "weekly": "সাপ্তাহিক",
+    "yearly": "বার্ষিক",
+    "budget": "বাজেট",
     "remaining": "অবশিষ্ট",
     "remainingUsed": "{{remaining}} বাকি · {{percent}}% ব্যবহৃত",
     "spent": "খরচ হয়েছে",

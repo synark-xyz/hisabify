@@ -7,6 +7,20 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['vaul', 'cmdk', 'input-otp', 'embla-carousel-react', 'react-resizable-panels'],
+          charts: ['recharts'],
+          pdf: ['jspdf', 'jspdf-autotable'],
+          i18n: ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
+        },
+      },
+    },
+  },
   server: {
     host: true, // Listen on all local IPs
     // Hostnames only (no protocol). Wildcard patterns allow any ngrok tunnel without code changes.

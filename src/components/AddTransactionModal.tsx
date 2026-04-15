@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
+import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/base-modal-sheet';
 import { TransactionForm } from '@/components/TransactionForm';
 import { VoiceInputFlow } from '@/components/VoiceInputFlow';
 import { ReceiptScannerModal, ScannedReceiptData } from '@/components/ReceiptScannerModal';
@@ -105,7 +105,6 @@ export function AddTransactionModal({
   const handleVoiceComplete = (data: { merchant?: string; amount?: number; currency?: string; type?: string }) => {
     const extractedCurrency = data.currency || defaultCurrency;
     setPrefillData({ merchant: data.merchant, amount: data.amount, currency: extractedCurrency });
-    // Also update formState currency if user has pending state
     if (hasPendingFormState) {
       setFormState(prev => ({ ...prev, currency: extractedCurrency }));
     }
@@ -122,7 +121,6 @@ export function AddTransactionModal({
       receiptUrl: data.receiptUrl ?? null,
       currency: extractedCurrency,
     });
-    // Also update formState currency if user has pending state
     if (hasPendingFormState) {
       setFormState(prev => ({ ...prev, currency: extractedCurrency }));
     }
@@ -130,18 +128,13 @@ export function AddTransactionModal({
     setShowReceipt(false);
   };
 
-  // Handle navigating to categories page while preserving form state
   const handleNavigateToCategories = useCallback((currentFormState: TransactionFormState) => {
-    // Save the current form state
     setFormState(currentFormState);
     setHasPendingFormState(true);
-    // Close the modal
     onOpenChange(false);
-    // Navigate to categories page
     navigate('/categories');
   }, [navigate, onOpenChange]);
 
-  // When modal opens and there's pending form state, restore it
   const effectiveFormState = hasPendingFormState ? formState : getInitialFormState({
     initialType,
     initialData,
@@ -150,44 +143,50 @@ export function AddTransactionModal({
 
   return (
     <>
-      <ResponsiveDrawer
-        open={open}
-        onOpenChange={onOpenChange}
-        title={t('common.newTransaction')}
-        className="max-h-[90vh]"
-      >
-        <TransactionForm
-          key={prefillKey}
-          mode="create"
-          onSuccess={() => {
-            setHasPendingFormState(false);
-            onSuccess();
-            onOpenChange(false);
-          }}
-          onSuccessKeepOpen={() => {
-            setHasPendingFormState(false);
-            onSuccess();
-          }}
-          onCancel={() => {
-            setHasPendingFormState(false);
-            onOpenChange(false);
-          }}
-          initialType={effectiveFormState.type}
-          initialData={{
-            merchant: effectiveFormState.merchant || prefillData.merchant as string || undefined,
-            amount: effectiveFormState.amount ? Number(effectiveFormState.amount) : (prefillData.amount as number | undefined),
-            category: effectiveFormState.categoryId || prefillData.category as string || undefined,
-            date: effectiveFormState.date instanceof Date ? effectiveFormState.date : new Date(effectiveFormState.date),
-            currency: prefillData.currency as string || effectiveFormState.currency || undefined,
-          }}
-          initialBudgetId={initialBudgetId}
-          onVoiceRequest={() => setShowVoice(true)}
-          onScanRequest={() => setShowReceipt(true)}
-          onNavigateToCategories={handleNavigateToCategories}
-          formState={effectiveFormState}
-          setFormState={setFormState}
-        />
-      </ResponsiveDrawer>
+      <BaseModalSheet open={open} onOpenChange={onOpenChange}>
+        <SheetBackdrop onClick={() => onOpenChange(false)} />
+        <SheetContainer>
+          <SheetHeader>
+            <SheetTitle>{t('common.newTransaction')}</SheetTitle>
+            <SheetClose />
+          </SheetHeader>
+          <SheetContent>
+            <div className="px-4 pb-4 pt-4">
+              <TransactionForm
+              key={prefillKey}
+              mode="create"
+              onSuccess={() => {
+                setHasPendingFormState(false);
+                onSuccess();
+                onOpenChange(false);
+              }}
+              onSuccessKeepOpen={() => {
+                setHasPendingFormState(false);
+                onSuccess();
+              }}
+              onCancel={() => {
+                setHasPendingFormState(false);
+                onOpenChange(false);
+              }}
+              initialType={effectiveFormState.type}
+              initialData={{
+                merchant: effectiveFormState.merchant || prefillData.merchant as string || undefined,
+                amount: effectiveFormState.amount ? Number(effectiveFormState.amount) : (prefillData.amount as number | undefined),
+                category: effectiveFormState.categoryId || prefillData.category as string || undefined,
+                date: effectiveFormState.date instanceof Date ? effectiveFormState.date : new Date(effectiveFormState.date),
+                currency: prefillData.currency as string || effectiveFormState.currency || undefined,
+              }}
+              initialBudgetId={initialBudgetId}
+              onVoiceRequest={() => setShowVoice(true)}
+              onScanRequest={() => setShowReceipt(true)}
+              onNavigateToCategories={handleNavigateToCategories}
+              formState={effectiveFormState}
+              setFormState={setFormState}
+            />
+            </div>
+          </SheetContent>
+        </SheetContainer>
+      </BaseModalSheet>
 
       <VoiceInputFlow
         open={showVoice}

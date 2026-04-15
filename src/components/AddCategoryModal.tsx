@@ -163,7 +163,7 @@ export function AddCategoryModal({
   const title = mode === 'sub' ? t('addCategoryModal.addSubCategory') : t('addCategoryModal.addCategory');
 
   return (
-    <BaseModalSheet open={open} onOpenChange={onOpenChange}>
+    <BaseModalSheet open={open} onOpenChange={onOpenChange} snapPoints={[0.6, 0.2]}>
       <SheetBackdrop onClick={() => onOpenChange(false)} />
       <SheetContainer>
         <SheetHeader>
@@ -172,7 +172,7 @@ export function AddCategoryModal({
         </SheetHeader>
         <SheetContent>
           <SheetScroller>
-            <div className="space-y-4 px-1 pb-4">
+            <div className="px-4 pb-4 pt-4">
               {/* Parent display (sub mode only) */}
               {mode === 'sub' && parentCategory && (
                 <div className="space-y-1">

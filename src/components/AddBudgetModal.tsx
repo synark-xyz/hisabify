@@ -18,7 +18,6 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useBudgets, PeriodType, Budget } from '@/hooks/useBudgets';
 import { useUserBehavior } from '@/hooks/useUserBehavior';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
 import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
@@ -69,9 +68,6 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
   const { categories } = useCategories();
   const { logEvent } = useUserBehavior();
   const currencySymbol = currencyData[currency]?.symbol || '$';
-
-  // Handle keyboard on mobile
-  useKeyboardHandler(open);
 
   const form = useForm<BudgetFormData>({
     resolver: zodResolver(budgetFormSchema),
@@ -244,17 +240,16 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
   const filteredCategories = categories.filter(c => c.type === 'expense');
 
   return (
-    <BaseModalSheet open={open} onOpenChange={onOpenChange}>
+    <BaseModalSheet open={open} onOpenChange={onOpenChange} snapPoints={[1, 0.6]}>
       <SheetBackdrop onClick={() => onOpenChange(false)} />
       <SheetContainer>
         <SheetHeader>
           <SheetTitle>{editingBudget ? t('budget.editBudget') : t('budget.addBudget')}</SheetTitle>
           <SheetClose />
         </SheetHeader>
-        <SheetContent>
-          <SheetScroller>
+        <SheetScroller>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-1">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 pt-2">
                 {/* Category */}
                 <FormField
                   control={form.control}
@@ -508,29 +503,28 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
                 </div>
               </form>
             </Form>
-          </SheetScroller>
-          <SheetFooter>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1"
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                type="submit"
-                onClick={form.handleSubmit(onSubmit)}
-                className="flex-1"
-                disabled={loading}
-              >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingBudget ? t('budget.updateBudget') : t('budget.addBudget')}
-              </Button>
-            </div>
-          </SheetFooter>
-        </SheetContent>
+        </SheetScroller>
+        <SheetFooter>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              type="submit"
+              onClick={form.handleSubmit(onSubmit)}
+              className="flex-1"
+              disabled={loading}
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingBudget ? t('budget.updateBudget') : t('budget.addBudget')}
+            </Button>
+          </div>
+        </SheetFooter>
       </SheetContainer>
     </BaseModalSheet>
   );

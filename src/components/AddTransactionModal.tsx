@@ -143,7 +143,7 @@ export function AddTransactionModal({
 
   return (
     <>
-      <BaseModalSheet open={open} onOpenChange={onOpenChange}>
+      <BaseModalSheet open={open} onOpenChange={onOpenChange} snapPoints={[1, 0.6]}>
         <SheetBackdrop onClick={() => onOpenChange(false)} />
         <SheetContainer>
           <SheetHeader>

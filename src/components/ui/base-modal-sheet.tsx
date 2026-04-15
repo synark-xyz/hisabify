@@ -1,6 +1,8 @@
 import * as React from "react";
-import { Sheet as ReactModalSheet } from "react-modal-sheet";
+import { Sheet as ReactModalSheet, SheetRef } from "react-modal-sheet";
 import { X } from "lucide-react";
+import { Capacitor } from '@capacitor/core';
+import { Keyboard } from '@capacitor/keyboard';
 
 import { cn } from "@/lib/utils";
 
@@ -14,6 +16,8 @@ function getSortedSnapPoints(points: number[]): number[] {
 
 interface SheetContextValue {
   onOpenChange: (open: boolean) => void;
+  snapToMax: () => void;
+  snapToDefault: () => void;
 }
 
 const SheetContext = React.createContext<SheetContextValue | null>(null);
@@ -41,37 +45,106 @@ export function BaseModalSheet({
   className,
   snapPoints = SNAP_POINTS,
 }: BaseModalSheetProps) {
+  const sheetRef = React.useRef<SheetRef>(null);
   const [keyboardHeight, setKeyboardHeight] = React.useState(0);
   const sortedSnapPoints = getSortedSnapPoints(snapPoints);
 
+  // Index of the highest user-defined snap point (e.g. 0.8 → index 2 in [0,0.4,0.8,1])
+  const defaultSnapIndex = sortedSnapPoints.indexOf(Math.max(...snapPoints));
+  const maxSnapIndex = sortedSnapPoints.length - 1; // full-height index
+
+  // Track the last snap index the user was at before keyboard opened
+  const prevSnapIndexRef = React.useRef<number>(defaultSnapIndex);
+  // Prevent onSnap from overwriting prevSnapIndex during programmatic snaps
+  const isProgrammaticSnapRef = React.useRef(false);
+
+  // Capacitor keyboard events (native Android/iOS)
   React.useEffect(() => {
-    const updateKeyboardHeight = () => {
-      const height = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--keyboard-height')) || 0;
-      setKeyboardHeight(height);
-    };
+    if (!Capacitor.isNativePlatform()) return;
 
-    updateKeyboardHeight();
+    const showListener = Keyboard.addListener('keyboardWillShow', ({ keyboardHeight: kh }) => {
+      document.documentElement.style.setProperty('--keyboard-height', `${kh}px`);
+      setKeyboardHeight(kh);
 
-    const observer = new MutationObserver(updateKeyboardHeight);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['style'],
+      if (open && sheetRef.current) {
+        isProgrammaticSnapRef.current = true;
+        sheetRef.current.snapTo(maxSnapIndex);
+        setTimeout(() => { isProgrammaticSnapRef.current = false; }, 400);
+      }
     });
 
-    window.addEventListener('resize', updateKeyboardHeight);
+    const hideListener = Keyboard.addListener('keyboardWillHide', () => {
+      document.documentElement.style.setProperty('--keyboard-height', '0px');
+      setKeyboardHeight(0);
+
+      if (open && sheetRef.current) {
+        isProgrammaticSnapRef.current = true;
+        sheetRef.current.snapTo(prevSnapIndexRef.current);
+        setTimeout(() => { isProgrammaticSnapRef.current = false; }, 400);
+      }
+    });
 
     return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', updateKeyboardHeight);
+      showListener.then(l => l.remove());
+      hideListener.then(l => l.remove());
     };
+  }, [open, maxSnapIndex]);
+
+  // visualViewport fallback for browsers (non-native)
+  React.useEffect(() => {
+    if (Capacitor.isNativePlatform() || !window.visualViewport) return;
+
+    const onViewportResize = () => {
+      const kh = Math.max(0, window.innerHeight - window.visualViewport!.height);
+      document.documentElement.style.setProperty('--keyboard-height', `${kh}px`);
+      setKeyboardHeight(kh);
+
+      if (open && sheetRef.current) {
+        if (kh > 0) {
+          isProgrammaticSnapRef.current = true;
+          sheetRef.current.snapTo(maxSnapIndex);
+          setTimeout(() => { isProgrammaticSnapRef.current = false; }, 400);
+        } else {
+          isProgrammaticSnapRef.current = true;
+          sheetRef.current.snapTo(prevSnapIndexRef.current);
+          setTimeout(() => { isProgrammaticSnapRef.current = false; }, 400);
+        }
+      }
+    };
+
+    window.visualViewport.addEventListener('resize', onViewportResize);
+    return () => window.visualViewport!.removeEventListener('resize', onViewportResize);
+  }, [open, maxSnapIndex]);
+
+  const snapToMax = React.useCallback(() => {
+    if (sheetRef.current) {
+      isProgrammaticSnapRef.current = true;
+      sheetRef.current.snapTo(maxSnapIndex);
+      setTimeout(() => { isProgrammaticSnapRef.current = false; }, 400);
+    }
+  }, [maxSnapIndex]);
+
+  const snapToDefault = React.useCallback(() => {
+    if (sheetRef.current) {
+      isProgrammaticSnapRef.current = true;
+      sheetRef.current.snapTo(prevSnapIndexRef.current);
+      setTimeout(() => { isProgrammaticSnapRef.current = false; }, 400);
+    }
   }, []);
 
   return (
-    <SheetContext.Provider value={{ onOpenChange }}>
+    <SheetContext.Provider value={{ onOpenChange, snapToMax, snapToDefault }}>
       <ReactModalSheet
+        ref={sheetRef}
         isOpen={open}
         onClose={() => onOpenChange(false)}
         snapPoints={sortedSnapPoints}
+        initialSnap={defaultSnapIndex}
+        onSnap={(index) => {
+          if (!isProgrammaticSnapRef.current) {
+            prevSnapIndexRef.current = index;
+          }
+        }}
         className={className}
         style={{
           '--keyboard-height': `${keyboardHeight}px`,
@@ -109,7 +182,10 @@ interface SheetContainerProps {
 
 const SheetContainer: React.FC<SheetContainerProps> = ({ children, className }) => {
   return (
-    <ReactModalSheet.Container className={cn("bg-card text-card-foreground shadow-xl", className)}>
+    <ReactModalSheet.Container
+      className={cn("text-card-foreground shadow-xl", className)}
+      style={{ background: 'hsl(var(--card))', borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}
+    >
       {children}
     </ReactModalSheet.Container>
   );
@@ -124,6 +200,9 @@ interface SheetHeaderProps {
 const SheetHeader: React.FC<SheetHeaderProps> = ({ children, className }) => {
   return (
     <ReactModalSheet.Header className={cn("relative bg-card border-b border-border/50", className)}>
+      <div className="flex justify-center pt-3 pb-0">
+        <div className="w-[100px] h-[5px] rounded-full bg-muted-foreground/25" />
+      </div>
       <div className="flex items-center justify-between px-4 py-3">
         <div className="w-10" />
         {children}
@@ -133,67 +212,60 @@ const SheetHeader: React.FC<SheetHeaderProps> = ({ children, className }) => {
   );
 };
 
-// Sheet.Content - Main scrollable content area with draggableAt support
+// Sheet.Content - Main scrollable content area
 interface SheetContentProps {
   children: React.ReactNode;
   className?: string;
-  draggableAt?: 'top' | 'both' | 'none';
 }
 
-const SheetContent: React.FC<SheetContentProps> = ({ 
-  children, 
+const SheetContent: React.FC<SheetContentProps> = ({
+  children,
   className,
-  draggableAt = 'top'
 }) => {
-  const [scrollHeight, setScrollHeight] = React.useState(0);
-  const contentRef = React.useRef<HTMLDivElement>(null);
+  const { snapToMax, snapToDefault } = useSheetContext();
+  const scrollTimerRef = React.useRef<ReturnType<typeof setTimeout>>();
 
-  React.useEffect(() => {
-    const updateScrollHeight = () => {
-      if (contentRef.current) {
-        setScrollHeight(contentRef.current.scrollHeight);
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    // Only react when content is actually scrollable
+    if (el.scrollHeight <= el.clientHeight) return;
+    clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      if (el.scrollTop === 0) {
+        snapToDefault();
+      } else {
+        snapToMax();
       }
-    };
-
-    updateScrollHeight();
-    
-    const timeout = setTimeout(updateScrollHeight, 100);
-    window.addEventListener('resize', updateScrollHeight);
-    
-    return () => {
-      clearTimeout(timeout);
-      window.removeEventListener('resize', updateScrollHeight);
-    };
-  }, [children]);
+    }, 80);
+  };
 
   return (
-    <ReactModalSheet.Content 
+    <ReactModalSheet.Content
       className={cn("bg-card", className)}
       unstyled
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          minHeight: 0,
-          // Let the sheet size naturally, but cap the sheet height so inner area can scroll
-          maxHeight: `calc(100vh - var(--keyboard-height) - 96px)`,
-          overflow: 'hidden',
-        }}
-      disableDrag={draggableAt === 'none' ? true : (draggableAt === 'top' ? ((args: { scrollPosition?: string }) => args.scrollPosition !== 'top') : undefined)}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
+      }}
+      disableDrag
     >
-      <div 
-        ref={contentRef}
-        className="flex-1 overflow-y-auto overscroll-y-contain scrollbar-hide"
-        style={{ 
+      <div
+        className="flex-1 overflow-y-auto scrollbar-hide"
+        style={{
           touchAction: 'pan-y',
           WebkitOverflowScrolling: 'touch',
-          minHeight: '0px',
-          maxHeight: `calc(100vh - var(--keyboard-height) - 160px)`,
+          minHeight: 0,
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}
+        onScroll={handleScroll}
       >
-        {children}
+        <div className="pb-4">
+          {children}
+        </div>
       </div>
     </ReactModalSheet.Content>
   );
@@ -226,7 +298,7 @@ const SheetClose: React.FC<SheetCloseProps> = ({ className }) => {
       type="button"
       onClick={() => onOpenChange(false)}
       className={cn(
-        "absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full w-10 h-10",
+        "absolute right-3 top-1/2 -translate-y-1/2 z-10 rounded-full w-10 h-10",
         "flex items-center justify-center",
         "bg-destructive/10 hover:bg-destructive/20 text-destructive",
         "transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
@@ -273,16 +345,11 @@ const SheetDragIndicator: React.FC<SheetDragIndicatorProps> = ({ className }) =>
 interface SheetScrollerProps {
   children: React.ReactNode;
   className?: string;
-  draggableAt?: 'top' | 'both';
 }
 
-const SheetScroller: React.FC<SheetScrollerProps> = ({ 
-  children, 
-  className,
-  draggableAt = 'top'
-}) => {
+const SheetScroller: React.FC<SheetScrollerProps> = ({ children, className }) => {
   return (
-    <SheetContent className={className} draggableAt={draggableAt}>
+    <SheetContent className={className}>
       {children}
     </SheetContent>
   );

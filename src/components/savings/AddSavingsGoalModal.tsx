@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { format, isBefore, startOfDay } from "date-fns";
-import { MobileDialog } from "@/components/ui/mobile-dialog";
+import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetHeader, SheetTitle, SheetClose, SheetContent } from "@/components/ui/base-modal-sheet";
 import {
   Form,
   FormControl,
@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
 import { useCurrency, currencyData } from "@/hooks/useCurrency";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useKeyboardHandler } from "@/hooks/useKeyboardHandler";
 import { useBudgetContext } from "@/hooks/useBudgetContext";
 import { PremiumGuard } from "@/components/PremiumGuard";
 import { calculateSavingsPace, type SavingsPlanFrequency } from "@/lib/savings";
@@ -80,9 +79,6 @@ export function AddSavingsGoalModal({
   const { t } = useTranslation();
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
-
-  // Handle keyboard on mobile
-  useKeyboardHandler(open);
 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalSchema),
@@ -223,13 +219,16 @@ export function AddSavingsGoalModal({
   };
 
   return (
-    <MobileDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={editingGoal ? t('savings.editGoalTitle') : t('savings.createGoalTitle')}
-    >
+    <BaseModalSheet open={open} onOpenChange={onOpenChange} snapPoints={[1, 0.6]}>
+      <SheetBackdrop onClick={() => onOpenChange(false)} />
+      <SheetContainer>
+        <SheetHeader>
+          <SheetTitle>{editingGoal ? t('savings.editGoalTitle') : t('savings.createGoalTitle')}</SheetTitle>
+          <SheetClose />
+        </SheetHeader>
+        <SheetContent>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 px-4 pt-4">
                 <FormField
                 control={form.control}
                 name="name"
@@ -711,6 +710,8 @@ export function AddSavingsGoalModal({
               </div>
           </form>
         </Form>
-    </MobileDialog>
+        </SheetContent>
+      </SheetContainer>
+    </BaseModalSheet>
   );
 }

@@ -184,7 +184,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                     e.target.value = '';
                 }}
             />
-            <BaseModalSheet open={open} onOpenChange={onOpenChange}>
+            <BaseModalSheet open={open} onOpenChange={onOpenChange} snapPoints={[0.4, 0.2]}>
                 <SheetBackdrop onClick={() => onOpenChange(false)} />
                 <SheetContainer>
                     <SheetHeader>
@@ -192,7 +192,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                         <SheetClose />
                     </SheetHeader>
                     <SheetContent>
-                        <div className="space-y-4 px-1">
+                        <div className="px-4 pb-4 pt-4">
                             <AnimatePresence mode="wait">
                                 {!previewImage ? (
                                     <motion.div

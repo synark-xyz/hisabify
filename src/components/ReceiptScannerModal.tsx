@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Sparkles, Image, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
+import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/base-modal-sheet';
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -24,7 +24,7 @@ export interface ScannedReceiptData {
     receiptPath?: string;
     rawText?: string;
     currency?: string;
-    provider?: string; // 'mindee-v2' | 'gemini-vision' | 'tesseract'
+    provider?: string;
 }
 
 interface ReceiptScannerModalProps {
@@ -45,7 +45,6 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
     const [extractedData, setExtractedData] = useState<ScannedReceiptData | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Reset state when modal opens/closes
     useEffect(() => {
         if (!open) {
             setPreviewImage(null);
@@ -69,7 +68,6 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                 return;
             }
         }
-
         fileInputRef.current?.click();
     };
 
@@ -89,7 +87,6 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-
         input.onchange = async (e: Event) => {
             const target = e.target as HTMLInputElement;
             const file = target.files?.[0];
@@ -97,7 +94,6 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                 await processImage(file);
             }
         };
-
         input.click();
     };
 
@@ -113,8 +109,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
             const { base64, mimeType } = await compressForGemini(file);
             const result = await callGeminiVision(base64, mimeType, userCurrency);
 
-            // Normalize currency from AI result
-            const detectedCurrency = result.currency 
+            const detectedCurrency = result.currency
                 ? normalizeCurrency(result.currency, userCurrency)
                 : userCurrency;
             
@@ -175,186 +170,201 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
 
     return (
         <>
-            {/* Hidden file input OUTSIDE drawer so .click() always works */}
             <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
                 className="hidden"
-                onChange={async (e) => {
+                onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
                     const file = e.target.files?.[0];
-                    if (file) await processImage(file);
+                    if (file) {
+                        await processImage(file);
+                    }
                     e.target.value = '';
                 }}
             />
-
-            <ResponsiveDrawer
-                open={open}
-                onOpenChange={onOpenChange}
-                title="Scan Receipt"
-                className="max-h-[80vh]"
-            >
-                {/* Privacy Indicator */}
-                {privacyMode && (
-                    <div className="flex items-center justify-end gap-1.5 text-[10px] text-emerald-500 font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-1 rounded-full w-fit ml-auto mb-3">
-                        <Sparkles className="w-3 h-3" /> Stealth Mode Active
-                    </div>
-                )}
-
-                {/* 3-state content area */}
-                <div className="min-h-[300px] flex flex-col">
-                    <AnimatePresence mode="wait">
-                        {!previewImage && !scanning && (
-                            <motion.div
-                                key="options"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex-1 flex flex-col items-center justify-center gap-4"
-                            >
-                                <div className="text-center space-y-2 mb-4">
-                                    <h4 className="text-lg font-bold">Capture Receipt</h4>
-                                    <p className="text-muted-foreground text-sm">Auto-extract details from your receipt</p>
-                                </div>
-
-                                <div className="w-full space-y-3">
-                                    <Button
-                                        onClick={handleTakePhoto}
-                                        className="w-full h-14 rounded-2xl text-base font-bold gap-3"
+            <BaseModalSheet open={open} onOpenChange={onOpenChange} snapPoints={[0.5, 0.2]}>
+                <SheetBackdrop onClick={() => onOpenChange(false)} />
+                <SheetContainer>
+                    <SheetHeader>
+                        <SheetTitle>Scan Receipt</SheetTitle>
+                        <SheetClose />
+                    </SheetHeader>
+                    <SheetContent>
+                        <div className="px-4 pb-4 pt-4">
+                            <AnimatePresence mode="wait">
+                                {!previewImage ? (
+                                    <motion.div
+                                        key="capture"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="space-y-4"
                                     >
-                                        <Camera className="w-5 h-5" />
-                                        Take Photo
-                                    </Button>
+                                        {/* Privacy mode notice */}
+                                        {privacyMode && (
+                                            <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4">
+                                                <p className="text-sm text-amber-600 dark:text-amber-400 text-center">
+                                                    Privacy Mode is ON — images are processed locally and never uploaded
+                                                </p>
+                                            </div>
+                                        )}
 
-                                    <Button
-                                        onClick={handleChooseFromGallery}
-                                        variant="outline"
-                                        className="w-full h-14 rounded-2xl text-base font-bold gap-3"
+                                        {/* Scanning indicator */}
+                                        {scanning && (
+                                            <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                                                <div className="relative">
+                                                    <Loader2 className="w-12 h-12 text-accent animate-spin" />
+                                                    <Sparkles className="w-6 h-6 text-accent/50 absolute -top-1 -right-1 animate-pulse" />
+                                                </div>
+                                                <p className="text-sm text-muted-foreground animate-pulse">{scanLabel}</p>
+                                            </div>
+                                        )}
+
+                                        {!scanning && (
+                                            <>
+                                                <div className="bg-gradient-to-br from-muted/50 to-muted/20 rounded-3xl border-2 border-dashed border-muted-foreground/20 p-8 text-center">
+                                                    <div className="space-y-4">
+                                                        <div className="w-16 h-16 mx-auto bg-accent/10 rounded-2xl flex items-center justify-center">
+                                                            <Camera className="w-8 h-8 text-accent" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold">Take a photo or choose from gallery</p>
+                                                            <p className="text-xs text-muted-foreground mt-1">
+                                                                We'll extract merchant, amount, and date automatically
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-3">
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={handleChooseFromGallery}
+                                                        className="flex-1 rounded-2xl"
+                                                    >
+                                                        <Image className="w-4 h-4 mr-2" />
+                                                        Gallery
+                                                    </Button>
+                                                    <Button
+                                                        onClick={handleTakePhoto}
+                                                        className="flex-1 rounded-2xl"
+                                                    >
+                                                        <Camera className="w-4 h-4 mr-2" />
+                                                        Camera
+                                                    </Button>
+                                                </div>
+
+                                                <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
+                                                    Powered by AI Vision. Receipt images are processed securely and never stored.
+                                                </p>
+                                            </>
+                                        )}
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="preview"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="space-y-4"
                                     >
-                                        <Image className="w-5 h-5" />
-                                        Choose from Gallery
-                                    </Button>
-                                </div>
+                                        {/* Scanning overlay */}
+                                        {scanning && (
+                                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-3xl">
+                                                <Loader2 className="w-10 h-10 text-white animate-spin mb-3" />
+                                                <p className="text-sm text-white font-medium animate-pulse">{scanLabel}</p>
+                                            </div>
+                                        )}
 
-                                <p className="text-xs text-muted-foreground text-center mt-4">
-                                    We'll automatically extract merchant, amount, and date
-                                </p>
-                            </motion.div>
-                        )}
+                                        {/* Image preview */}
+                                        <div className="relative rounded-2xl overflow-hidden bg-muted">
+                                            <img
+                                                src={previewImage}
+                                                alt="Receipt preview"
+                                                className="w-full h-48 object-cover"
+                                            />
+                                            {extractedData && (
+                                                <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-3">
+                                                    <div className="flex items-center gap-2 text-white text-xs">
+                                                        <Check className="w-4 h-4 text-emerald-400" />
+                                                        <span className="font-bold">
+                                                            {extractedData.merchant || 'Merchant not detected'}
+                                                        </span>
+                                                        {extractedData.amount && (
+                                                            <span className="text-emerald-400 ml-auto font-mono">
+                                                                {extractedData.currency || '$'}{extractedData.amount.toFixed(2)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
 
-                        {scanning && (
-                            <motion.div
-                                key="scanning"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex-1 flex flex-col items-center justify-center gap-4"
-                            >
-                                <Loader2 className="w-12 h-12 animate-spin text-accent" />
-                                <div className="text-center space-y-2">
-                                    <h4 className="text-lg font-bold">Analyzing Receipt...</h4>
-                                    <p className="text-muted-foreground text-sm">{scanLabel}</p>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {previewImage && !scanning && (
-                            <motion.div
-                                key="preview"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex-1 flex flex-col gap-4"
-                            >
-                                {/* Image Preview */}
-                                <div className="relative rounded-2xl overflow-hidden border border-border bg-muted/50">
-                                    <img
-                                        src={previewImage}
-                                        alt="Receipt preview"
-                                        className="w-full h-48 object-cover"
-                                    />
-                                    {extractedData && (
-                                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-3">
-                                            <div className="flex items-center gap-2 text-white text-xs">
-                                                <Check className="w-4 h-4 text-emerald-400" />
-                                                <span className="font-bold">
-                                                    {extractedData.merchant || 'Merchant not detected'}
-                                                </span>
-                                                {extractedData.amount && (
-                                                    <span className="text-emerald-400 ml-auto font-mono">
-                                                        {extractedData.currency || '$'}{extractedData.amount.toFixed(2)}
+                                        {extractedData && (
+                                            <div className="bg-muted/50 rounded-2xl p-4 space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Extracted Details</h5>
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                                        AI Vision
                                                     </span>
-                                                )}
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground">Merchant</p>
+                                                        <p className="text-sm font-bold">{extractedData.merchant || '—'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground">Amount</p>
+                                                        <p className="text-sm font-bold text-emerald-500">
+                                                            {extractedData.amount
+                                                                ? `${extractedData.currency || '$'}${extractedData.amount.toFixed(2)}`
+                                                                : '—'}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground">Date</p>
+                                                        <p className="text-sm font-bold">
+                                                            {extractedData.date ? extractedData.date.toLocaleDateString() : '—'}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
 
-                                {/* Extracted Data Summary */}
-                                {extractedData && (
-                                    <div className="bg-muted/50 rounded-2xl p-4 space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Extracted Details</h5>
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                                                AI Vision
-                                            </span>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <p className="text-[10px] text-muted-foreground">Merchant</p>
-                                                <p className="text-sm font-bold">{extractedData.merchant || '—'}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] text-muted-foreground">Amount</p>
-                                                <p className="text-sm font-bold text-emerald-500">
-                                                    {extractedData.amount
-                                                        ? `${extractedData.currency || '$'}${extractedData.amount.toFixed(2)}`
-                                                        : '—'}
+                                        {extractedData?.date && (new Date().getTime() - extractedData.date.getTime()) > 365 * 24 * 60 * 60 * 1000 && (
+                                            <div className="flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3">
+                                                <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                                                <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+                                                    <span className="font-bold">Old receipt detected.</span> The date on this bill is over a year ago. If you're adding it now, edit the date to today in the next step.
                                                 </p>
                                             </div>
-                                            <div>
-                                                <p className="text-[10px] text-muted-foreground">Date</p>
-                                                <p className="text-sm font-bold">
-                                                    {extractedData.date ? extractedData.date.toLocaleDateString() : '—'}
-                                                </p>
-                                            </div>
+                                        )}
+
+                                        <div className="flex gap-3 pt-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleRetake}
+                                                className="flex-1 rounded-xl"
+                                            >
+                                                Retake
+                                            </Button>
+                                            <Button
+                                                onClick={handleConfirm}
+                                                disabled={!extractedData}
+                                                className="flex-1 rounded-xl"
+                                            >
+                                                Continue
+                                            </Button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 )}
-
-                                {/* Old receipt warning */}
-                                {extractedData?.date && (new Date().getTime() - extractedData.date.getTime()) > 365 * 24 * 60 * 60 * 1000 && (
-                                    <div className="flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3">
-                                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                                        <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
-                                            <span className="font-bold">Old receipt detected.</span> The date on this bill is over a year ago. If you're adding it now, edit the date to today in the next step.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {/* Action Buttons */}
-                                <div className="flex gap-3 pt-2">
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleRetake}
-                                        className="flex-1 rounded-xl"
-                                    >
-                                        Retake
-                                    </Button>
-                                    <Button
-                                        onClick={handleConfirm}
-                                        disabled={!extractedData}
-                                        className="flex-1 rounded-xl"
-                                    >
-                                        Continue
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </ResponsiveDrawer>
+                            </AnimatePresence>
+                        </div>
+                    </SheetContent>
+                </SheetContainer>
+            </BaseModalSheet>
         </>
     );
 }

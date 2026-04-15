@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Loader2, Receipt } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { MobileDialog } from '@/components/ui/mobile-dialog';
+import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeader, SheetTitle, SheetClose, SheetScroller } from '@/components/ui/base-modal-sheet';
 import { TransactionItem } from '@/components/TransactionItem';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -81,42 +81,48 @@ export function BudgetTransactionsSheet({ budget, open, onOpenChange }: BudgetTr
   const totalSpent = transactions.reduce((sum, tx) => sum + tx.convertedAmount, 0);
 
   return (
-    <MobileDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={budgetName}
-      className="z-[10001]"
-    >
-      <div className="space-y-4">
-        {/* Period + summary */}
-        <div className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2">
-          <span className="text-xs text-muted-foreground">{periodLabel}</span>
-          <span className="text-xs font-semibold text-foreground">
-            {t('budget.totalBudgetSpent', { amount: formatAmount(totalSpent) })}
-          </span>
-        </div>
+    <BaseModalSheet open={open} onOpenChange={onOpenChange}>
+      <SheetBackdrop onClick={() => onOpenChange(false)} />
+      <SheetContainer className="z-[10001]">
+        <SheetHeader>
+          <SheetTitle>{budgetName}</SheetTitle>
+          <SheetClose />
+        </SheetHeader>
+        <SheetContent>
+          <SheetScroller>
+            <div className="space-y-4 px-1">
+              {/* Period + summary */}
+              <div className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2">
+                <span className="text-xs text-muted-foreground">{periodLabel}</span>
+                <span className="text-xs font-semibold text-foreground">
+                  {t('budget.totalBudgetSpent', { amount: formatAmount(totalSpent) })}
+                </span>
+              </div>
 
-        {/* Transaction list */}
-        {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : transactions.length > 0 ? (
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto pb-2">
-            {transactions.map((tx) => (
-              <TransactionItem
-                key={tx.id}
-                transaction={tx}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <Receipt className="mb-3 h-10 w-10 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">{t('budget.noExpensesInPeriod')}</p>
-          </div>
-        )}
-      </div>
-    </MobileDialog>
+              {/* Transaction list */}
+              {loading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : transactions.length > 0 ? (
+                <div className="space-y-2">
+                  {transactions.map((tx) => (
+                    <TransactionItem
+                      key={tx.id}
+                      transaction={tx}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <Receipt className="mb-3 h-10 w-10 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">{t('budget.noExpensesInPeriod')}</p>
+                </div>
+              )}
+            </div>
+          </SheetScroller>
+        </SheetContent>
+      </SheetContainer>
+    </BaseModalSheet>
   );
 }

@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MobileDialog } from '@/components/ui/mobile-dialog';
+import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/base-modal-sheet';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from "react-i18next";
@@ -455,113 +455,120 @@ export function SavingsGoalCard({
         defaultBudgetId={defaultBudgetId}
       />
 
-      <MobileDialog
-        className="z-[10000]"
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        title={t('savings.deleteConfirmTitle', { name: goal.name })}
-        maxWidth="max-w-[400px]"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {t('savings.deleteConfirmDesc')}
-          </p>
-          <div className="flex gap-2 pt-2">
-            <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => setShowDeleteConfirm(false)}>
-              {t('savings.cancel')}
-            </Button>
-            <Button
-              className="flex-1 rounded-2xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                onDelete(goal.id);
-                setShowDeleteConfirm(false);
-              }}
-            >
-              {t('savings.delete')}
-            </Button>
-          </div>
-        </div>
-      </MobileDialog>
+      <BaseModalSheet open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <SheetBackdrop onClick={() => setShowDeleteConfirm(false)} />
+        <SheetContainer className="z-[10000]">
+          <SheetHeader>
+            <SheetTitle>{t('savings.deleteConfirmTitle', { name: goal.name })}</SheetTitle>
+            <SheetClose onClick={() => setShowDeleteConfirm(false)} />
+          </SheetHeader>
+          <SheetContent>
+            <div className="space-y-4 px-1 pb-4">
+              <p className="text-sm text-muted-foreground">
+                {t('savings.deleteConfirmDesc')}
+              </p>
+              <div className="flex gap-2 pt-2">
+                <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => setShowDeleteConfirm(false)}>
+                  {t('savings.cancel')}
+                </Button>
+                <Button
+                  className="flex-1 rounded-2xl font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    onDelete(goal.id);
+                    setShowDeleteConfirm(false);
+                  }}
+                >
+                  {t('savings.delete')}
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </SheetContainer>
+      </BaseModalSheet>
 
-      <MobileDialog
-        open={showRedeploy}
-        onOpenChange={setShowRedeploy}
-        title={t('savings.redeployTitle', { name: goal.name })}
-        maxWidth="max-w-[400px]"
-      >
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-sm">
-            <p className="flex items-center justify-between">
-              <span>{t('savings.available')}</span>
-              <span className="font-semibold text-foreground">{formatAmount(goal.availableToRedeploy)}</span>
-            </p>
-          </div>
+      <BaseModalSheet open={showRedeploy} onOpenChange={setShowRedeploy}>
+        <SheetBackdrop onClick={() => setShowRedeploy(false)} />
+        <SheetContainer>
+          <SheetHeader>
+            <SheetTitle>{t('savings.redeployTitle', { name: goal.name })}</SheetTitle>
+            <SheetClose onClick={() => setShowRedeploy(false)} />
+          </SheetHeader>
+          <SheetContent>
+            <div className="space-y-4 px-1 pb-4">
+              <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-sm">
+                <p className="flex items-center justify-between">
+                  <span>{t('savings.available')}</span>
+                  <span className="font-semibold text-foreground">{formatAmount(goal.availableToRedeploy)}</span>
+                </p>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={`redeploy-${goal.id}`}>{t('savings.amount')}</Label>
-            <Input
-              id={`redeploy-${goal.id}`}
-              type="number"
-              value={redeployAmount}
-              onChange={(event) => setRedeployAmount(event.target.value)}
-              min="0"
-              max={goal.availableToRedeploy}
-              step="0.01"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor={`redeploy-${goal.id}`}>{t('savings.amount')}</Label>
+                <Input
+                  id={`redeploy-${goal.id}`}
+                  type="number"
+                  value={redeployAmount}
+                  onChange={(event) => setRedeployAmount(event.target.value)}
+                  min="0"
+                  max={goal.availableToRedeploy}
+                  step="0.01"
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={`target-${goal.id}`}>{t('savings.moveToAnotherGoal')}</Label>
-            <select
-              id={`target-${goal.id}`}
-              className="w-full rounded-2xl border border-input bg-background px-3 py-2 text-sm"
-              value={redeployTargetId}
-              onChange={(event) => setRedeployTargetId(event.target.value)}
-            >
-              <option value="">{t('savings.returnToMainBalance')}</option>
-              {otherActiveGoals.map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entry.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor={`target-${goal.id}`}>{t('savings.moveToAnotherGoal')}</Label>
+                <select
+                  id={`target-${goal.id}`}
+                  className="w-full rounded-2xl border border-input bg-background px-3 py-2 text-sm"
+                  value={redeployTargetId}
+                  onChange={(event) => setRedeployTargetId(event.target.value)}
+                >
+                  <option value="">{t('savings.returnToMainBalance')}</option>
+                  {otherActiveGoals.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => setShowRedeploy(false)}>
-              {t('savings.cancel')}
-            </Button>
-            <Button
-              className="flex-1 rounded-2xl font-bold"
-              onClick={() => {
-                const amount = Number(redeployAmount);
-                if (amount <= 0) {
-                  return;
-                }
+              <div className="flex gap-2 pt-2">
+                <Button variant="ghost" className="flex-1 rounded-2xl font-bold" onClick={() => setShowRedeploy(false)}>
+                  {t('savings.cancel')}
+                </Button>
+                <Button
+                  className="flex-1 rounded-2xl font-bold"
+                  onClick={() => {
+                    const amount = Number(redeployAmount);
+                    if (amount <= 0) {
+                      return;
+                    }
 
-                if (redeployTargetId) {
-                  onRedeployToGoal(goal.id, redeployTargetId, amount);
-                } else {
-                  onRedeployToBalance(goal.id, amount);
-                }
-                setShowRedeploy(false);
-              }}
-            >
-              {redeployTargetId ? (
-                <>
-                  <ArrowRightLeft className="mr-2 h-4 w-4" />
-                  {t('savings.moveFunds')}
-                </>
-              ) : (
-                <>
-                  <Wallet className="mr-2 h-4 w-4" />
-                  {t('savings.returnFunds')}
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </MobileDialog>
+                    if (redeployTargetId) {
+                      onRedeployToGoal(goal.id, redeployTargetId, amount);
+                    } else {
+                      onRedeployToBalance(goal.id, amount);
+                    }
+                    setShowRedeploy(false);
+                  }}
+                >
+                  {redeployTargetId ? (
+                    <>
+                      <ArrowRightLeft className="mr-2 h-4 w-4" />
+                      {t('savings.moveFunds')}
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="mr-2 h-4 w-4" />
+                      {t('savings.returnFunds')}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </SheetContainer>
+      </BaseModalSheet>
     </>
   );
 }

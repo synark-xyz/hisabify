@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
+import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/base-modal-sheet';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { useCurrency } from '@/hooks/useCurrency';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,8 +44,6 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
   const [parsed, setParsed]                   = useState<ParsedResult>({});
   const [aiLoading, setAiLoading]             = useState(false);
 
-  // ── Reset when sheet closes ───────────────────────────────────────────────
-
   const reset = useCallback(() => {
     setPhase('idle');
     setTranscript('');
@@ -60,9 +58,7 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
       void stop();
       reset();
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Core handler — one async function, zero useEffects for transitions ──
+  }, [open]);
 
   const handleRecord = async () => {
     setError(null);
@@ -79,7 +75,6 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
       }
       setPhase('result');
 
-      // Try AI extraction; fall back to regex on failure
       setAiLoading(true);
       try {
         const { data, error: fnError } = await supabase.functions.invoke('parse-transaction', {
@@ -88,7 +83,6 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
         if (fnError || !data || (!data.merchant && !data.amount)) {
           throw new Error(fnError?.message || 'AI returned no usable data');
         }
-        // Parse currency from the raw text in case AI didn't detect it
         const textCurrency = parseCurrencyFromString(text);
         const extractedCurrency = data.currency || textCurrency || userCurrency;
         setParsed({
@@ -101,9 +95,7 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
       } catch (err) {
         console.warn('[VoiceInput] AI parsing failed, falling back to regex:', err);
         const fallbackResult = parseCommand(text) as ParsedResult;
-        // Try to parse currency from the raw text using symbol/name mapping
         const textCurrency = parseCurrencyFromString(text);
-        // Use user's default currency as fallback when no currency detected
         setParsed({
           ...fallbackResult,
           currency: fallbackResult.currency || textCurrency || userCurrency,
@@ -119,10 +111,7 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
 
   const handleStop = () => {
     void stop();
-    // stop() triggers Android to finalize → listen() promise resolves → handleRecord continues
   };
-
-  // ── Button handler ────────────────────────────────────────────────────────
 
   const handleMicTap = () => {
     if (phase === 'idle') {
@@ -131,8 +120,6 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
       handleStop();
     }
   };
-
-  // ── Actions ───────────────────────────────────────────────────────────────
 
   const handleClose = () => {
     void stop();
@@ -165,221 +152,211 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
     handleClose();
   };
 
-  // ── Derived UI ────────────────────────────────────────────────────────────
-
   const tips = transactionType === 'income' ? INCOME_TIPS : EXPENSE_TIPS;
-
-  const micLabel =
-    phase === 'recording' ? 'Tap to stop' :
-    phase === 'result'    ? 'Done'         : 'Tap to record';
+  const isRecording = phase === 'recording';
 
   return (
-    <ResponsiveDrawer
-      open={open}
-      onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}
-      title="Voice Input"
-      className="max-h-[85vh]"
-    >
-      {/* ── Voice UI ── */}
-      <div className="flex flex-col items-center gap-5">
-
-        {/* Type selector — always visible; read-only while recording */}
-        <div className="w-full flex rounded-xl border border-border overflow-hidden">
-          {(['expense', 'income'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => phase !== 'recording' && setTransactionType(t)}
-              className={cn(
-                "flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-colors",
-                phase === 'recording' && "opacity-50 cursor-not-allowed",
-                t === 'expense' && transactionType === 'expense' && "bg-red-500/15 text-red-500",
-                t === 'income'  && transactionType === 'income'  && "bg-green-500/15 text-green-500",
-                transactionType !== t && "text-muted-foreground",
-              )}
-            >
-              {t === 'expense'
-                ? <TrendingDown className="w-4 h-4" />
-                : <TrendingUp   className="w-4 h-4" />
-              }
-              {t === 'expense' ? 'Expense' : 'Income'}
-            </button>
-          ))}
-        </div>
-
-        {/* Mic button */}
-        <div className="relative flex items-center justify-center">
-          {/* Pulse rings */}
-          {phase === 'recording' && (
-            <>
-              <motion.div
-                animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
-                transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                className="absolute w-36 h-36 rounded-full bg-red-500/30 pointer-events-none"
-              />
-              <motion.div
-                animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ repeat: Infinity, duration: 1.5, delay: 0.3, ease: 'easeInOut' }}
-                className="absolute w-36 h-36 rounded-full bg-red-500/20 pointer-events-none"
-              />
-            </>
-          )}
-
-          <button
-            onClick={handleMicTap}
-            disabled={phase === 'result'}
-            className={cn(
-              "relative z-10 w-36 h-36 rounded-full flex flex-col items-center justify-center gap-2",
-              "transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed",
-              phase === 'recording' ? "bg-red-500/15" : "bg-accent/10",
-            )}
-          >
-            {phase === 'recording'
-              ? <Square className="w-12 h-12 text-red-500" />
-              : <Mic    className="w-12 h-12 text-accent" />
-            }
-            <span className="text-xs font-medium text-muted-foreground">
-              {micLabel}
-            </span>
-          </button>
-        </div>
-
-        {/* Status */}
-        <div className="w-full text-center min-h-[2rem]">
-          {phase === 'idle' && !error && (
-            <p className="text-sm text-muted-foreground">
-              Select a type, then tap the mic to start
-            </p>
-          )}
-          {phase === 'recording' && (
-            <p className="text-sm text-muted-foreground animate-pulse">Listening…</p>
-          )}
-        </div>
-
-        {/* Error */}
-        {error && phase !== 'recording' && (
-          <Card className="w-full bg-destructive/5 border-destructive/20 p-3">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-destructive flex-1">{error}</p>
+    <BaseModalSheet open={open} onOpenChange={onOpenChange}>
+      <SheetBackdrop onClick={handleClose} />
+      <SheetContainer>
+        <SheetHeader>
+          <SheetTitle>Voice Input</SheetTitle>
+          <SheetClose onClick={handleClose} />
+        </SheetHeader>
+        <SheetContent>
+          <div className="space-y-5 px-1">
+            {/* Transaction type toggle */}
+            <div className="flex gap-2 p-1 bg-muted/50 rounded-2xl">
+              <button
+                onClick={() => setTransactionType('expense')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all",
+                  transactionType === 'expense'
+                    ? "bg-red-500 text-white shadow-md"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <TrendingDown className="w-4 h-4" />
+                Expense
+              </button>
+              <button
+                onClick={() => setTransactionType('income')}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all",
+                  transactionType === 'income'
+                    ? "bg-green-500 text-white shadow-md"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <TrendingUp className="w-4 h-4" />
+                Income
+              </button>
             </div>
-          </Card>
-        )}
 
-        {/* Result card */}
-        {phase === 'result' && (
-          <div className="w-full space-y-3">
-            {transcript ? (
-              <Card className="bg-muted/50 p-4 border-border/50">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Recognized:</p>
-                    <p className="text-sm font-mono text-foreground/80">"{transcript}"</p>
-                  </div>
-                  <div className="flex items-start gap-2 pt-2 border-t border-border/50">
-                    {aiLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 text-accent animate-spin mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-muted-foreground">Analyzing with AI…</p>
-                      </>
-                    ) : hasParsedData ? (
-                      <>
-                        <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-xs text-muted-foreground">Extracted:</p>
-                            {parsed.confidence && parsed.confidence !== 'high' && (
-                              <span className={cn(
-                                "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                                parsed.confidence === 'medium'
-                                  ? "bg-yellow-500/15 text-yellow-600"
-                                  : "bg-orange-500/15 text-orange-600",
-                              )}>
-                                {parsed.confidence} confidence
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 flex-wrap">
-                            {parsed.merchant && (
-                              <span className="text-sm font-medium capitalize">
-                                {parsed.merchant}
-                              </span>
-                            )}
-                            {parsed.amount && (
-                              <span className={cn(
-                                "text-sm font-bold",
-                                transactionType === 'income' ? "text-green-600" : "text-red-600",
-                              )}>
-                                {transactionType === 'income' ? '+' : '-'}
-                                {parsed.amount.toFixed(2)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-orange-600 flex-1">
-                          Could not extract merchant or amount — try again or add manually
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ) : (
-              <p className="text-sm text-center text-muted-foreground">
-                No speech detected. Try again.
-              </p>
-            )}
-
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleRetry} className="flex-1" disabled={aiLoading}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Try Again
-              </Button>
-              {hasParsedData && !aiLoading ? (
-                <Button
-                  onClick={handleUseTranscript}
-                  className={cn(
-                    "flex-1",
-                    transactionType === 'income'
-                      ? "bg-green-500 hover:bg-green-600"
-                      : "bg-accent hover:bg-accent/90",
-                  )}
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  Use This
-                </Button>
-              ) : !aiLoading ? (
-                <Button variant="outline" onClick={handleAddManually} className="flex-1">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Manually
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        )}
-
-        {/* Tips — idle only */}
-        {phase === 'idle' && (
-          <div className="w-full p-3 bg-muted/30 rounded-lg border border-border/30">
-            <div className="flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p className="font-medium text-foreground">
-                  {transactionType === 'income' ? 'Income examples:' : 'Expense examples:'}
-                </p>
-                <ul className="list-disc list-inside space-y-0.5 ml-1">
-                  {tips.map(tip => <li key={tip}>{tip}</li>)}
-                  <li>Speak clearly and include an amount</li>
-                </ul>
+            {/* Mic button */}
+            <div className="flex flex-col items-center justify-center py-6 space-y-4">
+              <motion.button
+                onClick={handleMicTap}
+                whileTap={{ scale: 0.92 }}
+                className={cn(
+                  "relative w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg",
+                  isRecording
+                    ? "bg-red-500 hover:bg-red-600 animate-pulse"
+                    : "bg-accent hover:bg-accent/90",
+                )}
+              >
+                {isRecording ? (
+                  <motion.div
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    <Square className="w-7 h-7 text-white fill-white" />
+                  </motion.div>
+                ) : (
+                  <Mic className="w-8 h-8 text-white" />
+                )}
+                {isRecording && (
+                  <span className="absolute -bottom-1 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                    REC
+                  </span>
+                )}
+              </motion.button>
+              <div className="text-center space-y-1">
+                {phase === 'idle' && !error && (
+                  <p className="text-sm text-muted-foreground">
+                    Select a type, then tap the mic to start
+                  </p>
+                )}
+                {phase === 'recording' && (
+                  <p className="text-sm text-muted-foreground animate-pulse">Listening…</p>
+                )}
               </div>
             </div>
-          </div>
-        )}
 
-      </div>
-    </ResponsiveDrawer>
+            {error && phase !== 'recording' && (
+              <Card className="w-full bg-destructive/5 border-destructive/20 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-destructive flex-1">{error}</p>
+                </div>
+              </Card>
+            )}
+
+            {phase === 'result' && (
+              <div className="w-full space-y-3">
+                {transcript ? (
+                  <Card className="bg-muted/50 p-4 border-border/50">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Recognized:</p>
+                        <p className="text-sm font-mono text-foreground/80">"{transcript}"</p>
+                      </div>
+                      <div className="flex items-start gap-2 pt-2 border-t border-border/50">
+                        {aiLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 text-accent animate-spin mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-muted-foreground">Analyzing with AI…</p>
+                          </>
+                        ) : hasParsedData ? (
+                          <>
+                            <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-xs text-muted-foreground">Extracted:</p>
+                                {parsed.confidence && parsed.confidence !== 'high' && (
+                                  <span className={cn(
+                                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                                    parsed.confidence === 'medium'
+                                      ? "bg-yellow-500/15 text-yellow-600"
+                                      : "bg-orange-500/15 text-orange-600",
+                                  )}>
+                                    {parsed.confidence} confidence
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {parsed.merchant && (
+                                  <span className="text-sm font-medium capitalize">
+                                    {parsed.merchant}
+                                  </span>
+                                )}
+                                {parsed.amount && (
+                                  <span className={cn(
+                                    "text-sm font-bold",
+                                    transactionType === 'income' ? "text-green-600" : "text-red-600",
+                                  )}>
+                                    {transactionType === 'income' ? '+' : '-'}
+                                    {parsed.amount.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-orange-600 flex-1">
+                              Could not extract merchant or amount — try again or add manually
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ) : (
+                  <p className="text-sm text-center text-muted-foreground">
+                    No speech detected. Try again.
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleRetry} className="flex-1" disabled={aiLoading}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Try Again
+                  </Button>
+                  {hasParsedData && !aiLoading ? (
+                    <Button
+                      onClick={handleUseTranscript}
+                      className={cn(
+                        "flex-1",
+                        transactionType === 'income'
+                          ? "bg-green-500 hover:bg-green-600"
+                          : "bg-accent hover:bg-accent/90",
+                      )}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Use This
+                    </Button>
+                  ) : !aiLoading ? (
+                    <Button variant="outline" onClick={handleAddManually} className="flex-1">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Manually
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
+            {phase === 'idle' && (
+              <div className="w-full p-3 bg-muted/30 rounded-lg border border-border/30">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p className="font-medium text-foreground">
+                      {transactionType === 'income' ? 'Income examples:' : 'Expense examples:'}
+                    </p>
+                    <ul className="list-disc list-inside space-y-0.5 ml-1">
+                      {tips.map(tip => <li key={tip}>{tip}</li>)}
+                      <li>Speak clearly and include an amount</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </SheetContainer>
+    </BaseModalSheet>
   );
 }

@@ -4,26 +4,31 @@ import { Capacitor } from "@capacitor/core";
 
 import { cn } from "@/lib/utils";
 
-const Drawer = ({
-  shouldScaleBackground = true,
-  snapPoints,
-  activeSnapPoint,
-  setActiveSnapPoint,
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Root> & {
+interface DrawerProps extends React.ComponentProps<typeof DrawerPrimitive.Root> {
   snapPoints?: (string | number)[];
   activeSnapPoint?: string | number;
   setActiveSnapPoint?: (snapPoint: string | number) => void;
-}) => (
-  <DrawerPrimitive.Root
-    shouldScaleBackground={shouldScaleBackground}
-    snapPoints={snapPoints}
-    activeSnapPoint={activeSnapPoint}
-    setActiveSnapPoint={setActiveSnapPoint}
-    dismissible={true}
-    modal={true}
-    {...props}
-  />
+}
+
+const Drawer = React.forwardRef<React.ElementRef<typeof DrawerPrimitive.Root>, DrawerProps>(
+  ({
+    shouldScaleBackground = true,
+    snapPoints,
+    activeSnapPoint,
+    setActiveSnapPoint,
+    ...props
+  }, ref) => (
+    <DrawerPrimitive.Root
+      ref={ref}
+      shouldScaleBackground={shouldScaleBackground}
+      snapPoints={snapPoints}
+      activeSnapPoint={activeSnapPoint}
+      setActiveSnapPoint={setActiveSnapPoint}
+      dismissible={true}
+      modal={true}
+      {...props}
+    />
+  )
 );
 Drawer.displayName = "Drawer";
 
@@ -39,7 +44,7 @@ const DrawerOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-40 bg-black/80 transition-opacity duration-200", className)}
+    className={cn("fixed inset-0 z-40 bg-black/80 backdrop-blur-sm transition-opacity duration-200 pointer-events-auto", className)}
     style={{
       position: 'fixed',
       top: 0,
@@ -47,7 +52,8 @@ const DrawerOverlay = React.forwardRef<
       right: 0,
       bottom: 0,
       width: '100vw',
-      height: '100dvh'
+      height: '100dvh',
+      touchAction: 'none',
     }}
     {...props}
   />
@@ -57,22 +63,24 @@ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+>(({ className, children, style, ...props }, ref) => {
   return (
     <DrawerPortal>
       <DrawerOverlay />
       <DrawerPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-[60] flex flex-col rounded-t-[24px] border-t-4 border-muted bg-background shadow-2xl pb-safe",
+          "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[24px] border-t-4 border-muted bg-background shadow-2xl pb-safe",
+          "max-h-[90dvh]",
           className,
         )}
         style={{
-          // Force viewport-relative positioning
           position: 'fixed',
           left: 0,
           right: 0,
           bottom: 0,
+          touchAction: 'none',
+          ...style,
         }}
         {...props}
       >

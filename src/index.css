@@ -88,6 +88,11 @@
 
 @layer base {
 
+  /* Keyboard height CSS variable — updated by useKeyboardHeight hook on native */
+  :root {
+    --keyboard-height: 0px;
+  }
+
   /* =========================================
      DEFAULT THEME (SettleUp Aesthetic)
      Applies when no data-variant is set OR when not cyberpunk
@@ -320,8 +325,19 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
+    /* Prevent iOS/Android from auto-zooming text on input focus */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     /* Allow native overscroll for bouncy effect, but maybe prevent nav actions */
     overscroll-behavior-y: auto;
+  }
+
+  /* Remove native browser styling on inputs for consistent cross-platform look */
+  input:not([type="range"]),
+  select,
+  textarea {
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   body {
@@ -355,7 +371,9 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
+    /* Use 100% instead of 100vw to avoid horizontal scroll on Android (100vw includes scrollbar width) */
+    width: 100%;
+    max-width: 100vw;
     height: 100vh;
     height: 100dvh;
     pointer-events: none;

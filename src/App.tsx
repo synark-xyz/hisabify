@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen as CapacitorSplashScreen } from '@capacitor/splash-screen';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -17,40 +17,42 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
-import { InsightsPage } from "@/pages/InsightsPage";
-import { ProfilePage } from "@/pages/ProfilePage";
 import { AuthPage } from "@/pages/AuthPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
-import { BudgetPage } from "@/pages/BudgetPage";
 import { InstallPage } from "@/pages/InstallPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { SplashScreen } from "@/components/SplashScreen";
 import NotFound from "@/pages/NotFound";
-import { SettingsPage } from "@/pages/SettingsPage";
-import { PreferencesPage } from "@/pages/settings/PreferencesPage";
-import { NotificationSettingsPage } from "@/pages/settings/NotificationSettingsPage";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
 import { DeleteAccountPage } from "@/pages/DeleteAccountPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
-import { SupportPage } from "@/pages/SupportPage";
-import { FaqPage } from "@/pages/FaqPage";
-import { PersonalPage } from "@/pages/profile/PersonalPage";
-import { DataPage } from "@/pages/profile/DataPage";
-import { ReferralsPage } from "@/pages/profile/ReferralsPage";
-import { DebtPage } from "@/pages/DebtPage";
-import { ActivityHistoryPage } from "@/pages/ActivityHistoryPage";
-import { CategoriesPage } from "@/pages/CategoriesPage";
-import { MorePage } from "@/pages/MorePage";
-import { CalculatorPage } from "@/pages/more/CalculatorPage";
-import { LoanCalculatorPage } from "@/pages/more/LoanCalculatorPage";
-import { DiscountTaxCalculatorPage } from "@/pages/more/DiscountTaxCalculatorPage";
-import { CurrencyConverterPage } from "@/pages/more/CurrencyConverterPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useScreenTracking } from "@/hooks/useScreenTracking";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { getAuthCallbackRouteFromUrl } from "@/lib/authRedirect";
+
+const InsightsPage = lazy(() => import("@/pages/InsightsPage").then(m => ({ default: m.InsightsPage })));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage").then(m => ({ default: m.ProfilePage })));
+const BudgetPage = lazy(() => import("@/pages/BudgetPage").then(m => ({ default: m.BudgetPage })));
+const SettingsPage = lazy(() => import("@/pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
+const PreferencesPage = lazy(() => import("@/pages/settings/PreferencesPage").then(m => ({ default: m.PreferencesPage })));
+const NotificationSettingsPage = lazy(() => import("@/pages/settings/NotificationSettingsPage").then(m => ({ default: m.NotificationSettingsPage })));
+const SupportPage = lazy(() => import("@/pages/SupportPage").then(m => ({ default: m.SupportPage })));
+const FaqPage = lazy(() => import("@/pages/FaqPage").then(m => ({ default: m.FaqPage })));
+const PersonalPage = lazy(() => import("@/pages/profile/PersonalPage").then(m => ({ default: m.PersonalPage })));
+const DataPage = lazy(() => import("@/pages/profile/DataPage").then(m => ({ default: m.DataPage })));
+const ReferralsPage = lazy(() => import("@/pages/profile/ReferralsPage").then(m => ({ default: m.ReferralsPage })));
+const DebtPage = lazy(() => import("@/pages/DebtPage").then(m => ({ default: m.DebtPage })));
+const ActivityHistoryPage = lazy(() => import("@/pages/ActivityHistoryPage").then(m => ({ default: m.ActivityHistoryPage })));
+const CategoriesPage = lazy(() => import("@/pages/CategoriesPage").then(m => ({ default: m.CategoriesPage })));
+const MorePage = lazy(() => import("@/pages/MorePage").then(m => ({ default: m.MorePage })));
+const CalculatorPage = lazy(() => import("@/pages/more/CalculatorPage").then(m => ({ default: m.CalculatorPage })));
+const LoanCalculatorPage = lazy(() => import("@/pages/more/LoanCalculatorPage").then(m => ({ default: m.LoanCalculatorPage })));
+const DiscountTaxCalculatorPage = lazy(() => import("@/pages/more/DiscountTaxCalculatorPage").then(m => ({ default: m.DiscountTaxCalculatorPage })));
+const CurrencyConverterPage = lazy(() => import("@/pages/more/CurrencyConverterPage").then(m => ({ default: m.CurrencyConverterPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -261,7 +263,13 @@ const App = () => (
             <AuthProvider>
               <ProfileProvider>
                 <CurrencyProvider>
-                  <RootLogic />
+                  <Suspense fallback={
+                    <div className="min-h-screen bg-background flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  }>
+                    <RootLogic />
+                  </Suspense>
                 </CurrencyProvider>
               </ProfileProvider>
             </AuthProvider>
@@ -295,6 +303,9 @@ function RootLogic() {
   useEffect(() => {
     clearStaleSessionOnFreshInstall().catch(() => {});
   }, []);  
+
+  // Track keyboard height as CSS custom property (--keyboard-height) for native modal layout
+  useKeyboardHeight();
 
   // Handle Android back button — navigates back in history; exits on double-back from root
   useAndroidBackButton(navigate);

@@ -109,7 +109,7 @@ interface SheetContainerProps {
 
 const SheetContainer: React.FC<SheetContainerProps> = ({ children, className }) => {
   return (
-    <ReactModalSheet.Container className={cn("bg-card text-card-foreground", className)}>
+    <ReactModalSheet.Container className={cn("bg-card text-card-foreground shadow-xl", className)}>
       {children}
     </ReactModalSheet.Container>
   );
@@ -175,8 +175,9 @@ const SheetContent: React.FC<SheetContentProps> = ({
           flexDirection: 'column',
           flex: 1,
           minHeight: 0,
-          overflowY: 'auto',
-          overflowX: 'hidden',
+          // Let the sheet size naturally, but cap the sheet height so inner area can scroll
+          maxHeight: `calc(100vh - var(--keyboard-height) - 96px)`,
+          overflow: 'hidden',
         }}
       disableDrag={draggableAt === 'none' ? true : (draggableAt === 'top' ? ((args: { scrollPosition?: string }) => args.scrollPosition !== 'top') : undefined)}
     >
@@ -187,6 +188,7 @@ const SheetContent: React.FC<SheetContentProps> = ({
           touchAction: 'pan-y',
           WebkitOverflowScrolling: 'touch',
           minHeight: '0px',
+          maxHeight: `calc(100vh - var(--keyboard-height) - 160px)`,
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}

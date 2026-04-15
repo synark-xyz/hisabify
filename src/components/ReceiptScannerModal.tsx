@@ -184,7 +184,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                     e.target.value = '';
                 }}
             />
-            <BaseModalSheet open={open} onOpenChange={onOpenChange} snapPoints={[0.4, 0.2]}>
+            <BaseModalSheet open={open} onOpenChange={onOpenChange} snapPoints={[0.5, 0.2]}>
                 <SheetBackdrop onClick={() => onOpenChange(false)} />
                 <SheetContainer>
                     <SheetHeader>

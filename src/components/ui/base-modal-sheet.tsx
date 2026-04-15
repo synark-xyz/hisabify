@@ -183,8 +183,8 @@ interface SheetContainerProps {
 const SheetContainer: React.FC<SheetContainerProps> = ({ children, className }) => {
   return (
     <ReactModalSheet.Container
-      className={cn("text-card-foreground shadow-xl", className)}
-      style={{ background: 'hsl(var(--card))', borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}
+      className={cn("text-card-foreground shadow-2xl rounded-t-3xl", className)}
+      style={{ background: 'hsl(var(--card))' }}
     >
       {children}
     </ReactModalSheet.Container>
@@ -201,7 +201,7 @@ const SheetHeader: React.FC<SheetHeaderProps> = ({ children, className }) => {
   return (
     <ReactModalSheet.Header className={cn("relative bg-card border-b border-border/50", className)}>
       <div className="flex justify-center pt-3 pb-0">
-        <div className="w-[100px] h-[5px] rounded-full bg-muted-foreground/25" />
+        <div className="w-[100px] h-[5px] rounded-full bg-muted-foreground/20" />
       </div>
       <div className="flex items-center justify-between px-4 py-3">
         <div className="w-10" />
@@ -249,11 +249,12 @@ const SheetContent: React.FC<SheetContentProps> = ({
         flex: 1,
         minHeight: 0,
         overflow: 'hidden',
+        borderRadius: '0',
       }}
       disableDrag
     >
       <div
-        className="flex-1 overflow-y-auto scrollbar-hide"
+        className="flex-1 scrollbar-hide"
         style={{
           touchAction: 'pan-y',
           WebkitOverflowScrolling: 'touch',

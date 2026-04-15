@@ -531,6 +531,8 @@
     "markedUpcoming": "আসন্ন হিসাবে চিহ্নিত করা হয়েছে",
     "addPaymentReminder": "পেমেন্ট রিমাইন্ডার যোগ করুন",
     "editPaymentReminder": "পেমেন্ট রিমাইন্ডার সম্পাদনা করুন",
+    "createReminder": "রিমাইন্ডার তৈরি করুন",
+    "editReminder": "রিমাইন্ডার সম্পাদনা করুন",
     "quickFillFromTransaction": "লেনদেন থেকে দ্রুত পূরণ করুন",
     "searchTransactions": "লেনদেন অনুসন্ধান করুন...",
     "noMatchingTransactions": "কোনো মেলা লেনদেন পাওয়া যায়নি",
@@ -899,7 +901,8 @@
     "monthly": "মাসিক",
     "yearly": "বার্ষিক",
     "nextDue": "পরবর্তী দেনা",
-    "noRecurring": "কোনো আবৃত লেনদেন নেই"
+    "noRecurring": "কোনো আবৃত লেনদেন নেই",
+    "none": "একবার"
   },
   "categories": {
     "categories": "বিভাগ",

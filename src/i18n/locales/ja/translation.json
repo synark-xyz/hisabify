@@ -529,6 +529,8 @@
     "markedUpcoming": "今後としてマーク済み",
     "addPaymentReminder": "支払いリマインダーを追加",
     "editPaymentReminder": "支払いリマインダーを編集",
+    "createReminder": "リマインダーを作成",
+    "editReminder": "リマインダーを編集",
     "quickFillFromTransaction": "トランザクションから自動入力",
     "searchTransactions": "トランザクションを検索...",
     "noMatchingTransactions": "一致するトランザクションが見つかりません",
@@ -895,7 +897,8 @@
     "monthly": "毎月",
     "yearly": "毎年",
     "nextDue": "次回支払日",
-    "noRecurring": "繰り返し取引はありません"
+    "noRecurring": "繰り返し取引はありません",
+    "none": "一回のみ"
   },
   "categories": {
     "categories": "カテゴリー",

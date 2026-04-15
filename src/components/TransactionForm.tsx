@@ -178,6 +178,8 @@ export function TransactionForm({
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderDate, setReminderDate] = useState<Date | undefined>(undefined);
   const [reminderDateOpen, setReminderDateOpen] = useState(false);
+  const [recurringInterval, setRecurringInterval] = useState<string>('monthly');
+  const [recurringOpen, setRecurringOpen] = useState(false);
 
   /* ─── Feature 2.x: Transfer disabled state (coming soon) ─── */
   const transferDisabled = true;
@@ -832,8 +834,8 @@ export function TransactionForm({
           currency: data.currency,
           due_date: reminderDate.toISOString(),
           status: 'upcoming',
-          is_recurring: false,
-          recurring_interval: null,
+          is_recurring: reminderEnabled && recurringInterval !== 'none',
+          recurring_interval: reminderEnabled && recurringInterval !== 'none' ? recurringInterval : null,
           notify_before_days: 1,
           note: null,
         }).then(({ error }) => {
@@ -1734,28 +1736,66 @@ export function TransactionForm({
                   checked={reminderEnabled}
                   onCheckedChange={(checked) => {
                     setReminderEnabled(checked);
-                    if (!checked) setReminderDate(undefined);
+                    if (!checked) {
+                      setReminderDate(undefined);
+                      setRecurringInterval('monthly');
+                    }
                   }}
                 />
               </div>
               {reminderEnabled && (
-                <Popover open={reminderDateOpen} onOpenChange={setReminderDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl h-11">
-                      <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                      {reminderDate ? format(reminderDate, 'MMM dd, yyyy') : t('transaction.remindMeOn')}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl" align="end">
-                    <CalendarComponent
-                      mode="single"
-                      selected={reminderDate}
-                      onSelect={(d) => { setReminderDate(d ?? undefined); setReminderDateOpen(false); }}
-                      defaultMonth={reminderDate ?? new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <>
+                  <Popover open={reminderDateOpen} onOpenChange={setReminderDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl h-11">
+                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                        {reminderDate ? format(reminderDate, 'MMM dd, yyyy') : t('transaction.remindMeOn')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl" align="end">
+                      <CalendarComponent
+                        mode="single"
+                        selected={reminderDate}
+                        onSelect={(d) => { setReminderDate(d ?? undefined); setReminderDateOpen(false); }}
+                        defaultMonth={reminderDate ?? new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Recurring interval selector */}
+                  <Popover open={recurringOpen} onOpenChange={setRecurringOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl h-11">
+                        <Clock className="mr-2 h-4 w-4 opacity-50" />
+                        <span className="flex-1">
+                          {recurringInterval === 'none' 
+                            ? t('transaction.oneTime') 
+                            : t(`recurring.${recurringInterval}`, recurringInterval[0].toUpperCase() + recurringInterval.slice(1))}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2 rounded-2xl shadow-2xl" align="start">
+                      <div className="flex flex-col gap-1">
+                        {['none', 'daily', 'weekly', 'monthly', 'yearly'].map((interval) => (
+                          <Button
+                            key={interval}
+                            variant={recurringInterval === interval ? 'secondary' : 'ghost'}
+                            className="justify-start font-normal rounded-lg"
+                            onClick={() => {
+                              setRecurringInterval(interval);
+                              setRecurringOpen(false);
+                            }}
+                          >
+                            {interval === 'none' 
+                              ? t('transaction.oneTime') 
+                              : t(`recurring.${interval}`, interval[0].toUpperCase() + interval.slice(1))}
+                          </Button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </>
               )}
             </div>
           )}

@@ -638,6 +638,8 @@
     "markedUpcoming": "Marked as upcoming",
     "addPaymentReminder": "Add Payment Reminder",
     "editPaymentReminder": "Edit Payment Reminder",
+    "createReminder": "Create Reminder",
+    "editReminder": "Edit Reminder",
     "quickFillFromTransaction": "Quick Fill from Transaction",
     "searchTransactions": "Search transactions...",
     "noMatchingTransactions": "No matching transactions found",
@@ -1007,7 +1009,8 @@
     "monthly": "Monthly",
     "yearly": "Yearly",
     "nextDue": "Next due",
-    "noRecurring": "No recurring transactions"
+    "noRecurring": "No recurring transactions",
+    "none": "One-time"
   },
   "categories": {
     "categories": "Categories",

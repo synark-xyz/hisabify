@@ -83,9 +83,9 @@ export default function ReportsPage() {
   return (
     <div className={cn("container mx-auto p-1space-y-2", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
       <PullToRefresh onRefresh={handleRefresh}>
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Page header */}
-          <div className="flex items-center gap-2.5 pb-1 border-b border-border/50">
+          <div className="flex items-center gap-2.5 pb-1 border-b border-border/50 pt-4">
             <FileBarChart className="h-5 w-5 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">{t('reports.title')}</h1>
           </div>

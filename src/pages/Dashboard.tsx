@@ -57,7 +57,8 @@ export function Dashboard() {
   const { isFirstTimeUser, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
   const { user } = useAuth();
   const { variant, theme } = useTheme();
-  const useDarkText = variant === 'cyberpunk' && theme === 'light';
+  const isLightMode = theme === 'light' && variant !== 'cyberpunk';
+  const useDarkText = (variant === 'cyberpunk' && theme === 'light') || (variant !== 'cyberpunk' && theme === 'light');
   const { formatAmount, currencyVersion, currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
@@ -302,8 +303,9 @@ export function Dashboard() {
                   "rounded-3xl p-4 px-5 shadow-xl relative overflow-hidden transition-all",
                   variant === 'cyberpunk'
                     ? "card-3d bg-card border-none"
-                    : "bg-[image:var(--gradient-balance)] text-white",
-                  useDarkText ? "text-foreground" : "text-white"
+                    : isLightMode
+                      ? "glass-card-accent text-foreground"
+                      : "bg-[image:var(--gradient-balance)] text-white"
                 )}
                 style={{ contain: 'layout', willChange: 'transform' }}
               >
@@ -478,7 +480,7 @@ export function Dashboard() {
                 >
                   <div
                     onClick={() => setShowUpgradeModal(true)}
-                    className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 shadow-lg shadow-purple-500/20 cursor-pointer group transition-all active:scale-95"
+                    className="relative overflow-hidden rounded-2xl p-4 glass-card-accent shadow-lg shadow-purple-500/20 cursor-pointer group transition-all active:scale-95"
                   >
                     <div
                       className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-colors"
@@ -525,7 +527,7 @@ export function Dashboard() {
                   exit={{ opacity: 0, y: -16, scale: 0.97 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div className="relative rounded-2xl p-4 border border-indigo-500/25 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 overflow-hidden">
+                  <div className="relative rounded-2xl p-4 border border-border/40 bg-muted/30 overflow-hidden">
                     <button
                       className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => {

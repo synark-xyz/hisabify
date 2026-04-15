@@ -59,24 +59,23 @@ export function BudgetPage() {
             {/* Hero Section */}
             <motion.div
               variants={itemVariants}
-              className="mx-4 relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 p-6 shadow-xl"
+              className="mx-4 relative overflow-hidden rounded-3xl glass-card-accent p-6"
             >
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
               <div className="relative z-10 flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-5 h-5 text-white/80" />
-                    <span className="text-white/80 text-sm font-medium">{t('budget.managerLabel')}</span>
+                    <Sparkles className="w-5 h-5 text-accent" />
+                    <span className="text-muted-foreground text-sm font-medium">{t('budget.managerLabel')}</span>
                   </div>
-                  <h1 className="text-2xl font-bold text-white mb-1">{t('budget.planYourFinances')}</h1>
-                  <p className="text-white/70 text-sm">{t('budget.planYourFinancesDesc')}</p>
+                  <h1 className="text-2xl font-bold text-foreground mb-1">{t('budget.planYourFinances')}</h1>
+                  <p className="text-muted-foreground text-sm">{t('budget.planYourFinancesDesc')}</p>
                 </div>
                 <motion.div
-                  className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
+                  className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center"
                   whileHover={{ scale: 1.05, rotate: 5 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Target className="w-7 h-7 text-white" />
+                  <Target className="w-7 h-7 text-accent" />
                 </motion.div>
               </div>
             </motion.div>

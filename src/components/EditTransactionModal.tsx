@@ -1,4 +1,4 @@
-import { ResponsiveDrawer } from '@/components/ui/responsive-drawer';
+import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/base-modal-sheet';
 import { TransactionForm } from '@/components/TransactionForm';
 import { Transaction } from '@/types';
 
@@ -22,21 +22,27 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSucces
   }
 
   return (
-    <ResponsiveDrawer
-      open={open}
-      onOpenChange={onOpenChange}
-      title={`Edit ${titleByType[transaction.type]}`}
-      className="max-h-[90vh]"
-    >
-      <TransactionForm
-        mode="edit"
-        initialTransaction={transaction}
-        onSuccess={() => {
-          onSuccess();
-          onOpenChange(false);
-        }}
-        onCancel={() => onOpenChange(false)}
-      />
-    </ResponsiveDrawer>
+    <BaseModalSheet open={open} onOpenChange={onOpenChange}>
+      <SheetBackdrop onClick={() => onOpenChange(false)} />
+      <SheetContainer>
+        <SheetHeader>
+          <SheetTitle>Edit {titleByType[transaction.type]}</SheetTitle>
+          <SheetClose />
+        </SheetHeader>
+        <SheetContent>
+          <div className="px-4 pb-4">
+            <TransactionForm
+            mode="edit"
+            initialTransaction={transaction}
+            onSuccess={() => {
+              onSuccess();
+              onOpenChange(false);
+            }}
+            onCancel={() => onOpenChange(false)}
+          />
+          </div>
+        </SheetContent>
+      </SheetContainer>
+    </BaseModalSheet>
   );
 }

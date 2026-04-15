@@ -68,20 +68,20 @@ export function ProfilePage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
               onClick={() => setShowUpgradeModal(true)}
-              className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-5 text-white shadow-xl shadow-purple-500/20 cursor-pointer relative overflow-hidden group border-glow"
+              className="bg-card border border-border/40 rounded-2xl p-5 text-foreground shadow-xl shadow-purple-500/10 cursor-pointer relative overflow-hidden group glass-card"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
               <div className="relative z-10 flex items-center justify-between">
                 <div>
-<div className="flex items-center gap-2 mb-1">
-                      <Crown className="w-4 h-4 text-yellow-400 fill-yellow-400 icon-glow" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/80">{t('profile.supportDevelopment')}</span>
-                    </div>
-                    <h3 className="text-lg font-black text-glow">{t('profile.goPremium')}</h3>
-                    <p className="text-xs text-white/70 font-medium">{t('profile.unlockAllFeatures')}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Crown className="w-4 h-4 text-accent fill-accent" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('profile.supportDevelopment')}</span>
+                  </div>
+                  <h3 className="text-lg font-black text-foreground">{t('profile.goPremium')}</h3>
+                  <p className="text-xs text-muted-foreground font-medium">{t('profile.unlockAllFeatures')}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <ChevronRight className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
               </div>
             </motion.div>

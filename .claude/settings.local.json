@@ -24,7 +24,9 @@
       "WebSearch",
       "Bash(npx vitest:*)",
       "Bash(grep -rn '\"\"/expenses\"\"' src/ --include=\"*.tsx\" --include=\"*.ts\")",
-      "Bash(echo \"TSC EXIT: $?\")"
+      "Bash(echo \"TSC EXIT: $?\")",
+      "Bash(sed -n '1058,1068p' /Users/sayem/Business_MVPs/Released/hisabify/src/components/TransactionForm.tsx)",
+      "Bash(sed -n '1486,1495p' /Users/sayem/Business_MVPs/Released/hisabify/src/components/TransactionForm.tsx)"
     ]
   },
   "enabledPlugins": {

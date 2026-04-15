@@ -25,7 +25,7 @@ export function BottomNavigation() {
     <AnimatePresence>
       {!isKeyboardOpen && (
         <motion.nav
-          className="fixed bottom-0 left-0 right-0 z-50 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg"
+          className="fixed bottom-0 left-0 right-0 z-40 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg"
           initial={{ y: 100 }}
           animate={{ y: 0 }}
           exit={{ y: 100 }}
@@ -49,7 +49,7 @@ export function BottomNavigation() {
               >
                 <Icon className={cn('w-6 h-6', isActive && 'fill-accent/10')} />
                 <span
-                  className={cn('text-[11px] font-semibold max-w-full truncate', isActive ? 'opacity-100' : 'opacity-60')}
+                  className={cn('text-xs font-semibold max-w-full truncate', isActive ? 'opacity-100' : 'opacity-60')}
                 >
                   {item.label}
                 </span>

@@ -28,10 +28,34 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const resolveTheme = useCallback((currentTheme: Theme): ResolvedTheme => {
+    if (currentTheme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return currentTheme as ResolvedTheme;
+  }, []);
+
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveTheme(theme));
+
+  useEffect(() => {
+    setResolvedTheme(resolveTheme(theme));
+  }, [theme, resolveTheme]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      if (theme === 'system') {
+        setResolvedTheme(resolveTheme('system'));
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme, resolveTheme]);
+
   useEffect(() => {
     const initTheme = async () => {
       const stored = localStorage.getItem('theme') as Theme;
-      const hasExplicitChoice = stored && ['dark', 'light'].includes(stored);
+      const hasExplicitChoice = stored && ['dark', 'light', 'system'].includes(stored);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -62,7 +86,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             .update({ theme_variant: storedVariant })
             .eq('user_id', user.id);
         }
-      } else if (data?.theme && ['dark', 'light'].includes(data.theme)) {
+      } else if (data?.theme && ['dark', 'light', 'system'].includes(data.theme)) {
         setThemeState(data.theme);
         localStorage.setItem('theme', data.theme);
         if (data?.theme_variant && ['default', 'cyberpunk'].includes(data.theme_variant)) {
@@ -88,14 +112,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (user) {
         supabase
           .from('users')
-          .update({ theme })
+          .update({ theme: theme })
           .eq('user_id', user.id)
           .then(({ error }) => {
             if (error) console.warn('Theme sync failed:', error);
           });
       }
     });
-  }, [theme, isInitialized]);
+  }, [theme, resolvedTheme, isInitialized]);
 
   useEffect(() => {
     const root = document.documentElement;

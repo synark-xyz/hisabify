@@ -178,6 +178,8 @@ export function TransactionForm({
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderDate, setReminderDate] = useState<Date | undefined>(undefined);
   const [reminderDateOpen, setReminderDateOpen] = useState(false);
+  const [recurringInterval, setRecurringInterval] = useState<string>('monthly');
+  const [recurringOpen, setRecurringOpen] = useState(false);
 
   /* ─── Feature 2.x: Transfer disabled state (coming soon) ─── */
   const transferDisabled = true;
@@ -832,8 +834,8 @@ export function TransactionForm({
           currency: data.currency,
           due_date: reminderDate.toISOString(),
           status: 'upcoming',
-          is_recurring: false,
-          recurring_interval: null,
+          is_recurring: reminderEnabled && recurringInterval !== 'none',
+          recurring_interval: reminderEnabled && recurringInterval !== 'none' ? recurringInterval : null,
           notify_before_days: 1,
           note: null,
         }).then(({ error }) => {
@@ -882,7 +884,7 @@ export function TransactionForm({
   const baseCurrencySymbol = currencyData[currency]?.symbol || '$';
 
   return (
-    <div className="overflow-y-auto px-3 sm:px-4 pb-safe-nav h-full -mx-1 sm:mx-0">
+    <div className="px-1 sm:px-0 pb-safe-nav">
       {/* ─── Type selector: Tabs in create mode; legacy 4-button grid for lend/owe edit ─── */}
       {isEditMode && (type === 'lend' || type === 'owe') ? (
         <div className="grid grid-cols-4 gap-2 mb-4">
@@ -897,14 +899,14 @@ export function TransactionForm({
               type="button"
               onClick={() => setType(opt.id as typeof type)}
               className={cn(
-                'flex flex-col items-center gap-1.5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border transition-all card-3d',
-                type === opt.id ? 'border-accent bg-accent/5 ring-1 ring-accent/20 border-glow' : 'border-border bg-card hover:bg-muted'
+                'flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all card-3d',
+                type === opt.id ? 'border-accent bg-accent/5 ring-1 ring-accent/20' : 'border-border bg-card hover:bg-muted'
               )}
             >
-              <div className={cn('w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center', opt.bg)}>
-                <opt.icon className={cn('w-4 h-4 sm:w-5 sm:h-5', opt.color, 'icon-glow')} />
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', opt.bg)}>
+                <opt.icon className={cn('w-4 h-4', opt.color)} />
               </div>
-              <span className={cn('text-[9px] sm:text-[10px] font-bold uppercase tracking-wider truncate w-full text-center', type === opt.id && 'text-glow')}>
+              <span className={cn('text-[10px] font-bold uppercase tracking-wider truncate w-full text-center')}>
                 {opt.name}
               </span>
             </button>
@@ -969,24 +971,24 @@ export function TransactionForm({
 
       {/* ─── PAYER / PAYEE contextual field ─── */}
       {type === 'expense' && (
-        <div className="space-y-1.5 mb-2">
-          <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.payerOptional')}</label>
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.payerOptional')}</label>
           <input
             type="text"
             placeholder={t('transaction.payerPlaceholder')}
-            className="w-full rounded-lg sm:rounded-xl border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             value={payer}
             onChange={(e) => setPayer(e.target.value)}
           />
         </div>
       )}
       {type === 'income' && (
-        <div className="space-y-1.5 mb-2">
-          <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.payeeOptional')}</label>
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.payeeOptional')}</label>
           <input
             type="text"
             placeholder={t('transaction.payeePlaceholder')}
-            className="w-full rounded-lg sm:rounded-xl border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             value={payee}
             onChange={(e) => setPayee(e.target.value)}
           />
@@ -995,12 +997,12 @@ export function TransactionForm({
 
       {/* ─── Phase 2.1: Transfer account fields ─── */}
       {type === 'transfer' && !transferDisabled && (
-        <div className="space-y-4 mb-2">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.fromAccount')}</label>
-            <div className="grid grid-cols-3 gap-1.5">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.fromAccount')}</label>
+            <div className="grid grid-cols-3 gap-2">
               {accountTypes.length === 0 ? (
-                <div className="col-span-3 text-center py-2 text-xs text-muted-foreground">No accounts found</div>
+                <div className="col-span-3 text-center py-3 text-xs text-muted-foreground">No accounts found</div>
               ) : (
                 accountTypes.map((at) => (
                   <button
@@ -1008,14 +1010,14 @@ export function TransactionForm({
                     type="button"
                     onClick={() => setTransferFromAccountTypeId(at.id)}
                     className={cn(
-                      'flex flex-col items-center justify-center gap-0.5 rounded-lg border py-1.5 text-[10px] font-medium transition-all',
+                      'flex flex-col items-center justify-center gap-1 rounded-xl border py-2.5 text-xs font-medium transition-all',
                       transferFromAccountTypeId === at.id
                         ? 'border-accent bg-accent/10 ring-1 ring-accent/30'
-                        : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                        : 'border-border/50 bg-muted/50 text-muted-foreground hover:bg-muted'
                     )}
                   >
                     <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
                       style={{ backgroundColor: at.color || '#7C3AED' }}
                     >
                       {at.name.charAt(0)}
@@ -1026,11 +1028,11 @@ export function TransactionForm({
               )}
             </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.toAccount')}</label>
-            <div className="grid grid-cols-3 gap-1.5">
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.toAccount')}</label>
+            <div className="grid grid-cols-3 gap-2">
               {accountTypes.filter((at) => at.id !== transferFromAccountTypeId).length === 0 ? (
-                <div className="col-span-3 text-center py-2 text-xs text-muted-foreground">No other accounts</div>
+                <div className="col-span-3 text-center py-3 text-xs text-muted-foreground">No other accounts</div>
               ) : (
                 accountTypes.filter((at) => at.id !== transferFromAccountTypeId).map((at) => (
                   <button
@@ -1038,14 +1040,14 @@ export function TransactionForm({
                     type="button"
                     onClick={() => setTransferToAccountTypeId(at.id)}
                     className={cn(
-                      'flex flex-col items-center justify-center gap-0.5 rounded-lg border py-1.5 text-[10px] font-medium transition-all',
+                      'flex flex-col items-center justify-center gap-1 rounded-xl border py-2.5 text-xs font-medium transition-all',
                       transferToAccountTypeId === at.id
                         ? 'border-accent bg-accent/10 ring-1 ring-accent/30'
-                        : 'border-border bg-muted/50 text-muted-foreground hover:bg-muted'
+                        : 'border-border/50 bg-muted/50 text-muted-foreground hover:bg-muted'
                     )}
                   >
                     <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
                       style={{ backgroundColor: at.color || '#7C3AED' }}
                     >
                       {at.name.charAt(0)}
@@ -1056,13 +1058,14 @@ export function TransactionForm({
               )}
             </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.transferFeeOptional')}</label>
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.transferFeeOptional')}</label>
             <input
               type="number"
+              inputMode="decimal"
               step="0.01"
               placeholder={t('common.amountPlaceholder')}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring h-11"
               value={transferFee}
               onChange={(e) => setTransferFee(e.target.value)}
             />
@@ -1072,25 +1075,25 @@ export function TransactionForm({
 
       {/* ─── Voice / Scan quick-fill row ─── */}
       {(onVoiceRequest || onScanRequest) && (
-        <div className="flex gap-1.5 sm:gap-2 mb-2">
+        <div className="flex gap-2">
           {onVoiceRequest && (
             <button
               type="button"
               onClick={onVoiceRequest}
-              className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
             >
-              <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
-              <span className="text-xs sm:text-sm font-semibold">{t('transaction.voiceFill')}</span>
+              <Mic className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium">{t('transaction.voiceFill')}</span>
             </button>
           )}
           {onScanRequest && (
             <button
               type="button"
               onClick={onScanRequest}
-              className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border bg-muted/50 hover:bg-muted transition-colors"
             >
-              <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
-              <span className="text-xs sm:text-sm font-semibold">{t('transaction.scanReceipt')}</span>
+              <Camera className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium">{t('transaction.scanReceipt')}</span>
             </button>
           )}
         </div>
@@ -1107,13 +1110,13 @@ export function TransactionForm({
             name="merchant"
             render={({ field }) => (
               <FormItem className="relative">
-                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   {type === 'lend' ? t('transaction.descriptionLend') : type === 'owe' ? t('transaction.descriptionBorrow') : type === 'transfer' ? t('transaction.descriptionTransfer') : t('transaction.description')}
                 </FormLabel>
                 <FormControl>
                   <Input
                     placeholder={type === 'lend' ? t('transaction.descriptionPlaceholderLendBorrow') : type === 'owe' ? t('transaction.descriptionPlaceholderLendBorrow') : type === 'transfer' ? t('transaction.descriptionPlaceholderTransfer') : t('transaction.descriptionPlaceholder')}
-                    className="rounded-xl"
+                    className="rounded-xl h-11"
                     {...field}
                     ref={(el) => {
                       field.ref(el);
@@ -1121,7 +1124,6 @@ export function TransactionForm({
                     }}
                     onBlur={(e) => {
                       field.onBlur();
-                      // Delay hiding to allow click on suggestion
                       setTimeout(() => setShowSuggestions(false), 200);
                     }}
                     onFocus={() => {
@@ -1144,7 +1146,6 @@ export function TransactionForm({
                           onClick={() => {
                             form.setValue('merchant', s.merchant);
                             if (s.category_id) {
-                              // Set category — also update parent category for sub-category support
                               const cat = categories.find((c) => c.id === s.category_id);
                               if (cat?.parent_id) {
                                 setSelectedParentCategoryId(cat.parent_id);
@@ -1183,7 +1184,7 @@ export function TransactionForm({
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.amount')}</FormLabel>
+                <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.amount')}</FormLabel>
                 <div className="flex gap-2">
                   <FormField
                     control={form.control}
@@ -1196,7 +1197,7 @@ export function TransactionForm({
                             currencyField.onChange(value);
                           }}
                         >
-                          <SelectTrigger className="w-20">
+                          <SelectTrigger className="w-20 h-11">
                             <SelectValue>
                               <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
                             </SelectValue>
@@ -1216,7 +1217,7 @@ export function TransactionForm({
                         <Button
                           type="button"
                           variant="outline"
-                          className="w-20 flex items-center justify-center px-3"
+                          className="w-20 h-11 flex items-center justify-center px-3"
                           disabled
                         >
                           <span className="font-bold">{currencyData[currencyField.value]?.symbol || '$'}</span>
@@ -1225,7 +1226,15 @@ export function TransactionForm({
                     }
                   />
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder={t('common.amountPlaceholder')} className="flex-1 rounded-xl text-lg font-bold" {...field} />
+                    <Input 
+                      type="number" 
+                      inputMode="decimal" 
+                      step="0.01" 
+                      placeholder={t('common.amountPlaceholder')} 
+                      className="flex-1 rounded-xl text-lg font-bold h-11" 
+                      style={{ caretColor: 'var(--accent)' }}
+                      {...field} 
+                    />
                   </FormControl>
                 </div>
                 {convertedPreview && (
@@ -1238,17 +1247,17 @@ export function TransactionForm({
 
           {/* ─── Phase 2.3: Payment Method picker ─── */}
           {type !== 'transfer' && (
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.paymentMethod')}</label>
-              <div className="grid grid-cols-6 sm:grid-cols-3 gap-2 sm:gap-1.5">
+            <div className="space-y-3">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.paymentMethod')}</label>
+              <div className="grid grid-cols-6 sm:grid-cols-3 gap-2 sm:gap-2">
                 {(Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]).map(([method, label]) => {
                   const icons: Record<PaymentMethod, JSX.Element> = {
-                    cash: <Banknote className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
-                    card: <CreditCard className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
-                    bank_transfer: <Building2 className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
-                    online: <Globe className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
-                    cheque: <FileText className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
-                    other: <ArrowLeftRight className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 shrink-0" />,
+                    cash: <Banknote className="w-4 h-4 sm:w-4 sm:h-4 shrink-0" />,
+                    card: <CreditCard className="w-4 h-4 sm:w-4 sm:h-4 shrink-0" />,
+                    bank_transfer: <Building2 className="w-4 h-4 sm:w-4 sm:h-4 shrink-0" />,
+                    online: <Globe className="w-4 h-4 sm:w-4 sm:h-4 shrink-0" />,
+                    cheque: <FileText className="w-4 h-4 sm:w-4 sm:h-4 shrink-0" />,
+                    other: <ArrowLeftRight className="w-4 h-4 sm:w-4 sm:h-4 shrink-0" />,
                   };
                   const shortLabels: Record<PaymentMethod, string> = {
                     cash: t('transaction.paymentMethodCash'),
@@ -1258,20 +1267,22 @@ export function TransactionForm({
                     cheque: t('transaction.paymentMethodCheque'),
                     other: t('transaction.paymentMethodOther'),
                   };
+                  const isSelected = paymentMethod === method;
                   return (
                     <button
                       key={method}
                       type="button"
                       onClick={() => setPaymentMethod(paymentMethod === method ? '' : method)}
                       className={cn(
-                        'flex items-center justify-center gap-1.5 rounded-lg border text-[11px] sm:text-[12px] font-medium transition-all h-8 sm:h-9 px-0.5 sm:px-1.5 col-span-2',
-                        paymentMethod === method
-                          ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
-                          : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                        'flex flex-col items-center justify-center gap-1 rounded-xl border text-[11px] sm:text-xs font-semibold transition-all h-12 sm:h-14 px-1',
+                        'active:scale-95',
+                        isSelected
+                          ? 'border-accent bg-accent text-accent-foreground shadow-md ring-2 ring-accent/30'
+                          : 'border-border/50 bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border'
                       )}
                     >
                       {icons[method]}
-                      <span className="truncate">{shortLabels[method]}</span>
+                      <span className="truncate text-center leading-tight">{shortLabels[method]}</span>
                     </button>
                   );
                 })}
@@ -1281,11 +1292,11 @@ export function TransactionForm({
 
           {/* ─── Feature 1.4: Split toggle (expense only, create mode only) ─── */}
           {type !== 'transfer' && type === 'expense' && !isEditMode && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Split className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
-                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.splitTransaction')}</span>
-              </div>
+            <div className="flex items-center justify-between py-2">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2 cursor-pointer">
+                <Split className="w-4 h-4" />
+                {t('transaction.splitTransaction')}
+              </label>
               <Switch
                 checked={isSplit}
                 onCheckedChange={(checked) => {
@@ -1302,12 +1313,12 @@ export function TransactionForm({
 
           {/* ─── Split With field ─── */}
           {isSplit && (
-            <div className="space-y-1.5">
-              <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.splitWithOptional')}</label>
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.splitWithOptional')}</label>
               <input
                 type="text"
                 placeholder={t('transaction.splitWithPlaceholder')}
-                className="w-full rounded-lg sm:rounded-xl border border-input bg-background px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={splitWith}
                 onChange={(e) => setSplitWith(e.target.value)}
               />
@@ -1330,16 +1341,16 @@ export function TransactionForm({
                   : currentSubs.filter((cat) => cat.type === 'expense');
 
                 return (
-                  <FormItem>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">
+                  <FormItem className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                         {isLendOwe ? t('transaction.categoryOptional') : t('transaction.category')}
                       </FormLabel>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                        className="h-7 px-2.5 text-xs text-accent hover:text-accent/80 gap-1.5 font-medium"
                         onClick={() => {
                           if (onNavigateToCategories) {
                             onNavigateToCategories({
@@ -1369,7 +1380,7 @@ export function TransactionForm({
                           }
                         }}
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-3.5 w-3.5" />
                         {t('transaction.createNew')}
                       </Button>
                     </div>
@@ -1382,13 +1393,13 @@ export function TransactionForm({
                       }}
                     >
                       <FormControl>
-                        <SelectTrigger className="rounded-xl">
+                        <SelectTrigger className="rounded-xl h-11">
                           <SelectValue placeholder={isLendOwe ? t('transaction.selectCategoryOptional') : t('transaction.selectCategory')} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="rounded-2xl">
+                      <SelectContent className="rounded-2xl max-h-[280px]">
                         {filteredRootCategories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
+                          <SelectItem key={cat.id} value={cat.id} className="rounded-xl py-2.5">
                             {getLocalizedCategoryName(cat)}
                           </SelectItem>
                         ))}
@@ -1407,12 +1418,12 @@ export function TransactionForm({
                           setCustomCategoryError('');
                         }}
                       >
-                        <SelectTrigger className="rounded-xl mt-2">
+                        <SelectTrigger className="rounded-xl h-11">
                           <SelectValue placeholder={t('transaction.selectSubCategory')} />
                         </SelectTrigger>
-                        <SelectContent className="rounded-2xl">
+                        <SelectContent className="rounded-2xl max-h-[280px]">
                           {filteredSubs.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id} className="rounded-xl">
+                            <SelectItem key={cat.id} value={cat.id} className="rounded-xl py-2.5">
                               {getLocalizedCategoryName(cat)}
                             </SelectItem>
                           ))}
@@ -1488,6 +1499,7 @@ export function TransactionForm({
                     </Select>
                     <Input
                       type="number"
+                      inputMode="decimal"
                       step="0.01"
                       placeholder={t('common.amountPlaceholder')}
                       className="rounded-xl text-xs sm:text-sm h-8 sm:h-9"
@@ -1539,13 +1551,13 @@ export function TransactionForm({
           )}
 
           {isOtherCategory && !isSplit && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider opacity-70">
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                 {type === 'income' ? t('transaction.whatIncomeFor') : t('transaction.whatExpenseFor')}
               </label>
               <Input
                 placeholder={t('transaction.customCategoryPlaceholder')}
-                className="rounded-xl"
+                className="rounded-xl h-11"
                 value={customCategoryLabel}
                 maxLength={100}
                 onChange={(e) => {
@@ -1564,8 +1576,8 @@ export function TransactionForm({
 
           {/* Budget chip suggestions — Feature 1 & 4 */}
           {(type === 'expense' || type === 'lend' || type === 'owe') && !isSplit && matchingBudgets.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.applyToBudget')}</p>
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.applyToBudget')}</p>
               <div className="flex flex-wrap gap-2">
                 {matchingBudgets.map((b) => (
                   <button
@@ -1577,12 +1589,10 @@ export function TransactionForm({
                       setLinkedBudgetId(selecting ? b.id : null);
 
                       if (selecting) {
-                        // Auto-fill amount if field is currently empty
                         if (!form.getValues('amount')) {
                           const fill = b.remaining > 0 ? b.remaining : b.amount;
                           if (fill > 0) form.setValue('amount', fill.toFixed(2));
                         }
-                        // Auto-fill merchant/description if field is currently empty
                         if (!form.getValues('merchant')) {
                           const name = b.category?.name || b.name || '';
                           if (name) form.setValue('merchant', name);
@@ -1590,24 +1600,24 @@ export function TransactionForm({
                       }
                     }}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                      'flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition-all',
                       selectedBudgetId === b.id
-                        ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
-                        : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                        ? 'border-accent bg-accent text-accent-foreground shadow-sm'
+                        : 'border-border/50 bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
                   >
                     <span>{b.category?.name || b.name || t('budget.totalBudget')}</span>
                     <span className={cn(
-                      'tabular-nums text-[10px]',
-                      b.remaining <= 0 ? 'text-destructive' : 'opacity-60'
+                      'tabular-nums text-xs',
+                      selectedBudgetId === b.id ? 'opacity-80' : (b.remaining <= 0 ? 'text-destructive' : 'opacity-60')
                     )}>
-                      {formatAmount(b.remaining)} {t('transaction.budgetLeft')}
+                      {formatAmount(b.remaining)}
                     </span>
                   </button>
                 ))}
               </div>
               {!selectedBudgetId && (
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {t('transaction.noBudgetSelected')}
                 </p>
               )}
@@ -1616,9 +1626,9 @@ export function TransactionForm({
 
           {/* ─── Feature 1.2: Transaction Tags ─── */}
           {type !== 'transfer' && (
-            <div className="space-y-2">
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.tags')}</p>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.tags')}</p>
+              <div className="flex flex-wrap gap-2">
                 {PREDEFINED_TAGS.map((tag) => {
                   const isSelected = selectedTags.includes(tag);
                   return (
@@ -1627,10 +1637,10 @@ export function TransactionForm({
                       type="button"
                       onClick={() => toggleTag(tag)}
                       className={cn(
-                        'rounded-full border px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium transition-all',
+                        'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
                         isSelected
-                          ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent/30'
-                          : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                          ? 'border-accent bg-accent text-accent-foreground shadow-sm'
+                          : 'border-border/50 bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
                       )}
                     >
                       {t(`transaction.tag${tag.replace(/\s+/g, '').replace(/[^a-zA-Z]/g, '')}`, { defaultValue: tag })}
@@ -1643,9 +1653,9 @@ export function TransactionForm({
 
           {/* ─── Feature 1.3: Cleared / Uncleared status toggle ─── */}
           {(type === 'expense' || type === 'income') && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider opacity-70">
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   {transactionStatus === 'cleared' ? t('transaction.cleared') : t('transaction.uncleared')}
                 </span>
                 <button
@@ -1658,7 +1668,7 @@ export function TransactionForm({
                       : t('transaction.unclearedTooltip'),
                   )}
                 >
-                  <Info className="w-3 h-3.5 sm:w-3.5 sm:h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                  <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
                 </button>
               </div>
               <Switch
@@ -1674,12 +1684,12 @@ export function TransactionForm({
             control={form.control}
             name="date"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.date')}</FormLabel>
+              <FormItem className="space-y-2">
+                <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.date')}</FormLabel>
                 <Popover open={dateOpen} onOpenChange={setDateOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl h-11">
                         <Calendar className="mr-2 h-4 w-4 opacity-50" />
                         {field.value ? format(field.value, 'MMM dd, yyyy') : t('transaction.pickDate')}
                       </Button>
@@ -1706,10 +1716,10 @@ export function TransactionForm({
             control={form.control}
             name="note"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">{t('transaction.noteOptional')}</FormLabel>
+              <FormItem className="space-y-2">
+                <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('transaction.noteOptional')}</FormLabel>
                 <FormControl>
-                  <Textarea placeholder={t('transaction.notePlaceholder')} className="resize-none rounded-lg sm:rounded-xl text-xs sm:text-sm" rows={2} {...field} />
+                  <Textarea placeholder={t('transaction.notePlaceholder')} className="resize-none rounded-xl text-sm min-h-[60px]" rows={2} {...field} />
                 </FormControl>
               </FormItem>
             )}
@@ -1719,50 +1729,105 @@ export function TransactionForm({
           {(type === 'expense' || type === 'income') && type !== 'transfer' && (
             <div className="space-y-3 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-md p-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5" /> {t('transaction.setReminder')}
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Bell className="w-4 h-4" /> {t('transaction.setReminder')}
                 </label>
                 <Switch
                   checked={reminderEnabled}
                   onCheckedChange={(checked) => {
                     setReminderEnabled(checked);
-                    if (!checked) setReminderDate(undefined);
+                    if (!checked) {
+                      setReminderDate(undefined);
+                      setRecurringInterval('monthly');
+                    }
                   }}
                 />
               </div>
               {reminderEnabled && (
-                <Popover open={reminderDateOpen} onOpenChange={setReminderDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl">
-                      <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                      {reminderDate ? format(reminderDate, 'MMM dd, yyyy') : t('transaction.remindMeOn')}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl" align="end">
-                    <CalendarComponent
-                      mode="single"
-                      selected={reminderDate}
-                      onSelect={(d) => { setReminderDate(d ?? undefined); setReminderDateOpen(false); }}
-                      defaultMonth={reminderDate ?? new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <>
+                  <Popover open={reminderDateOpen} onOpenChange={setReminderDateOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl h-11">
+                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                        {reminderDate ? format(reminderDate, 'MMM dd, yyyy') : t('transaction.remindMeOn')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl" align="end">
+                      <CalendarComponent
+                        mode="single"
+                        selected={reminderDate}
+                        onSelect={(d) => { setReminderDate(d ?? undefined); setReminderDateOpen(false); }}
+                        defaultMonth={reminderDate ?? new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Recurring interval selector */}
+                  <Popover open={recurringOpen} onOpenChange={setRecurringOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal rounded-xl h-11">
+                        <Clock className="mr-2 h-4 w-4 opacity-50" />
+                        <span className="flex-1">
+                          {recurringInterval === 'none' 
+                            ? t('transaction.oneTime') 
+                            : t(`recurring.${recurringInterval}`, recurringInterval[0].toUpperCase() + recurringInterval.slice(1))}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2 rounded-2xl shadow-2xl" align="start">
+                      <div className="flex flex-col gap-1">
+                        {['none', 'daily', 'weekly', 'monthly', 'yearly'].map((interval) => (
+                          <Button
+                            key={interval}
+                            variant={recurringInterval === interval ? 'secondary' : 'ghost'}
+                            className="justify-start font-normal rounded-lg"
+                            onClick={() => {
+                              setRecurringInterval(interval);
+                              setRecurringOpen(false);
+                            }}
+                          >
+                            {interval === 'none' 
+                              ? t('transaction.oneTime') 
+                              : t(`recurring.${interval}`, interval[0].toUpperCase() + interval.slice(1))}
+                          </Button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </>
               )}
             </div>
           )}
 
-          <div className="flex gap-2 pt-6 pb-2">
-            <Button type="button" variant="ghost" onClick={onCancel} className="flex-1">
+          <div className="sticky bottom-0 flex items-center gap-2 pt-4 pb-2 bg-background border-t border-border/50"
+            style={{
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+              marginLeft: '-1rem',
+              marginRight: '-1rem',
+              paddingLeft: '1rem',
+              paddingRight: '1rem',
+            }}
+          >
+            {/* Tertiary: Cancel (text button) */}
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={onCancel} 
+              className="text-muted-foreground hover:text-foreground px-2"
+            >
               {t('common.cancel')}
             </Button>
-            {/* ─── Feature 1.6: Save & Add Another (create mode only) ─── */}
+            
+            <div className="flex-1" />
+            
+            {/* ─── Feature 1.6: Save & Add Another (secondary, outlined) ─── */}
             {!isEditMode && onSuccessKeepOpen && (
               <Button
                 type="button"
                 variant="outline"
                 disabled={form.formState.isSubmitting}
-                className="flex-1 text-sm"
+                className="text-sm font-medium border-2"
                 onClick={() => form.handleSubmit((data) => handleSubmit(data, true))()}
               >
                 {form.formState.isSubmitting ? (
@@ -1772,7 +1837,13 @@ export function TransactionForm({
                 )}
               </Button>
             )}
-            <Button type="submit" disabled={form.formState.isSubmitting} className="flex-1">
+            
+            {/* Primary: Save (filled, emphasized) */}
+            <Button 
+              type="submit" 
+              disabled={form.formState.isSubmitting} 
+              className="font-bold shadow-lg"
+            >
               {form.formState.isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (

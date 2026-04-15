@@ -103,6 +103,56 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const initTheme = async () => {
+      const stored = localStorage.getItem('theme') as Theme;
+      const hasExplicitChoice = stored && ['dark', 'light'].includes(stored);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsInitialized(true);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('users')
+        .select('theme, theme_variant')
+        .eq('user_id', user.id)
+        .single();
+
+      if (hasExplicitChoice) {
+        setThemeState(stored);
+        const storedVariant = localStorage.getItem('theme_variant') as ThemeVariant;
+        if (storedVariant) setVariantState(storedVariant);
+
+        if (data?.theme && data.theme !== stored) {
+          await supabase
+            .from('users')
+            .update({ theme: stored })
+            .eq('user_id', user.id);
+        }
+        if (data?.theme_variant && storedVariant && data.theme_variant !== storedVariant) {
+          await supabase
+            .from('users')
+            .update({ theme_variant: storedVariant })
+            .eq('user_id', user.id);
+        }
+      } else if (data?.theme && ['dark', 'light'].includes(data.theme)) {
+        setThemeState(data.theme);
+        localStorage.setItem('theme', data.theme);
+        if (data?.theme_variant && ['default', 'cyberpunk'].includes(data.theme_variant)) {
+          setVariantState(data.theme_variant);
+          localStorage.setItem('theme_variant', data.theme_variant);
+        }
+      }
+
+      setIsInitialized(true);
+    };
+
+    initTheme();
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialized) return;
     const root = document.documentElement;
     const effectiveTheme = resolvedTheme;
     root.classList.remove('light', 'dark');
@@ -123,6 +173,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme, resolvedTheme, isInitialized]);
 
   useEffect(() => {
+    if (!isInitialized) return;
     const root = document.documentElement;
     if (variant === 'default') {
       root.removeAttribute('data-variant');
@@ -130,7 +181,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       root.setAttribute('data-variant', variant);
     }
     localStorage.setItem('theme_variant', variant);
-  }, [variant]);
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from('users')
+          .update({ theme_variant: variant })
+          .eq('user_id', user.id)
+          .then(({ error }) => {
+            if (error) console.warn('Theme variant sync failed:', error);
+          });
+      }
+    });
+  }, [variant, isInitialized]);
 
   const setTheme = (newTheme: Theme) => setThemeState(newTheme);
   const setVariant = (newVariant: ThemeVariant) => setVariantState(newVariant);

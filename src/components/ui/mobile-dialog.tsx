@@ -5,61 +5,32 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "./drawer";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Custom hook to prevent drawer drag interference with scrolling
-function useScrollableDrawer() {
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-  const [isScrolling, setIsScrolling] = React.useState(false);
+function useKeyboardHeight() {
+  const [keyboardHeight, setKeyboardHeight] = React.useState(0);
 
   React.useEffect(() => {
-    const scrollElement = scrollRef.current;
-    if (!scrollElement) return;
-
-    let touchStartY = 0;
-    let scrollStartTop = 0;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-      scrollStartTop = scrollElement.scrollTop;
-      setIsScrolling(true);
+    const updateKeyboardHeight = () => {
+      const height = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--keyboard-height')) || 0;
+      setKeyboardHeight(height);
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
-      const touchY = e.touches[0].clientY;
-      const deltaY = touchStartY - touchY;
+    updateKeyboardHeight();
 
-      // Prevent drawer drag when scrolling content
-      if (scrollElement.scrollHeight > scrollElement.clientHeight) {
-        const scrollTop = scrollElement.scrollTop;
-        const scrollHeight = scrollElement.scrollHeight;
-        const clientHeight = scrollElement.clientHeight;
+    const observer = new MutationObserver(updateKeyboardHeight);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style'],
+    });
 
-        // Allow scroll up if not at top
-        if (deltaY < 0 && scrollTop > 0) {
-          e.stopPropagation();
-        }
-        // Allow scroll down if not at bottom
-        if (deltaY > 0 && scrollTop < scrollHeight - clientHeight) {
-          e.stopPropagation();
-        }
-      }
-    };
-
-    const handleTouchEnd = () => {
-      setIsScrolling(false);
-    };
-
-    scrollElement.addEventListener('touchstart', handleTouchStart, { passive: true });
-    scrollElement.addEventListener('touchmove', handleTouchMove, { passive: false });
-    scrollElement.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('resize', updateKeyboardHeight);
 
     return () => {
-      scrollElement.removeEventListener('touchstart', handleTouchStart);
-      scrollElement.removeEventListener('touchmove', handleTouchMove);
-      scrollElement.removeEventListener('touchend', handleTouchEnd);
+      observer.disconnect();
+      window.removeEventListener('resize', updateKeyboardHeight);
     };
   }, []);
 
-  return { scrollRef, isScrolling };
+  return keyboardHeight;
 }
 
 interface MobileDialogProps {
@@ -72,9 +43,22 @@ interface MobileDialogProps {
   maxWidth?: string;
 }
 
+const PARTIAL_HEIGHT = 0.65;
+const FULL_HEIGHT = 0.92;
+
+function calculateSnapPoints(keyboardHeight: number): number[] {
+  const vh = window.innerHeight;
+  const availableHeight = vh - keyboardHeight;
+  
+  const partial = Math.round((availableHeight * PARTIAL_HEIGHT) / vh * 100) / 100;
+  const full = Math.round((availableHeight * FULL_HEIGHT) / vh * 100) / 100;
+  
+  return [partial, full];
+}
+
 /**
  * Smart dialog component that uses native-optimized UI on mobile platforms
- * - Mobile (Capacitor): Bottom sheet drawer for better native UX
+ * - Mobile (Capacitor): Bottom sheet drawer with snap points for better native UX
  * - Web: Centered dialog popup
  */
 export function MobileDialog({
@@ -87,21 +71,68 @@ export function MobileDialog({
   maxWidth = "max-w-[500px]",
 }: MobileDialogProps) {
   const isNative = Capacitor.isNativePlatform();
-  const { scrollRef } = useScrollableDrawer();
+  const keyboardHeight = useKeyboardHeight();
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  
+  const snapPoints = React.useMemo(
+    () => calculateSnapPoints(keyboardHeight),
+    [keyboardHeight]
+  );
+
+  React.useEffect(() => {
+    if (!isNative || !open) return;
+
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+
+    let touchStartY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (scrollElement.scrollHeight <= scrollElement.clientHeight) return;
+      
+      const touchY = e.touches[0].clientY;
+      const deltaY = touchStartY - touchY;
+      const scrollTop = scrollElement.scrollTop;
+      const scrollHeight = scrollElement.scrollHeight;
+      const clientHeight = scrollElement.clientHeight;
+
+      if (deltaY < 0 && scrollTop > 0) {
+        e.stopPropagation();
+      }
+      if (deltaY > 0 && scrollTop < scrollHeight - clientHeight) {
+        e.stopPropagation();
+      }
+    };
+
+    scrollElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+    scrollElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      scrollElement.removeEventListener('touchstart', handleTouchStart);
+      scrollElement.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [isNative, open, keyboardHeight]);
 
   if (isNative) {
-    // Use bottom sheet for native mobile apps
     return (
       <Drawer
         open={open}
         onOpenChange={onOpenChange}
+        snapPoints={snapPoints}
         dismissible={true}
         shouldScaleBackground={false}
       >
         <DrawerContent
-          className={cn("flex flex-col", className)}
+          ref={contentRef}
+          className={cn("flex flex-col !rounded-b-none", className)}
           style={{
-            maxHeight: 'calc(100vh - 5rem)', // 100vh - bottom nav height (80px/5rem)
+            height: '100dvh',
+            maxHeight: '100dvh',
           }}
         >
           {/* Fixed Header - Draggable area */}
@@ -127,14 +158,15 @@ export function MobileDialog({
           {/* Scrollable Content - Prevent drawer drag on this area */}
           <div
             ref={scrollRef}
-            className="flex-1 px-4 pt-2 pb-5 min-h-0"
+            className="flex-1 px-4 pt-2 pb-safe min-h-0"
             data-vaul-no-drag
             style={{
               overflowY: 'auto',
               overflowX: 'hidden',
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-y'
+              touchAction: 'pan-y',
+              paddingBottom: `calc(var(--keyboard-height, 0px) + env(safe-area-inset-bottom, 0px) + 16px)`,
             }}
           >
             {children}
@@ -142,7 +174,14 @@ export function MobileDialog({
 
           {/* Fixed Footer - if provided */}
           {footer && (
-            <div className="flex-shrink-0 px-4 py-4 border-t border-border/50 bg-background" data-vaul-no-drag>
+            <div 
+              className="flex-shrink-0 px-4 py-4 border-t border-border/50 bg-background" 
+              data-vaul-no-drag
+              style={{
+                marginTop: 'auto',
+                paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + 16px)`,
+              }}
+            >
               {footer}
             </div>
           )}

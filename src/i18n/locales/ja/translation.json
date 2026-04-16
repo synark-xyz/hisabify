@@ -266,10 +266,25 @@
     "historyLimitTitle": "履歴の上限に達しました",
     "historyLimitDesc": "無料プランは過去30日間に対応しています。全履歴にはアップグレードしてください。",
     "calendarSelected": "選択済み",
-    "calendarSwipeHint": "スワイプして表示"
+    "calendarSwipeHint": "スワイプして表示",
+    "dateSelect": {
+      "january": "1月",
+      "february": "2月",
+      "march": "3月",
+      "april": "4月",
+      "may": "5月",
+      "june": "6月",
+      "july": "7月",
+      "august": "8月",
+      "september": "9月",
+      "october": "10月",
+      "november": "11月",
+      "december": "12月"
+    }
   },
   "budget": {
     "title": "予算",
+    "used": "使用済み",
     "monthly": "月次",
     "weekly": "週次",
     "yearly": "年次",
@@ -753,6 +768,80 @@
     "average": "平均",
     "biggestExpenseCategory": "最大の支出カテゴリー",
     "budgetRemaining": "残りの予算",
+    "dialogs": {
+      "budgetExceed": {
+        "title": "予算上限を超過",
+        "expenseAmount": "支出金額:",
+        "budgetRemaining": "予算残り:",
+        "overBudgetBy": "予算超過:",
+        "addAnyway": "追加する",
+        "expenseWillExceed": "この支出は{{name}}の予算を超過します。"
+      },
+      "dashboard": {
+        "financialSummary": "財務サマリー",
+        "quickInsights": "クイック分析",
+        "dailyAverage": "日平均（今月）",
+        "monthlySavingsRate": "月間貯蓄率",
+        "incomeExpenseRatio": "収入/支出比率",
+        "topExpenses": "トップ支出",
+        "merchant": "加盟店",
+        "category": "カテゴリー",
+        "amount": "金額",
+        "noExpensesYet": "支出がありません",
+        "budgetVsActual": "予算 vs 実績",
+        "budgetLabel": "予算:",
+        "actualLabel": "実績:",
+        "totalIncome": "総収入",
+        "addIncomeStart": "収入を追加して追跡を開始",
+        "totalExpenses": "総支出",
+        "noExpensesRecorded": "支出が記録されていません",
+        "spent": "支出",
+        "earned": "収入",
+        "underBudget": "予算内"
+      },
+      "deleteBudget": {
+        "title": "予算を削除",
+        "confirmTitle": "{{name}}を削除しますか？",
+        "confirmDesc": "この操作は元に戻せません。予算とその進捗が完全に削除されます。"
+      },
+      "deleteTransaction": {
+        "title": "取引を削除",
+        "confirmTitle": "この取引を削除しますか？",
+        "confirmDesc": "この操作は元に戻せません。",
+        "toastDeleted": "取引が削除されました",
+        "toastError": "取引の削除中にエラーが発生しました"
+      },
+      "editRecurring": {
+        "title": "定期リマインダーを編集しますか？"
+      },
+      "transactionDetails": {
+        "tags": "タグ",
+        "note": "メモ",
+        "receipt": "レシート",
+        "failedUpdateLink": "リンクの更新に失敗しました",
+        "failedRemoveLink": "リンクの削除に失敗しました"
+      },
+      "upgrade": {
+        "unlimited": "無制限",
+        "goals": "目標",
+        "full": "フル",
+        "history": "履歴",
+        "smarter": "スマート",
+        "planning": "計画",
+        "monthly": "月次",
+        "annual": "年次",
+        "purchaseError": "購入エラー",
+        "restoreError": "復元エラー"
+      },
+      "paymentReminder": {
+        "noReminders": "支払いリマインダーは見つかりません",
+        "deleteReminder": "リマインダーを削除",
+        "toastDeleted": "リマインダーが削除されました"
+      },
+      "paymentCarousel": {
+        "noReminder": "リマインダーはまだ設定されていません"
+      }
+    },
     "categoryBreakdown": "カテゴリー内訳",
     "chartModeBoth": "両方",
     "chartModeExpenses": "支出",
@@ -815,6 +904,9 @@
     "tabAdvanced": "詳細",
     "tabInsights": "インサイト",
     "tabOverview": "概要",
+    "more": "もっと表示",
+    "spendingIncreased": "支出增加",
+    "spendingDecreased": "支出減少",
     "thisMonth": "今月",
     "thisYear": "今年",
     "title": "分析",
@@ -1016,6 +1108,18 @@
     "loanCalculator": "ローン計算機",
     "discountTax": "割引＆税金",
     "currencyConverter": "通貨換算"
+  },
+  "calTool": {
+    "ac": "AC",
+    "ce": "CE",
+    "toggleSign": "+/-",
+    "percent": "%",
+    "divide": "÷",
+    "multiply": "×",
+    "subtract": "-",
+    "add": "+",
+    "decimal": ".",
+    "equals": "="
   },
   "morePage": {
     "tools": "ツール",

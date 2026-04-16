@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import type { ActivityLog } from '@/types';
 import {
   ArrowUpRight,

@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import { BudgetWithSpending } from '@/hooks/useBudgets';
+import { useTranslation } from 'react-i18next';
 
 interface DeleteBudgetDialogProps {
   budget: BudgetWithSpending | null;
@@ -20,10 +21,12 @@ interface DeleteBudgetDialogProps {
 
 const DeleteBudgetDialog = React.forwardRef<HTMLDivElement, DeleteBudgetDialogProps>(
   ({ budget, open, onOpenChange, onConfirm }, ref) => {
+    const { t } = useTranslation();
     const handleConfirm = () => {
       onConfirm();
       onOpenChange(false);
     };
+    const budgetName = budget?.category?.name || budget?.name || t('budget.totalBudget');
 
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -33,19 +36,15 @@ const DeleteBudgetDialog = React.forwardRef<HTMLDivElement, DeleteBudgetDialogPr
               <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-destructive" />
               </div>
-              <SheetTitle className="text-xl">Delete Budget</SheetTitle>
+              <SheetTitle className="text-xl">{t('dialogs.deleteBudget.title')}</SheetTitle>
             </div>
             <SheetDescription className="text-base leading-relaxed pt-2">
               {budget ? (
                 <>
-                  Are you sure you want to delete the budget for{' '}
-                  <span className="font-semibold text-foreground">
-                    {budget.category?.name || budget.name || 'Total Budget'}
-                  </span>
-                  ? This action cannot be undone.
+                  {t('dialogs.deleteBudget.confirmTitle', { name: budgetName })} {t('dialogs.deleteBudget.confirmDesc')}
                 </>
               ) : (
-                'Are you sure you want to delete this budget? This action cannot be undone.'
+                t('dialogs.deleteBudget.confirmDesc')
               )}
             </SheetDescription>
           </SheetHeader>
@@ -56,7 +55,7 @@ const DeleteBudgetDialog = React.forwardRef<HTMLDivElement, DeleteBudgetDialogPr
               className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
               size="lg"
             >
-              Delete Budget
+              {t('dialogs.deleteBudget.title')}
             </Button>
             <Button
               onClick={() => onOpenChange(false)}
@@ -64,7 +63,7 @@ const DeleteBudgetDialog = React.forwardRef<HTMLDivElement, DeleteBudgetDialogPr
               className="w-full"
               size="lg"
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
           </SheetFooter>
         </SheetContent>

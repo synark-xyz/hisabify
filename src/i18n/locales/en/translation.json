@@ -374,10 +374,25 @@
     "historyLimitTitle": "History limit reached",
     "historyLimitDesc": "Free plan supports the last 30 days. Upgrade for full history.",
     "calendarSelected": "selected",
-    "calendarSwipeHint": "Swipe for more"
+    "calendarSwipeHint": "Swipe for more",
+    "dateSelect": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    }
   },
   "budget": {
     "title": "Budget",
+    "used": "used",
     "monthly": "Monthly",
     "weekly": "Weekly",
     "yearly": "Yearly",
@@ -554,6 +569,80 @@
     "exceedsBalance": "This exceeds your current balance of {{amount}}",
     "goalCompletes": "This contribution completes the goal.",
     "budgetRemaining": "Budget remaining",
+    "dialogs": {
+      "budgetExceed": {
+        "title": "Budget Limit Exceeded",
+        "expenseAmount": "Expense amount:",
+        "budgetRemaining": "Budget remaining:",
+        "overBudgetBy": "Over budget by:",
+        "addAnyway": "Add Anyway",
+        "expenseWillExceed": "This expense will exceed your {{name}} budget."
+      },
+      "dashboard": {
+        "financialSummary": "Financial Summary",
+        "quickInsights": "Quick Insights",
+        "dailyAverage": "Daily Average (This Month)",
+        "monthlySavingsRate": "Monthly Savings Rate",
+        "incomeExpenseRatio": "Income/Expense Ratio",
+        "topExpenses": "Top Expenses",
+        "merchant": "Merchant",
+        "category": "Category",
+        "amount": "Amount",
+        "noExpensesYet": "No expenses yet",
+        "budgetVsActual": "Budget vs Actual",
+        "budgetLabel": "Budget:",
+        "actualLabel": "Actual:",
+        "totalIncome": "Total Income",
+        "addIncomeStart": "Add income to start tracking",
+        "totalExpenses": "Total Expenses",
+        "noExpensesRecorded": "No expenses recorded yet",
+        "spent": "Spent",
+        "earned": "Earned",
+        "underBudget": "Under budget"
+      },
+      "deleteBudget": {
+        "title": "Delete Budget",
+        "confirmTitle": "Delete \"{{name}}\"?",
+        "confirmDesc": "This action cannot be undone. This will permanently delete your budget and its progress."
+      },
+      "deleteTransaction": {
+        "title": "Delete Transaction",
+        "confirmTitle": "Delete this transaction?",
+        "confirmDesc": "This action cannot be undone.",
+        "toastDeleted": "Transaction deleted",
+        "toastError": "Error deleting transaction"
+      },
+      "editRecurring": {
+        "title": "Edit Recurring Reminder?"
+      },
+      "transactionDetails": {
+        "tags": "Tags",
+        "note": "Note",
+        "receipt": "Receipt",
+        "failedUpdateLink": "Failed to update link",
+        "failedRemoveLink": "Failed to remove link"
+      },
+      "upgrade": {
+        "unlimited": "Unlimited",
+        "goals": "Goals",
+        "full": "Full",
+        "history": "History",
+        "smarter": "Smarter",
+        "planning": "Planning",
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "purchaseError": "Purchase error",
+        "restoreError": "Restore error"
+      },
+      "paymentReminder": {
+        "noReminders": "No payment reminders found",
+        "deleteReminder": "Delete Reminder",
+        "toastDeleted": "Reminder deleted"
+      },
+      "paymentCarousel": {
+        "noReminder": "No reminder has been set yet"
+      }
+    },
     "goalRemaining": "Goal remaining",
     "transferCap": "Transfer cap",
     "budgetEnded": "This budget period has ended. Remaining funds will be cleared soon.",
@@ -1315,6 +1404,7 @@
   },
   "calTool": {
     "ac": "AC",
+    "ce": "CE",
     "toggleSign": "+/-",
     "percent": "%",
     "divide": "÷",

@@ -202,9 +202,9 @@ export function AnalyticsPage() {
           <motion.section variants={itemVariants}>
             <Tabs defaultValue="insights" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12 card-3d">
-                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-accent data-[state=active]:text-glow">{t('analytics.tabInsights')}</TabsTrigger>
-                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:text-glow">{t('analytics.tabOverview')}</TabsTrigger>
-                <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-purple-500 data-[state=active]:text-glow relative overflow-hidden">
+                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px]">{t('analytics.tabInsights')}</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px]">{t('analytics.tabOverview')}</TabsTrigger>
+                <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] relative overflow-hidden">
                   {t('analytics.tabAdvanced')}
                   {!isPremium && !subscriptionLoading && <Lock className="ml-1.5 w-3 h-3 text-muted-foreground/50" />}
                 </TabsTrigger>

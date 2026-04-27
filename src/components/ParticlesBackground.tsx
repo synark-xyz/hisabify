@@ -14,7 +14,7 @@ interface Particle {
 }
 
 export const ParticlesBackground = () => {
-    const { variant, theme } = useTheme();
+    const { theme } = useTheme();
 
     const particles = useMemo(() => {
         return Array.from({ length: 25 }).map((_, i) => ({
@@ -28,50 +28,18 @@ export const ParticlesBackground = () => {
         }));
     }, []);
 
-    // Get theme-aware particle colors with proper visibility
-    const getParticleStyle = (colorType: string) => {
-        if (variant === 'cyberpunk') {
-            // Cyberpunk theme - Teal and Gold
-            if (theme === 'light') {
-                return {
-                    primary: { backgroundColor: 'rgba(0, 168, 168, 0.15)' },   // Darker teal
-                    secondary: { backgroundColor: 'rgba(204, 136, 0, 0.15)' }, // Darker gold
-                    accent: { backgroundColor: 'rgba(168, 85, 247, 0.12)' },   // Purple
-                }[colorType];
-            } else {
-                return {
-                    primary: { backgroundColor: 'rgba(0, 255, 255, 0.18)' },   // Neon teal
-                    secondary: { backgroundColor: 'rgba(255, 215, 0, 0.18)' }, // Neon gold
-                    accent: { backgroundColor: 'rgba(255, 45, 149, 0.15)' },   // Neon pink
-                }[colorType];
-            }
-        } else {
-            // Default theme - Orange and Purple
-            if (theme === 'light') {
-                return {
-                    primary: { backgroundColor: 'rgba(255, 152, 0, 0.15)' },    // Orange
-                    secondary: { backgroundColor: 'rgba(108, 60, 225, 0.15)' }, // Purple
-                    accent: { backgroundColor: 'rgba(168, 85, 247, 0.13)' },    // Purple accent
-                }[colorType];
-            } else {
-                return {
-                    primary: { backgroundColor: 'rgba(255, 152, 0, 0.12)' },    // Orange
-                    secondary: { backgroundColor: 'rgba(108, 60, 225, 0.12)' }, // Purple
-                    accent: { backgroundColor: 'rgba(168, 85, 247, 0.10)' },    // Purple accent
-                }[colorType];
-            }
-        }
-    };
+    const opacity = theme === 'light' ? 0.15 : 0.12;
+    const getParticleStyle = (colorType: string) => ({
+        primary: { backgroundColor: `hsl(var(--primary) / ${opacity})` },
+        secondary: { backgroundColor: `hsl(var(--accent) / ${opacity})` },
+        accent: { backgroundColor: `hsl(var(--accent) / ${opacity * 0.85})` },
+    }[colorType]);
 
     return (
         <div
             className="fixed inset-0 z-0 overflow-hidden pointer-events-none"
             style={{ contain: 'strict', willChange: 'transform' }}
         >
-            {/* Solid Background Layer - Only for Cyberpunk Light */}
-            {variant === 'cyberpunk' && theme === 'light' && (
-                <div className="absolute inset-0 -z-10 bg-background" />
-            )}
             {/* Animated Particles */}
             {particles.map((particle) => (
                 <motion.div
@@ -121,11 +89,7 @@ export const ParticlesBackground = () => {
             <div
                 className={cn(
                     "absolute inset-0",
-                    variant === 'cyberpunk' && theme === 'light'
-                        ? "bg-gradient-to-b from-background/20 via-transparent to-background/20"
-                        : variant === 'cyberpunk'
-                        ? "bg-transparent"
-                        : theme === 'light'
+                    theme === 'light'
                         ? "bg-gradient-to-b from-background/20 via-transparent to-background/20"
                         : "bg-gradient-to-b from-background/40 via-transparent to-background/40"
                 )}

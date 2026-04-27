@@ -11,7 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { generateWeeklyHealthNotification, generateWeeklyTip, AppNotification } from '@/lib/notificationManager';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useHealthScore } from '@/features/gamification/hooks/useHealthScore';
-import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
@@ -143,10 +142,9 @@ export function NotificationsPage() {
         }
     };
 
-    const { variant } = useTheme();
 
     return (
-        <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+        <div className={cn("min-h-screen", "bg-background")}>
             <Header title="Notifications" showBack />
 
             <PullToRefresh onRefresh={handleRefresh}>

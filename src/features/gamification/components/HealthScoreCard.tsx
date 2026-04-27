@@ -7,7 +7,6 @@ import { useReferral } from '@/features/referrals/hooks/useReferral';
 import { getMilestoneBadge, getScoreColor } from '../utils/healthScoreLogic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/hooks/useTheme';
 import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import { cn } from '@/lib/utils';
 import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
@@ -21,14 +20,13 @@ import { HealthScoreDetailSheet } from './HealthScoreDetailSheet';
 export function HealthScoreCard() {
     const { score, loading } = useHealthScore();
     const { referralCode } = useReferral();
-    const { variant } = useTheme();
     const { t } = useTranslation();
     const { language } = useLanguage();
     const [shareCopied, setShareCopied] = useState(false);
     const [detailOpen, setDetailOpen] = useState(false);
 
     if (loading) {
-        return <Skeleton className="w-full h-[180px] rounded-3xl" />;
+        return <Skeleton className="w-full h-[180px] rounded-xl" />;
     }
 
     if (!score) return null;
@@ -65,21 +63,15 @@ export function HealthScoreCard() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-3xl p-5 mb-6 isolate bg-card shadow-card card-3d transition-all"
+            className="relative rounded-xl p-4 md:p-5 bg-card shadow-card transition-all"
         >
-            {/* Subtle Glow Effect based on score (Cyberpunk only) */}
-            <div
-                className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] opacity-20 z-[-1] hidden data-[variant=cyberpunk]:block"
-                style={{ backgroundColor: strokeColor }}
-            />
-
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-primary/10 border border-primary/10 backdrop-blur-sm">
-                        <ChartPie className="w-5 h-5 icon-glow" style={{ color: strokeColor }} />
+                    <div className="p-2 rounded-lg bg-primary/10">
+                        <ChartPie className="w-5 h-5" style={{ color: strokeColor }} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-foreground tracking-tight">{t('healthScore.financialHealth')}</h3>
+                        <h3 className="font-bold text-foreground tracking-tight text-sm">{t('healthScore.financialHealth')}</h3>
                         <p className="text-xs text-muted-foreground">{t('healthScore.personalFinanceScore')}</p>
                     </div>
                 </div>
@@ -87,10 +79,10 @@ export function HealthScoreCard() {
                 <Popover>
                     <PopoverTrigger asChild>
                         <button className="focus:outline-none">
-                            <Info className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors icon-glow" />
+                            <Info className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
                         </button>
                     </PopoverTrigger>
-                    <PopoverContent side="left" className="w-auto p-3">
+                    <PopoverContent side="left" className="w-auto p-3 rounded-xl">
                         <div className="space-y-1.5 min-w-[120px]">
                             <p className="text-xs font-bold text-muted-foreground uppercase mb-2">{t('healthScore.breakdown')}</p>
                             <div className="flex justify-between text-xs gap-4">
@@ -110,18 +102,18 @@ export function HealthScoreCard() {
                 </Popover>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                 {/* Gauge — tappable to open detail sheet */}
                 <button
                     onClick={() => setDetailOpen(true)}
-                    className="relative w-32 h-32 flex-shrink-0 flex items-center justify-center active:scale-95 transition-transform"
+                    className="relative w-24 h-24 flex-shrink-0 flex items-center justify-center active:scale-95 transition-transform"
                     aria-label="View health score details"
                 >
-                    <svg className="w-full h-full transform -rotate-90">
+                    <svg viewBox="0 0 120 120" className="w-full h-full transform -rotate-90">
                         {/* Track */}
                         <circle
-                            cx="64"
-                            cy="64"
+                            cx="60"
+                            cy="60"
                             r={radius}
                             stroke="currentColor"
                             className="text-muted/20"
@@ -131,8 +123,8 @@ export function HealthScoreCard() {
                         />
                         {/* Progress */}
                         <motion.circle
-                            cx="64"
-                            cy="64"
+                            cx="60"
+                            cy="60"
                             r={radius}
                             stroke={strokeColor}
                             strokeWidth="8"
@@ -142,7 +134,6 @@ export function HealthScoreCard() {
                             animate={{ strokeDashoffset: offset }}
                             transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
                             strokeLinecap="round"
-                            className="drop-shadow-md"
                         />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-foreground">
@@ -150,7 +141,7 @@ export function HealthScoreCard() {
                             initial={{ scale: 0.5, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ delay: 0.5, type: "spring" }}
-                            className="text-4xl font-black tracking-tighter text-glow"
+                            className="text-2xl font-black tracking-tighter"
                         >
                             {new Intl.NumberFormat(getLanguageLocale(language), { maximumFractionDigits: 0 }).format(score.total)}
                         </motion.span>
@@ -159,10 +150,10 @@ export function HealthScoreCard() {
                 </button>
 
                 {/* Info / Tip */}
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-3 w-full">
                     {/* Milestone badge */}
                     {milestoneBadge && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <div className="flex items-center gap-2">
                             <span className="text-base leading-none">{milestoneBadge.emoji}</span>
                             <div className="flex-1 min-w-0">
                                 <p className="text-[10px] font-black uppercase tracking-wider text-amber-600">{t(`healthScore.badge.${milestoneBadge.key}.name`, milestoneBadge.name)}</p>
@@ -173,23 +164,20 @@ export function HealthScoreCard() {
 
                     <Popover>
                         <PopoverTrigger asChild>
-                            <div className="bg-muted/30 rounded-2xl p-4 border border-border/50 relative overflow-hidden group cursor-pointer transition-colors hover:bg-muted/50 active:scale-[0.98] transition-all">
-                                <div className="absolute top-0 right-0 p-3 opacity-10">
-                                    <TrendingUp className="w-12 h-12 rotate-[-15deg] text-foreground" />
-                                </div>
+                            <div className="relative cursor-pointer transition-colors hover:bg-muted/30 active:scale-[0.98] transition-all">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 flex items-center gap-1">
                                     <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                                     {t('healthScore.smartInsight')}
                                 </p>
-                                <p className="text-sm font-medium text-foreground leading-relaxed pr-2">
+                                <p className="text-sm font-medium text-foreground leading-relaxed">
                                     "{t(score.insightKey, score.insightParams)}"
                                 </p>
                             </div>
                         </PopoverTrigger>
-                        <PopoverContent side="bottom" className="max-w-[300px] p-4 shadow-xl z-50">
+                        <PopoverContent side="bottom" className="max-w-[300px] p-4 shadow-lg rounded-xl z-50">
                             <div className="space-y-3">
                                 <h4 className="font-bold text-foreground text-sm flex items-center gap-2">
-                                    <Info className="w-4 h-4 text-accent icon-glow" />
+                                    <Info className="w-4 h-4 text-accent" />
                                     {t('healthScore.howItWorks')}
                                 </h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -230,10 +218,8 @@ export function HealthScoreCard() {
 
                     {/* Challenge a Friend button — only visible at milestone scores */}
                     {showChallengeButton && (
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full h-8 rounded-xl font-bold text-xs border-dashed border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/60 gap-1.5"
+                        <button
+                            className="w-full h-8 rounded-lg text-[10px] text-amber-600 hover:bg-amber-500/10 transition-colors flex items-center justify-center gap-1.5 font-bold"
                             onClick={handleChallenge}
                         >
                             {shareCopied ? (
@@ -247,7 +233,7 @@ export function HealthScoreCard() {
                                     {t('healthScore.challengeAFriend')}
                                 </>
                             )}
-                        </Button>
+                        </button>
                     )}
                 </div>
             </div>

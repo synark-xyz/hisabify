@@ -17,7 +17,10 @@ import {
   Archive,
   ArrowRightLeft,
   Calendar,
+  ChevronDown,
+  ChevronUp,
   Edit,
+  Lock,
   MoreVertical,
   Plus,
   Sparkles,
@@ -31,7 +34,6 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { cn } from '@/lib/utils';
 import { localizeNumber } from '@/lib/i18nNumber';
-import { GoalThermometer } from './GoalThermometer';
 import { SavingsFundingDialog } from './SavingsFundingDialog';
 import { GoalCompletionModal } from './GoalCompletionModal';
 import { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
@@ -75,11 +77,14 @@ export function SavingsGoalCard({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRedeploy, setShowRedeploy] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [redeployTargetId, setRedeployTargetId] = useState<string>('');
   const [redeployAmount, setRedeployAmount] = useState(goal.availableToRedeploy.toString());
   const { formatAmount } = useCurrency();
   const previousStatusRef = useRef(goal.status);
   const celebrationTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+
+  const isCompleted = goal.status === 'completed';
 
   const statusColors = {
     completed: 'text-green-500',
@@ -132,21 +137,48 @@ export function SavingsGoalCard({
     };
   }, [goal.status]);
 
+  // Hide zero-value or no-data fields
+  const showReserve = goal.reserve_amount && goal.reserve_amount > 0;
+  const showProjection = goal.suggestedDeadline || goal.projectedCompletionLabel;
+
   return (
     <>
-      <Card className="overflow-visible border-border/50 bg-card/50 backdrop-blur-sm group hover:shadow-lg transition-all duration-300 card-3d">
+      <Card 
+        className={cn(
+          "overflow-visible border-border/50 bg-card/50 backdrop-blur-sm group transition-all duration-300 card-3d",
+          isCompleted && "opacity-75 grayscale-[0.3] border-green-500/20"
+        )}
+      >
         <CardHeader className="p-4 pb-2">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-                style={{ backgroundColor: `${goal.color}15` }}
-              >
-                <Target className="w-5 h-5 icon-glow" style={{ color: goal.color }} />
+            <div 
+              className="flex items-center gap-3 flex-1 cursor-pointer"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {/* Icon with completed lock overlay */}
+              <div className="relative">
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center shadow-sm",
+                    isCompleted && "grayscale"
+                  )}
+                  style={{ backgroundColor: `${goal.color}15` }}
+                >
+                  <Target className="w-5 h-5 icon-glow" style={{ color: goal.color }} />
+                </div>
+                {isCompleted && (
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow-sm">
+                    <Lock className="w-3 h-3 text-white" />
+                  </div>
+                )}
               </div>
-              <div>
-                <CardTitle className="text-sm font-black uppercase tracking-tight">{goal.name}</CardTitle>
-                <div className="flex items-center gap-2">
+
+              <div className="flex-1 min-w-0">
+                {/* Goal Title - Semi-Bold 18px */}
+                <CardTitle className="text-[18px] font-semibold tracking-tight truncate">
+                  {goal.name}
+                </CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
                   {goal.status !== 'no_plan' && (
                     <span className={cn('text-[10px] font-black uppercase tracking-widest', statusColors[goal.status])}>
                       {statusLabels[goal.status]}
@@ -165,11 +197,22 @@ export function SavingsGoalCard({
                   )}
                 </div>
               </div>
+
+              {/* Mobile expand indicator */}
+              <ChevronDown className={cn(
+                "w-5 h-5 text-muted-foreground transition-transform md:hidden",
+                isExpanded && "rotate-180"
+              )} />
             </div>
 
+            {/* Desktop: Dropdown only visible on hover | Mobile: hidden (moved to expanded state) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -202,9 +245,67 @@ export function SavingsGoalCard({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {/* Collapsed State - Always visible on mobile */}
+          <div className="mt-3 space-y-2">
+            {/* Progress Bar - Single source of truth */}
+<div className="space-y-1.5 px-2"> {/* Extra padding to prevent clipping */}
+                <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span>{t('savings.progress')}</span>
+                  <span className="text-foreground">{goal.percentage}%</span>
+                </div>
+                <Progress
+                  value={goal.percentage}
+                  className="h-2 bg-muted/30"
+                  style={{ '--progress-background': goal.color } as CSSProperties}
+                />
+              </div>
+
+            {/* Current Saved Amount - Bold 22px */}
+            <div className="flex items-end justify-between">
+              <p className="text-[22px] font-bold text-foreground leading-none">
+                {formatAmount(goal.current_amount)}
+              </p>
+              {/* Target - Regular 14px muted */}
+              <p className="text-[14px] font-normal text-muted-foreground">
+                {t('savings.targetLabel')}: {formatAmount(goal.target_amount)}
+              </p>
+            </div>
+
+            {/* Mobile Expanded Actions - only when expanded */}
+            {isExpanded && (
+              <div className="flex items-center gap-2 pt-2 md:hidden">
+                {goal.status !== 'completed' && (
+                  <Button
+                    size="sm"
+                    className="flex-1 h-9 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowFunding(true);
+                    }}
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    {t('savings.addFunds')}
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 rounded-xl font-bold text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(goal);
+                  }}
+                >
+                  <Edit className="mr-1 h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
 
-        <CardContent className="p-4 pt-2">
+        {/* Desktop: Always show full content | Mobile: Collapsible */}
+        <CardContent className={cn("p-4 pt-0", !isExpanded && "hidden md:block")}>
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2 rounded-2xl h-10">
               <TabsTrigger value="overview" className="rounded-xl text-[10px] font-bold uppercase tracking-wider">
@@ -216,87 +317,69 @@ export function SavingsGoalCard({
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
-                  {goal.status === 'completed' && (
+              {goal.status === 'completed' && (
                 <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-emerald-700">
                   <Sparkles className="h-4 w-4 animate-pulse" />
                   <p className="text-xs font-semibold">{t('savings.goalCompleted')}</p>
                 </div>
               )}
 
-              <div className="flex items-center gap-5">
-                <GoalThermometer percentage={goal.percentage} color={goal.color} size="sm" />
-
-                <div className="flex-1 space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      <span>{t('savings.progress')}</span>
-                      <span className="text-foreground">{goal.percentage}%</span>
-                    </div>
-                    <Progress
-                      value={goal.percentage}
-                      className="h-1.5 bg-muted/30"
-                      style={{ '--progress-background': goal.color } as CSSProperties}
-                    />
+              <div className="space-y-4">
+                {/* This Month & Reserve - only show if non-zero */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-0.5">
+                    <p className="text-[14px] font-normal text-muted-foreground">{t('savings.thisMonth')}</p>
+                    <p className="text-[18px] font-semibold text-foreground">{formatAmount(goal.thisMonthContribution)}</p>
                   </div>
+                  {showReserve && (
+                    <div className="space-y-0.5">
+                      <p className="text-[14px] font-normal text-muted-foreground">{t('savings.reserve')}</p>
+                      <p className="text-[18px] font-semibold text-foreground/70">{formatAmount(goal.reserve_amount)}</p>
+                    </div>
+                  )}
+                </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('savings.saved')}</p>
-                      <p className="text-sm font-black text-foreground">{formatAmount(goal.current_amount)}</p>
+                {/* Deadline */}
+                {goal.deadline && (
+                  <div className="flex items-center gap-1.5 text-[14px] font-normal text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {goal.daysLeft !== null && goal.daysLeft >= 0
+                        ? t('savings.daysLeft', { days: localizeNumber(goal.daysLeft) })
+                        : format(new Date(goal.deadline), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                )}
+
+                {/* Desktop Add Funds Button - only on hover */}
+                {!isCompleted && (
+                  <Button
+                    size="sm"
+                    className="w-full h-10 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
+                    onClick={() => setShowFunding(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t('savings.addFunds')}
+                  </Button>
+                )}
+
+                {goal.status === 'completed' ? (
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">{t('savings.readyToRedeploy')}</span>
+                      <span className="font-semibold text-foreground">{formatAmount(goal.availableToRedeploy)}</span>
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('savings.targetLabel')}</p>
-                      <p className="text-sm font-black text-foreground/70">{formatAmount(goal.target_amount)}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('savings.thisMonth')}</p>
-                      <p className="text-sm font-black text-foreground/70">{formatAmount(goal.thisMonthContribution)}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('savings.reserve')}</p>
-                      <p className="text-sm font-black text-foreground/70">{formatAmount(goal.reserve_amount || 0)}</p>
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className="text-muted-foreground">{t('savings.completedAt')}</span>
+                      <span className="font-semibold text-foreground">
+                        {format(new Date(goal.completed_at || goal.updated_at), 'MMM d, yyyy')}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between gap-2">
-                    {goal.deadline && (
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        <Calendar className="w-3 h-3" />
-                        <span>
-                          {goal.daysLeft !== null && goal.daysLeft >= 0
-                            ? t('savings.daysLeft', { days: localizeNumber(goal.daysLeft) })
-                            : format(new Date(goal.deadline), 'MMM d')}
-                        </span>
-                      </div>
-                    )}
-
-                    {!goal.isArchived && goal.status !== 'completed' && (
-                      <Button
-                        size="sm"
-                        className="h-8 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-xs"
-                        onClick={() => setShowFunding(true)}
-                      >
-                        <Plus className="mr-1 h-3 w-3" />
-                        {t('savings.funds')}
-                      </Button>
-                    )}
-                  </div>
-
-                  {goal.status === 'completed' ? (
-                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{t('savings.readyToRedeploy')}</span>
-                        <span className="font-semibold text-foreground">{formatAmount(goal.availableToRedeploy)}</span>
-                      </div>
-                      <div className="mt-1 flex items-center justify-between">
-                        <span className="text-muted-foreground">{t('savings.completedAt')}</span>
-                        <span className="font-semibold text-foreground">
-                          {format(new Date(goal.completed_at || goal.updated_at), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-xs">
+                ) : (
+                  /* Projections - only show if data exists */
+                  showProjection && (
+                    <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">{t('savings.projectedCompletion')}</span>
                         <span className="font-semibold text-foreground">
@@ -314,66 +397,67 @@ export function SavingsGoalCard({
                         </span>
                       </div>
                     </div>
-                  )}
+                  )
+                )}
 
-                  {goal.planEnabled && goal.status !== 'completed' && (
-                    <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/10 p-3 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{t('savings.requiredThis', { period: goal.periodLabel })}</span>
-                        <span className="font-semibold text-foreground">{formatAmount(goal.requiredPerPeriod)}</span>
-                      </div>
-
-                      {goal.paceStatus !== 'completed' && (
-                        <div className={cn('rounded-xl border px-3 py-2', paceToneClass)}>
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-semibold">
-                              {goal.paceStatus === 'ahead' ? t('savings.paceAhead') : goal.paceStatus === 'behind' ? t('savings.paceBehind') : t('savings.paceOnTrack')}
-                            </span>
-                            <span>{formatAmount(goal.currentPeriodAmount)}</span>
-                          </div>
-                          <p className="mt-1 text-[11px]">
-                            {goal.paceStatus === 'behind'
-                              ? t('savings.neededThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })
-                              : t('savings.dueThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })}
-                          </p>
-                        </div>
-                      )}
-
-                      {sparklineData.length > 0 && (
-                        <div className="h-20">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={sparklineData}>
-                              <XAxis dataKey="label" hide />
-                              <YAxis hide />
-                              <Tooltip
-                                formatter={(value: number, name: string) => [formatAmount(value), name === 'target' ? t('savings.chartRequired') : t('savings.chartSaved')]}
-                                labelFormatter={(label) => label}
-                              />
-                              <ReferenceLine y={goal.requiredPerPeriod} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
-                              <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} />
-                              <Line type="monotone" dataKey="amount" stroke={goal.color} strokeWidth={2} dot={false} />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
-
-                      {goal.paceStatus === 'behind' && goal.suggestedDeadline && (
-                        <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-amber-700">
-                          <span>{t('savings.paceAtThis', { date: format(new Date(goal.suggestedDeadline), 'MMM d, yyyy') })}</span>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 rounded-lg px-2 text-[11px] font-bold text-amber-700 hover:text-amber-800"
-                            onClick={() => onUpdateDeadline(goal.id, goal.suggestedDeadline!)}
-                          >
-                            {t('savings.updateDeadline')}
-                          </Button>
-                        </div>
-                      )}
+                {goal.planEnabled && goal.status !== 'completed' && (
+                  <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/10 p-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">{t('savings.requiredThis', { period: goal.periodLabel })}</span>
+                      <span className="font-semibold text-foreground">{formatAmount(goal.requiredPerPeriod)}</span>
                     </div>
-                  )}
-                </div>
+
+                    {goal.paceStatus !== 'completed' && (
+                      <div className={cn('rounded-xl border px-3 py-2', paceToneClass)}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-semibold">
+                            {goal.paceStatus === 'ahead' ? t('savings.paceAhead') : goal.paceStatus === 'behind' ? t('savings.paceBehind') : t('savings.paceOnTrack')}
+                          </span>
+                          <span>{formatAmount(goal.currentPeriodAmount)}</span>
+                        </div>
+                        <p className="mt-1 text-[11px]">
+                          {goal.paceStatus === 'behind'
+                            ? t('savings.neededThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })
+                            : t('savings.dueThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Desktop: Sparkline always visible in footer */}
+                    {sparklineData.length > 0 && (
+                      <div className="h-20">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={sparklineData}>
+                            <XAxis dataKey="label" hide />
+                            <YAxis hide />
+                            <Tooltip
+                              formatter={(value: number, name: string) => [formatAmount(value), name === 'target' ? t('savings.chartRequired') : t('savings.chartSaved')]}
+                              labelFormatter={(label) => label}
+                            />
+                            <ReferenceLine y={goal.requiredPerPeriod} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
+                            <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} />
+                            <Line type="monotone" dataKey="amount" stroke={goal.color} strokeWidth={2} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {goal.paceStatus === 'behind' && goal.suggestedDeadline && (
+                      <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-amber-700">
+                        <span>{t('savings.paceAtThis', { date: format(new Date(goal.suggestedDeadline), 'MMM d, yyyy') })}</span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 rounded-lg px-2 text-[11px] font-bold text-amber-700 hover:text-amber-800"
+                          onClick={() => onUpdateDeadline(goal.id, goal.suggestedDeadline!)}
+                        >
+                          {t('savings.updateDeadline')}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </TabsContent>
 

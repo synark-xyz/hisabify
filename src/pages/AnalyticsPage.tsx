@@ -49,7 +49,6 @@ export function AnalyticsPage() {
   const { currency, formatAmount } = useCurrency();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { variant } = useTheme();
   const navigate = useNavigate();
   const hasShownClampToastRef = useRef(false);
 
@@ -137,19 +136,11 @@ export function AnalyticsPage() {
   };
 
   return (
-    <div className={cn("min-h-screen pb-page-content fade-bottom-overlay", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+    <>
       <PullToRefresh onRefresh={async () => { await refetch(); }}>
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <motion.header
-          className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 rounded-b-3xl"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-        </motion.header>
-
+        <div className="max-w-6xl mx-auto pb-page-content">
         <motion.main
-          className="px-4 space-y-6"
+          className="px-4 pt-4 space-y-6"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -383,6 +374,6 @@ export function AnalyticsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

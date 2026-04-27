@@ -230,7 +230,7 @@ export function FinancialSummary({
           period={summaries.thisWeek}
           comparison={weeklyComparison}
           icon={Calendar}
-          colorClass="bg-purple-500/20 text-purple-500"
+          colorClass="bg-primary/20 text-primary"
         />
         <SummaryCard
           title="This Month"

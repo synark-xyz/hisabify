@@ -43,8 +43,8 @@ export function SavingsGoalsSummary({
       label: t("savings.overallProgress"),
       value: `${tn(overallProgress)}%`,
       icon: TrendUp,
-      color: "text-purple-500",
-      bgColor: "bg-purple-500/10",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
     },
     {
       label: t("savings.completed"),

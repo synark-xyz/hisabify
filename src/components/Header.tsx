@@ -103,12 +103,13 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
 
   return (
     <motion.header
-      className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl transition-all duration-200 flex items-center justify-between px-4 pb-4"
+      className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl transition-all duration-200"
       style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)' }}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
+      <div className="flex items-center justify-between px-4 pb-4 lg:px-6 lg:pb-4 max-w-5xl mx-auto">
       <motion.button
         onClick={handleLeftAction}
         className="relative flex items-center justify-center p-1"
@@ -211,6 +212,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
 
           </>
         )}
+      </div>
       </div>
     </motion.header>
   );

@@ -65,23 +65,6 @@
     }
   }
 
-  @keyframes neon-pulse {
-    0%, 100% {
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 0 10px rgba(0, 255, 255, 0.2);
-    }
-    50% {
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 15px rgba(0, 255, 255, 0.3);
-    }
-  }
-
-  /* Cyberpunk dropdown animations */
-  [data-variant="cyberpunk"] [data-radix-dropdown-menu-content] {
-    animation: dropdown-bounce-in 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  [data-variant="cyberpunk"] [data-radix-dropdown-menu-content][data-state="closed"] {
-    animation: dropdown-bounce-out 0.2s ease-out;
-  }
 }
 
 /* SettleUp Design System - Fintech aesthetic with purple cards and orange accents */
@@ -97,7 +80,7 @@
      DEFAULT THEME (Glassmorphism Minimal)
      Clean glass aesthetic with subtle depth
      ========================================= */
-  :root:not([data-variant="cyberpunk"]) {
+  :root {
     --background: 240 20% 98%;
     --foreground: 240 10% 10%;
 
@@ -171,7 +154,7 @@
     --font-sans: 'Exo 2', system-ui, -apple-system, sans-serif;
   }
 
-  .dark:not([data-variant="cyberpunk"]) {
+  .dark {
     --background: 220 20% 8%;
     --foreground: 0 0% 95%;
 
@@ -220,109 +203,6 @@
     --shadow-card-hover: 0 8px 24px -8px rgba(0,0,0,0.4);
   }
 
-  /* =========================================
-     CYBERPUNK THEME (Gold & Teal aesthetic)
-     Applies when data-variant="cyberpunk"
-     ========================================= */
-  :root[data-variant="cyberpunk"] {
-    /* Default to Dark Mode aesthetics (Cyberpunk is predominantly dark) */
-    --background: 220 50% 8%;
-    /* Deep Midnight Blue #0a0f1c */
-    --foreground: 210 20% 98%;
-    /* White */
-
-    --card: 220 50% 10%;
-    --card-foreground: 210 20% 98%;
-
-    --popover: 220 50% 10%;
-    --popover-foreground: 210 20% 98%;
-
-    --primary: 170 100% 50%;
-    /* Neon Teal */
-    --primary-foreground: 220 50% 8%;
-
-    --secondary: 220 40% 16%;
-    --secondary-foreground: 210 20% 98%;
-
-    --muted: 220 40% 20%;
-    --muted-foreground: 210 20% 70%;
-
-    --accent: 45 100% 50%;
-    /* Gold #FFD700 */
-    --accent-foreground: 220 50% 8%;
-
-    --destructive: 0 90% 60%;
-    --destructive-foreground: 210 20% 98%;
-
-    --border: 45 100% 50%;
-    /* Gold borders */
-    --input: 220 40% 20%;
-    --ring: 45 100% 50%;
-
-    --radius: 0.25rem;
-    /* Sharper corners */
-
-    /* Custom overrides */
-    --card-purple: 170 100% 40%;
-    /* Becomes Teal */
-    --card-purple-light: 170 100% 50%;
-    --card-green: 45 100% 45%;
-    /* Becomes Gold */
-    --card-green-light: 45 100% 55%;
-    --orange: 320 100% 50%;
-    /* Becomes Neon Pink */
-    --orange-light: 320 100% 60%;
-
-    /* Chart colors - Neon Palette */
-    --chart-1: 170 100% 50%;
-    /* Teal */
-    --chart-2: 45 100% 50%;
-    /* Gold */
-    --chart-3: 320 100% 50%;
-    /* Pink */
-    --chart-4: 260 100% 65%;
-    /* Purple */
-    --chart-5: 210 100% 70%;
-    /* Blue */
-
-    /* Gradients */
-    --gradient-card-purple: linear-gradient(135deg, hsl(170 100% 30%) 0%, hsl(170 100% 45%) 100%);
-    --gradient-card-green: linear-gradient(135deg, hsl(45 100% 40%) 0%, hsl(45 100% 50%) 100%);
-    --gradient-card-orange: linear-gradient(135deg, hsl(320 100% 40%) 0%, hsl(320 100% 50%) 100%);
-
-    /* Neon Glow Shadows */
-    --shadow-card: 0 0 15px -3px hsla(170, 100%, 50%, 0.1), 0 0 5px -2px hsla(45, 100%, 50%, 0.1);
-    --shadow-card-hover: 0 0 25px -5px hsla(170, 100%, 50%, 0.3), 0 0 10px -2px hsla(45, 100%, 50%, 0.3);
-    --shadow-fab: 0 0 20px hsla(45, 100%, 50%, 0.5);
-
-    --font-sans: 'Exo 2', system-ui, -apple-system, sans-serif;
-  }
-
-  /* Cyberpunk Light Mode (High Contrast) */
-  :root[data-variant="cyberpunk"].light {
-    --background: 210 20% 98%;
-    --foreground: 220 50% 8%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 220 50% 8%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 50% 8%;
-
-    --secondary: 220 20% 94%;
-    --secondary-foreground: 220 50% 8%;
-
-    --muted: 220 20% 90%;
-    --muted-foreground: 220 40% 40%;
-
-    --border: 220 20% 85%;
-
-    /* Keep Accents bold */
-    --primary: 170 100% 35%;
-    /* Darker Teal for contrast */
-    --accent: 45 100% 45%;
-    /* Darker Gold */
-  }
 }
 
 @layer base {
@@ -573,66 +453,8 @@
     border-radius: 10px;
   }
 
-  /* =========================================
-     CYBERPUNK GLOW UTILITIES
-     ========================================= */
-  .text-glow {
-    text-shadow: 0 0 10px hsla(var(--primary), 0.5), 0 0 20px hsla(var(--primary), 0.3);
-  }
-
-  .border-glow {
-    border-color: hsl(var(--primary));
-    box-shadow: 0 0 10px hsla(var(--primary), 0.3), inset 0 0 5px hsla(var(--primary), 0.1);
-  }
-
   .icon-glow {
-    filter: drop-shadow(0 0 5px hsla(var(--primary), 0.6));
-  }
-
-  /* 3D Card Effect for Cyberpunk Theme */
-  [data-variant="cyberpunk"] .card-3d {
-    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--card)/0.8));
-    border: 1px solid hsl(var(--border));
-    box-shadow:
-      0 10px 30px -10px rgba(0, 0, 0, 0.5),
-      0 0 0 1px hsla(var(--accent), 0.1),
-      inset 0 0 20px hsla(var(--primary), 0.05);
-    transform-style: preserve-3d;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  [data-variant="cyberpunk"] .card-3d:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 15px 35px -10px rgba(0, 0, 0, 0.6),
-      0 0 15px hsla(var(--accent), 0.2),
-      inset 0 0 20px hsla(var(--primary), 0.1);
-    border-color: hsl(var(--accent));
-  }
-
-  /* Background Animation Keyframes */
-  @keyframes cyber-bg-move {
-    0% {
-      background-position: 0% 0%;
-    }
-
-    100% {
-      background-position: 100% 100%;
-    }
-  }
-
-  @keyframes neon-pulse {
-
-    0%,
-    100% {
-      opacity: 1;
-      filter: brightness(1);
-    }
-
-    50% {
-      opacity: 0.7;
-      filter: brightness(1.2);
-    }
+    filter: drop-shadow(0 0 5px hsl(var(--primary) / 0.6));
   }
 }
 

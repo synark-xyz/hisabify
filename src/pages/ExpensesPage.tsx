@@ -91,7 +91,6 @@ export function ExpensesPage() {
   const { user } = useAuth();
   const { currency, currencyVersion } = useCurrency();
   const { convertAmount } = useExchangeRate();
-  const { variant } = useTheme();
   const { isPremium } = useSubscription();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -615,7 +614,7 @@ export function ExpensesPage() {
   const isDateFocused = effectiveFocusedDate !== null;
 
   return (
-    <div className={cn('min-h-screen', variant === 'cyberpunk' ? 'bg-transparent' : 'bg-background')}>
+    <div className={cn('min-h-screen', 'bg-background')}>
       <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
           <motion.main

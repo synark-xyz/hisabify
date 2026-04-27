@@ -418,33 +418,17 @@ export async function getSavingsCategoryMap(): Promise<SavingsCategoryMap> {
     return cachedCategoryMap;
   }
 
-  const { data, error } = await supabase
-    .from('categories')
-    .select('id, name')
-    .in('name', [SAVINGS_CATEGORY_NAME, SAVINGS_RETURN_CATEGORY_NAME]);
+  // SECURITY DEFINER RPC — creates system savings categories if missing, then
+  // returns their IDs. Avoids client-side upsert which is blocked by RLS.
+  const { data, error } = await supabase.rpc('ensure_savings_categories');
 
   if (error) {
     throw error;
   }
 
-  let savingsCategoryId = data?.find((category) => category.name === SAVINGS_CATEGORY_NAME)?.id;
-  let savingsReturnCategoryId = data?.find((category) => category.name === SAVINGS_RETURN_CATEGORY_NAME)?.id;
-
-  if (!savingsCategoryId || !savingsReturnCategoryId) {
-    const toUpsert = [
-      { name: SAVINGS_CATEGORY_NAME, icon: 'target', color: '#10B981', type: 'expense', category_type: 'savings' },
-      { name: SAVINGS_RETURN_CATEGORY_NAME, icon: 'wallet', color: '#3B82F6', type: 'income', category_type: 'savings_return' },
-    ];
-    const { data: seeded, error: seedError } = await supabase
-      .from('categories')
-      .upsert(toUpsert, { onConflict: 'name' })
-      .select('id, name');
-    if (seedError) {
-      throw seedError;
-    }
-    savingsCategoryId = seeded?.find((c) => c.name === SAVINGS_CATEGORY_NAME)?.id ?? savingsCategoryId;
-    savingsReturnCategoryId = seeded?.find((c) => c.name === SAVINGS_RETURN_CATEGORY_NAME)?.id ?? savingsReturnCategoryId;
-  }
+  const rows = data as Array<{ cat_name: string; cat_id: string }> | null;
+  const savingsCategoryId = rows?.find((c) => c.cat_name === SAVINGS_CATEGORY_NAME)?.cat_id;
+  const savingsReturnCategoryId = rows?.find((c) => c.cat_name === SAVINGS_RETURN_CATEGORY_NAME)?.cat_id;
 
   if (!savingsCategoryId || !savingsReturnCategoryId) {
     throw new Error('Savings categories are not configured');

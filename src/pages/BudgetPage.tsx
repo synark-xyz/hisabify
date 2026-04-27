@@ -8,7 +8,6 @@ import { useBudgets } from '@/hooks/useBudgets';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
-import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SavingsTabContent } from '@/components/savings/SavingsTabContent';
@@ -19,7 +18,6 @@ export function BudgetPage() {
   const defaultTab = searchParams.get('tab') === 'goals' ? 'goals' : 'budget';
   const { refetch } = useBudgets();
   const { isPremium } = useSubscription();
-  const { variant } = useTheme();
   const { t } = useTranslation();
 
   // Scroll to top on page load
@@ -41,7 +39,7 @@ export function BudgetPage() {
   };
 
   return (
-    <div className={cn("min-h-screen relative", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+    <div className={cn("min-h-screen relative", "bg-background")}>
       <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 

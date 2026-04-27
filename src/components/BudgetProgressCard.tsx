@@ -216,15 +216,15 @@ export function BudgetProgressCard({ budget, onEdit, onDelete, onViewTransaction
           </div>
         )}
 
-        {/* Progress Bar */}
+{/* Progress Bar */}
         <div className="relative">
-          <div className="h-3 bg-muted rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
               className="h-full rounded-full"
               style={{ backgroundColor: statusColor }}
               initial={{ width: 0 }}
               animate={{ width: `${displayPercentage}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             />
           </div>
 

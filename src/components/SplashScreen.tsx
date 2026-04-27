@@ -1,7 +1,5 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { useTheme } from '@/hooks/useTheme';
-import { CyberpunkSplash } from './CyberpunkSplash';
 import { HisabifyLogo } from './HisabifyLogo';
 
 const MESSAGES = [
@@ -12,15 +10,10 @@ const MESSAGES = [
 ];
 
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
-    const { variant } = useTheme();
     const [progress, setProgress] = useState(0);
     const [messageIndex, setMessageIndex] = useState(0);
 
     useEffect(() => {
-        if (variant === 'cyberpunk') {
-            return;
-        }
-
         const duration = 2500; // 2.5s total
         const interval = 20;
         const steps = duration / interval;
@@ -46,11 +39,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         }, interval);
 
         return () => clearInterval(timer);
-    }, [onComplete, variant]);
-
-    if (variant === 'cyberpunk') {
-        return <CyberpunkSplash onComplete={onComplete} />;
-    }
+    }, [onComplete]);
 
     return (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-background">

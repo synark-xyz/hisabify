@@ -15,7 +15,6 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { emitTransactionUpdated } from '@/lib/transaction-events';
 import type { Transaction } from '@/types';
 
 export const SAVINGS_CATEGORY_NAME = 'Savings';
@@ -482,8 +481,6 @@ export async function recordSavingsContribution(input: SavingsContributionInput)
   if (error) {
     throw error;
   }
-
-  emitTransactionUpdated();
 }
 
 export async function recordSavingsReturn(params: {
@@ -519,8 +516,6 @@ export async function recordSavingsReturn(params: {
   if (error) {
     throw error;
   }
-
-  emitTransactionUpdated();
 }
 
 export async function recordBudgetLeftoverTransfer(params: {
@@ -578,8 +573,6 @@ export async function recordBudgetLeftoverTransfer(params: {
   if (error) {
     throw error;
   }
-
-  emitTransactionUpdated();
 }
 
 export async function redeploySavingsBetweenGoals(params: SavingsTransferInput): Promise<void> {

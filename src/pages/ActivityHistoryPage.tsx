@@ -20,7 +20,7 @@ import {
   Archive,
   LayoutGrid,
 } from 'lucide-react';
-import { useActivityLog } from '@/hooks/useActivityLog';
+import { useActivityHistory } from '@/hooks/useActivityHistory';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
@@ -101,7 +101,7 @@ function ActivityGroup({ dateStr, activities, t }: { dateStr: string; activities
 }
 
 export function ActivityHistoryPage() {
-  const { activities, loading } = useActivityLog();
+  const { activities, loading } = useActivityHistory();
   const { t } = useTranslation();
   const navigate = useNavigate();
 

@@ -30,8 +30,6 @@ import { Transaction, CategorySpending, Card, Category, PaymentMethod, PAYMENT_M
 import { getViewRange, type TransactionViewMode } from '@/lib/transactionDateRange';
 import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
 import { enforceHistoryWindow } from '@/lib/historyLimits';
-import { emitTransactionUpdated } from '@/lib/transaction-events';
-import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -233,10 +231,6 @@ export function ExpensesPage() {
   const handleRefresh = useCallback(async () => {
     await fetchTransactions();
   }, [fetchTransactions]);
-
-  useTransactionUpdateListener(() => {
-    void fetchTransactions();
-  });
 
   useEffect(() => {
     if (user) {
@@ -598,7 +592,7 @@ export function ExpensesPage() {
   );
 
   const handleTransactionMutationSuccess = useCallback(() => {
-    emitTransactionUpdated();
+    // Supabase real-time subscriptions handle state refresh — no manual event needed
   }, []);
 
   const clearFocusedDate = useCallback(() => {

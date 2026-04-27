@@ -10,7 +10,6 @@ import { UpgradeModal } from '@/components/UpgradeModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
-import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SavingsTabContent } from '@/components/savings/SavingsTabContent';
 
@@ -27,10 +26,6 @@ export function BudgetPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
-
-  useTransactionUpdateListener(() => {
-    refetch({ fireAlerts: true });
-  });
 
   const containerVariants = {
     hidden: { opacity: 0 },

@@ -10,7 +10,6 @@ import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberpunkBackground } from '@/components/CyberpunkBackground';
 import { cn } from '@/lib/utils';
-import { emitTransactionUpdated } from '@/lib/transaction-events';
 
 const PAGE_TITLES: Record<string, string> = {
     '/': 'nav.dashboard',
@@ -125,9 +124,7 @@ export function Layout() {
             <AddTransactionModal
                 open={showManual}
                 onOpenChange={setShowManual}
-                onSuccess={() => {
-                    emitTransactionUpdated();
-                }}
+                onSuccess={() => {}}
             />
         </div>
     );

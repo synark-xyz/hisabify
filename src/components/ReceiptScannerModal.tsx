@@ -6,7 +6,7 @@ import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeade
 import { useProfile } from '@/hooks/useProfile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCurrency } from '@/hooks/useCurrency';
-import { useUserBehavior } from '@/hooks/useUserBehavior';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
 import { compressForGemini } from '@/lib/imageProcessor';
@@ -37,7 +37,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
     const { privacyMode } = useProfile();
     const { ensurePermission } = usePermissions();
     const { currency: userCurrency } = useCurrency();
-    const { logEvent } = useUserBehavior();
+    const { logEvent } = useAnalytics();
     const { toast } = useToast();
     const [scanning, setScanning] = useState(false);
     const [scanLabel, setScanLabel] = useState('Analyzing receipt...');

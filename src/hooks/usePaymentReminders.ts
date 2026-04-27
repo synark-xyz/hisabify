@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { PaymentReminder } from '@/types';
 import { calculateNextDueDate } from '@/lib/recurringReminders';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
-import { emitTransactionUpdated } from '@/lib/transaction-events';
 import { recordSavingsContribution } from '@/lib/savings';
 
 export function usePaymentReminders() {
@@ -138,8 +137,6 @@ export function usePaymentReminders() {
         });
         if (error) {
             console.warn('Failed to record reminder transaction for budget tracking:', error.message);
-        } else {
-            emitTransactionUpdated();
         }
     }, [findMatchingBudgetId]);
 

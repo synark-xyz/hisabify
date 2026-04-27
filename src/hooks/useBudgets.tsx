@@ -7,38 +7,11 @@ import { toast } from 'sonner';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, format } from 'date-fns';
 import { Category } from '@/types';
 import { showBudgetWarning, showBudgetExceeded } from '@/lib/notificationManager';
-import { emitTransactionUpdated } from '@/lib/transaction-events';
+import { computeBudgetSpending, dedupeBudgetPeriods, type Budget, type BudgetWithSpending } from '@/lib/budgetUtils';
+import type { Category } from '@/types';
 import type { Database } from '@/integrations/supabase/types';
 
 export type PeriodType = 'weekly' | 'monthly' | 'yearly';
-
-export interface Budget {
-  id: string;
-  user_id: string;
-  category_id: string | null;
-  category?: Category;
-  amount: number;
-  month: number;
-  year: number;
-  period_type: PeriodType;
-  start_date: string | null;
-  end_date: string | null;
-  name: string | null;
-  is_template: boolean;
-  is_recurring: boolean;
-  template_name: string | null;
-  alert_threshold: number;
-  alert_enabled: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface BudgetWithSpending extends Budget {
-  spent: number;
-  remaining: number;
-  percentage: number;
-  status: 'safe' | 'warning' | 'utilized' | 'exceeded';
-}
 
 export interface CreateBudgetInput {
   category_id: string | null;
@@ -77,9 +50,7 @@ export function useBudgets() {
     if (typeof window === 'undefined') {
       return;
     }
-
     window.dispatchEvent(new Event('budget-updated'));
-    emitTransactionUpdated();
   }, []);
 
   // Refs to prevent infinite loops and duplicate fetches
@@ -278,54 +249,16 @@ export function useBudgets() {
             }
           }
 
-          const remaining = Math.max(0, budget.amount - spent);
-          const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-
-          let status: 'safe' | 'warning' | 'utilized' | 'exceeded' = 'safe';
-          if (spent > budget.amount) {
-            status = 'exceeded';       // spent MORE than budget → red
-          } else if (spent >= budget.amount) {
-            status = 'utilized';       // spent exactly the budget → green "Paid"
-          } else if (percentage >= 75) {
-            status = 'warning';        // 75–99% → amber "At Risk"
-          }
+          const spendingCalc = computeBudgetSpending(budget, spent, budget.alert_threshold ?? 75);
 
           return {
             ...budget,
-            spent,
-            remaining,
-            percentage,
-            status
+            ...spendingCalc,
           } as BudgetWithSpending;
         })
       );
 
-      // Smart de-dup: for each category, if the current period is fully utilized/exceeded
-      // AND an upcoming period exists (created by Pay Now / auto-rollover), show the upcoming one.
-      const catMap = new Map<string, BudgetWithSpending[]>();
-      for (const b of budgetsWithSpending) {
-        const key = b.category_id ?? '__total__';
-        if (!catMap.has(key)) catMap.set(key, []);
-        catMap.get(key)!.push(b);
-      }
-      const dedupedBudgets: BudgetWithSpending[] = [];
-      for (const group of catMap.values()) {
-        if (group.length === 1) { dedupedBudgets.push(group[0]); continue; }
-        const current = group.filter(b => {
-          const s = b.start_date ? new Date(b.start_date) : null;
-          const e = b.end_date ? new Date(b.end_date) : null;
-          if (!s) return true;
-          return s <= now && (e === null || e >= now);
-        });
-        const upcoming = group.filter(b => b.start_date && new Date(b.start_date) > now);
-        if (current.length > 0) {
-          const allDone = current.every(b => b.status === 'utilized' || b.status === 'exceeded');
-          dedupedBudgets.push(...(allDone && upcoming.length > 0 ? upcoming : current));
-        } else {
-          dedupedBudgets.push(...(upcoming.length > 0 ? upcoming : group));
-        }
-      }
-      setBudgets(dedupedBudgets);
+      setBudgets(dedupeBudgetPeriods(budgetsWithSpending));
 
       // Show alerts only when triggered by a real transaction change event,
       // not on page load, to prevent spam on tab open.

@@ -16,7 +16,7 @@ import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useBudgets, PeriodType, Budget } from '@/hooks/useBudgets';
-import { useUserBehavior } from '@/hooks/useUserBehavior';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,7 +66,7 @@ export function AddBudgetModal({ open, onOpenChange, editingBudget, onSuccess }:
   const { isPremium } = useSubscription();
   const { createBudget, updateBudget, budgets } = useBudgets();
   const { categories } = useCategories();
-  const { logEvent } = useUserBehavior();
+  const { logEvent } = useAnalytics();
   const currencySymbol = currencyData[currency]?.symbol || '$';
 
   const form = useForm<BudgetFormData>({

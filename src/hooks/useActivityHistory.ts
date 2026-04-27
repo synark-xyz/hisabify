@@ -15,7 +15,7 @@ export interface LogActivityInput {
   group_id?: string | null;
 }
 
-export function useActivityLog() {
+export function useActivityHistory() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -34,7 +34,7 @@ export function useActivityLog() {
       if (error) throw error;
       setActivities((data as ActivityLog[]) || []);
     } catch (err) {
-      console.error('[useActivityLog] fetch error:', err);
+      console.error('[useActivityHistory] fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export function useActivityLog() {
       setActivities((prev) => [(data as ActivityLog), ...prev]);
       return data as ActivityLog;
     } catch (err) {
-      console.error('[useActivityLog] logActivity error:', err);
+      console.error('[useActivityHistory] logActivity error:', err);
       return null;
     }
   }, [user]);

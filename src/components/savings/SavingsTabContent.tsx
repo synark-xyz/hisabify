@@ -15,7 +15,6 @@ import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 
 import { useTheme } from '@/hooks/useTheme';
-import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
@@ -73,11 +72,6 @@ export function SavingsTabContent() {
     ), 0);
     setMainBalance(balance);
   }, [user?.id]);
-
-  useTransactionUpdateListener(() => {
-    refetch();
-    void fetchMainBalance();
-  });
 
   useEffect(() => {
     void fetchMainBalance();

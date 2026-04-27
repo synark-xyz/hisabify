@@ -32,7 +32,6 @@ import { exportToCSV } from '@/lib/exportUtils';
 import { subMonths, startOfMonth, endOfMonth, getMonth, getYear } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PremiumGuard } from '@/components/PremiumGuard';
-import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
@@ -67,10 +66,6 @@ export function AnalyticsPage() {
     refetch,
   } = useDashboardData(dateRange);
   const hasTransactionData = transactions.length > 0;
-
-  useTransactionUpdateListener(() => {
-    refetch();
-  });
 
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const canUseCustomRange = canUseFeature({ isPremium }, 'analytics_custom_range');

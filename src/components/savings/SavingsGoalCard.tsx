@@ -99,14 +99,6 @@ export function SavingsGoalCard({
     no_plan: t('savings.status.no_plan'),
   };
 
-  const chartData = goal.contributionHistory
-    .filter((entry) => entry.type === 'contribution')
-    .map((entry) => ({
-      date: format(new Date(entry.date), 'MMM d'),
-      total: entry.runningTotal,
-      target: goal.requiredPerPeriod,
-    }));
-
   const sparklineData = goal.sparkline.map((entry) => ({
     label: entry.label,
     amount: entry.amount,
@@ -388,23 +380,6 @@ export function SavingsGoalCard({
             <TabsContent value="history">
               <PremiumGuard featureName="Savings History">
                 <div className="space-y-4">
-                  <div className="h-32 rounded-2xl border border-border/50 bg-muted/10 p-2">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <XAxis dataKey="date" hide />
-                        <YAxis hide />
-                        <Tooltip />
-                        {goal.planEnabled && goal.requiredPerPeriod > 0 && (
-                          <ReferenceLine y={goal.requiredPerPeriod} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
-                        )}
-                        {goal.planEnabled && goal.requiredPerPeriod > 0 && (
-                          <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} />
-                        )}
-                        <Line type="monotone" dataKey="total" stroke={goal.color} strokeWidth={2} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-
                   <div className="space-y-2">
                     {goal.contributionHistory.length === 0 ? (
                       <p className="rounded-2xl border border-dashed border-border/50 p-4 text-sm text-muted-foreground">

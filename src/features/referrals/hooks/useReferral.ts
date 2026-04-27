@@ -6,6 +6,11 @@ import { toast } from 'sonner';
 
 const PENDING_REFERRAL_KEY = 'pendingReferralCode';
 
+interface RedeemReferralResponse {
+  success: boolean;
+  error?: string;
+}
+
 export function useReferral() {
     const { user } = useAuth();
     const { profile, refreshProfile, loading: profileLoading } = useProfile();
@@ -26,21 +31,20 @@ export function useReferral() {
         setLoading(true);
 
         try {
-            // Call atomic RPC function that handles all validation and updates
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { data, error } = await (supabase as any).rpc('redeem_referral_code', {
-                p_referral_code: code.toUpperCase(),
-                p_invitee_id: user.id
+// Call atomic RPC function that handles all validation and updates
+            const { data, error } = await supabase.rpc('redeem_referral_code', {
+              p_referral_code: code.toUpperCase(),
+              p_invitee_id: user.id
             });
 
             if (error) {
-                console.error('RPC error:', error);
-                toast.error('Failed to redeem code');
-                return false;
+              console.error('RPC error:', error);
+              toast.error('Failed to redeem code');
+              return false;
             }
 
             // Parse RPC response
-            const result = data as { success: boolean; error?: string };
+            const result = (data ?? { success: false }) as RedeemReferralResponse;
 
             if (!result.success) {
                 toast.error(result.error || 'Failed to redeem code');

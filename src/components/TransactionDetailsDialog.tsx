@@ -83,7 +83,7 @@ export function TransactionDetailsDialog({
   useEffect(() => {
     setLocalBudgetId(transaction?.budget_id ?? null);
     setLocalGoalId(transaction?.savings_goal_id ?? null);
-  }, [transaction?.id]);
+  }, [transaction?.id, transaction?.budget_id, transaction?.savings_goal_id]);
 
   const handleAssign = useCallback(
     async (entityType: 'budget' | 'goal', id: string) => {

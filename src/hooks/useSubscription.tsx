@@ -19,9 +19,6 @@ export function useSubscription() {
     presentPaywall: rcPresentPaywall,
   } = useRevenueCat();
 
-  // Hardcoded override for the owner account
-  const isSpecialUser = user?.email === 'sam103043@gmail.com';
-
   // Time-based referral Pro access check
   const hasActiveReferralGrant = profile.referral_granted_until
     ? new Date(profile.referral_granted_until) > new Date()
@@ -30,7 +27,6 @@ export function useSubscription() {
   const isPremium =
     (profile.subscription_type === 'pro' && profile.subscription_status === 'active') ||
     hasActiveReferralGrant ||
-    isSpecialUser ||
     isEntitled;
 
   /**

@@ -58,7 +58,7 @@ export function VoiceInputFlow({ open, onOpenChange, onComplete }: VoiceInputFlo
       void stop();
       reset();
     }
-  }, [open]);
+  }, [open, stop, reset]);
 
   const handleRecord = async () => {
     setError(null);

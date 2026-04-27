@@ -31,6 +31,12 @@ export function getEmailAuthRedirectUrl(path: string): string {
 }
 
 export function getOAuthRedirectUrl(): string {
+  // Prefer http(s) origin — handles web even when Capacitor.isNativePlatform() misreports
+  const origin = getWindowOrigin();
+  if (origin && (origin.startsWith('http://') || origin.startsWith('https://'))) {
+    return getEmailAuthRedirectUrl(AUTH_CALLBACK_PATH);
+  }
+
   if (Capacitor.isNativePlatform()) {
     return `${getAppUrlScheme()}://auth/callback`;
   }

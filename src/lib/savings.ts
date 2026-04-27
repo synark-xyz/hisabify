@@ -428,8 +428,24 @@ export async function getSavingsCategoryMap(): Promise<SavingsCategoryMap> {
     throw error;
   }
 
-  const savingsCategoryId = data?.find((category) => category.name === SAVINGS_CATEGORY_NAME)?.id;
-  const savingsReturnCategoryId = data?.find((category) => category.name === SAVINGS_RETURN_CATEGORY_NAME)?.id;
+  let savingsCategoryId = data?.find((category) => category.name === SAVINGS_CATEGORY_NAME)?.id;
+  let savingsReturnCategoryId = data?.find((category) => category.name === SAVINGS_RETURN_CATEGORY_NAME)?.id;
+
+  if (!savingsCategoryId || !savingsReturnCategoryId) {
+    const toUpsert = [
+      { name: SAVINGS_CATEGORY_NAME, icon: 'target', color: '#10B981', type: 'expense', category_type: 'savings' },
+      { name: SAVINGS_RETURN_CATEGORY_NAME, icon: 'wallet', color: '#3B82F6', type: 'income', category_type: 'savings_return' },
+    ];
+    const { data: seeded, error: seedError } = await supabase
+      .from('categories')
+      .upsert(toUpsert, { onConflict: 'name' })
+      .select('id, name');
+    if (seedError) {
+      throw seedError;
+    }
+    savingsCategoryId = seeded?.find((c) => c.name === SAVINGS_CATEGORY_NAME)?.id ?? savingsCategoryId;
+    savingsReturnCategoryId = seeded?.find((c) => c.name === SAVINGS_RETURN_CATEGORY_NAME)?.id ?? savingsReturnCategoryId;
+  }
 
   if (!savingsCategoryId || !savingsReturnCategoryId) {
     throw new Error('Savings categories are not configured');

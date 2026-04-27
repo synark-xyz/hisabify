@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useProfile } from '@/hooks/useProfile';
-import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { calculateHealthScore, HealthScoreResult } from '../utils/healthScoreLogic';
 
 export function useHealthScore(): { score: HealthScoreResult | null; loading: boolean } {
@@ -51,10 +50,6 @@ export function useHealthScore(): { score: HealthScoreResult | null; loading: bo
       return (count || 0) > 0;
     },
     enabled: !!user?.id,
-  });
-
-  useTransactionUpdateListener(() => {
-    queryClient.invalidateQueries({ queryKey: ['health-score-budget-transfer', user?.id] });
   });
 
   const score = useMemo(() => {

@@ -19,34 +19,38 @@ export function SavingsSnapshotCard({ onViewAll, onCreateFirst }: SavingsSnapsho
   const formatNumber = (n: number) => new Intl.NumberFormat(getLanguageLocale(language)).format(n);
 
   return (
-    <section className="rounded-3xl border border-border/50 bg-card p-5 shadow-card">
+    <section className="rounded-xl border border-border/50 bg-card p-4 shadow-card">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-foreground">{t('savingsSnapshot.title')}</h2>
-          <p className="text-xs text-muted-foreground">
-            {formatAmount(totalSaved)} / {formatAmount(totalTarget)} {t('savingsSnapshot.saved')}
-          </p>
+          {totalTarget > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {formatAmount(totalSaved)} / {formatAmount(totalTarget)} {t('savingsSnapshot.saved')}
+            </p>
+          )}
         </div>
-        <Button variant="ghost" size="sm" className="rounded-xl" onClick={activeGoals.length > 0 ? onViewAll : onCreateFirst}>
+        <Button variant="ghost" size="sm" className="rounded-lg" onClick={activeGoals.length > 0 ? onViewAll : onCreateFirst}>
           {activeGoals.length > 0 ? t('savingsSnapshot.viewAll') : t('savingsSnapshot.startFirstGoal')}
         </Button>
       </div>
 
       {activeGoals.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border/50 p-4 text-sm text-muted-foreground">
+        <div className="rounded-xl border border-dashed border-border/50 p-4 text-sm text-muted-foreground">
           {t('savingsSnapshot.startFirstGoal')}
         </div>
       ) : (
         <div className="space-y-3">
           {topActiveGoals.map((goal) => (
-            <div key={goal.id} className="rounded-2xl border border-border/50 p-3">
+            <div key={goal.id} className="rounded-xl border border-border/50 p-3">
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{goal.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t('savingsSnapshot.percentComplete', { percent: formatNumber(goal.percentage) })}
-                    {goal.daysLeft !== null ? ` • ${t('savingsSnapshot.daysLeft', { days: formatNumber(goal.daysLeft) })}` : ''}
-                  </p>
+                  {goal.percentage > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t('savingsSnapshot.percentComplete', { percent: formatNumber(goal.percentage) })}
+                      {goal.daysLeft !== null ? ` • ${t('savingsSnapshot.daysLeft', { days: formatNumber(goal.daysLeft) })}` : ''}
+                    </p>
+                  )}
                   {goal.planEnabled && goal.requiredPerPeriod > 0 && (
                     <p className="mt-1 text-xs text-muted-foreground">
                       {formatAmount(goal.requiredPerPeriod)} {t('savingsSnapshot.dueThisPeriod', { period: goal.periodLabel })}
@@ -71,20 +75,22 @@ export function SavingsSnapshotCard({ onViewAll, onCreateFirst }: SavingsSnapsho
             </div>
           ))}
 
-          <div className="rounded-2xl border border-border/50 bg-muted/20 p-3 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{t('savingsSnapshot.totalSaved')}</span>
-              <span className="font-semibold text-foreground">{formatAmount(totalSaved)}</span>
+          {totalTarget > 0 && (
+            <div className="rounded-xl border border-border/50 p-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{t('savingsSnapshot.totalSaved')}</span>
+                <span className="font-semibold text-foreground">{formatAmount(totalSaved)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-muted-foreground">{t('savingsSnapshot.totalTarget')}</span>
+                <span className="font-semibold text-foreground">{formatAmount(totalTarget)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-muted-foreground">{t('savingsSnapshot.overallProgress')}</span>
+                <span className="font-semibold text-foreground">{formatNumber(overallPercentage)}%</span>
+              </div>
             </div>
-            <div className="mt-1 flex items-center justify-between">
-              <span className="text-muted-foreground">{t('savingsSnapshot.totalTarget')}</span>
-              <span className="font-semibold text-foreground">{formatAmount(totalTarget)}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between">
-              <span className="text-muted-foreground">{t('savingsSnapshot.overallProgress')}</span>
-              <span className="font-semibold text-foreground">{formatNumber(overallPercentage)}%</span>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </section>

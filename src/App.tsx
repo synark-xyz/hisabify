@@ -29,7 +29,7 @@ import { DeleteAccountPage } from "@/pages/DeleteAccountPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
-import { useScreenTracking } from "@/hooks/useScreenTracking";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { getAuthCallbackRouteFromUrl } from "@/lib/authRedirect";
@@ -311,7 +311,7 @@ function RootLogic() {
   useAndroidBackButton(navigate);
 
   // Track screen views in Firebase Analytics
-  useScreenTracking();
+  useAnalytics();
 
   // Register Android device for FCM push notifications
   usePushNotifications();

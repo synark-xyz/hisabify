@@ -3,6 +3,7 @@ import { format, setMonth, setYear, setDate, getDaysInMonth, set } from "date-fn
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface DateSelectProps {
@@ -14,11 +15,6 @@ interface DateSelectProps {
     maxYear?: number;
 }
 
-const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-];
-
 export function DateSelect({
     value,
     onChange,
@@ -27,11 +23,15 @@ export function DateSelect({
     minYear = new Date().getFullYear() - 5,
     maxYear = new Date().getFullYear() + 20
 }: DateSelectProps) {
+    const { t } = useTranslation();
     // If no value provided, use today? Or null? The prop says Date | undefined, but onChange expects Date.
     // Standardizing on always returning a valid date if possible, or handling null implies input clearing.
     // For this specific use case (Budget/Goal), we usually want a date.
 
     const dateValue = value || new Date();
+    
+    const monthKeys = ['dateSelect.january', 'dateSelect.february', 'dateSelect.march', 'dateSelect.april', 'dateSelect.may', 'dateSelect.june', 'dateSelect.july', 'dateSelect.august', 'dateSelect.september', 'dateSelect.october', 'dateSelect.november', 'dateSelect.december'];
+    const months = monthKeys.map(key => t(key));
 
     const [day, setDay] = useState(dateValue.getDate().toString());
     const [month, setMonthVal] = useState(dateValue.getMonth().toString());

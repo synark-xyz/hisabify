@@ -32,7 +32,6 @@ import { exportToCSV } from '@/lib/exportUtils';
 import { subMonths, startOfMonth, endOfMonth, getMonth, getYear } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PremiumGuard } from '@/components/PremiumGuard';
-import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
@@ -50,7 +49,6 @@ export function AnalyticsPage() {
   const { currency, formatAmount } = useCurrency();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { variant } = useTheme();
   const navigate = useNavigate();
   const hasShownClampToastRef = useRef(false);
 
@@ -67,10 +65,6 @@ export function AnalyticsPage() {
     refetch,
   } = useDashboardData(dateRange);
   const hasTransactionData = transactions.length > 0;
-
-  useTransactionUpdateListener(() => {
-    refetch();
-  });
 
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const canUseCustomRange = canUseFeature({ isPremium }, 'analytics_custom_range');
@@ -142,19 +136,11 @@ export function AnalyticsPage() {
   };
 
   return (
-    <div className={cn("min-h-screen pb-page-content fade-bottom-overlay", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+    <>
       <PullToRefresh onRefresh={async () => { await refetch(); }}>
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <motion.header
-          className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 rounded-b-3xl"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-        </motion.header>
-
+        <div className="max-w-6xl mx-auto pb-page-content">
         <motion.main
-          className="px-4 space-y-6"
+          className="px-4 pt-4 space-y-6"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -207,9 +193,9 @@ export function AnalyticsPage() {
           <motion.section variants={itemVariants}>
             <Tabs defaultValue="insights" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12 card-3d">
-                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-accent data-[state=active]:text-glow">{t('analytics.tabInsights')}</TabsTrigger>
-                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:text-glow">{t('analytics.tabOverview')}</TabsTrigger>
-                <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] data-[state=active]:bg-card data-[state=active]:text-purple-500 data-[state=active]:text-glow relative overflow-hidden">
+                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px]">{t('analytics.tabInsights')}</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px]">{t('analytics.tabOverview')}</TabsTrigger>
+                <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] relative overflow-hidden">
                   {t('analytics.tabAdvanced')}
                   {!isPremium && !subscriptionLoading && <Lock className="ml-1.5 w-3 h-3 text-muted-foreground/50" />}
                 </TabsTrigger>
@@ -388,6 +374,6 @@ export function AnalyticsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

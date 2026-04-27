@@ -6,6 +6,7 @@ import { ArrowRight, Check, Clock, Crown, RotateCcw, Sparkles, Target, Wallet, L
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 const isNativePlatform = Capacitor.isNativePlatform();
@@ -95,6 +96,7 @@ function getUpgradeContent(source?: string) {
 }
 
 export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { purchasePlan, restorePurchases, revenueCatReady, showPaywall } = useSubscription();
   const { monthlyPrice, yearlyPrice } = useSubscriptionPricing();
@@ -188,18 +190,18 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
             <div className="mb-5 grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
                 <Wallet className="mx-auto h-4 w-4 text-emerald-500" />
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Unlimited</p>
-                <p className="mt-1 text-sm font-black text-foreground">Goals</p>
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('dialogs.upgrade.unlimited')}</p>
+                <p className="mt-1 text-sm font-black text-foreground">{t('dialogs.upgrade.goals')}</p>
               </div>
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
                 <Clock className="mx-auto h-4 w-4 text-sky-500" />
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Full</p>
-                <p className="mt-1 text-sm font-black text-foreground">History</p>
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('dialogs.upgrade.full')}</p>
+                <p className="mt-1 text-sm font-black text-foreground">{t('dialogs.upgrade.history')}</p>
               </div>
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
                 <Target className="mx-auto h-4 w-4 text-purple-500" />
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Smarter</p>
-                <p className="mt-1 text-sm font-black text-foreground">Planning</p>
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('dialogs.upgrade.smarter')}</p>
+                <p className="mt-1 text-sm font-black text-foreground">{t('dialogs.upgrade.planning')}</p>
               </div>
             </div>
 
@@ -228,7 +230,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
             {/* Pricing cards */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-purple-400 mb-2">Monthly</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-purple-400 mb-2">{t('dialogs.upgrade.monthly')}</p>
                 <div className="flex items-baseline gap-0.5 mb-1">
                   <span className="text-2xl font-black text-foreground">{monthlyPrice}</span>
                   <span className="text-xs text-muted-foreground">/mo</span>
@@ -241,7 +243,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                     Save 33%
                   </span>
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-400 mb-2">Annual</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-400 mb-2">{t('dialogs.upgrade.annual')}</p>
                 <div className="flex items-baseline gap-0.5 mb-1">
                   <span className="text-2xl font-black text-foreground">{yearlyPrice}</span>
                   <span className="text-xs text-muted-foreground">/yr</span>

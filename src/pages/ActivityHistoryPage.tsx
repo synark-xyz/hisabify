@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import type { ActivityLog } from '@/types';
 import {
   ArrowUpRight,
@@ -19,7 +20,7 @@ import {
   Archive,
   LayoutGrid,
 } from 'lucide-react';
-import { useActivityLog } from '@/hooks/useActivityLog';
+import { useActivityHistory } from '@/hooks/useActivityHistory';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
@@ -100,7 +101,7 @@ function ActivityGroup({ dateStr, activities, t }: { dateStr: string; activities
 }
 
 export function ActivityHistoryPage() {
-  const { activities, loading } = useActivityLog();
+  const { activities, loading } = useActivityHistory();
   const { t } = useTranslation();
   const navigate = useNavigate();
 

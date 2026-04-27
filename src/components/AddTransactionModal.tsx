@@ -1,11 +1,13 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/base-modal-sheet';
 import { TransactionForm } from '@/components/TransactionForm';
 import { VoiceInputFlow } from '@/components/VoiceInputFlow';
-import { ReceiptScannerModal, ScannedReceiptData } from '@/components/ReceiptScannerModal';
 import { useCurrency } from '@/hooks/useCurrency';
+import type { ScannedReceiptData } from '@/components/ReceiptScannerModal';
+
+const ReceiptScannerModal = lazy(() => import('@/components/ReceiptScannerModal').then(m => ({ default: m.ReceiptScannerModal })));
 
 interface TransactionFormState {
   type: 'expense' | 'income' | 'transfer';
@@ -193,11 +195,13 @@ export function AddTransactionModal({
         onOpenChange={setShowVoice}
         onComplete={handleVoiceComplete}
       />
-      <ReceiptScannerModal
-        open={showReceipt}
-        onOpenChange={setShowReceipt}
-        onScanComplete={handleReceiptComplete}
-      />
+      <Suspense fallback={null}>
+        <ReceiptScannerModal
+          open={showReceipt}
+          onOpenChange={setShowReceipt}
+          onScanComplete={handleReceiptComplete}
+        />
+      </Suspense>
     </>
   );
 }

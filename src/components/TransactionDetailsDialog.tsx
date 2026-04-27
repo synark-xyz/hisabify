@@ -17,6 +17,7 @@ import { PencilSimple, Trash, ChartBar } from '@phosphor-icons/react';
 import { AssignmentSheet } from '@/components/AssignmentSheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface TransactionDetailsDialogProps {
   transaction: Transaction | null;
@@ -59,6 +60,7 @@ export function TransactionDetailsDialog({
   onEdit,
   onDelete,
 }: TransactionDetailsDialogProps) {
+  const { t } = useTranslation();
   const { formatAmount, currency } = useCurrency();
   // Note: useBudgets() is called here independently (not shared with parent page)
   // since TransactionDetailsDialog is opened episodically and useBudgets is not
@@ -81,7 +83,7 @@ export function TransactionDetailsDialog({
   useEffect(() => {
     setLocalBudgetId(transaction?.budget_id ?? null);
     setLocalGoalId(transaction?.savings_goal_id ?? null);
-  }, [transaction?.id]);
+  }, [transaction?.id, transaction?.budget_id, transaction?.savings_goal_id]);
 
   const handleAssign = useCallback(
     async (entityType: 'budget' | 'goal', id: string) => {
@@ -109,7 +111,7 @@ export function TransactionDetailsDialog({
       if (error) {
         setLocalBudgetId(transaction.budget_id ?? null);
         setLocalGoalId(transaction.savings_goal_id ?? null);
-        toast({ title: 'Failed to update link', variant: 'destructive' });
+        toast({ title: t('dialogs.transactionDetails.failedUpdateLink'), variant: 'destructive' });
       }
     },
     [transaction, toast]
@@ -129,7 +131,7 @@ export function TransactionDetailsDialog({
     if (error) {
       setLocalBudgetId(transaction.budget_id ?? null);
       setLocalGoalId(transaction.savings_goal_id ?? null);
-      toast({ title: 'Failed to remove link', variant: 'destructive' });
+      toast({ title: t('dialogs.transactionDetails.failedRemoveLink'), variant: 'destructive' });
     }
   }, [transaction, toast]);
 
@@ -267,7 +269,7 @@ export function TransactionDetailsDialog({
           {/* Tags */}
           {tags.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground w-24 shrink-0">Tags</span>
+              <span className="text-xs text-muted-foreground w-24 shrink-0">{t('dialogs.transactionDetails.tags')}</span>
               <div className="flex flex-wrap gap-1">
                 {tags.map((tag) => (
                   <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent font-medium">
@@ -286,7 +288,7 @@ export function TransactionDetailsDialog({
           {/* Note */}
           {cleanNote && (
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Note</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('dialogs.transactionDetails.note')}</p>
               <p className="text-sm bg-muted/50 rounded-xl px-3 py-2">{cleanNote}</p>
             </div>
           )}
@@ -294,7 +296,7 @@ export function TransactionDetailsDialog({
           {/* Receipt image */}
           {transaction.receipt_url && (
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Receipt</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('dialogs.transactionDetails.receipt')}</p>
               <img
                 src={transaction.receipt_url}
                 alt="Receipt"

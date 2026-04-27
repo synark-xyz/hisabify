@@ -1,16 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { injectM3Theme, DEFAULT_SEED } from '@/lib/materialTheme';
 
 export type Theme = 'dark' | 'light' | 'system';
 export type ResolvedTheme = 'dark' | 'light';
-export type ThemeVariant = 'default' | 'cyberpunk';
 
 interface ThemeContextType {
   theme: Theme;
   resolvedTheme: ResolvedTheme;
-  variant: ThemeVariant;
+  seedColor: string;
   setTheme: (theme: Theme) => void;
-  setVariant: (variant: ThemeVariant) => void;
+  setSeedColor: (hex: string) => void;
   toggleTheme: () => void;
 }
 
@@ -18,22 +18,20 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem('theme') as Theme;
-    return stored || 'dark';
+    return (localStorage.getItem('theme') as Theme) || 'dark';
   });
 
-  const [variant, setVariantState] = useState<ThemeVariant>(() => {
-    const stored = localStorage.getItem('theme_variant') as ThemeVariant;
-    return stored || 'default';
+  const [seedColor, setSeedColorState] = useState<string>(() => {
+    return localStorage.getItem('theme_seed_color') || DEFAULT_SEED;
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const resolveTheme = useCallback((currentTheme: Theme): ResolvedTheme => {
-    if (currentTheme === 'system') {
+  const resolveTheme = useCallback((t: Theme): ResolvedTheme => {
+    if (t === 'system') {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
-    return currentTheme as ResolvedTheme;
+    return t as ResolvedTheme;
   }, []);
 
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveTheme(theme));
@@ -43,160 +41,71 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme, resolveTheme]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
-      if (theme === 'system') {
-        setResolvedTheme(resolveTheme('system'));
-      }
+      if (theme === 'system') setResolvedTheme(resolveTheme('system'));
     };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    mq.addEventListener('change', handleChange);
+    return () => mq.removeEventListener('change', handleChange);
   }, [theme, resolveTheme]);
 
+  // Load persisted theme from DB on mount
   useEffect(() => {
-    const initTheme = async () => {
+    const init = async () => {
       const stored = localStorage.getItem('theme') as Theme;
-      const hasExplicitChoice = stored && ['dark', 'light', 'system'].includes(stored);
+      const hasExplicit = stored && ['dark', 'light', 'system'].includes(stored);
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setIsInitialized(true);
-        return;
-      }
+      if (!user) { setIsInitialized(true); return; }
 
       const { data } = await supabase
         .from('users')
-        .select('theme, theme_variant')
+        .select('theme')
         .eq('user_id', user.id)
         .single();
 
-      if (hasExplicitChoice) {
+      if (hasExplicit) {
         setThemeState(stored);
-        const storedVariant = localStorage.getItem('theme_variant') as ThemeVariant;
-        if (storedVariant) setVariantState(storedVariant);
-
         if (data?.theme && data.theme !== stored) {
-          await supabase
-            .from('users')
-            .update({ theme: stored })
-            .eq('user_id', user.id);
-        }
-        if (data?.theme_variant && storedVariant && data.theme_variant !== storedVariant) {
-          await supabase
-            .from('users')
-            .update({ theme_variant: storedVariant })
-            .eq('user_id', user.id);
+          await supabase.from('users').update({ theme: stored }).eq('user_id', user.id);
         }
       } else if (data?.theme && ['dark', 'light', 'system'].includes(data.theme)) {
-        setThemeState(data.theme);
+        setThemeState(data.theme as Theme);
         localStorage.setItem('theme', data.theme);
-        if (data?.theme_variant && ['default', 'cyberpunk'].includes(data.theme_variant)) {
-          setVariantState(data.theme_variant);
-          localStorage.setItem('theme_variant', data.theme_variant);
-        }
       }
 
       setIsInitialized(true);
     };
-
-    initTheme();
+    init();
   }, []);
 
-  useEffect(() => {
-    const initTheme = async () => {
-      const stored = localStorage.getItem('theme') as Theme;
-      const hasExplicitChoice = stored && ['dark', 'light'].includes(stored);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setIsInitialized(true);
-        return;
-      }
-
-      const { data } = await supabase
-        .from('users')
-        .select('theme, theme_variant')
-        .eq('user_id', user.id)
-        .single();
-
-      if (hasExplicitChoice) {
-        setThemeState(stored);
-        const storedVariant = localStorage.getItem('theme_variant') as ThemeVariant;
-        if (storedVariant) setVariantState(storedVariant);
-
-        if (data?.theme && data.theme !== stored) {
-          await supabase
-            .from('users')
-            .update({ theme: stored })
-            .eq('user_id', user.id);
-        }
-        if (data?.theme_variant && storedVariant && data.theme_variant !== storedVariant) {
-          await supabase
-            .from('users')
-            .update({ theme_variant: storedVariant })
-            .eq('user_id', user.id);
-        }
-      } else if (data?.theme && ['dark', 'light'].includes(data.theme)) {
-        setThemeState(data.theme);
-        localStorage.setItem('theme', data.theme);
-        if (data?.theme_variant && ['default', 'cyberpunk'].includes(data.theme_variant)) {
-          setVariantState(data.theme_variant);
-          localStorage.setItem('theme_variant', data.theme_variant);
-        }
-      }
-
-      setIsInitialized(true);
-    };
-
-    initTheme();
-  }, []);
-
+  // Apply theme class to DOM + sync to DB
   useEffect(() => {
     if (!isInitialized) return;
     const root = document.documentElement;
-    const effectiveTheme = resolvedTheme;
     root.classList.remove('light', 'dark');
-    root.classList.add(effectiveTheme);
+    root.classList.add(resolvedTheme);
     localStorage.setItem('theme', theme);
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        supabase
-          .from('users')
-          .update({ theme: theme })
-          .eq('user_id', user.id)
-          .then(({ error }) => {
-            if (error) console.warn('Theme sync failed:', error);
-          });
+        supabase.from('users').update({ theme }).eq('user_id', user.id)
+          .then(({ error }) => { if (error) console.warn('Theme sync failed:', error); });
       }
     });
   }, [theme, resolvedTheme, isInitialized]);
 
+  // Inject M3 CSS vars whenever seed or dark/light changes
   useEffect(() => {
-    if (!isInitialized) return;
-    const root = document.documentElement;
-    if (variant === 'default') {
-      root.removeAttribute('data-variant');
-    } else {
-      root.setAttribute('data-variant', variant);
-    }
-    localStorage.setItem('theme_variant', variant);
+    injectM3Theme(seedColor, resolvedTheme === 'dark');
+  }, [seedColor, resolvedTheme]);
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase
-          .from('users')
-          .update({ theme_variant: variant })
-          .eq('user_id', user.id)
-          .then(({ error }) => {
-            if (error) console.warn('Theme variant sync failed:', error);
-          });
-      }
-    });
-  }, [variant, isInitialized]);
+  const setTheme = (t: Theme) => setThemeState(t);
 
-  const setTheme = (newTheme: Theme) => setThemeState(newTheme);
-  const setVariant = (newVariant: ThemeVariant) => setVariantState(newVariant);
+  const setSeedColor = (hex: string) => {
+    setSeedColorState(hex);
+    localStorage.setItem('theme_seed_color', hex);
+  };
 
   const toggleTheme = () => {
     const effective = theme === 'system' ? resolvedTheme : theme;
@@ -204,17 +113,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, variant, setTheme, setVariant, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, seedColor, setTheme, setSeedColor, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used within a ThemeProvider');
+  return ctx;
 }
-

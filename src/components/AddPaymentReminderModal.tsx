@@ -189,7 +189,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold uppercase tracking-wider opacity-70">Quick Fill</Label>
+                  <Label className="text-xs font-bold uppercase tracking-wider opacity-70">{t('reminders.quickFill')}</Label>
                   <button
                     type="button"
                     onClick={() => setShowQuickFill(!showQuickFill)}
@@ -348,9 +348,9 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl">
-                        <SelectItem value="weekly" className="rounded-xl">Weekly</SelectItem>
-                        <SelectItem value="monthly" className="rounded-xl">Monthly</SelectItem>
-                        <SelectItem value="yearly" className="rounded-xl">Yearly</SelectItem>
+                        <SelectItem value="weekly" className="rounded-xl">{t('reminders.reminderIntervalWeekly')}</SelectItem>
+                        <SelectItem value="monthly" className="rounded-xl">{t('reminders.reminderIntervalMonthly')}</SelectItem>
+                        <SelectItem value="yearly" className="rounded-xl">{t('reminders.reminderIntervalYearly')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </motion.div>
@@ -358,7 +358,7 @@ export function AddPaymentReminderModal({ open, onOpenChange, onSuccess, reminde
               </AnimatePresence>
 
               <div className="space-y-1.5">
-                <Label htmlFor="note" className="text-xs font-bold uppercase tracking-wider opacity-70">Note (optional)</Label>
+                <Label htmlFor="note" className="text-xs font-bold uppercase tracking-wider opacity-70">{t('reminders.reminderNoteLabel')}</Label>
                 <Input
                   id="note"
                   value={note}

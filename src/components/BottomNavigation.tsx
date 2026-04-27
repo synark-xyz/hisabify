@@ -25,7 +25,7 @@ export function BottomNavigation() {
     <AnimatePresence>
       {!isKeyboardOpen && (
         <motion.nav
-          className="fixed bottom-0 left-0 right-0 z-40 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg"
+          className="fixed bottom-0 left-0 right-0 z-40 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg lg:hidden"
           initial={{ y: 100 }}
           animate={{ y: 0 }}
           exit={{ y: 100 }}

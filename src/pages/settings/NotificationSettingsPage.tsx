@@ -8,7 +8,6 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { requestNotificationPermission, sendNotification } from '@/lib/notifications';
 import { setBudgetAlertsEnabled } from '@/lib/notificationManager';
-import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -17,7 +16,6 @@ export function NotificationSettingsPage() {
     const { user } = useAuth();
     const { t } = useTranslation();
     const { toast } = useToast();
-    const { variant } = useTheme();
     const currentTokenRef = useRef<string | null>(null);
 
     const [preferences, setPreferences] = useState({
@@ -144,7 +142,7 @@ export function NotificationSettingsPage() {
     };
 
     return (
-        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+        <div className={cn("min-h-screen pb-page-content", "bg-background")}>
             <Header title="Notifications" showBack />
             <main className="px-4 py-6 space-y-6">
 
@@ -185,8 +183,8 @@ export function NotificationSettingsPage() {
                 {/* Push Notifications */}
                 <div className="flex items-center justify-between p-4 bg-card rounded-2xl border border-border/50">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-purple-500/10 rounded-xl">
-                            <Smartphone className="w-5 h-5 text-purple-500" />
+                        <div className="p-2 bg-primary/10 rounded-xl">
+                            <Smartphone className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                             <p className="font-bold text-foreground">{t('notificationSettings.pushNotifications')}</p>

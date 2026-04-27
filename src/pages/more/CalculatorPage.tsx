@@ -17,6 +17,7 @@ type CalcAction =
   | { type: 'operation'; payload: string }
   | { type: 'equals' }
   | { type: 'clear' }
+  | { type: 'clearEntry' }
   | { type: 'decimal' }
   | { type: 'percent' }
   | { type: 'toggleSign' };
@@ -108,6 +109,13 @@ function calcReducer(state: CalcState, action: CalcAction): CalcState {
     }
     case 'clear':
       return initialState;
+    case 'clearEntry': {
+      const current = state.display;
+      if (current.length === 1 || (current.length === 2 && current.startsWith('-'))) {
+        return { ...state, display: '0' };
+      }
+      return { ...state, display: current.slice(0, -1) };
+    }
     case 'percent': {
       const val = parseFloat(state.display) / 100;
       return { ...state, display: String(val), waitingForOperand: true };
@@ -173,22 +181,22 @@ export function CalculatorPage() {
         )}
 
         {/* Keypad */}
-        <div className="grid grid-cols-4 gap-3">
-          {/* Row 1 */}
-          <Button variant="outline" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'clear' })}>
+        <div className="grid grid-cols-4 gap-2">
+          {/* Row 1: AC CE +/- % */}
+          <Button variant="outline" className="h-12 text-sm font-medium" onClick={() => dispatch({ type: 'clear' })}>
             {t('calTool.ac')}
           </Button>
-          <Button variant="outline" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'toggleSign' })}>
+          <Button variant="outline" className="h-12 text-sm font-medium" onClick={() => dispatch({ type: 'clearEntry' })}>
+            {t('calTool.ce')}
+          </Button>
+          <Button variant="outline" className="h-12 text-sm font-medium" onClick={() => dispatch({ type: 'toggleSign' })}>
             {t('calTool.toggleSign')}
           </Button>
-          <Button variant="outline" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'percent' })}>
+          <Button variant="outline" className="h-12 text-sm font-medium" onClick={() => dispatch({ type: 'percent' })}>
             {t('calTool.percent')}
           </Button>
-          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '÷' })}>
-            {t('calTool.divide')}
-          </Button>
 
-          {/* Row 2 */}
+          {/* Row 2: 7 8 9 ÷ */}
           <Button variant="secondary" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'digit', payload: '7' })}>
             7
           </Button>
@@ -198,11 +206,11 @@ export function CalculatorPage() {
           <Button variant="secondary" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'digit', payload: '9' })}>
             9
           </Button>
-          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '×' })}>
-            {t('calTool.multiply')}
+          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '÷' })}>
+            {t('calTool.divide')}
           </Button>
 
-          {/* Row 3 */}
+          {/* Row 3: 4 5 6 × */}
           <Button variant="secondary" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'digit', payload: '4' })}>
             4
           </Button>
@@ -212,11 +220,11 @@ export function CalculatorPage() {
           <Button variant="secondary" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'digit', payload: '6' })}>
             6
           </Button>
-          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '-' })}>
-            {t('calTool.subtract')}
+          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '×' })}>
+            {t('calTool.multiply')}
           </Button>
 
-          {/* Row 4 */}
+          {/* Row 4: 1 2 3 - */}
           <Button variant="secondary" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'digit', payload: '1' })}>
             1
           </Button>
@@ -226,18 +234,23 @@ export function CalculatorPage() {
           <Button variant="secondary" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'digit', payload: '3' })}>
             3
           </Button>
-          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '+' })}>
-            {t('calTool.add')}
+          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '-' })}>
+            {t('calTool.subtract')}
           </Button>
 
-          {/* Row 5 */}
+          {/* Row 5: 0 + = (0 spans 2, others 1 each) */}
           <Button variant="secondary" className="h-14 text-lg font-medium col-span-2" onClick={() => dispatch({ type: 'digit', payload: '0' })}>
             0
           </Button>
           <Button variant="secondary" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'decimal' })}>
             {t('calTool.decimal')}
           </Button>
-          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'equals' })}>
+          <Button variant="default" className="h-14 text-lg font-medium" onClick={() => dispatch({ type: 'operation', payload: '+' })}>
+            {t('calTool.add')}
+          </Button>
+
+          {/* Row 6: = (full width) */}
+          <Button variant="default" className="h-14 text-xl font-bold col-span-4" onClick={() => dispatch({ type: 'equals' })}>
             {t('calTool.equals')}
           </Button>
         </div>

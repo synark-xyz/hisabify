@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { CustomerCenterTrigger } from '@/components/CustomerCenterTrigger';
@@ -140,10 +139,9 @@ export function PersonalPage() {
         setPasswordLoading(false);
     };
 
-    const { variant } = useTheme();
 
     return (
-        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+        <div className={cn("min-h-screen pb-page-content", "bg-background")}>
 
             <main className="px-4 py-6 space-y-6">
 

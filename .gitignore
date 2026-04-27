@@ -23,6 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+#keystore files
+keystore_info/
+*.jks
+*.keystore
+
 # Environment variables
 .env
 .env.test
@@ -31,6 +36,7 @@ dist-ssr
 /bug-evd
 
 # Playwright
+.playwright-mcp/
 playwright-report/
 test-results/
 e2e/.auth/

@@ -478,13 +478,13 @@ export function AddSavingsGoalModal({
                                   className="grid grid-cols-3 rounded-xl bg-muted/30 p-1"
                                 >
                                   <ToggleGroupItem value="daily" className="rounded-lg text-xs font-bold uppercase tracking-wider">
-                                    Daily
+                                    {t('recurring.daily')}
                                   </ToggleGroupItem>
                                   <ToggleGroupItem value="weekly" className="rounded-lg text-xs font-bold uppercase tracking-wider">
-                                    Weekly
+                                    {t('savings.weekly')}
                                   </ToggleGroupItem>
                                   <ToggleGroupItem value="monthly" className="rounded-lg text-xs font-bold uppercase tracking-wider">
-                                    Monthly
+                                    {t('savings.monthly')}
                                   </ToggleGroupItem>
                                 </ToggleGroup>
                               </FormControl>
@@ -511,7 +511,7 @@ export function AddSavingsGoalModal({
                               </p>
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div className="rounded-lg bg-background/70 px-3 py-2">
-                                  <p className="text-muted-foreground">Remaining to save</p>
+                                  <p className="text-muted-foreground">{t('savings.remainingToSave')}</p>
                                   <p className="font-semibold text-foreground">
                                     {(currencyData[currency]?.symbol || "$")}{amountRemaining.toFixed(2)}
                                   </p>
@@ -647,8 +647,8 @@ export function AddSavingsGoalModal({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="weekly">Weekly</SelectItem>
-                              <SelectItem value="monthly">Monthly</SelectItem>
+<SelectItem value="weekly">{t('savings.weekly')}</SelectItem>
+                                <SelectItem value="monthly">{t('savings.monthly')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormItem>

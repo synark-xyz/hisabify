@@ -56,11 +56,13 @@ export function BudgetStatusCard({ status }: BudgetStatusCardProps) {
             <span>Spent: {formatAmount(status.budget.spent)}</span>
             <span>Limit: {formatAmount(status.budget.amount)}</span>
           </div>
-          <div className="w-full bg-white dark:bg-gray-800 rounded-full h-2">
-            <div
-              className={`h-2 rounded-full ${progressColors[status.status]}`}
-              style={{ width: `${Math.min(status.budget.percentage, 100)}%` }}
-            />
+          <div className="w-full px-2"> {/* Extra padding to prevent clipping */}
+            <div className="bg-white dark:bg-gray-800 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full ${progressColors[status.status]}`}
+                style={{ width: `${Math.min(status.budget.percentage, 100)}%` }}
+              />
+            </div>
           </div>
         </div>
       )}

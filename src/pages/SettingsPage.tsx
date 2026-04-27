@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +12,6 @@ export function SettingsPage() {
     const navigate = useNavigate();
     const { signOut } = useAuth();
     const { toast } = useToast();
-    const { variant } = useTheme();
     const { t } = useTranslation();
 
     const handleSignOut = async () => {
@@ -23,64 +21,68 @@ export function SettingsPage() {
     };
 
     const menuItems = [
-        { id: 'preferences', icon: Settings, label: t('settings.preferences'), path: '/settings/preferences', color: 'bg-blue-500/10 text-blue-500' },
-        { id: 'notifications', icon: Bell, label: t('notifications.notifications'), path: '/settings/notifications', color: 'bg-indigo-500/10 text-indigo-500' },
+        { id: 'preferences', icon: Settings, label: t('settings.preferences'), path: '/settings/preferences', color: 'bg-accent/10 text-accent' },
+        { id: 'notifications', icon: Bell, label: t('notifications.notifications'), path: '/settings/notifications', color: 'bg-primary/10 text-primary' },
     ];
 
     const supportItems = [
-        { id: 'help', icon: Headset, label: t('common.helpSupport'), path: '/support', color: 'bg-emerald-500/10 text-emerald-500' },
-        { id: 'privacy', icon: Shield, label: t('page.privacyPolicy'), path: '/privacy', color: 'bg-emerald-500/10 text-emerald-500' },
-        { id: 'faq', icon: CircleHelp, label: t('page.faq'), path: '/faq', color: 'bg-emerald-500/10 text-emerald-500' },
+        { id: 'help', icon: Headset, label: t('common.helpSupport'), path: '/support', color: 'bg-accent/10 text-accent' },
+        { id: 'privacy', icon: Shield, label: t('page.privacyPolicy'), path: '/privacy', color: 'bg-accent/10 text-accent' },
+        { id: 'faq', icon: CircleHelp, label: t('page.faq'), path: '/faq', color: 'bg-accent/10 text-accent' },
     ];
 
     return (
-        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+        <div className={cn("min-h-screen pb-page-content", "bg-background")}>
             <Header title={t('settings.title')} showBack />
             <main className="px-4 py-6 space-y-8">
 
                 {/* General Settings */}
                 <section className="space-y-4">
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">{t('settingsPage.general')}</h3>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest pl-4">{t('settingsPage.general')}</h3>
                     <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm card-3d transition-all">
+                        <div className="px-4">
                         {menuItems.map((item, idx) => (
                             <motion.div
                                 key={item.id}
                                 onClick={() => navigate(item.path)}
-                                className={`flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors ${idx !== menuItems.length - 1 ? 'border-b border-border/50' : ''}`}
+                                className={`flex items-center justify-between py-4 cursor-pointer hover:bg-muted/50 transition-colors ${idx !== menuItems.length - 1 ? 'border-b border-border/50' : ''}`}
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-xl ${item.color}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.color}`}>
                                         <item.icon className="w-5 h-5 icon-glow" />
                                     </div>
                                     <span className="font-semibold text-foreground">{item.label}</span>
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
+                                <ChevronRight className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
                             </motion.div>
                         ))}
+                        </div>
                     </div>
                 </section>
 
                 {/* Support */}
                 <section className="space-y-4">
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest px-1">{t('settingsPage.support')}</h3>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest pl-4">{t('settingsPage.support')}</h3>
                     <div className="bg-card rounded-2xl border border-border/50 overflow-hidden shadow-sm card-3d transition-all">
+                        <div className="px-4">
                         {supportItems.map((item, idx) => (
                             <motion.div
                                 key={item.id}
                                 onClick={() => navigate(item.path)}
-                                className={`flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors ${idx !== supportItems.length - 1 ? 'border-b border-border/50' : ''}`}
+                                className={`flex items-center justify-between py-4 cursor-pointer hover:bg-muted/50 transition-colors ${idx !== supportItems.length - 1 ? 'border-b border-border/50' : ''}`}
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-xl ${item.color}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.color}`}>
                                         <item.icon className="w-5 h-5 icon-glow" />
                                     </div>
                                     <span className="font-semibold text-foreground">{item.label}</span>
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
+                                <ChevronRight className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
                             </motion.div>
                         ))}
+                        </div>
                     </div>
                 </section>
 

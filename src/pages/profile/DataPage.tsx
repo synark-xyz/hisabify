@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 
 const cardVariants = {
@@ -29,7 +28,6 @@ const cardVariants = {
 };
 
 export function DataPage() {
-    const { variant } = useTheme();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, signOut } = useAuth();
@@ -134,7 +132,7 @@ export function DataPage() {
     };
 
     return (
-        <div className={cn("min-h-screen", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+        <div className={cn("min-h-screen", "bg-background")}>
             <main className="px-4 py-6 space-y-3 max-w-lg mx-auto">
 
                 {/* ── Your Data ─────────────────────────────────────────── */}

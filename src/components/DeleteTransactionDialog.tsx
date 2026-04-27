@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 import { Transaction } from '@/types';
 
 interface DeleteTransactionDialogProps {
@@ -24,6 +25,7 @@ interface DeleteTransactionDialogProps {
 export function DeleteTransactionDialog({ open, onOpenChange, transaction, onSuccess }: DeleteTransactionDialogProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleDelete = async () => {
     if (!transaction) return;
@@ -40,12 +42,12 @@ export function DeleteTransactionDialog({ open, onOpenChange, transaction, onSuc
       import('@/lib/analytics').then(({ analytics, AnalyticsEvents }) => {
         analytics.logEvent(AnalyticsEvents.DELETE_TRANSACTION);
       }).catch(() => {});
-      toast({ title: 'Transaction deleted' });
+      toast({ title: t('dialogs.deleteTransaction.toastDeleted') });
       onSuccess();
       onOpenChange(false);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      toast({ title: 'Error', description: message, variant: 'destructive' });
+      const message = error instanceof Error ? error.message : t('errors.generic');
+      toast({ title: t('dialogs.deleteTransaction.toastError'), description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -55,19 +57,19 @@ export function DeleteTransactionDialog({ open, onOpenChange, transaction, onSuc
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+          <AlertDialogTitle>{t('dialogs.deleteTransaction.title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete this transaction? This action cannot be undone.
+            {t('dialogs.deleteTransaction.confirmDesc')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={loading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

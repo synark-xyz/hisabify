@@ -267,10 +267,25 @@
     "historyLimitTitle": "ইতিহাসের সীমা পৌঁছে গেছে",
     "historyLimitDesc": "বিনামূল্যে পরিকল্পনা শেষ ৩০ দিন সমর্থন করে। সম্পূর্ণ ইতিহাসের জন্য আপগ্রেড করুন।",
     "calendarSelected": "নির্বাচিত",
-    "calendarSwipeHint": "আরো দেখতে সোয়াইপ করুন"
+    "calendarSwipeHint": "আরো দেখতে সোয়াইপ করুন",
+    "dateSelect": {
+      "january": "জানুয়ারি",
+      "february": "ফেব্রুয়ারি",
+      "march": "মার্চ",
+      "april": "এপ্রিল",
+      "may": "মে",
+      "june": "জুন",
+      "july": "জুলাই",
+      "august": "আগস্ট",
+      "september": "সেপ্টেম্বর",
+      "october": "অক্টোবর",
+      "november": "নভেম্বর",
+      "december": "ডিসেম্বর"
+    }
   },
   "budget": {
     "title": "বাজেট",
+    "used": "ব্যবহৃত",
     "monthly": "মাসিক",
     "weekly": "সাপ্তাহিক",
     "yearly": "বার্ষিক",
@@ -492,20 +507,24 @@
     "languageDesc": "আপনার পছন্দের ভাষা নির্বাচন করুন",
     "logout": "লগ আউট",
     "privacy": "গোপনীয়তা",
-    "proFeatureLocked": "Pro বৈশিষ্ট্য লক করা",
-    "proFeatureLockedDesc": "Cyberpunk থিম আনলক করতে Pro-তে আপগ্রেড করুন!",
+    "accentColor": "অ্যাকসেন্ট রং",
+    "accentColorDesc": "আপনার অ্যাপের রঙের থিম বেছে নিন",
+    "colorViolet": "বেগুনি",
+    "colorBlue": "নীল",
+    "colorTeal": "টিল",
+    "colorGreen": "সবুজ",
+    "colorRed": "লাল",
+    "colorOrange": "কমলা",
+    "colorPink": "গোলাপি",
+    "colorIndigo": "ইন্ডিগো",
+    "colorBrown": "বাদামি",
+    "colorCyan": "সায়ান",
     "security": "নিরাপত্তা",
-    "styleCyberpunk": "সাইবারপাঙ্ক",
-    "styleCyberpunkDesc": "ভবিষ্যত স্বর্ণ এবং নীল-সবুজ",
-    "styleDefault": "ডিফল্ট",
-    "styleDefaultDesc": "পরিষ্কার এবং আধুনিক",
     "theme": "থিম",
     "themeDark": "অন্ধকার",
     "themeDesc": "আপনার পছন্দের থিম বেছে নিন",
     "themeLight": "হালকা",
     "themeSystem": "সিস্টেম",
-    "visualStyle": "ভিজ্যুয়াল স্টাইল",
-    "visualStyleDesc": "অ্যাপ নান্দনিকতা কাস্টমাইজ করুন",
     "weekMonday": "সোমবার",
     "weekTuesday": "মঙ্গলবার",
     "weekWednesday": "বুধবার",
@@ -755,6 +774,80 @@
     "average": "গড়",
     "biggestExpenseCategory": "সবচেয়ে বড় খরচ ক্যাটেগরি",
     "budgetRemaining": "বাকি বাজেট",
+    "dialogs": {
+      "budgetExceed": {
+        "title": "বাজেট সীমা অতিক্রম",
+        "expenseAmount": "খরচের পরিমাণ:",
+        "budgetRemaining": "বাজেট বাকি:",
+        "overBudgetBy": "বাজেট অতিক্রম করেছে:",
+        "addAnyway": "তবু যোগ করুন",
+        "expenseWillExceed": "এই খরচ আপনার {{name}} বাজেট অতিক্রম করবে।"
+      },
+      "dashboard": {
+        "financialSummary": "আর্থিক সারসংক্ষেপ",
+        "quickInsights": "দ্রুত অন্তর্দৃষ্টি",
+        "dailyAverage": "গড় দৈনিক (এই মাস)",
+        "monthlySavingsRate": "মাসিক সঞ্চয়ের হার",
+        "incomeExpenseRatio": "আয়/খরচ অনুপাত",
+        "topExpenses": "শীর্ষ খরচ",
+        "merchant": "ব্যবসায়ী",
+        "category": "বিভাগ",
+        "amount": "পরিমাণ",
+        "noExpensesYet": "এখনও কোনো খরচ নেই",
+        "budgetVsActual": "বাজেট বনাম প্রকৃত",
+        "budgetLabel": "বাজেট:",
+        "actualLabel": "প্রকৃত:",
+        "totalIncome": "মোট আয়",
+        "addIncomeStart": "ট্র্যাকিং শুরু করতে আয় যোগ করুন",
+        "totalExpenses": "মোট খরচ",
+        "noExpensesRecorded": "এখনও কোনো খরচ রেকর্ড হয়নি",
+        "spent": "খরচ হয়েছে",
+        "earned": "উপার্জন হয়েছে",
+        "underBudget": "বাজেটের মধ্যে"
+      },
+      "deleteBudget": {
+        "title": "বাজেট মুছুন",
+        "confirmTitle": "\"{{name}}\" মুছবেন?",
+        "confirmDesc": "এই কাজ পুনরায় করা যায় না। এটি আপনার বাজেট এবং এর অগ্রগতি স্থায়ীভাবে মুছে দেবে।"
+      },
+      "deleteTransaction": {
+        "title": "লেনদেন মুছুন",
+        "confirmTitle": "এই লেনদেন মুছবেন?",
+        "confirmDesc": "এই কাজ পুনরায় করা যায় না।",
+        "toastDeleted": "লেনদেন মুছে ফেলা হয়েছে",
+        "toastError": "লেনদেন মুছতে ত্রুটি"
+      },
+      "editRecurring": {
+        "title": "পুনরাবৃত্ত রিমাইন্ডার সম্পাদনা করবেন?"
+      },
+      "transactionDetails": {
+        "tags": "ট্যাগ",
+        "note": "নোট",
+        "receipt": "রসিদ",
+        "failedUpdateLink": "লিংক আপডেট করতে ব্যর্থ",
+        "failedRemoveLink": "লিংক সরাতে ব্যর্থ"
+      },
+      "upgrade": {
+        "unlimited": "সীমাহীন",
+        "goals": "লক্ষ্য",
+        "full": "সম্পূর্ণ",
+        "history": "ইতিহাস",
+        "smarter": "স্মার্ট",
+        "planning": "পরিকল্পনা",
+        "monthly": "মাসিক",
+        "annual": "বার্ষিক",
+        "purchaseError": "ক্রয় ত্রুটি",
+        "restoreError": "পুনরুদ্ধার ত্রুটি"
+      },
+      "paymentReminder": {
+        "noReminders": "কোনো পেমেন্ট রিমাইন্ডার পাওয়া যায়নি",
+        "deleteReminder": "রিমাইন্ডার মুছুন",
+        "toastDeleted": "রিমাইন্ডার মুছে ফেলা হয়েছে"
+      },
+      "paymentCarousel": {
+        "noReminder": "এখনও কোনো রিমাইন্ডার সেট করা হয়নি"
+      }
+    },
     "categoryBreakdown": "বিভাগ বিশ্লেষণ",
     "chartModeBoth": "উভয়",
     "chartModeExpenses": "খরচ",
@@ -817,6 +910,7 @@
     "tabAdvanced": "উন্নত",
     "tabInsights": "বিশ্লেষণ",
     "tabOverview": "সংক্ষিপ্ত বিবরণ",
+    "more": "আরও",
     "thisMonth": "এই মাস",
     "thisYear": "এই বছর",
     "title": "বিশ্লেষণ",
@@ -868,12 +962,12 @@
     "notesOptional": "নোট (ঐচ্ছিক)",
     "notesPlaceholder": "নোট যোগ করুন...",
     "iOweSummary": "আমি ঋণী",
-    "owedToMe": "আমার কাছে পাওনা",
+    "owedToMe": "আমার পাওনা",
     "all": "সব",
     "noDebtsTracked": "এখনও কোনো ঋণ ট্র্যাক করা হয়নি",
     "tapAddToTrack": "ঋণ যোগ করতে + বোতাম ট্যাপ করুন",
     "iOweLabel": "আমি ঋণী",
-    "owesMeLabel": "আমার কাছে পাওনা",
+    "owesMeLabel": "আমার পাওনা",
     "total": "মোট",
     "due": "দেয়ার:",
     "paid": "প্রদত্ত:",
@@ -911,6 +1005,7 @@
     "savings": "সঞ্চয়"
   },
   "transaction": {
+    "addTransaction": "+ লেনদেন যুক্ত করুন",
     "typeExpense": "খরচ",
     "typeIncome": "আয়",
     "typeTransfer": "স্থানান্তর",
@@ -1015,11 +1110,23 @@
     "linked": "যুক্ত",
     "noBudgetsOrGoals": "এখনো কোনো বাজেট বা সঞ্চয় লক্ষ্য নেই।"
   },
-  "calculator": {
-    "calculator": "ক্যালকুলেটর",
-    "loanCalculator": "লোন ক্যালকুলেটর",
-    "discountTax": "ডিসকাউন্ট ও কর",
-    "currencyConverter": "কারেন্সি কনভার্টার"
+"calculator": {
+    "calculator": "Calculator",
+    "loanCalculator": "Loan Calculator",
+    "discountTax": "Discount & Tax",
+    "currencyConverter": "Currency Converter"
+  },
+  "calTool": {
+    "ac": "AC",
+    "ce": "CE",
+    "toggleSign": "+/-",
+    "percent": "%",
+    "divide": "÷",
+    "multiply": "×",
+    "subtract": "-",
+    "add": "+",
+    "decimal": ".",
+    "equals": "="
   },
   "morePage": {
     "tools": "টুলস",

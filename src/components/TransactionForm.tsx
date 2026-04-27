@@ -23,7 +23,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useCategories } from '@/hooks/useCategories';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
-import { useUserBehavior } from '@/hooks/useUserBehavior';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useSmartSuggest } from '@/hooks/useSmartSuggest';
 import { useCategoryMutations } from '@/hooks/useCategoryMutations';
@@ -33,7 +33,6 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
-import { emitTransactionUpdated } from '@/lib/transaction-events';
 
 interface TransactionFormState {
   type: 'expense' | 'income' | 'lend' | 'owe' | 'transfer';
@@ -195,7 +194,7 @@ export function TransactionForm({
   const { currency, formatAmount } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const { isPremium } = useSubscription();
-  const { logEvent } = useUserBehavior();
+  const { logEvent } = useAnalytics();
   const { categories } = useCategories();
   const { budgets, getBudgetsForCategory } = useBudgetContext();
   const { activeGoals } = useSavingsGoals();
@@ -846,7 +845,6 @@ export function TransactionForm({
       /* ─── Feature 1.6: Save & Add Another ─── */
       if (keepOpen && onSuccessKeepOpen) {
         // Emit event so budgets can refetch
-        emitTransactionUpdated();
         onSuccessKeepOpen();
         // Reset form for another entry
         form.reset({
@@ -860,7 +858,6 @@ export function TransactionForm({
         resetFormState();
       } else {
         // Emit transaction updated event so budgets can refetch
-        emitTransactionUpdated();
         onSuccess();
 
         if (!isEditMode) {

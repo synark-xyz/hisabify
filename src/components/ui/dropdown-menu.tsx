@@ -31,10 +31,6 @@ const DropdownMenuSubTrigger = React.forwardRef<
       "flex cursor-pointer select-none items-center gap-3 rounded-xl px-4 py-3 text-[15px] outline-none transition-all duration-200",
       "data-[state=open]:bg-accent/20 focus:bg-accent/10",
       // Cyberpunk: Bouncy scale + glow
-      "[html[data-variant='cyberpunk']_&]:data-[state=open]:shadow-[0_0_15px_rgba(0,255,255,0.3)]",
-      "[html[data-variant='cyberpunk']_&]:data-[state=open]:scale-105",
-      "[html[data-variant='cyberpunk']_&]:transition-all",
-      "[html[data-variant='cyberpunk']_&]:duration-300",
       inset && "pl-11",
       className,
     )}
@@ -65,11 +61,6 @@ const DropdownMenuSubContent = React.forwardRef<
       "data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2",
       "data-[state=open]:duration-200 data-[state=closed]:duration-150",
       // Cyberpunk: Gold border + neon glow + solid background
-      "[html[data-variant='cyberpunk']_&]:bg-popover",
-      "[html[data-variant='cyberpunk']_&]:border-accent/30",
-      "[html[data-variant='cyberpunk']_&]:shadow-[0_0_30px_rgba(255,215,0,0.2),0_0_15px_rgba(0,255,255,0.15)]",
-      "[html[data-variant='cyberpunk']_&]:data-[state=open]:zoom-in-90",
-      "[html[data-variant='cyberpunk']_&]:data-[state=open]:duration-300",
       className,
     )}
     {...props}
@@ -109,12 +100,6 @@ const DropdownMenuContent = React.forwardRef<
           "data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2",
           "data-[state=open]:duration-200 data-[state=closed]:duration-150",
           // Cyberpunk: Gold border + neon glow + SOLID background
-          "[html[data-variant='cyberpunk']_&]:bg-popover",
-          "[html[data-variant='cyberpunk']_&]:border-accent/30",
-          "[html[data-variant='cyberpunk']_&]:shadow-[0_0_30px_rgba(255,215,0,0.2),0_0_15px_rgba(0,255,255,0.15)]",
-          "[html[data-variant='cyberpunk']_&]:data-[state=open]:zoom-in-90",
-          "[html[data-variant='cyberpunk']_&]:data-[state=open]:duration-300",
-          "[html[data-variant='cyberpunk']_&]:data-[state=closed]:duration-200",
           className,
         )}
         {...props}
@@ -140,12 +125,6 @@ const DropdownMenuItem = React.forwardRef<
       "hover:bg-accent/10 focus:bg-accent/15 active:scale-[0.98]",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",
       // Cyberpunk: Bouncy scale + glow on hover
-      "[html[data-variant='cyberpunk']_&]:hover:bg-accent/5",
-      "[html[data-variant='cyberpunk']_&]:hover:scale-[1.02]",
-      "[html[data-variant='cyberpunk']_&]:hover:shadow-[0_0_10px_rgba(255,215,0,0.15)]",
-      "[html[data-variant='cyberpunk']_&]:active:scale-[0.96]",
-      "[html[data-variant='cyberpunk']_&]:transition-all",
-      "[html[data-variant='cyberpunk']_&]:duration-300",
       // Focus ring for accessibility
       "focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-popover",
       inset && "pl-11",
@@ -169,10 +148,6 @@ const DropdownMenuCheckboxItem = React.forwardRef<
       "hover:bg-accent/10 focus:bg-accent/15 active:scale-[0.98]",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",
       // Cyberpunk: Enhanced interaction
-      "[html[data-variant='cyberpunk']_&]:hover:scale-[1.02]",
-      "[html[data-variant='cyberpunk']_&]:hover:shadow-[0_0_10px_rgba(255,215,0,0.15)]",
-      "[html[data-variant='cyberpunk']_&]:transition-all",
-      "[html[data-variant='cyberpunk']_&]:duration-300",
       className,
     )}
     checked={checked}
@@ -201,10 +176,6 @@ const DropdownMenuRadioItem = React.forwardRef<
       "hover:bg-accent/10 focus:bg-accent/15 active:scale-[0.98]",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",
       // Cyberpunk: Enhanced interaction
-      "[html[data-variant='cyberpunk']_&]:hover:scale-[1.02]",
-      "[html[data-variant='cyberpunk']_&]:hover:shadow-[0_0_10px_rgba(255,215,0,0.15)]",
-      "[html[data-variant='cyberpunk']_&]:transition-all",
-      "[html[data-variant='cyberpunk']_&]:duration-300",
       className,
     )}
     {...props}
@@ -231,7 +202,6 @@ const DropdownMenuLabel = React.forwardRef<
       // Mobile-friendly label with better hierarchy
       "px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80",
       // Cyberpunk: Gold accent color
-      "[html[data-variant='cyberpunk']_&]:text-accent/70",
       inset && "pl-11",
       className
     )}
@@ -250,8 +220,6 @@ const DropdownMenuSeparator = React.forwardRef<
       // More prominent separator for better visual hierarchy
       "-mx-1 my-2 h-[2px] bg-gradient-to-r from-transparent via-muted to-transparent",
       // Cyberpunk: Gold gradient separator with glow
-      "[html[data-variant='cyberpunk']_&]:via-accent/20",
-      "[html[data-variant='cyberpunk']_&]:shadow-[0_0_8px_rgba(255,215,0,0.2)]",
       className
     )}
     {...props}
@@ -265,7 +233,6 @@ const DropdownMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTML
       className={cn(
         "ml-auto text-xs font-semibold tracking-wider opacity-60",
         // Cyberpunk: Gold tint for shortcuts
-        "[html[data-variant='cyberpunk']_&]:text-accent/70",
         className
       )}
       {...props}

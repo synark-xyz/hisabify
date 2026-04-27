@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useTranslation } from 'react-i18next';
 
 interface EditRecurringReminderDialogProps {
   open: boolean;
@@ -22,26 +23,22 @@ export function EditRecurringReminderDialog({
   onConfirm,
   reminderTitle
 }: EditRecurringReminderDialogProps) {
+  const { t } = useTranslation();
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Edit Recurring Reminder?</AlertDialogTitle>
+          <AlertDialogTitle>{t('dialogs.editRecurring.title')}</AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">
             <p>
-              You're editing <span className="font-semibold text-foreground">"{reminderTitle}"</span>,
-              which is a recurring reminder.
-            </p>
-            <p>
-              This will update the current reminder. The changes will apply to this occurrence
-              and future recurrences based on the new settings.
+              {t('reminders.editReminder')} <span className="font-semibold text-foreground">"{reminderTitle}"</span>.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>
-            Continue Editing
+            {t('common.edit')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -15,7 +15,6 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { emitTransactionUpdated } from '@/lib/transaction-events';
 import type { Transaction } from '@/types';
 
 export const SAVINGS_CATEGORY_NAME = 'Savings';
@@ -419,17 +418,17 @@ export async function getSavingsCategoryMap(): Promise<SavingsCategoryMap> {
     return cachedCategoryMap;
   }
 
-  const { data, error } = await supabase
-    .from('categories')
-    .select('id, name')
-    .in('name', [SAVINGS_CATEGORY_NAME, SAVINGS_RETURN_CATEGORY_NAME]);
+  // SECURITY DEFINER RPC — creates system savings categories if missing, then
+  // returns their IDs. Avoids client-side upsert which is blocked by RLS.
+  const { data, error } = await supabase.rpc('ensure_savings_categories');
 
   if (error) {
     throw error;
   }
 
-  const savingsCategoryId = data?.find((category) => category.name === SAVINGS_CATEGORY_NAME)?.id;
-  const savingsReturnCategoryId = data?.find((category) => category.name === SAVINGS_RETURN_CATEGORY_NAME)?.id;
+  const rows = data as Array<{ cat_name: string; cat_id: string }> | null;
+  const savingsCategoryId = rows?.find((c) => c.cat_name === SAVINGS_CATEGORY_NAME)?.cat_id;
+  const savingsReturnCategoryId = rows?.find((c) => c.cat_name === SAVINGS_RETURN_CATEGORY_NAME)?.cat_id;
 
   if (!savingsCategoryId || !savingsReturnCategoryId) {
     throw new Error('Savings categories are not configured');
@@ -466,8 +465,6 @@ export async function recordSavingsContribution(input: SavingsContributionInput)
   if (error) {
     throw error;
   }
-
-  emitTransactionUpdated();
 }
 
 export async function recordSavingsReturn(params: {
@@ -503,8 +500,6 @@ export async function recordSavingsReturn(params: {
   if (error) {
     throw error;
   }
-
-  emitTransactionUpdated();
 }
 
 export async function recordBudgetLeftoverTransfer(params: {
@@ -562,8 +557,6 @@ export async function recordBudgetLeftoverTransfer(params: {
   if (error) {
     throw error;
   }
-
-  emitTransactionUpdated();
 }
 
 export async function redeploySavingsBetweenGoals(params: SavingsTransferInput): Promise<void> {

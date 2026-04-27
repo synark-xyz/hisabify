@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, DollarSign, Calendar, ArrowUpRight, ArrowDown
 import { format, startOfDay, startOfWeek, startOfMonth, endOfDay, endOfWeek, endOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useTranslation } from 'react-i18next';
 
 interface Transaction {
   id: string;
@@ -44,6 +45,7 @@ export function FinancialSummary({
   className,
 }: FinancialSummaryProps) {
   const { formatAmount } = useCurrency();
+  const { t } = useTranslation();
 
   // Calculate summaries for different periods
   const summaries = useMemo(() => {
@@ -157,13 +159,13 @@ export function FinancialSummary({
       {/* Main Metrics */}
       <div className="space-y-2 mb-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-xs text-muted-foreground">Income</span>
+          <span className="text-xs text-muted-foreground">{t('dashboard.income')}</span>
           <span className="text-sm font-semibold text-emerald-500">
             {formatAmount(period.income)}
           </span>
         </div>
         <div className="flex items-baseline justify-between">
-          <span className="text-xs text-muted-foreground">Expense</span>
+          <span className="text-xs text-muted-foreground">{t('dashboard.expenses')}</span>
           <span className="text-sm font-semibold text-accent">
             {formatAmount(period.expense)}
           </span>
@@ -208,7 +210,7 @@ export function FinancialSummary({
     <div className={cn('space-y-4', className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-foreground">Financial Summary</h2>
+        <h2 className="text-lg font-bold text-foreground">{t('dialogs.dashboard.financialSummary')}</h2>
         <span className="text-sm text-muted-foreground">
           {format(selectedDate, 'MMM dd, yyyy')}
         </span>
@@ -228,7 +230,7 @@ export function FinancialSummary({
           period={summaries.thisWeek}
           comparison={weeklyComparison}
           icon={Calendar}
-          colorClass="bg-purple-500/20 text-purple-500"
+          colorClass="bg-primary/20 text-primary"
         />
         <SummaryCard
           title="This Month"
@@ -246,16 +248,16 @@ export function FinancialSummary({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h3 className="text-sm font-semibold text-foreground mb-3">Quick Insights</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t('dialogs.dashboard.quickInsights')}</h3>
         <div className="space-y-2 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Daily Average (This Month)</span>
+            <span className="text-muted-foreground">{t('dialogs.dashboard.dailyAverage')}</span>
             <span className="font-medium text-foreground">
               {formatAmount(summaries.thisMonth.expense / new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate())}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Monthly Savings Rate</span>
+            <span className="text-muted-foreground">{t('dialogs.dashboard.monthlySavingsRate')}</span>
             <span className={cn(
               'font-medium',
               summaries.thisMonth.income > 0 ? 'text-emerald-500' : 'text-muted-foreground'
@@ -276,7 +278,7 @@ export function FinancialSummary({
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Income/Expense Ratio</span>
+            <span className="text-muted-foreground">{t('dialogs.dashboard.incomeExpenseRatio')}</span>
             <span className="font-medium text-foreground">
               {summaries.thisMonth.expense > 0
                 ? `${(summaries.thisMonth.income / summaries.thisMonth.expense).toFixed(2)}x`

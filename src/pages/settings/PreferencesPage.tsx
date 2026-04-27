@@ -2,24 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Moon, Sun, Monitor, ArrowLeft, Zap, CheckCircle, Lock, Tag, Globe } from 'lucide-react';
+import { Moon, Sun, Monitor, ArrowLeft, Tag, Globe } from 'lucide-react';
+import { ThemeColorPicker } from '@/components/ThemeColorPicker';
 import { Header } from '@/components/Header';
 import { useTheme } from '@/hooks/useTheme';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useLanguage, languageNames } from '@/hooks/useLanguage';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
 export function PreferencesPage() {
     const { user } = useAuth();
-    const { profile } = useProfile();
-    const { theme, variant, setTheme, setVariant } = useTheme();
+    const { theme, setTheme } = useTheme();
     const { currency, setCurrency } = useCurrency();
     const { language, setLanguage } = useLanguage();
     const { toast } = useToast();
@@ -83,71 +81,12 @@ export function PreferencesPage() {
     };
 
     return (
-        <div className={cn("min-h-screen pb-page-content", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+        <div className="min-h-screen pb-page-content bg-background">
             <Header title={t('settings.preferences')} showBack />
             <main className="px-4 py-6 space-y-6">
 
-                {/* Theme Style Selection */}
-                <div className="p-4 bg-card rounded-2xl border border-border/50 space-y-3">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-xl">
-                                <Zap className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="font-bold text-foreground">{t('settings.visualStyle')}</p>
-                                <p className="text-sm text-muted-foreground">{t('settings.visualStyleDesc')}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 mt-2">
-                        <button
-                            onClick={() => setVariant('default')}
-                            className={`relative p-3 rounded-xl border-2 transition-all text-left ${variant === 'default'
-                                ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                                : 'border-border hover:border-primary/50'
-                                }`}
-                        >
-                            <div className="font-bold text-sm mb-1">{t('settings.styleDefault')}</div>
-                            <div className="text-xs text-muted-foreground">{t('settings.styleDefaultDesc')}</div>
-                            {variant === 'default' && <div className="absolute top-3 right-3 text-primary"><CheckCircle className="w-4 h-4" /></div>}
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                // Pro Check Mock: In real app check profile.subscription_type === 'pro'
-                                const isPro = profile?.subscription_type === 'pro';
-                                if (isPro) {
-                                    setVariant('cyberpunk');
-                                } else {
-                                    toast({
-                                        title: t('settings.proFeatureLocked'),
-                                        description: t('settings.proFeatureLockedDesc'),
-                                        variant: "destructive"
-                                    });
-                                }
-                            }}
-                            className={`relative p-3 rounded-xl border-2 transition-all text-left overflow-hidden ${variant === 'cyberpunk'
-                                ? 'border-accent bg-accent/5 ring-2 ring-accent/20'
-                                : 'border-border hover:border-accent/50 group'
-                                }`}
-                        >
-                            <div className="font-bold text-sm mb-1 flex items-center gap-1.5">
-                                <span className={variant === 'cyberpunk' ? "text-accent" : ""}>{t('settings.styleCyberpunk')}</span>
-                                {profile?.subscription_type !== 'pro' && (
-                                    <span className="px-1.5 py-0.5 rounded-md bg-accent text-[10px] text-black font-bold flex items-center gap-0.5">
-                                        PRO <Lock className="w-2.5 h-2.5" />
-                                    </span>
-                                )}
-                            </div>
-                            <div className="text-xs text-muted-foreground">{t('settings.styleCyberpunkDesc')}</div>
-
-                            {/* Preview gradient for cyberpunk */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                    </div>
-                </div>
+                {/* Accent Color Picker */}
+                <ThemeColorPicker />
 
                 {/* Theme Mode Selection */}
                 <div className="p-4 bg-card rounded-2xl border border-border/50 space-y-3">

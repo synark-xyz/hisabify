@@ -60,18 +60,18 @@ async function deleteFirstExistingGoal(page: Page) {
 
 test.describe('Savings page', () => {
   test('loads the savings page', async ({ page }) => {
-    await page.goto('/savings');
-    await expect(page.getByRole('heading', { name: 'Savings' })).toBeVisible({ timeout: 10_000 });
+    await page.goto('/budget?tab=goals');
+    await expect(page.getByRole('heading', { name: 'Budget' })).toBeVisible({ timeout: 10_000 });
   });
 
   test('shows an "Add Goal" button or equivalent CTA', async ({ page }) => {
-    await page.goto('/savings');
+    await page.goto('/budget?tab=goals');
     const addBtn = page.getByRole('button', { name: /add.*goal|new.*goal|\+/i });
     await expect(addBtn.first()).toBeVisible({ timeout: 5_000 });
   });
 
   test('shows a savings summary section when goals exist', async ({ page }) => {
-    await page.goto('/savings');
+    await page.goto('/budget?tab=goals');
     // Either summary cards or an empty-state message should be visible
     await expect(page.locator('main')).toBeVisible({ timeout: 5_000 });
   });
@@ -79,7 +79,7 @@ test.describe('Savings page', () => {
 
 test.describe('Create savings goal', () => {
   test('creates a goal and it appears in the list', async ({ page }) => {
-    await page.goto('/savings');
+    await page.goto('/budget?tab=goals');
     let mode = await openAddGoalModal(page);
     if (mode === 'upgrade') {
       // Free account already has a goal; remove one and retry create flow.
@@ -106,8 +106,8 @@ test.describe('Create savings goal', () => {
 
 test.describe('Savings goal card', () => {
   test('goal card shows a progress bar element', async ({ page }) => {
-    await page.goto('/savings');
-    await expect(page.getByRole('heading', { name: 'Savings' })).toBeVisible({ timeout: 10_000 });
+    await page.goto('/budget?tab=goals');
+    await expect(page.getByRole('heading', { name: 'Budget' })).toBeVisible({ timeout: 10_000 });
     // Progress bars are typically role="progressbar" — data-dependent
     const progressBar = page.getByRole('progressbar').first();
     if (await progressBar.count() > 0) {
@@ -118,7 +118,7 @@ test.describe('Savings goal card', () => {
 
 test.describe('Delete savings goal', () => {
   test('creates then deletes a goal', async ({ page }) => {
-    await page.goto('/savings');
+    await page.goto('/budget?tab=goals');
     const mode = await openAddGoalModal(page);
 
     if (mode === 'upgrade') {
@@ -152,7 +152,7 @@ test.describe('Delete savings goal', () => {
 
 test.describe('Premium gate', () => {
   test('shows upgrade prompt when free user tries to add a second goal', async ({ page }) => {
-    await page.goto('/savings');
+    await page.goto('/budget?tab=goals');
 
     // If the account has no goal yet, create one first so the second-attempt gate can be asserted.
     let mode = await openAddGoalModal(page);

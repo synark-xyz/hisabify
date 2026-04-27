@@ -31,15 +31,23 @@ describe('authRedirect', () => {
 
   it('returns a native callback URL on native platforms', () => {
     isNativePlatform.mockReturnValue(true);
+    Object.defineProperty(window, 'location', {
+      value: { origin: 'null' },
+      writable: true,
+    });
 
     expect(getOAuthRedirectUrl()).toBe('io.synark.hisabify://auth/callback');
   });
 
   it('uses a web redirect for email-based auth flows', () => {
     isNativePlatform.mockReturnValue(true);
+    Object.defineProperty(window, 'location', {
+      value: { origin: 'http://localhost' },
+      writable: true,
+    });
 
     expect(getEmailAuthRedirectUrl('/reset-password')).toBe(
-      `${window.location.origin}/reset-password`,
+      'http://localhost/reset-password',
     );
   });
 

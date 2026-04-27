@@ -22,7 +22,6 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTheme } from '@/hooks/useTheme';
-import { useTransactionUpdateListener } from '@/hooks/useTransactionUpdateListener';
 import { useFirstTimeUser } from '@/hooks/useFirstTimeUser';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { MonthlyWrapCard } from '@/components/MonthlyWrapCard';
@@ -212,10 +211,6 @@ export function Dashboard() {
       refetchFirstTimeStatus()
     ]);
   }, [fetchTransactions, fetchActivityLogs, fetchMonthlySummary, fetchTodayTransactions, fetchAvailableYears, refetchReminders, refetchFirstTimeStatus]);
-
-  useTransactionUpdateListener(() => {
-    void handleRefresh();
-  });
 
   useEffect(() => {
     if (user) {

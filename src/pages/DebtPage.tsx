@@ -13,7 +13,7 @@ import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
 import { cn } from '@/lib/utils';
 import { format, isPast } from 'date-fns';
 import { useDebts } from '@/hooks/useDebts';
-import { useActivityLog } from '@/hooks/useActivityLog';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import { Language } from '@/i18n';
@@ -283,7 +283,7 @@ export function DebtPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { language } = useLanguage();
-  const { logActivity } = useActivityLog();
+  const { logActivity } = useAnalytics();
   const { debts, loading, totalIOwe, totalTheyOwe, createDebt, settleDebt, deleteDebt } = useDebts({
     onActivityLog: logActivity,
   });

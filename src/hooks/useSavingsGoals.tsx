@@ -283,10 +283,12 @@ export function useSavingsGoals() {
 
         let runningTotal = 0;
         const contributionHistory = goalTransactions
-          .filter((tx) => tx.category?.name === 'Savings' || tx.category?.name === 'Savings Return')
+          .filter((tx) => tx.savings_goal_id === goal.id)
           .map((tx) => {
             const amount = Number(tx.amount_converted || tx.amount);
-            const isContribution = tx.category?.name === 'Savings';
+            // Contributions are 'expense' type transactions to the Savings category
+            // Returns are 'income' type transactions to the Savings Return category
+            const isContribution = tx.type === 'expense';
             runningTotal += isContribution ? amount : -amount;
 
             return {

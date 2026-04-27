@@ -52,11 +52,11 @@ export function DebtTriageWidget() {
   const extraCount = outstandingDebts.length - allPills.length;
 
   return (
-    <div className="bg-card border border-border/50 rounded-3xl overflow-hidden shadow-card">
+    <div className="bg-card border border-border/50 rounded-xl shadow-card">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-0">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
             <Handshake className="w-4 h-4 text-accent" />
           </div>
           <span className="text-sm font-black tracking-tight">{t('debt.debts')}</span>
@@ -75,32 +75,36 @@ export function DebtTriageWidget() {
       {/* Two lanes */}
       <div className="grid grid-cols-2 gap-2.5 px-4 py-3">
         {/* To Pay */}
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-rose-400 mb-0.5">{t('debt.toPay')}</p>
-          <p className="text-xl font-black text-rose-500 leading-none mb-0.5">
+        <div className="bg-card border border-border/50 rounded-xl p-3 relative">
+          <div className="absolute top-2 right-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full">{t('debt.toPay')}</span>
+          </div>
+          <p className="text-xl font-black text-rose-500 leading-none mb-0.5 mt-4">
             {formatAmount(totalIOwe)}
           </p>
           <p className="text-[10px] text-muted-foreground mb-2.5">{formatNumber(iOwe.length)} {t('debt.debt')}</p>
           <button
             type="button"
             onClick={() => navigate('/debts?tab=i_owe')}
-            className="w-full py-1.5 rounded-xl bg-rose-500/20 text-rose-400 text-[11px] font-bold hover:bg-rose-500/30 transition-colors"
+            className="w-full py-1.5 rounded-lg text-rose-500 text-[11px] font-bold hover:bg-rose-500/10 transition-colors"
           >
             {t('debt.payNow')}
           </button>
         </div>
 
         {/* To Collect */}
-        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-0.5">{t('debt.toCollect')}</p>
-          <p className="text-xl font-black text-emerald-500 leading-none mb-0.5">
+        <div className="bg-card border border-border/50 rounded-xl p-3 relative">
+          <div className="absolute top-2 right-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">{t('debt.toCollect')}</span>
+          </div>
+          <p className="text-xl font-black text-emerald-500 leading-none mb-0.5 mt-4">
             {formatAmount(totalTheyOwe)}
           </p>
           <p className="text-[10px] text-muted-foreground mb-2.5">{formatNumber(theyOwe.length)} {t('debt.debt')}</p>
           <button
             type="button"
             onClick={() => navigate('/debts?tab=they_owe')}
-            className="w-full py-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 text-[11px] font-bold hover:bg-emerald-500/30 transition-colors"
+            className="w-full py-1.5 rounded-lg text-emerald-500 text-[11px] font-bold hover:bg-emerald-500/10 transition-colors"
           >
             {t('debt.remind')}
           </button>
@@ -125,8 +129,8 @@ export function DebtTriageWidget() {
                   className={cn(
                     'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border',
                     isOverdue
-                      ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
-                      : 'bg-muted text-muted-foreground border-border/50'
+                      ? 'text-rose-400 border-rose-500/40'
+                      : 'text-muted-foreground border-border/50'
                   )}
                   title={d.person_name}
                 >

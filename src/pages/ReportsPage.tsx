@@ -24,7 +24,6 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ReportsPage() {
-  const { variant } = useTheme();
   const { isPremium } = useSubscription();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -81,7 +80,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className={cn("container mx-auto p-1space-y-2", variant === 'cyberpunk' ? "bg-transparent" : "bg-background")}>
+    <div className="container mx-auto px-4 pb-page-content space-y-2">
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="space-y-4">
           {/* Page header */}

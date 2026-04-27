@@ -112,8 +112,8 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
               role="button"
               tabIndex={0}
               className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-2xl border bg-card/50 backdrop-blur-md shadow-sm min-w-[180px]',
-                savingsReminder ? 'border-emerald-500/20 bg-emerald-500/5' : status.borderColor
+                'flex items-center gap-3 px-3 py-3 rounded-xl border bg-card shadow-sm w-[160px] flex-shrink-0',
+                savingsReminder ? 'border-emerald-500/20' : status.borderColor
               )}
               whileHover={{ scale: 1.02 }}
               onClick={() => {
@@ -128,21 +128,16 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
                 }
               }}
             >
-              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', savingsReminder ? 'bg-emerald-500/15' : status.bgColor)}>
-                <Icon className={cn('w-5 h-5', savingsReminder ? 'text-emerald-600' : status.color)} weight="duotone" />
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', savingsReminder ? 'bg-emerald-500/15' : status.bgColor)}>
+                <Icon className={cn('w-4 h-4', savingsReminder ? 'text-emerald-600' : status.color)} weight="duotone" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground truncate">{reminderTitle}</p>
+                <p className="text-xs font-bold text-foreground truncate">{reminderTitle}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className={cn('text-[10px] font-bold tracking-wider', savingsReminder ? 'text-emerald-600' : status.color)}>
                     {status.label}
                   </span>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-black text-foreground">
-                  {formatReminderAmount(reminder, formatAmount)}
-                </p>
               </div>
             </motion.div>
           );

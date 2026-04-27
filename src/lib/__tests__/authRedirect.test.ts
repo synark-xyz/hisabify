@@ -41,9 +41,13 @@ describe('authRedirect', () => {
 
   it('uses a web redirect for email-based auth flows', () => {
     isNativePlatform.mockReturnValue(true);
+    Object.defineProperty(window, 'location', {
+      value: { origin: 'http://localhost' },
+      writable: true,
+    });
 
     expect(getEmailAuthRedirectUrl('/reset-password')).toBe(
-      `${window.location.origin}/reset-password`,
+      'http://localhost/reset-password',
     );
   });
 

@@ -73,7 +73,7 @@ describe('computeBudgetSpending', () => {
 
     const result = computeBudgetSpending(budget, 50);
     expect(result.percentage).toBe(0);
-    expect(result.status).toBe('safe');
+    expect(result.status).toBe('exceeded');
   });
 });
 

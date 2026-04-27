@@ -1,4 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    rpc: vi.fn(),
+    from: vi.fn(() => ({ insert: vi.fn() })),
+  },
+}));
+
 import { calculateSavingsPace } from '../savings';
 import { addDays, addMonths, addWeeks, formatISO, startOfWeek, subDays, subMonths, subWeeks } from 'date-fns';
 

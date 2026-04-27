@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
 import {
   shouldUpdateRates,
   markRatesUpdated,
@@ -8,6 +8,26 @@ import {
 
 const STORAGE_KEY = 'exchange-rate-last-update';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+// Mock localStorage for jsdom environment
+const mockStore: Record<string, string> = {};
+
+const mockLocalStorage = {
+  getItem: (key: string) => mockStore[key] ?? null,
+  setItem: (key: string, value: string) => { mockStore[key] = value; },
+  removeItem: (key: string) => { delete mockStore[key]; },
+  clear: () => { Object.keys(mockStore).forEach(k => delete mockStore[k]); },
+  get length() { return Object.keys(mockStore).length; },
+  key: (index: number) => Object.keys(mockStore)[index] ?? null,
+};
+
+beforeAll(() => {
+  Object.defineProperty(window, 'localStorage', {
+    value: mockLocalStorage,
+    writable: true,
+    configurable: true,
+  });
+});
 
 // Reset localStorage before every test to ensure clean state
 beforeEach(() => {

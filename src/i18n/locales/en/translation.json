@@ -392,7 +392,7 @@
   },
   "budget": {
     "title": "Budget",
-    "used": "used",
+    "used": "{{amount}}% used",
     "monthly": "Monthly",
     "weekly": "Weekly",
     "yearly": "Yearly",
@@ -444,7 +444,7 @@
     "noBudgetsYet": "No Budgets Yet",
     "createFirstBudget": "Create your first budget to start tracking your spending.",
     "createBudget": "Create Budget",
-    "category": "Category",
+    "merchant": "Merchant",
     "allCategories": "All Categories",
     "budgetName": "Budget Name",
     "budgetNameOptional": "Budget Name (Optional)",
@@ -463,8 +463,7 @@
     "updateBudget": "Update Budget",
     "periodLabel": "{{start}} – {{end}}",
     "totalBudgetSpent": "{{amount}} spent",
-    "noExpensesInPeriod": "No expenses in this period",
-    "used": "{{amount}}% used"
+    "noExpensesInPeriod": "No expenses in this period"
   },
   "savings": {
     "title": "Savings",
@@ -526,7 +525,8 @@
     "returnFunds": "Return Funds",
     "returnToMainBalance": "Return to main balance",
     "moveToAnotherGoal": "Move to another goal",
-    "amount": "Amount",
+    "category": "Category",
+        "amount": "Amount",
     "available": "Available",
     "deleteConfirmTitle": "Delete \"{{name}}\"?",
     "deleteConfirmDesc": "This action cannot be undone. This will permanently delete your savings goal and its progress.",
@@ -584,7 +584,8 @@
         "dailyAverage": "Daily Average (This Month)",
         "monthlySavingsRate": "Monthly Savings Rate",
         "incomeExpenseRatio": "Income/Expense Ratio",
-        "topExpenses": "Top Expenses",
+        "topExpenses": "Top 5 Expenses",
+        "date": "Date",
         "merchant": "Merchant",
         "category": "Category",
         "amount": "Amount",
@@ -670,7 +671,9 @@
     "reserveFromBudget": "Reserve From Budget",
     "optionalBudgetLink": "Optional budget link",
     "noLinkedBudget": "No linked budget",
-    "savingsReserved": "Savings Reserved"
+    "savingsReserved": "Savings Reserved",
+    "totalNetSavings": "Total Net Savings",
+    "activeGoals": "Active Goals"
   },
   "settings": {
     "title": "Settings",
@@ -905,6 +908,7 @@
       "tableHeaders": {
         "metric": "Metric",
         "value": "Value",
+        "merchant": "Merchant",
         "category": "Category",
         "amount": "Amount",
         "count": "Count",
@@ -917,7 +921,7 @@
         "spent": "Spent",
         "remaining": "Remaining",
         "usage": "Usage %",
-        "merchant": "Merchant",
+        "date": "Date",
         "type": "Type",
         "note": "Note"
       },
@@ -1048,7 +1052,11 @@
     "weekWednesday": "Wednesday",
     "weekThursday": "Thursday",
     "weekFriday": "Friday",
-    "weekSaturday": "Saturday"
+    "weekSaturday": "Saturday",
+    "overview": "Overview",
+    "insights": "Insights",
+    "advanced": "Advanced",
+    "subtitle": "View spending patterns and financial insights"
   },
   "debt": {
     "debtTracker": "Debt Tracker",
@@ -1063,7 +1071,8 @@
     "theyOweMe": "They Owe Me",
     "personName": "Person Name",
     "personNamePlaceholder": "Enter name",
-    "amount": "Amount",
+    "category": "Category",
+        "amount": "Amount",
     "dueDateOptional": "Due Date (Optional)",
     "noDueDate": "No due date set",
     "notesOptional": "Notes (Optional)",
@@ -1136,7 +1145,8 @@
     "descriptionPlaceholder": "What was this for?",
     "descriptionPlaceholderLendBorrow": "Name or @handle",
     "descriptionPlaceholderTransfer": "e.g. Monthly savings transfer",
-    "amount": "Amount",
+    "category": "Category",
+        "amount": "Amount",
     "paymentMethod": "Payment Method",
     "paymentMethodCash": "Cash",
     "paymentMethodCard": "Card",
@@ -1153,7 +1163,7 @@
     "splitTotal": "Split Total",
     "balanced": "Balanced",
     "splitRemaining": "Remaining",
-    "category": "Category",
+    "merchant": "Merchant",
     "categoryOptional": "Category (optional)",
     "selectCategory": "Select category",
     "selectCategoryOptional": "Select category (optional)",
@@ -1266,7 +1276,7 @@
     "title": "Categories",
     "noCategoriesAddOne": "No categories yet. Add one!",
     "addCategory": "Add Category",
-    "addSub": "+ Sub",
+    "addSub": "Sub",
     "subCount_one": "{{count}} sub",
     "subCount_other": "{{count}} subs",
     "expense": "Expense",
@@ -1342,7 +1352,8 @@
     "convertedAmount": "Converted Amount",
     "updatedAgo": "Updated {{time}}",
     "popularConversions": "Popular Conversions",
-    "amount": "Amount",
+    "category": "Category",
+        "amount": "Amount",
     "from": "From",
     "to": "To",
     "convert": "Convert",
@@ -1357,7 +1368,7 @@
     "pushNotificationsDesc": "Instant alerts on your device"
   },
   "expensesPage": {
-    "category": "Category",
+    "merchant": "Merchant",
     "subCategory": "Sub-category",
     "groupBy": "Group by"
   },
@@ -1369,7 +1380,7 @@
     "email": "Email",
     "subject": "Subject",
     "message": "Message",
-    "category": "Category",
+    "merchant": "Merchant",
     "attachments": "Attachments (optional)",
     "addFiles": "Add files",
     "yourName": "Your name",

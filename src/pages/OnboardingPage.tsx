@@ -32,8 +32,8 @@ const slides = [
     {
         id: 1,
         icon: Wallet,
-        color: "from-blue-500 to-cyan-400",
-        bgColor: "bg-blue-500/10",
+        color: "from-primary to-accent",
+        bgColor: "bg-primary/10",
         features: [
             { icon: CreditCard, textKey: "onboarding.slide1Feature1" },
             { icon: Zap, textKey: "onboarding.slide1Feature2" },

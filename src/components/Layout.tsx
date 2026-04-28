@@ -7,6 +7,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Header } from '@/components/Header';
+import { HisabifyLogo } from "@/components/HisabifyLogo";
 import { cn } from '@/lib/utils';
 
 const PAGE_TITLES: Record<string, string> = {
@@ -91,7 +92,7 @@ export function Layout() {
                 <div className="px-5 py-5 border-b border-border/30">
                     <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-sm">
-                            <span className="text-primary-foreground font-black text-base leading-none">H</span>
+                            <HisabifyLogo size={36} showText={false} className="overflow-hidden rounded-[8px]" />
                         </div>
                         <span className="font-black text-xl tracking-tight text-foreground">Hisabify</span>
                     </div>

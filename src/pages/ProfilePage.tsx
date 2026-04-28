@@ -24,7 +24,7 @@ export function ProfilePage() {
   const subscriptionStatusLabel = (profile.subscription_status || 'inactive').replace('_', ' ');
 
   const menuItems = [
-    { id: 'personal', icon: User, label: t('profile.personalInformation'), path: '/profile/personal', color: 'bg-blue-500/10 text-blue-500' },
+    { id: 'personal', icon: User, label: t('profile.personalInformation'), path: '/profile/personal', color: 'bg-primary/10 text-primary' },
     { id: 'invite', icon: Gift, label: t('profile.inviteEarn'), path: '/profile/invite', color: 'bg-pink-500/10 text-pink-500' },
     { id: 'data', icon: Database, label: t('profile.dataManagement'), path: '/profile/data', color: 'bg-orange-500/10 text-orange-500' },
   ];

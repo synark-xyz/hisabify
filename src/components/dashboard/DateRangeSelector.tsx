@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Download, Lock, RotateCw, SlidersHorizontal } from 'lucide-react';
+import { Calendar, Download, RotateCw, SlidersHorizontal } from 'lucide-react';
 import { format, subDays, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, isBefore } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -19,9 +19,6 @@ interface DateRangeSelectorProps {
   onDateRangeChange: (range: { from: Date; to: Date }) => void;
   onExportCSV: () => void;
   minDate?: Date;
-  onUpgradeRequired?: () => void;
-  canUseCustomRange?: boolean;
-  canExport?: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
@@ -41,9 +38,6 @@ export function DateRangeSelector({
   onDateRangeChange,
   onExportCSV,
   minDate,
-  onUpgradeRequired,
-  canUseCustomRange = true,
-  canExport = true,
   onRefresh,
   isRefreshing = false,
 }: DateRangeSelectorProps) {
@@ -52,13 +46,7 @@ export function DateRangeSelector({
   const handlePresetSelect = (preset: typeof presetRanges[0]) => {
     const next = preset.getValue();
 
-    if (!canUseCustomRange) {
-      onUpgradeRequired?.();
-      return;
-    }
-
     if (minDate && isBefore(next.from, minDate)) {
-      onUpgradeRequired?.();
       onDateRangeChange({
         from: minDate,
         to: isBefore(next.to, minDate) ? minDate : next.to,
@@ -71,13 +59,7 @@ export function DateRangeSelector({
 
   const handleCalendarSelect = (range: DateRange | undefined) => {
     if (range?.from && range?.to) {
-      if (!canUseCustomRange) {
-        onUpgradeRequired?.();
-        return;
-      }
-
       if (minDate && isBefore(range.from, minDate)) {
-        onUpgradeRequired?.();
         onDateRangeChange({
           from: minDate,
           to: isBefore(range.to, minDate) ? minDate : range.to,
@@ -130,10 +112,7 @@ export function DateRangeSelector({
                 onClick={() => handlePresetSelect(preset)}
                 className="cursor-pointer hover:bg-accent/50 focus:bg-accent/50"
               >
-                <span className="flex items-center gap-2">
-                  {preset.label}
-                  {minDate && isBefore(preset.getValue().from, minDate) && <Lock className="w-3 h-3 text-amber-500" />}
-                </span>
+                <span>{preset.label}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -155,15 +134,10 @@ export function DateRangeSelector({
           <Button
             variant="outline"
             size="icon"
-            onClick={canExport ? onExportCSV : onUpgradeRequired}
-            className={cn(
-              "h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30",
-              canExport 
-                ? "text-emerald-500" 
-                : "text-muted-foreground"
-            )}
+            onClick={onExportCSV}
+            className="h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30 text-emerald-500"
           >
-            {canExport ? <Download className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+            <Download className="w-4 h-4" />
           </Button>
         </motion.div>
       </div>

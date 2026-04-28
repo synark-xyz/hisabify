@@ -17,7 +17,7 @@ export function MorePage() {
   ];
 
   const appPreferences = [
-    { id: 'categories', icon: 'Tag', label: t('morePage.categories'), description: t('morePage.manageCategories'), path: '/categories', color: 'bg-blue-500/10 text-blue-500' },
+    { id: 'categories', icon: 'Tag', label: t('morePage.categories'), description: t('morePage.manageCategories'), path: '/categories', color: 'bg-primary/10 text-primary' },
   ];
 
   const financeTracking = [

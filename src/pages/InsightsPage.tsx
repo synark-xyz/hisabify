@@ -12,7 +12,7 @@ export function InsightsPage() {
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
       <div className="px-4 pt-2">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid grid-cols-2 w-full lg:w-64 lg:mx-auto">
           <TabsTrigger value="analytics">{t('analytics.title')}</TabsTrigger>
           <TabsTrigger value="reports">{t('reports.title')}</TabsTrigger>
         </TabsList>

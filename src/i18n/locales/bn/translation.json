@@ -1,7 +1,7 @@
 {
   "common": {
     "save": "সংরক্ষণ",
-    "cancel": "বাতিল করুন",
+    "cancel": "বাতিল",
     "edit": "সম্পাদনা করুন",
     "newPassword": "নতুন পাসওয়ার্ড",
     "confirmPassword": "পাসওয়ার্ড নিশ্চিত করুন",
@@ -24,7 +24,6 @@
     "next": "পরবর্তী",
     "back": "ফিরে যান",
     "amountPlaceholder": "০.০০",
-    "cancel": "বাতিল",
     "done": "সম্পন্ন",
     "today": "আজ",
     "yesterday": "গতকাল",
@@ -285,7 +284,7 @@
   },
   "budget": {
     "title": "বাজেট",
-    "used": "ব্যবহৃত",
+    "used": "{{amount}}% ব্যবহৃত",
     "monthly": "মাসিক",
     "weekly": "সাপ্তাহিক",
     "yearly": "বার্ষিক",
@@ -356,8 +355,7 @@
     "updateBudget": "বাজেট আপডেট করুন",
     "periodLabel": "{{start}} – {{end}}",
     "totalBudgetSpent": "{{amount}} খরচ হয়েছে",
-    "noExpensesInPeriod": "এই সময়কালে কোনো খরচ নেই",
-    "used": "{{amount}}% ব্যবহৃত"
+    "noExpensesInPeriod": "এই সময়কালে কোনো খরচ নেই"
   },
   "savings": {
     "title": "সঞ্চয়",
@@ -489,7 +487,34 @@
     "reserveFromBudget": "বাজেট থেকে সংরক্ষণ",
     "optionalBudgetLink": "ঐচ্ছিক বাজেট লিংক",
     "noLinkedBudget": "কোনো লিংক করা বাজেট নেই",
-    "savingsReserved": "সঞ্চয় সংরক্ষিত"
+    "savingsReserved": "সঞ্চয় সংরক্ষিত",
+    "totalNetSavings": "মোট নিট সঞ্চয়",
+    "activeGoals": "সক্রিয় লক্ষ্য",
+    "dialogs": {
+      "dashboard": {
+        "financialSummary": "আর্থিক সারসংক্ষেপ",
+        "quickInsights": "দ্রুত অন্তর্দৃষ্টি",
+        "dailyAverage": "গড় দৈনিক (এই মাস)",
+        "monthlySavingsRate": "মাসিক সঞ্�য়ের হার",
+        "incomeExpenseRatio": "আয়/খরচ অনুপাত",
+        "topExpenses": "শীর্ষ ৫টি খরচ",
+        "date": "তারিখ",
+        "merchant": "ব্যবসায়ী",
+        "category": "বিভাগ",
+        "amount": "পরিমাণ",
+        "noExpensesYet": "এখনও কোনো খরচ নেই",
+        "budgetVsActual": "বাজেট বনাম প্রকৃত",
+        "budgetLabel": "বাজেট:",
+        "actualLabel": "প্রকৃত:",
+        "totalIncome": "মোট আয়",
+        "addIncomeStart": "ট্র্যাকিং শুরু করতে আয় যোগ করুন",
+        "totalExpenses": "মোট খরচ",
+        "noExpensesRecorded": "এখনও কোনো খরচ রেকর্ড হয়নি",
+        "spent": "খরচ হয়েছে",
+        "earned": "উপার্জন হয়েছে",
+        "underBudget": "বাজেটের মধ্যে"
+      }
+    }
   },
   "settings": {
     "preferences": "পছন্দগুলি",
@@ -789,7 +814,8 @@
         "dailyAverage": "গড় দৈনিক (এই মাস)",
         "monthlySavingsRate": "মাসিক সঞ্চয়ের হার",
         "incomeExpenseRatio": "আয়/খরচ অনুপাত",
-        "topExpenses": "শীর্ষ খরচ",
+        "topExpenses": "শীর্ষ ৫টি খরচ",
+        "date": "তারিখ",
         "merchant": "ব্যবসায়ী",
         "category": "বিভাগ",
         "amount": "পরিমাণ",
@@ -857,7 +883,7 @@
     "createBudget": "বাজেট তৈরি করুন",
     "dayOfWeek": "দিন অনুযায়ী খরচ",
     "expenses": "খরচ",
-    "featureAdvanced": "উন্নত বিশ্লেষণ",
+    "featureAdvanced": "অ্যাডভান্স বিশ্লেষণ",
     "featureAiInsights": "AI বিশ্লেষণ",
     "greatSavings": "দুর্দান্ত সঞ্চয়!",
     "heatMap": "খরচ তাপমাত্রা মানচিত্র",
@@ -907,7 +933,7 @@
     "suggestNoSpendDay": "আগামীকাল 'কোন খরচ নেই' দিন চেষ্টা করুন এবং চক্র ভেঙে দিন এবং আপনার সঞ্চয়ের হার বাড়ান!",
     "suggestReduceNonEssential": "এই মাসের অপ্রয়োজনীয় খরচ চিহ্নিত করুন এবং আপনার খরচ বেসলাইনে ফিরিয়ে আনুন।",
     "suggestReviewTransactions": "আপনার সাম্প্রতিক উচ্চ মূল্যের লেনদেন পর্যালোচনা করুন এবং নিশ্চিত করুন যে তারা আপনার আর্থিক লক্ষ্যগুলির সাথে সামঞ্জস্যপূর্ণ।",
-    "tabAdvanced": "উন্নত",
+    "tabAdvanced": "অ্যাডভান্সড",
     "tabInsights": "বিশ্লেষণ",
     "tabOverview": "সংক্ষিপ্ত বিবরণ",
     "more": "আরও",
@@ -926,8 +952,8 @@
     "totalSpent": "মোট ব্যয়",
     "totalThisYear": "এই বছর মোট",
     "transactions": "লেনদেন",
-    "spendingIncreased":"খরচ বেড়েছে",
-    "spendingDecreased":"খরচ কমেছে",
+    "spendingIncreased": "খরচ বেড়েছে",
+    "spendingDecreased": "খরচ কমেছে",
     "txns": "txns",
     "unusualSpendingDetected": "অস্বাভাবিক ব্যয় সনাক্ত হয়েছে",
     "viewAll": "সব দেখুন",
@@ -941,7 +967,11 @@
     "weekWednesday": "বুধবার",
     "weekThursday": "বৃহস্পতিবার",
     "weekFriday": "শুক্রবার",
-    "weekSaturday": "শনিবার"
+    "weekSaturday": "শনিবার",
+    "overview": "ওভারভিউ",
+    "insights": "ইনসাইটস",
+    "advanced": "অ্যাডভান্সড",
+    "subtitle": "খরচের প্যাটার্ন এবং আর্থিক ইনসাইট দেখুন"
   },
   "debt": {
     "debtTracker": "ঋণ ট্র্যাকার",
@@ -1005,7 +1035,7 @@
     "savings": "সঞ্চয়"
   },
   "transaction": {
-    "addTransaction": "+ লেনদেন যুক্ত করুন",
+    "addTransaction": "লেনদেন যুক্ত করুন",
     "typeExpense": "খরচ",
     "typeIncome": "আয়",
     "typeTransfer": "স্থানান্তর",
@@ -1110,7 +1140,7 @@
     "linked": "যুক্ত",
     "noBudgetsOrGoals": "এখনো কোনো বাজেট বা সঞ্চয় লক্ষ্য নেই।"
   },
-"calculator": {
+  "calculator": {
     "calculator": "Calculator",
     "loanCalculator": "Loan Calculator",
     "discountTax": "Discount & Tax",
@@ -1174,7 +1204,7 @@
     "title": "ক্যাটাগরি",
     "noCategoriesAddOne": "কোনো ক্যাটাগরি নেই। একটি যোগ করুন!",
     "addCategory": "ক্যাটাগরি যোগ করুন",
-    "addSub": "+ সাব",
+    "addSub": "সাব",
     "subCount_one": "{{count}} সাব",
     "subCount_other": "{{count}} সাব",
     "expense": "ব্যয়",
@@ -1270,10 +1300,36 @@
     "groupBy": "গ্রুপ করুন"
   },
   "supportPage": {
+    "name": "নাম",
+    "email": "ইমেল",
+    "subject": "বিষয়",
+    "message": "বার্তা",
+    "category": "বিভাগ",
+    "attachments": "সংযুক্তি (ঐচ্ছিক)",
+    "addFiles": "ফাইল যোগ করুন",
     "yourName": "আপনার নাম",
     "emailPlaceholder": "you@example.com",
-    "helpWith": "আমরা কীভাবে সাহায্য করতে পারি?",
-    "describeIssue": "আপনার সমস্যা বা অনুরোধ বিস্তারিত বলুন।"
+    "helpWith": "আমরা আপনাকে কীভাবে সাহায্য করতে পারি?",
+    "describeIssue": "আপনার সমস্যা বা অনুরোধ বর্ণনা করুন।",
+    "attachmentHelp": "সর্বোচ্চ {{count}} ফাইল, প্রতিটি 10 MB পর্যন্ত।",
+    "categoryGeneral": "সাধারণ",
+    "categoryBugReport": "বাগ রিপোর্ট",
+    "categoryFeatureRequest": "বৈশিষ্ট্য অনুরোধ",
+    "categoryBilling": "বিলিং",
+    "categoryAccount": "অ্যাকাউন্ট",
+    "maxFilesMessage": "আপনি সর্বোচ্চ {{count}}টি ফাইল আপলোড করতে পারেন",
+    "fileTooLarge": "{{filename}} খুব বড়",
+    "maxFileSizePerFile": "প্রতিটি ফাইলের সর্বোচ্চ আকার 10 MB।",
+    "completeAllFields": "অনুগ্রহ করে সমস্ত প্রয়োজনীয় ক্ষেত্র পূরণ করুন",
+    "attachmentUploadFailed": "সংযুক্তি আপলোড করা যায়নি",
+    "sendingWithoutAttachments": "আপলোড করা ফাইল লিঙ্ক ছাড়াই ইমেল পাঠানো হচ্ছে।",
+    "requestSent": "সহায়তা অনুরোধ পাঠানো হয়েছে",
+    "openingEmailClient": "আপনার ইমেল ক্লায়েন্ট খুলছি",
+    "emailPreparedFor": "ইমেল {{email}} এর জন্য প্রস্তুত থাকবে।",
+    "sendButton": "সহায়তায় পাঠান",
+    "sending": "পাঠানো হচ্ছে...",
+    "helpMessage": "সাহায্য প্রয়োজন? আমাদের একটি বার্তা পাঠান এবং আমরা {{email}} এ আপনার সাথে যোগাযোগ করব।",
+    "removeFile": "{{filename}} সরান"
   },
   "index": {
     "welcome": "আপনার ফাঁকা অ্যাপে স্বাগতম",
@@ -1382,38 +1438,6 @@
     "errorTitle": "404",
     "oopsPageNotFound": "আফসোস! পৃষ্ঠা পাওয়া যায়নি",
     "returnHome": "হোমে ফিরে যান"
-  },
-  "supportPage": {
-    "name": "নাম",
-    "email": "ইমেল",
-    "subject": "বিষয়",
-    "message": "বার্তা",
-    "category": "বিভাগ",
-    "attachments": "সংযুক্তি (ঐচ্ছিক)",
-    "addFiles": "ফাইল যোগ করুন",
-    "yourName": "আপনার নাম",
-    "emailPlaceholder": "you@example.com",
-    "helpWith": "আমরা আপনাকে কীভাবে সাহায্য করতে পারি?",
-    "describeIssue": "আপনার সমস্যা বা অনুরোধ বর্ণনা করুন।",
-    "attachmentHelp": "সর্বোচ্চ {{count}} ফাইল, প্রতিটি 10 MB পর্যন্ত।",
-    "categoryGeneral": "সাধারণ",
-    "categoryBugReport": "বাগ রিপোর্ট",
-    "categoryFeatureRequest": "বৈশিষ্ট্য অনুরোধ",
-    "categoryBilling": "বিলিং",
-    "categoryAccount": "অ্যাকাউন্ট",
-    "maxFilesMessage": "আপনি সর্বোচ্চ {{count}}টি ফাইল আপলোড করতে পারেন",
-    "fileTooLarge": "{{filename}} খুব বড়",
-    "maxFileSizePerFile": "প্রতিটি ফাইলের সর্বোচ্চ আকার 10 MB।",
-    "completeAllFields": "অনুগ্রহ করে সমস্ত প্রয়োজনীয় ক্ষেত্র পূরণ করুন",
-    "attachmentUploadFailed": "সংযুক্তি আপলোড করা যায়নি",
-    "sendingWithoutAttachments": "আপলোড করা ফাইল লিঙ্ক ছাড়াই ইমেল পাঠানো হচ্ছে।",
-    "requestSent": "সহায়তা অনুরোধ পাঠানো হয়েছে",
-    "openingEmailClient": "আপনার ইমেল ক্লায়েন্ট খুলছি",
-    "emailPreparedFor": "ইমেল {{email}} এর জন্য প্রস্তুত থাকবে।",
-    "sendButton": "সহায়তায় পাঠান",
-    "sending": "পাঠানো হচ্ছে...",
-    "helpMessage": "সাহায্য প্রয়োজন? আমাদের একটি বার্তা পাঠান এবং আমরা {{email}} এ আপনার সাথে যোগাযোগ করব।",
-    "removeFile": "{{filename}} সরান"
   },
   "resetPassword": {
     "title": "পাসওয়ার্ড রিসেট করুন",

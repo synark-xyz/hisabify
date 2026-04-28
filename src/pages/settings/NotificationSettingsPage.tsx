@@ -166,8 +166,8 @@ export function NotificationSettingsPage() {
                 {/* Email Notifications */}
                 <div className="flex items-center justify-between p-4 bg-card rounded-2xl border border-border/50">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500/10 rounded-xl">
-                            <Bell className="w-5 h-5 text-blue-500" />
+                        <div className="p-2 bg-primary/10 rounded-xl">
+                            <Bell className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                             <p className="font-bold text-foreground">{t('notificationSettings.emailUpdates')}</p>

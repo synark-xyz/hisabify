@@ -71,7 +71,6 @@ export default function ReportsPage() {
   };
 
   const handleRefresh = async () => {
-    // Trigger re-fetch by updating filters slightly
     setFilters({ ...filters });
   };
 
@@ -83,14 +82,12 @@ export default function ReportsPage() {
     <div className="container mx-auto px-4 pb-page-content space-y-2">
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="space-y-4">
-          {/* Page header */}
           <div className="flex items-center gap-2.5 pb-1 border-b border-border/50 pt-4">
             <FileBarChart className="h-5 w-5 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">{t('reports.title')}</h1>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-            {/* Sidebar - Filters & Templates */}
             <div className="space-y-4">
               <ReportFiltersPanel
                 filters={filters}
@@ -113,7 +110,6 @@ export default function ReportsPage() {
               />
             </div>
 
-            {/* Main Content - Report */}
             <div className="space-y-5">
               {isLoading ? (
                 <>

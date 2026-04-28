@@ -355,7 +355,7 @@ export function SavingsGoalCard({
                 {!isCompleted && (
                   <Button
                     size="sm"
-                    className="w-full h-10 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
+                    className="w-full h-10 rounded-xl bg-accent hover:bg-accent/90 text-white font-bold text-sm hidden md:flex"
                     onClick={() => setShowFunding(true)}
                   >
                     <Plus className="mr-2 h-4 w-4" />

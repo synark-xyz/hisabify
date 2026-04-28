@@ -26,16 +26,16 @@ export function TopExpensesTable({ transactions }: TopExpensesTableProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h3 className="text-lg font-bold text-foreground mb-4">Top 5 Expenses</h3>
+      <h3 className="text-lg font-bold text-foreground mb-4">{t('savings.dialogs.dashboard.topExpenses')}</h3>
       {topExpenses.length > 0 ? (
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-muted-foreground">Merchant</TableHead>
-                <TableHead className="text-muted-foreground">Category</TableHead>
-                <TableHead className="text-muted-foreground">Date</TableHead>
-                <TableHead className="text-right text-muted-foreground">Amount</TableHead>
+                <TableHead className="text-muted-foreground">{t('savings.dialogs.dashboard.merchant')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('savings.dialogs.dashboard.category')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('savings.dialogs.dashboard.date')}</TableHead>
+                <TableHead className="text-right text-muted-foreground">{t('savings.dialogs.dashboard.amount')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -76,7 +76,7 @@ export function TopExpensesTable({ transactions }: TopExpensesTableProps) {
       ) : (
         <div className="text-center py-8">
           <span className="text-4xl">📋</span>
-          <p className="text-muted-foreground mt-2">No expenses yet</p>
+          <p className="text-muted-foreground mt-2">{t('savings.dialogs.dashboard.noExpensesYet')}</p>
         </div>
       )}
     </motion.div>

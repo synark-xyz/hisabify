@@ -130,15 +130,15 @@ export function NotificationsPage() {
             case 'budget_exceeded':
                 return { icon: WarningCircle, color: 'text-destructive', bg: 'bg-destructive/10' };
             case 'goal_milestone':
-                return { icon: TrendUp, color: 'text-blue-500', bg: 'bg-blue-500/10' };
+                return { icon: TrendUp, color: 'text-primary', bg: 'bg-primary/10' };
             case 'goal_completed':
-                return { icon: Target, color: 'text-green-500', bg: 'bg-green-500/10' };
+                return { icon: Target, color: 'text-emerald-500', bg: 'bg-emerald-500/10' };
             case 'push_notification':
-                return { icon: Bell, color: 'text-blue-500', bg: 'bg-blue-500/10' };
+                return { icon: Bell, color: 'text-primary', bg: 'bg-primary/10' };
             case 'health_weekly':
                 return { icon: Heartbeat, color: 'text-green-500', bg: 'bg-green-500/10' };
             case 'weekly_tip':
-                return { icon: Lightbulb, color: 'text-rose-500', bg: 'bg-rose-500/10' };
+                return { icon: Lightbulb, color: 'text-primary', bg: 'bg-primary/10' };
         }
     };
 

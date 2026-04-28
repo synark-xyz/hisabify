@@ -223,7 +223,7 @@ export function FinancialSummary({
           period={summaries.today}
           comparison={dailyComparison}
           icon={DollarSign}
-          colorClass="bg-blue-500/20 text-blue-500"
+          colorClass="bg-primary/20 text-primary"
         />
         <SummaryCard
           title="This Week"

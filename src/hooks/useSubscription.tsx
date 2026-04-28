@@ -24,10 +24,8 @@ export function useSubscription() {
     ? new Date(profile.referral_granted_until) > new Date()
     : false;
 
-  const isPremium =
-    (profile.subscription_type === 'pro' && profile.subscription_status === 'active') ||
-    hasActiveReferralGrant ||
-    isEntitled;
+  // PRO restrictions removed — entire app is now unlocked for all users.
+  const isPremium = true;
 
   /**
    * Purchase a plan by type. On native, delegates to RevenueCat.

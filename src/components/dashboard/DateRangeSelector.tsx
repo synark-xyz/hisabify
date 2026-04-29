@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Download, RotateCw, SlidersHorizontal } from 'lucide-react';
 import { format, subDays, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, isBefore } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
@@ -101,9 +102,9 @@ export function DateRangeSelector({
       <div className="flex items-center gap-1.5 sm:gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30">
+            <IconButton>
               <SlidersHorizontal className="w-4 h-4 text-violet-500" />
-            </Button>
+            </IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-card border-border/60 shadow-lg">
             {presetRanges.map((preset) => (
@@ -119,27 +120,14 @@ export function DateRangeSelector({
         </DropdownMenu>
 
         {onRefresh && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30"
-          >
+          <IconButton onClick={onRefresh} disabled={isRefreshing}>
             <RotateCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
-          </Button>
+          </IconButton>
         )}
-        
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onExportCSV}
-            className="h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30 text-emerald-500"
-          >
-            <Download className="w-4 h-4" />
-          </Button>
-        </motion.div>
+
+        <IconButton onClick={onExportCSV} className="text-emerald-500">
+          <Download className="w-4 h-4" />
+        </IconButton>
       </div>
     </motion.div>
   );

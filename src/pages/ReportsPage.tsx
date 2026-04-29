@@ -79,7 +79,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 pb-page-content space-y-2">
+    <div className="px-4 pb-page-content space-y-2">
       <PullToRefresh onRefresh={handleRefresh}>
         <div className="space-y-4">
           <div className="flex items-center gap-2.5 pb-1 border-b border-border/50 pt-4">
@@ -87,7 +87,7 @@ export default function ReportsPage() {
             <h1 className="text-2xl font-bold tracking-tight">{t('reports.title')}</h1>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+          <div className="grid gap-6 lg:grid-cols-[300px_minmax(300px,1fr)]">
             <div className="space-y-4">
               <ReportFiltersPanel
                 filters={filters}

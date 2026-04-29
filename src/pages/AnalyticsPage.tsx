@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, RefreshCw, Crown, Share2, X } from 'lucide-react';
+import { RefreshCw, Crown, Share2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
@@ -37,6 +37,7 @@ import { useTranslation } from 'react-i18next';
 
 export function AnalyticsPage() {
   const [showWrapModal, setShowWrapModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState({
     from: startOfMonth(subMonths(new Date(), 11)),
     to: endOfMonth(new Date()),
@@ -104,32 +105,15 @@ export function AnalyticsPage() {
             initial="hidden"
             animate="visible"
           >
-            {/* Header */}
-            <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(-1)}
-                  className="hover:bg-accent/50 rounded-xl"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-foreground">{t('analytics.title')}</h1>
-                  <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">{t('analytics.subtitle')}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <DateRangeSelector
-                  dateRange={dateRange}
-                  onDateRangeChange={handleDateRangeChange}
-                  onExportCSV={handleExportCSV}
-                  onRefresh={refetch}
-                  isRefreshing={loading}
-                />
-              </div>
+            {/* Action Bar */}
+            <motion.div variants={itemVariants} className="flex items-center justify-end mb-6">
+              <DateRangeSelector
+                dateRange={dateRange}
+                onDateRangeChange={handleDateRangeChange}
+                onExportCSV={handleExportCSV}
+                onRefresh={refetch}
+                isRefreshing={loading}
+              />
             </motion.div>
 
             {/* Summary Cards */}
@@ -143,8 +127,8 @@ export function AnalyticsPage() {
             </motion.div>
 
             {/* Main Tabs */}
-            <Tabs defaultValue="overview" className="mt-6">
-              <TabsList className="grid grid-cols-3 w-full lg:w-auto lg:grid-cols-3 gap-1 p-1 bg-card/50 rounded-xl">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+              <TabsList className="mb-6 grid grid-cols-3 w-full lg:w-auto lg:grid-cols-3 gap-1 p-1 bg-card/50 rounded-xl">
                 <TabsTrigger value="overview" className="text-xs sm:text-sm">{t('analytics.overview')}</TabsTrigger>
                 <TabsTrigger value="insights" className="text-xs sm:text-sm">{t('analytics.insights')}</TabsTrigger>
                 <TabsTrigger value="advanced" className="text-xs sm:text-sm">{t('analytics.advanced')}</TabsTrigger>

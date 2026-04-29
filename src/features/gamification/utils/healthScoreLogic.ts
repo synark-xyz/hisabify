@@ -1,20 +1,18 @@
 import { differenceInDays, parseISO } from 'date-fns';
 
-// ─── Score component weights (keep in sync with calculateHealthScore) ────────
-
 export const SCORE_WEIGHTS = {
-  budget: 35,
-  savings: 50,
+  budget: 30,
+  savings: 30,
+  trends: 15,
   activity: 15,
+  accuracy: 10,
 } as const;
 
 export function getScoreColor(val: number): string {
-  if (val >= 80) return '#10b981'; // emerald-500
-  if (val >= 50) return '#f59e0b'; // amber-500
-  return '#f43f5e'; // rose-500
+  if (val >= 80) return '#10b981';
+  if (val >= 50) return '#f59e0b';
+  return '#f43f5e';
 }
-
-// ─── Milestone badge definitions ──────────────────────────────────────────────
 
 export interface MilestoneBadge {
   score: number;
@@ -31,22 +29,23 @@ const MILESTONE_BADGES: MilestoneBadge[] = [
   { score: 50, key: 'gettingSteady', name: 'Getting Steady', emoji: '🌱', description: 'Building solid financial foundations' },
 ];
 
-/**
- * Returns the highest milestone badge earned for a given score.
- * Returns null if the score is below the lowest milestone (50).
- */
 export function getMilestoneBadge(score: number): MilestoneBadge | null {
   for (const badge of MILESTONE_BADGES) {
-    if (score >= badge.score) {
-      return badge;
-    }
+    if (score >= badge.score) return badge;
   }
   return null;
+}
+
+interface SpendingByCategory {
+  categoryId: string | null;
+  amount: number;
 }
 
 interface HealthScoreParams {
   totalSpent: number;
   totalBudget: number;
+  totalIncome: number;
+  totalSavings: number;
   hasActiveGoal: boolean;
   anyGoalOnTrack: boolean;
   hasSavingsContributionThisMonth: boolean;
@@ -62,6 +61,13 @@ interface HealthScoreParams {
   onTrackGoalName?: string | null;
   latestCompletedGoalName?: string | null;
   lastActiveAt: string | null;
+  currentMonthExpenses: number;
+  currentMonthNeeds: number;
+  currentMonthWants: number;
+  previousMonthExpenses: number;
+  spendingByCategory: SpendingByCategory[];
+  transactionsThisMonth: number;
+  daysInMonth: number;
 }
 
 export interface HealthScoreResult {
@@ -69,7 +75,17 @@ export interface HealthScoreResult {
   breakdown: {
     budget: number;
     savings: number;
+    trends: number;
     activity: number;
+    accuracy: number;
+  };
+  metrics: {
+    savingsRate: number;
+    budgetAdherence: number;
+    expenseGrowthRate: number;
+    topSpendingCategory: string | null;
+    needsPercentage: number;
+    wantsPercentage: number;
   };
   insightKey: string;
   insightParams: Record<string, string>;
@@ -80,11 +96,8 @@ export interface HealthScoreTip {
   component: 'budget' | 'savings' | 'activity' | 'general';
 }
 
-/**
- * Returns 1–3 actionable tips based on the weakest score components.
- */
 export function generateTips(
-  breakdown: { budget: number; savings: number; activity: number },
+  breakdown: { budget: number; savings: number; activity: number; trends?: number; accuracy?: number },
   total: number,
 ): HealthScoreTip[] {
   if (total >= 90) {
@@ -93,80 +106,157 @@ export function generateTips(
 
   const tips: HealthScoreTip[] = [];
 
-  if (breakdown.budget < 20) {
-    tips.push({ text: "You're overspending. Try setting stricter budgets.", component: 'budget' });
+  if (breakdown.budget < 15) {
+    tips.push({ text: "Budget alert: You're at 80%+ spending. Time to cut back!", component: 'budget' });
   }
 
-  if (breakdown.savings < 25) {
-    tips.push({ text: "Set up a savings goal and contribute monthly to boost this score.", component: 'savings' });
-  } else if (breakdown.savings < 35) {
-    tips.push({ text: "Enable auto-contribute on your savings goals to earn +5 pts.", component: 'savings' });
+  if (breakdown.savings < 15) {
+    tips.push({ text: "Your savings rate is below 10%. Aim for at least 20% savings.", component: 'savings' });
   }
 
-  if (breakdown.activity < 10) {
-    tips.push({ text: "Log transactions regularly — inactivity costs 2 pts/day.", component: 'activity' });
+  if ((breakdown.trends || 0) < 10) {
+    tips.push({ text: "Detected spend creep: Your expenses are growing month-over-month.", component: 'savings' });
+  }
+
+  if (breakdown.activity < 8) {
+    tips.push({ text: "Log transactions daily — inactivity is hurting your score.", component: 'activity' });
   }
 
   if (tips.length === 0) {
-    tips.push({ text: "Keep up the good work! Complete more savings goals to push higher.", component: 'general' });
+    tips.push({ text: "Keep up the good work! Stay consistent with your goals.", component: 'general' });
   }
 
   return tips.slice(0, 3);
 }
 
 export function calculateHealthScore(params: HealthScoreParams): HealthScoreResult {
+  // 1. Budget Score
   let budgetScore = 0;
+  let budgetAdherence = 100;
   if (params.totalBudget > 0) {
-    const adherence = Math.max(0, 1 - params.totalSpent / params.totalBudget);
-    budgetScore = Math.round(adherence * 35);
+    budgetAdherence = Math.max(0, 1 - params.totalSpent / params.totalBudget) * 100;
+    budgetScore = Math.round((budgetAdherence / 100) * SCORE_WEIGHTS.budget);
   } else if (params.totalSpent === 0) {
-    budgetScore = 35;
+    budgetScore = SCORE_WEIGHTS.budget;
+    budgetAdherence = 100;
   }
+
+  // 2. Savings Score
+  const savingsRate = params.totalIncome > 0 ? (params.totalSavings / params.totalIncome) * 100 : 0;
+  const needsPct = params.currentMonthExpenses > 0 ? (params.currentMonthNeeds / params.currentMonthExpenses) * 100 : 0;
+  const wantsPct = params.currentMonthExpenses > 0 ? (params.currentMonthWants / params.currentMonthExpenses) * 100 : 0;
 
   let savingsScore = 0;
-  if (params.hasActiveGoal) savingsScore += 10;
-  if (params.anyGoalOnTrack) savingsScore += 10;
-  if (params.hasSavingsContributionThisMonth) savingsScore += 10;
-  if (params.completedGoalsCount > 0) savingsScore += 15;
-  if (params.anyAutoContributeEnabled) savingsScore += 5;
-  if (params.anyPlanEnabled) savingsScore += 5;
-  if (params.anyOnPaceThisPeriod) savingsScore += 10;
-  if (params.anyBehindThisPeriod) savingsScore -= 10;
-  if (params.transferredBudgetLeftoverThisMonth) savingsScore += 5;
-  if (params.overdueWithoutContribution) savingsScore -= 10;
-  savingsScore = Math.max(0, Math.min(50, savingsScore));
+  if (savingsRate >= 20) savingsScore += 15;
+  else if (savingsRate >= 10) savingsScore += 10;
+  else if (savingsRate >= 5) savingsScore += 5;
 
-  let activityScore = 0;
+  const needsGood = needsPct <= 55 && needsPct >= 45;
+  const wantsGood = wantsPct <= 35 && wantsPct >= 25;
+  if (needsGood && wantsGood && savingsRate >= 15) savingsScore += 15;
+  else if (needsPct <= 60 && wantsPct <= 40) savingsScore += 10;
+  else if (needsPct > 65 || wantsPct > 45) savingsScore += 0;
+  else savingsScore += 5;
+
+  savingsScore = Math.min(SCORE_WEIGHTS.savings, savingsScore);
+  let rule502030: 'good' | 'warning' | 'bad' = 'good';
+  if (needsPct > 60 || wantsPct > 40 || savingsRate < 10) rule502030 = 'bad';
+  else if (needsPct > 55 || wantsPct > 35 || savingsRate < 15) rule502030 = 'warning';
+
+  // 3. Trends Score
+  const expenseGrowthRate = params.previousMonthExpenses > 0
+    ? ((params.currentMonthExpenses - params.previousMonthExpenses) / params.previousMonthExpenses) * 100
+    : 0;
+  let trendsScore = SCORE_WEIGHTS.trends;
+  if (expenseGrowthRate > 30) trendsScore -= 10;
+  else if (expenseGrowthRate > 20) trendsScore -= 7;
+  else if (expenseGrowthRate > 10) trendsScore -= 4;
+  else if (expenseGrowthRate > 5) trendsScore -= 2;
+  trendsScore = Math.max(0, trendsScore);
+  const hasSpendCreep = expenseGrowthRate > 10;
+
+  // 4. Activity Score
+  let activityScore = SCORE_WEIGHTS.activity;
   if (params.lastActiveAt) {
     const daysInactive = Math.abs(differenceInDays(new Date(), parseISO(params.lastActiveAt)));
-    activityScore = Math.max(0, 15 - daysInactive * 2);
+    activityScore = Math.max(0, SCORE_WEIGHTS.activity - daysInactive * 2);
+  }
+  const txnsPerDay = params.daysInMonth > 0 ? params.transactionsThisMonth / params.daysInMonth : 0;
+  if (txnsPerDay >= 1) activityScore = Math.min(SCORE_WEIGHTS.activity, activityScore + 2);
+  else if (txnsPerDay >= 0.5) activityScore = Math.min(SCORE_WEIGHTS.activity, activityScore + 1);
+
+  // 5. Accuracy Score
+  const variancePct = params.totalBudget > 0
+    ? Math.abs(params.totalSpent - params.totalBudget) / params.totalBudget * 100
+    : 0;
+  let accuracyScore = SCORE_WEIGHTS.accuracy;
+  if (variancePct > 30) accuracyScore -= 6;
+  else if (variancePct > 20) accuracyScore -= 4;
+  else if (variancePct > 10) accuracyScore -= 2;
+  else if (variancePct <= 5) accuracyScore += 2;
+  accuracyScore = Math.max(0, Math.min(SCORE_WEIGHTS.accuracy, accuracyScore));
+
+  // Total
+  const total = Math.max(0, Math.min(100,
+    budgetScore + savingsScore + trendsScore + activityScore + accuracyScore
+  ));
+
+  // Top category - with explicit empty array fallback
+  let topCategoryId: string | null = null;
+  let topCategoryAmount = 0;
+  const safeArray = Array.isArray(params.spendingByCategory) ? params.spendingByCategory : [];
+  for (const cat of safeArray) {
+    if (cat && typeof cat.amount === 'number' && cat.amount > topCategoryAmount) {
+      topCategoryAmount = cat.amount;
+      topCategoryId = cat.categoryId;
+    }
   }
 
+  // Insight
   let insightKey = 'healthScore.insightSetGoal';
   let insightParams: Record<string, string> = {};
 
   if (params.completedGoalsCount > 0 && params.latestCompletedGoalName) {
     insightKey = 'healthScore.insightCompletedGoal';
     insightParams = { goalName: params.latestCompletedGoalName };
+  } else if (hasSpendCreep) {
+    insightKey = 'healthScore.insightSpendCreep';
+    insightParams = { rate: expenseGrowthRate.toFixed(1) + '%' };
+  } else if (budgetAdherence <= 20) {
+    insightKey = 'healthScore.insightBudgetAlert';
+    insightParams = { pct: (100 - budgetAdherence).toFixed(0) + '%' };
+    } else if (rule502030 === 'bad') {
+      insightKey = 'healthScore.insightRule502030';
+    insightParams = { needs: needsPct.toFixed(0) + '%', savings: savingsRate.toFixed(0) + '%' };
   } else if (params.hasActiveGoal && params.anyBehindThisPeriod && params.atRiskGoalName) {
     insightKey = 'healthScore.insightBehind';
     insightParams = { goalName: params.atRiskGoalName, required: params.atRiskGoalRequiredLabel || '' };
-  } else if (params.hasActiveGoal && params.overdueWithoutContribution && params.atRiskGoalName) {
-    insightKey = 'healthScore.insightBehindContribute';
-    insightParams = { goalName: params.atRiskGoalName };
   } else if (params.anyGoalOnTrack && params.onTrackGoalName) {
     insightKey = 'healthScore.insightOnTrack';
     insightParams = { goalName: params.onTrackGoalName };
+  } else if (savingsRate < 10 && params.totalIncome > 0) {
+    insightKey = 'healthScore.insightLowSavings';
+    insightParams = { rate: savingsRate.toFixed(1) + '%' };
   } else if (params.hasActiveGoal) {
     insightKey = 'healthScore.insightKeepContributing';
   }
 
   return {
-    total: Math.max(0, Math.min(100, budgetScore + savingsScore + activityScore)),
+    total,
     breakdown: {
       budget: budgetScore,
       savings: savingsScore,
+      trends: trendsScore,
       activity: activityScore,
+      accuracy: accuracyScore,
+    },
+    metrics: {
+      savingsRate,
+      budgetAdherence,
+      expenseGrowthRate,
+      topSpendingCategory: topCategoryId,
+      needsPercentage: needsPct,
+      wantsPercentage: wantsPct,
     },
     insightKey,
     insightParams,

@@ -29,12 +29,12 @@ export function BudgetVsActualChart({ data }: BudgetVsActualChartProps) {
           <p className="text-sm font-semibold text-foreground mb-2">{label}</p>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary" />
+              <div className="w-2 h-2 rounded-full bg-muted-foreground" />
               <span className="text-sm text-muted-foreground">Budget:</span>
               <span className="text-sm font-semibold text-foreground">{formatAmount(budget)}</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-accent" />
+              <div className="w-2 h-2 rounded-full bg-primary" />
               <span className="text-sm text-muted-foreground">Actual:</span>
               <span className="text-sm font-semibold text-foreground">{formatAmount(actual)}</span>
             </div>
@@ -56,17 +56,17 @@ export function BudgetVsActualChart({ data }: BudgetVsActualChartProps) {
       animate={{ opacity: 1, y: 0 }}
     >
       <h3 className="text-lg font-bold text-foreground mb-4">Budget vs Actual</h3>
-      <div className="h-64">
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
             <XAxis
               dataKey="category"
               axisLine={false}
               tickLine={false}
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
               angle={-45}
-              textAnchor="end"
-              height={60}
+              textAnchor="middle"
+              height={80}
               interval={0}
             />
             <YAxis
@@ -76,23 +76,29 @@ export function BudgetVsActualChart({ data }: BudgetVsActualChartProps) {
               tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }} />
-            <Legend 
-              verticalAlign="top" 
+            <Legend
+              verticalAlign="top"
               height={36}
               formatter={(value) => <span className="text-foreground capitalize">{value}</span>}
             />
             <Bar
               dataKey="budget"
-              fill="hsl(var(--primary))"
+              fill="hsl(var(--muted-foreground))"
               radius={[4, 4, 0, 0]}
               maxBarSize={30}
             />
             <Bar
               dataKey="actual"
-              fill="hsl(var(--accent))"
               radius={[4, 4, 0, 0]}
               maxBarSize={30}
-            />
+            >
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.actual > entry.budget ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'}
+                />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>

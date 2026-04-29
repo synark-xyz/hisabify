@@ -16,7 +16,7 @@ const PAGE_TITLES: Record<string, string> = {
     '/savings': 'nav.savings',
     '/expenses': 'nav.expenses',
     '/transactions': 'nav.transactions',
-    '/insights': 'nav.insights',
+    '/insights': 'nav.analytics',
     '/reports': 'nav.analytics',
     '/profile': 'nav.profile',
     '/profile/personal': 'profile.personalInfo',

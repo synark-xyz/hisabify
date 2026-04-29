@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useBudgets } from '@/hooks/useBudgets';
 import { Transaction, CategorySpending, MonthlySpending } from '@/types';
 import { format, startOfMonth, endOfMonth, subMonths, parseISO } from 'date-fns';
 import { getTransactionCategoryName, getTransactionCategoryColor, isRealExpense } from '@/lib/transactionUtils';
@@ -58,13 +59,13 @@ interface DashboardData {
 
 export function useDashboardData(dateRange: { from: Date; to: Date }): DashboardData {
   const [transactions, setTransactions] = useState<ConvertedTransaction[]>([]);
-  const [budgets, setBudgets] = useState<BudgetWithSpending[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
   const { isPremium } = useSubscription();
+  const { budgets: rawBudgets } = useBudgets();
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -101,54 +102,6 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
       );
 
       setTransactions(convertedTransactions);
-
-      // Fetch budgets for current month
-      const now = new Date();
-      const { data: budgetData, error: budgetError } = await supabase
-        .from('budgets')
-        .select('*, category:categories(*)')
-        .eq('user_id', user.id)
-        .eq('month', now.getMonth() + 1)
-        .eq('year', now.getFullYear());
-
-      if (budgetError) throw budgetError;
-
-      // Calculate spent for each budget
-      const budgetsWithSpending = (budgetData || []).map((budget: {
-        id: string;
-        name: string | null;
-        category_id: string | null;
-        amount: number;
-        period_type: string;
-        start_date: string | null;
-        end_date: string | null;
-        category?: { name?: string; color?: string } | null;
-      }) => {
-        const spent = convertedTransactions
-          .filter(tx =>
-            isRealExpense(tx) &&
-            tx.category_id === budget.category_id &&
-            new Date(tx.date).getMonth() === now.getMonth() &&
-            new Date(tx.date).getFullYear() === now.getFullYear()
-          )
-          .reduce((sum, tx) => sum + tx.convertedAmount, 0);
-
-        return {
-          id: budget.id,
-          name: budget.name || budget.category?.name || 'General Budget',
-          category: budget.category?.name,
-          categoryColor: budget.category?.color,
-          amount: Number(budget.amount),
-          spent,
-          remaining: Number(budget.amount) - spent,
-          percentage: Number(budget.amount) > 0 ? (spent / Number(budget.amount)) * 100 : 0,
-          periodType: budget.period_type,
-          startDate: budget.start_date || format(startOfMonth(now), 'yyyy-MM-dd'),
-          endDate: budget.end_date || format(endOfMonth(now), 'yyyy-MM-dd'),
-        };
-      });
-
-      setBudgets(budgetsWithSpending);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
@@ -172,6 +125,24 @@ export function useDashboardData(dateRange: { from: Date; to: Date }): Dashboard
   );
 
   const netBalance = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
+
+  // Map useBudgets() data to internal shape — same source as BudgetPage
+  const budgets = useMemo<BudgetWithSpending[]>(() =>
+    rawBudgets.map(b => ({
+      id: b.id,
+      name: b.name || b.category?.name || 'General Budget',
+      category: b.category?.name,
+      categoryColor: b.category?.color,
+      amount: b.amount,
+      spent: b.spent,
+      remaining: b.remaining,
+      percentage: b.percentage,
+      periodType: b.period_type,
+      startDate: b.start_date || '',
+      endDate: b.end_date || '',
+    })),
+    [rawBudgets]
+  );
 
   const budgetRemaining = useMemo(() =>
     budgets.reduce((sum, b) => sum + b.remaining, 0),

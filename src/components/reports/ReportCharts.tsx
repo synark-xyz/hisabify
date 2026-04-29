@@ -81,17 +81,33 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
 
   const categoryColors = reportData.categoryBreakdown.map((entry) => entry.color);
   const incomeCategoryColors = reportData.incomeCategoryBreakdown.map((entry) => entry.color);
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        flexWrap: "nowrap",
+        overflowX: "auto",
+        gap: "24px",
+      }}
+      className="pb-2 md:gap-6"
+    >
       {/* Expense Category Breakdown Pie Chart */}
-      <Card>
+      <Card
+        style={{
+          flex: "0 0 auto",
+          width: "320px",
+        }}
+        className="sm:w-[85vw] md:w-auto"
+      >
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('reports.charts.expensesByCategory')}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-4">
           {reportData.categoryBreakdown.length > 0 ? (
             <div>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" minHeight={180}>
                 <PieChart>
                   <Pie
                     activeIndex={activeIndex}
@@ -119,7 +135,6 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                 </PieChart>
               </ResponsiveContainer>
 
-              {/* Legend grid — no clipping, full text visible */}
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {reportData.categoryBreakdown.map((item, index) => (
                   <button
@@ -147,22 +162,28 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               </div>
             </div>
           ) : (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-              {t('reports.charts.noExpenseData')}
+            <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
+              {t('reports.charts.noExpensesData')}
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Income Category Breakdown Pie Chart */}
-      <Card>
+      <Card
+        style={{
+          flex: "0 0 auto",
+          width: "320px",
+        }}
+        className="sm:w-[85vw] md:w-auto"
+      >
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('reports.charts.incomeSources')}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-4">
           {reportData.incomeCategoryBreakdown.length > 0 ? (
             <div>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" minHeight={180}>
                 <PieChart>
                   <Pie
                     activeIndex={incomeActiveIndex}
@@ -190,7 +211,6 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                 </PieChart>
               </ResponsiveContainer>
 
-              {/* Legend grid */}
               <div className="grid grid-cols-2 gap-2 mt-3">
                 {reportData.incomeCategoryBreakdown.map((item, index) => (
                   <button
@@ -218,7 +238,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               </div>
             </div>
           ) : (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+            <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
               {t('reports.charts.noIncomeData')}
             </div>
           )}
@@ -226,13 +246,19 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       </Card>
 
       {/* Budget Performance Bar Chart */}
-      <Card>
+      <Card
+        style={{
+          flex: "0 0 auto",
+          width: "320px",
+        }}
+        className="sm:w-[85vw] md:w-auto"
+      >
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('reports.charts.budgetPerformance')}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-4">
           {reportData.budgetPerformance.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" minHeight={220}>
               <BarChart
                 data={reportData.budgetPerformance}
                 layout="vertical"
@@ -255,7 +281,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+            <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
               {t('reports.charts.noBudgetData')}
             </div>
           )}
@@ -263,13 +289,19 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       </Card>
 
       {/* Daily Expenses Area Chart */}
-      <Card className="lg:col-span-3 md:col-span-2">
+      <Card
+        style={{
+          flex: "0 0 auto",
+          width: "320px",
+        }}
+        className="sm:w-[85vw] md:w-auto"
+      >
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('reports.charts.dailyExpensesIncome')}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-4">
           {formattedDailyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" minHeight={280}>
               <AreaChart data={formattedDailyData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
@@ -307,7 +339,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
               {t('reports.charts.noData')}
             </div>
           )}

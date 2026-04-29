@@ -70,13 +70,19 @@ export function ReportSummary({ summary }: ReportSummaryProps) {
         <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">{t('reports.summary.title')}</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-border/50">
+        <div
+          className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2"
+          style={{ scrollbarWidth: "thin" }}
+        >
           {stats.map((stat, i) => (
-            <div key={stat.labelKey} className={`flex flex-col items-center gap-2 px-3 py-2 ${i < 2 ? "md:border-b lg:border-b-0 border-b border-border/50" : ""}`}>
-              <div className={`w-8 h-8 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+            <div
+              key={stat.labelKey}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card min-w-[160px] flex-shrink-0 snap-start"
+            >
+              <div className={`w-9 h-9 rounded-lg ${stat.bgColor} flex items-center justify-center shrink-0`}>
                 <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </div>
-              <div className="text-center">
+              <div className="min-w-0">
                 <p className={`text-base font-semibold tabular-nums leading-tight ${stat.color}`}>{stat.value}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{t(stat.labelKey)}</p>
               </div>

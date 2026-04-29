@@ -208,7 +208,60 @@
         "name": "安定中",
         "description": "着実な財務基盤を構築中"
       }
-    }
+    },
+    "insightSpendCreep": "支出が{{rate}}増加しました — 支出の侵食に注意してください。",
+    "insightBudgetAlert": "予算の{{pct}}に達しました — ペースを落としてください。",
+    "insightRule502030": "ニーズ{{needs}}と貯金{{savings}} — 50/30/20のルールに従いましょう。",
+    "insightLowSavings": "貯金率は{{rate}}です — 20%を目指しましょう。",
+    "rule502030Analysis": "50/30/20 ルール分析",
+    "needs": "ニーズ",
+    "wants": "ワンツ",
+    "target": "目標",
+    "budgetAdherence": "予算順守",
+    "budgetAdherenceDesc": "予算内にどれだけ収まっているか",
+    "savingsRate": "貯金率",
+    "savingsRateDesc": "貯金と収入の比率",
+    "cashFlowTrends": "キャッシュフローの傾向",
+    "cashFlowTrendsDesc": "月ごとの支出成長分析",
+    "dailyActivity": "日々のアクティビティ",
+    "dailyActivityDesc": "どれだけ頻繁に取引を記録するか",
+    "budgetAccuracy": "予算精度",
+    "budgetAccuracyDesc": "計画と実際の支出の差異",
+    "coreFormula": "コア数式",
+    "balanceFormula": "残高 = 収入 − 支出",
+    "savingsRateFormula": "貯金率 = 貯金 ÷ 収入",
+    "scoreBreakdown": "スコア内訳",
+    "rate": "レート",
+    "rule": "ルール",
+    "momGrowth": "前月比成長",
+    "alert": "アラート",
+    "spendCreepDetected": "支出の侵食を検出",
+    "normal": "正常",
+    "dailyReconSpeed": "日々の調整スピード",
+    "ptsMax": "pts 最大",
+    "perDay": "日あたり",
+    "inactive": "非アクティブ",
+    "budgetVarianceTracking": "予算と実際の差異追跡",
+    "calculationWeights": "計算ウェイト",
+    "calculatedDesc": "財務健全性スコアは、5つの主要な指標に基づいて計算されます。",
+    "remaining": "{{pct}}% 残り",
+    "overBudget": "{{pct}}% 予算オーバー",
+    "savingsRateGood": "{{rate}}% 貯金率 ✓",
+    "savingsRateOk": "{{rate}}% 貯金率",
+    "dailyLoggingStreak": "デイリー記録ストリーク",
+    "logMoreTransactions": "取引をもっと記録",
+    "budget": "予算",
+    "budgetLabel": "予算",
+    "savingsLabel": "貯蓄",
+    "trendsLabel": "トレンド",
+    "activityLabel": "アクティビティ",
+    "accuracyLabel": "精度",
+    "trends": "トレンド",
+    "accuracy": "精度",
+    "detailTitle": "財務健全性の詳細",
+    "earnBadgePrompt": "バッジを獲得するために習慣を改善し続けましょう！",
+    "maxPtsLabel": "最大 {{max}} pt",
+    "improvementTips": "改善のヒント"
   },
   "expenses": {
     "title": "支出",
@@ -266,21 +319,7 @@
     "historyLimitTitle": "履歴の上限に達しました",
     "historyLimitDesc": "無料プランは過去30日間に対応しています。全履歴にはアップグレードしてください。",
     "calendarSelected": "選択済み",
-    "calendarSwipeHint": "スワイプして表示",
-    "dateSelect": {
-      "january": "1月",
-      "february": "2月",
-      "march": "3月",
-      "april": "4月",
-      "may": "5月",
-      "june": "6月",
-      "july": "7月",
-      "august": "8月",
-      "september": "9月",
-      "october": "10月",
-      "november": "11月",
-      "december": "12月"
-    }
+    "calendarSwipeHint": "スワイプして表示"
   },
   "budget": {
     "title": "予算",
@@ -489,31 +528,81 @@
     "noLinkedBudget": "リンクされた予算なし",
     "savingsReserved": "貯金予約済み",
     "totalNetSavings": "純貯蓄額",
-    "activeGoals": "進行中の目標",
-    "dialogs": {
-      "dashboard": {
-        "financialSummary": "財務サマリー",
-        "quickInsights": "クイック分析",
-        "dailyAverage": "日平均（今月）",
-        "monthlySavingsRate": "月間貯蓄率",
-        "incomeExpenseRatio": "収入/支出比率",
-        "topExpenses": "トップ5支出",
-        "date": "日付",
-        "merchant": "加盟店",
-        "category": "カテゴリー",
-        "amount": "金額",
-        "noExpensesYet": "支出がありません",
-        "budgetVsActual": "予算 vs 実績",
-        "budgetLabel": "予算:",
-        "actualLabel": "実績:",
-        "totalIncome": "総収入",
-        "addIncomeStart": "収入を追加して追跡を開始",
-        "totalExpenses": "総支出",
-        "noExpensesRecorded": "支出が記録されていません",
-        "spent": "支出",
-        "earned": "収入",
-        "underBudget": "予算内"
-      }
+    "activeGoals": "進行中の目標"
+  },
+  "dialogs": {
+    "budgetExceed": {
+      "title": "予算上限を超過",
+      "expenseAmount": "支出金額:",
+      "budgetRemaining": "予算残り:",
+      "overBudgetBy": "予算超過:",
+      "addAnyway": "追加する",
+      "expenseWillExceed": "この支出は{{name}}の予算を超過します。"
+    },
+    "dashboard": {
+      "financialSummary": "財務サマリー",
+      "quickInsights": "クイック分析",
+      "dailyAverage": "日平均（今月）",
+      "monthlySavingsRate": "月間貯蓄率",
+      "incomeExpenseRatio": "収入/支出比率",
+      "topExpenses": "トップ5支出",
+      "date": "日付",
+      "merchant": "加盟店",
+      "category": "カテゴリー",
+      "amount": "金額",
+      "noExpensesYet": "支出がありません",
+      "budgetVsActual": "予算 vs 実績",
+      "budgetLabel": "予算:",
+      "actualLabel": "実績:",
+      "totalIncome": "総収入",
+      "addIncomeStart": "収入を追加して追跡を開始",
+      "totalExpenses": "総支出",
+      "noExpensesRecorded": "支出が記録されていません",
+      "spent": "支出",
+      "earned": "収入",
+      "underBudget": "予算内"
+    },
+    "deleteBudget": {
+      "title": "予算を削除",
+      "confirmTitle": "{{name}}を削除しますか？",
+      "confirmDesc": "この操作は元に戻せません。予算とその進捗が完全に削除されます。"
+    },
+    "deleteTransaction": {
+      "title": "取引を削除",
+      "confirmTitle": "この取引を削除しますか？",
+      "confirmDesc": "この操作は元に戻せません。",
+      "toastDeleted": "取引が削除されました",
+      "toastError": "取引の削除中にエラーが発生しました"
+    },
+    "editRecurring": {
+      "title": "定期リマインダーを編集しますか？"
+    },
+    "transactionDetails": {
+      "tags": "タグ",
+      "note": "メモ",
+      "receipt": "レシート",
+      "failedUpdateLink": "リンクの更新に失敗しました",
+      "failedRemoveLink": "リンクの削除に失敗しました"
+    },
+    "upgrade": {
+      "unlimited": "無制限",
+      "goals": "目標",
+      "full": "フル",
+      "history": "履歴",
+      "smarter": "スマート",
+      "planning": "計画",
+      "monthly": "月次",
+      "annual": "年次",
+      "purchaseError": "購入エラー",
+      "restoreError": "復元エラー"
+    },
+    "paymentReminder": {
+      "noReminders": "支払いリマインダーは見つかりません",
+      "deleteReminder": "リマインダーを削除",
+      "toastDeleted": "リマインダーが削除されました"
+    },
+    "paymentCarousel": {
+      "noReminder": "リマインダーはまだ設定されていません"
     }
   },
   "settings": {
@@ -799,81 +888,6 @@
     "average": "平均",
     "biggestExpenseCategory": "最大の支出カテゴリー",
     "budgetRemaining": "残りの予算",
-    "dialogs": {
-      "budgetExceed": {
-        "title": "予算上限を超過",
-        "expenseAmount": "支出金額:",
-        "budgetRemaining": "予算残り:",
-        "overBudgetBy": "予算超過:",
-        "addAnyway": "追加する",
-        "expenseWillExceed": "この支出は{{name}}の予算を超過します。"
-      },
-      "dashboard": {
-        "financialSummary": "財務サマリー",
-        "quickInsights": "クイック分析",
-        "dailyAverage": "日平均（今月）",
-        "monthlySavingsRate": "月間貯蓄率",
-        "incomeExpenseRatio": "収入/支出比率",
-        "topExpenses": "トップ5支出",
-        "date": "日付",
-        "merchant": "加盟店",
-        "category": "カテゴリー",
-        "amount": "金額",
-        "noExpensesYet": "支出がありません",
-        "budgetVsActual": "予算 vs 実績",
-        "budgetLabel": "予算:",
-        "actualLabel": "実績:",
-        "totalIncome": "総収入",
-        "addIncomeStart": "収入を追加して追跡を開始",
-        "totalExpenses": "総支出",
-        "noExpensesRecorded": "支出が記録されていません",
-        "spent": "支出",
-        "earned": "収入",
-        "underBudget": "予算内"
-      },
-      "deleteBudget": {
-        "title": "予算を削除",
-        "confirmTitle": "{{name}}を削除しますか？",
-        "confirmDesc": "この操作は元に戻せません。予算とその進捗が完全に削除されます。"
-      },
-      "deleteTransaction": {
-        "title": "取引を削除",
-        "confirmTitle": "この取引を削除しますか？",
-        "confirmDesc": "この操作は元に戻せません。",
-        "toastDeleted": "取引が削除されました",
-        "toastError": "取引の削除中にエラーが発生しました"
-      },
-      "editRecurring": {
-        "title": "定期リマインダーを編集しますか？"
-      },
-      "transactionDetails": {
-        "tags": "タグ",
-        "note": "メモ",
-        "receipt": "レシート",
-        "failedUpdateLink": "リンクの更新に失敗しました",
-        "failedRemoveLink": "リンクの削除に失敗しました"
-      },
-      "upgrade": {
-        "unlimited": "無制限",
-        "goals": "目標",
-        "full": "フル",
-        "history": "履歴",
-        "smarter": "スマート",
-        "planning": "計画",
-        "monthly": "月次",
-        "annual": "年次",
-        "purchaseError": "購入エラー",
-        "restoreError": "復元エラー"
-      },
-      "paymentReminder": {
-        "noReminders": "支払いリマインダーは見つかりません",
-        "deleteReminder": "リマインダーを削除",
-        "toastDeleted": "リマインダーが削除されました"
-      },
-      "paymentCarousel": {
-        "noReminder": "リマインダーはまだ設定されていません"
-      }
-    },
     "categoryBreakdown": "カテゴリー内訳",
     "chartModeBoth": "両方",
     "chartModeExpenses": "支出",
@@ -1345,7 +1359,14 @@
     "title": "履歴",
     "activitiesRecorded": "件のアクティビティ記録",
     "noActivityYet": "アクティビティはまだありません",
-    "noActivityDesc": "あなたの取引と決済がここに表示されます"
+    "noActivityDesc": "あなたの取引と決済がここに表示されます",
+    "youOwe": "{{name}}に{{currency}} {{amount}}を借りています",
+    "owesYou": "{{name}}があなたに{{currency}} {{amount}}を借りています",
+    "settledDebtTo": "{{name}}への借金を返済しました: {{currency}} {{amount}}",
+    "settledDebtFrom": "{{name}}からの借金を返済されました: {{currency}} {{amount}}",
+    "paidTowards": "{{name}}への借金に{{currency}} {{amount}}を支払いました",
+    "deletedDebtTo": "{{name}}への借金を削除しました",
+    "deletedDebtFrom": "{{name}}からの借金を削除しました"
   },
   "authCallback": {
     "authenticating": "認証中...",
@@ -1468,5 +1489,28 @@
     "a5": "[プロフィール] > [データ管理]を開いて、データエクスポートとクリーンアップツールにアクセスします。完全なアカウント削除については、サポートにお問い合わせください。",
     "q6": "サポートに連絡するにはどうすればよいですか？",
     "a6": "[設定] > [ヘルプとサポート]を開いてサポートフォームを送信します。詳細やオプションの添付ファイルを含めることができます。"
+  },
+  "financialHealth": {
+    "today": "今日",
+    "thisWeek": "今週",
+    "thisMonth": "今月",
+    "net": "純収益",
+    "vsPrevious": "前期比",
+    "txnCount_one": "{{count}} 件",
+    "txnCount_other": "{{count}} 件"
+  },
+  "dateSelect": {
+    "january": "1月",
+    "february": "2月",
+    "march": "3月",
+    "april": "4月",
+    "may": "5月",
+    "june": "6月",
+    "july": "7月",
+    "august": "8月",
+    "september": "9月",
+    "october": "10月",
+    "november": "11月",
+    "december": "12月"
   }
 }

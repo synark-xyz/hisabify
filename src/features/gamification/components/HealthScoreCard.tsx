@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChartPie, Info, Share2, Check, Wallet, PiggyBank, Flame, TrendingUp, Target } from 'lucide-react';
+import { ChartPie, Info, Share2, Check, Wallet, HandCoinsIcon, Flame, TrendingUp, Target } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHealthScore } from '../hooks/useHealthScore';
@@ -70,7 +70,7 @@ export function HealthScoreCard() {
         {
             label: t('healthScore.savingsLabel'),
             value: score.breakdown.savings,
-            icon: PiggyBank,
+            icon: HandCoinsIcon,
             color: '#4F6BF5',
             maxPoints: SCORE_WEIGHTS.savings,
             description: score.metrics.savingsRate >= 20
@@ -159,7 +159,7 @@ export function HealthScoreCard() {
                                 <div className="space-y-1.5">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <PiggyBank className="w-4 h-4 text-blue-500" />
+                                            <HandCoinsIcon className="w-4 h-4 text-blue-500" />
                                             <span className="text-sm font-medium text-foreground">{t('healthScore.savings')}</span>
                                         </div>
                                         <span className="text-sm font-mono font-bold text-blue-500">
@@ -375,7 +375,7 @@ export function HealthScoreCard() {
                                 </div>
                             </li>
                             <li className="flex items-start gap-2">
-                                <PiggyBank className="w-4 h-4 text-blue-500 mt-0.5" />
+                                <HandCoinsIcon className="w-4 h-4 text-blue-500 mt-0.5" />
                                 <div>
                                     <span className="font-semibold text-blue-500">{t('healthScore.savingsRate')}</span>
                                     <p className="text-muted-foreground">{t('healthScore.savingsRateDesc')}</p>

@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { getMilestoneBadge, generateTips, getScoreColor, SCORE_WEIGHTS } from '../utils/healthScoreLogic';
 import type { HealthScoreResult } from '../utils/healthScoreLogic';
 import { cn } from '@/lib/utils';
+import { localizeNumber } from '@/lib/i18nNumber';
 
 interface HealthScoreDetailSheetProps {
   open: boolean;
@@ -13,10 +14,10 @@ interface HealthScoreDetailSheetProps {
 }
 
 const COMPONENTS = [
-  { key: 'budget' as const, label: 'Budgeting', max: SCORE_WEIGHTS.budget, bg: 'bg-emerald-500' },
-  { key: 'savings' as const, label: 'Savings', max: SCORE_WEIGHTS.savings, bg: 'bg-blue-500' },
-  { key: 'activity' as const, label: 'Activity', max: SCORE_WEIGHTS.activity, bg: 'bg-amber-500' },
-] as const;
+  { key: 'budget' as const, labelKey: 'healthScore.budgeting', max: SCORE_WEIGHTS.budget, bg: 'bg-emerald-500' },
+  { key: 'savings' as const, labelKey: 'healthScore.savings', max: SCORE_WEIGHTS.savings, bg: 'bg-blue-500' },
+  { key: 'activity' as const, labelKey: 'healthScore.activity', max: SCORE_WEIGHTS.activity, bg: 'bg-amber-500' },
+];
 
 const TIP_COLORS: Record<string, string> = {
   budget: 'text-emerald-600',
@@ -41,7 +42,7 @@ export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScor
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto px-6 pb-8">
         <SheetHeader className="mb-5 pt-2">
-          <SheetTitle className="text-left font-bold text-xl">Financial Health Detail</SheetTitle>
+          <SheetTitle className="text-left font-bold text-xl">{t('healthScore.detailTitle')}</SheetTitle>
         </SheetHeader>
 
         {/* Score gauge + badge */}
@@ -77,7 +78,7 @@ export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScor
                 className="text-3xl font-black tracking-tighter"
                 style={{ color: strokeColor }}
               >
-                {score.total}
+                {localizeNumber(score.total)}
               </span>
               <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">
                 / 100
@@ -98,7 +99,7 @@ export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScor
               </div>
             ) : (
               <p className="text-sm text-muted-foreground mb-2">
-                Keep improving your habits to earn a badge!
+                {t('healthScore.earnBadgePrompt')}
               </p>
             )}
             <p className="text-xs text-muted-foreground leading-relaxed">{t(score.insightKey, score.insightParams)}</p>
@@ -108,23 +109,23 @@ export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScor
         {/* Score breakdown bars */}
         <div className="space-y-4 mb-6">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Score Breakdown
+            {t('healthScore.scoreBreakdown')}
           </p>
-          {COMPONENTS.map(({ key, label, max, bg }) => {
+          {COMPONENTS.map(({ key, labelKey, max, bg }) => {
             const val = score.breakdown[key];
             const pct = Math.round((val / max) * 100);
             return (
               <div key={key} className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                    <span className="text-sm font-semibold text-foreground">{t(labelKey)}</span>
                     <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                      max {max} pts
+                      {t('healthScore.maxPtsLabel', { max })}
                     </span>
                   </div>
                   <span className="text-sm font-bold tabular-nums">
-                    {val}
-                    <span className="text-xs text-muted-foreground font-normal">/{max}</span>
+                    {localizeNumber(val)}
+                    <span className="text-xs text-muted-foreground font-normal">/{localizeNumber(max)}</span>
                   </span>
                 </div>
                 <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -144,7 +145,7 @@ export function HealthScoreDetailSheet({ open, onOpenChange, score }: HealthScor
         {tips.length > 0 && (
           <div className="space-y-3">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              Improvement Tips
+              {t('healthScore.improvementTips')}
             </p>
             {tips.map((tip, i) => (
               <div

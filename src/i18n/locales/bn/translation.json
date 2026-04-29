@@ -208,7 +208,60 @@
         "name": "স্থির হচ্ছি",
         "description": "শক্ত আর্থিক ভিত্তি গড়ছি"
       }
-    }
+    },
+    "insightSpendCreep": "আপনার খরচ {{rate}} বেড়েছে — খরচের দিকে নজর রাখুন।",
+    "insightBudgetAlert": "আপনি {{pct}} বাজেটে পৌঁছেছেন — গতি কমান।",
+    "insightRule502030": "প্রয়োজন {{needs}} এবং সঞ্চয় {{savings}} — ৫০/৩০/২০ নিয়মটি অনুসরণ করুন।",
+    "insightLowSavings": "আপনার সঞ্চয়ের হার {{rate}} — ২০% লক্ষ্য করুন।",
+    "rule502030Analysis": "৫০/৩০/২০ নিয়ম বিশ্লেষণ",
+    "needs": "প্রয়োজন",
+    "wants": "চাহিদা",
+    "target": "লক্ষ্য",
+    "budgetAdherence": "বাজেট নিয়ন্ত্রণ",
+    "budgetAdherenceDesc": "বাজেটের মধ্যে কতটা থাকেন",
+    "savingsRate": "সঞ্চয়ের হার",
+    "savingsRateDesc": "আয় বনাম সঞ্চয়ের অনুপাত",
+    "cashFlowTrends": "ক্যাশ ফ্লো ট্রেন্ড",
+    "cashFlowTrendsDesc": "মাসিক ব্যয় বৃদ্ধির বিশ্লেষণ",
+    "dailyActivity": "দৈননিক কার্যকলাপ",
+    "dailyActivityDesc": "কত ঘনি লেনদেন লগ করেন",
+    "budgetAccuracy": "বাজেটের নিখুঁতি",
+    "budgetAccuracyDesc": "পরিকল্পত বনাম প্রকৃত ব্যয়ের ব্যবধান",
+    "coreFormula": "মূল সূত্র",
+    "balanceFormula": "ব্যালেন্স = আয় − ব্যয়",
+    "savingsRateFormula": "সঞ্চয়ের হার = সঞ্চয় ÷ আয়",
+    "scoreBreakdown": "স্কোর বিশ্লেষণ",
+    "rate": "হার",
+    "rule": "নিয়ম",
+    "momGrowth": "মাসিক বৃদ্ধি",
+    "alert": "সতর্কতা",
+    "spendCreepDetected": "খরচের দিকে নজর রাখুন",
+    "normal": "স্বাভাবিক",
+    "dailyReconSpeed": "দৈনিক সমন্বয় গতি",
+    "ptsMax": "pts সর্বোচ্চ",
+    "perDay": "প্রতি দিন",
+    "inactive": "নিষ্ক্রিয়",
+    "budgetVarianceTracking": "বাজেট বনাম প্রকৃত ব্যয় ট্র্যাকিং",
+    "calculationWeights": "গণনা মাপক",
+    "remaining": "{{pct}}% বাকি",
+    "overBudget": "{{pct}}% বাজেট অতিক্রম",
+    "savingsRateGood": "{{rate}}% সঞ্চয় হার ✓",
+    "savingsRateOk": "{{rate}}% সঞ্চয় হার",
+    "dailyLoggingStreak": "দৈনিক লগ স্ট্রিক",
+    "logMoreTransactions": "আরও লেনদেন লগ করুন",
+    "calculatedDesc": "আপনার আর্থিক স্বাস্থ্য ৫০টি মূল মেট্রিক্সের উপর ভিত্তি করে গণনা করা হয়।",
+    "budget": "বাজেট",
+    "budgetLabel": "বাজেট",
+    "savingsLabel": "সঞ্চয়",
+    "trendsLabel": "ট্রেন্ড",
+    "activityLabel": "কার্যকলাপ",
+    "accuracyLabel": "নির্ভুলতা",
+    "trends": "ট্রেন্ড",
+    "accuracy": "নির্ভুলতা",
+    "detailTitle": "আর্থিক স্বাস্থ্যের বিবরণ",
+    "earnBadgePrompt": "ব্যাজ অর্জন করতে আপনার অভ্যাস উন্নত করতে থাকুন!",
+    "maxPtsLabel": "সর্বোচ্চ {{max}} পয়েন্ট",
+    "improvementTips": "উন্নতির পরামর্শ"
   },
   "expenses": {
     "title": "খরচ",
@@ -266,21 +319,7 @@
     "historyLimitTitle": "ইতিহাসের সীমা পৌঁছে গেছে",
     "historyLimitDesc": "বিনামূল্যে পরিকল্পনা শেষ ৩০ দিন সমর্থন করে। সম্পূর্ণ ইতিহাসের জন্য আপগ্রেড করুন।",
     "calendarSelected": "নির্বাচিত",
-    "calendarSwipeHint": "আরো দেখতে সোয়াইপ করুন",
-    "dateSelect": {
-      "january": "জানুয়ারি",
-      "february": "ফেব্রুয়ারি",
-      "march": "মার্চ",
-      "april": "এপ্রিল",
-      "may": "মে",
-      "june": "জুন",
-      "july": "জুলাই",
-      "august": "আগস্ট",
-      "september": "সেপ্টেম্বর",
-      "october": "অক্টোবর",
-      "november": "নভেম্বর",
-      "december": "ডিসেম্বর"
-    }
+    "calendarSwipeHint": "আরো দেখতে সোয়াইপ করুন"
   },
   "budget": {
     "title": "বাজেট",
@@ -489,31 +528,81 @@
     "noLinkedBudget": "কোনো লিংক করা বাজেট নেই",
     "savingsReserved": "সঞ্চয় সংরক্ষিত",
     "totalNetSavings": "মোট নিট সঞ্চয়",
-    "activeGoals": "সক্রিয় লক্ষ্য",
-    "dialogs": {
-      "dashboard": {
-        "financialSummary": "আর্থিক সারসংক্ষেপ",
-        "quickInsights": "দ্রুত অন্তর্দৃষ্টি",
-        "dailyAverage": "গড় দৈনিক (এই মাস)",
-        "monthlySavingsRate": "মাসিক সঞ্�য়ের হার",
-        "incomeExpenseRatio": "আয়/খরচ অনুপাত",
-        "topExpenses": "শীর্ষ ৫টি খরচ",
-        "date": "তারিখ",
-        "merchant": "ব্যবসায়ী",
-        "category": "বিভাগ",
-        "amount": "পরিমাণ",
-        "noExpensesYet": "এখনও কোনো খরচ নেই",
-        "budgetVsActual": "বাজেট বনাম প্রকৃত",
-        "budgetLabel": "বাজেট:",
-        "actualLabel": "প্রকৃত:",
-        "totalIncome": "মোট আয়",
-        "addIncomeStart": "ট্র্যাকিং শুরু করতে আয় যোগ করুন",
-        "totalExpenses": "মোট খরচ",
-        "noExpensesRecorded": "এখনও কোনো খরচ রেকর্ড হয়নি",
-        "spent": "খরচ হয়েছে",
-        "earned": "উপার্জন হয়েছে",
-        "underBudget": "বাজেটের মধ্যে"
-      }
+    "activeGoals": "সক্রিয় লক্ষ্য"
+  },
+  "dialogs": {
+    "budgetExceed": {
+      "title": "বাজেট সীমা অতিক্রম",
+      "expenseAmount": "খরচের পরিমাণ:",
+      "budgetRemaining": "বাজেট বাকি:",
+      "overBudgetBy": "বাজেট অতিক্রম করেছে:",
+      "addAnyway": "তবু যোগ করুন",
+      "expenseWillExceed": "এই খরচ আপনার {{name}} বাজেট অতিক্রম করবে।"
+    },
+    "dashboard": {
+      "financialSummary": "আর্থিক সারসংক্ষেপ",
+      "quickInsights": "দ্রুত অন্তর্দৃষ্টি",
+      "dailyAverage": "গড় দৈনিক (এই মাস)",
+      "monthlySavingsRate": "মাসিক সঞ্চয়ের হার",
+      "incomeExpenseRatio": "আয়/খরচ অনুপাত",
+      "topExpenses": "শীর্ষ ৫টি খরচ",
+      "date": "তারিখ",
+      "merchant": "ব্যবসায়ী",
+      "category": "বিভাগ",
+      "amount": "পরিমাণ",
+      "noExpensesYet": "এখনও কোনো খরচ নেই",
+      "budgetVsActual": "বাজেট বনাম প্রকৃত",
+      "budgetLabel": "বাজেট:",
+      "actualLabel": "প্রকৃত:",
+      "totalIncome": "মোট আয়",
+      "addIncomeStart": "ট্র্যাকিং শুরু করতে আয় যোগ করুন",
+      "totalExpenses": "মোট খরচ",
+      "noExpensesRecorded": "এখনও কোনো খরচ রেকর্ড হয়নি",
+      "spent": "খরচ হয়েছে",
+      "earned": "উপার্জন হয়েছে",
+      "underBudget": "বাজেটের মধ্যে"
+    },
+    "deleteBudget": {
+      "title": "বাজেট মুছুন",
+      "confirmTitle": "\"{{name}}\" মুছবেন?",
+      "confirmDesc": "এই কাজ পুনরায় করা যায় না। এটি আপনার বাজেট এবং এর অগ্রগতি স্থায়ীভাবে মুছে দেবে।"
+    },
+    "deleteTransaction": {
+      "title": "লেনদেন মুছুন",
+      "confirmTitle": "এই লেনদেন মুছবেন?",
+      "confirmDesc": "এই কাজ পুনরায় করা যায় না।",
+      "toastDeleted": "লেনদেন মুছে ফেলা হয়েছে",
+      "toastError": "লেনদেন মুছতে ত্রুটি"
+    },
+    "editRecurring": {
+      "title": "পুনরাবৃত্ত রিমাইন্ডার সম্পাদনা করবেন?"
+    },
+    "transactionDetails": {
+      "tags": "ট্যাগ",
+      "note": "নোট",
+      "receipt": "রসিদ",
+      "failedUpdateLink": "লিংক আপডেট করতে ব্যর্থ",
+      "failedRemoveLink": "লিংক সরাতে ব্যর্থ"
+    },
+    "upgrade": {
+      "unlimited": "সীমাহীন",
+      "goals": "লক্ষ্য",
+      "full": "সম্পূর্ণ",
+      "history": "ইতিহাস",
+      "smarter": "স্মার্ট",
+      "planning": "পরিকল্পনা",
+      "monthly": "মাসিক",
+      "annual": "বার্ষিক",
+      "purchaseError": "ক্রয় ত্রুটি",
+      "restoreError": "পুনরুদ্ধার ত্রুটি"
+    },
+    "paymentReminder": {
+      "noReminders": "কোনো পেমেন্ট রিমাইন্ডার পাওয়া যায়নি",
+      "deleteReminder": "রিমাইন্ডার মুছুন",
+      "toastDeleted": "রিমাইন্ডার মুছে ফেলা হয়েছে"
+    },
+    "paymentCarousel": {
+      "noReminder": "এখনও কোনো রিমাইন্ডার সেট করা হয়নি"
     }
   },
   "settings": {
@@ -799,81 +888,6 @@
     "average": "গড়",
     "biggestExpenseCategory": "সবচেয়ে বড় খরচ ক্যাটেগরি",
     "budgetRemaining": "বাকি বাজেট",
-    "dialogs": {
-      "budgetExceed": {
-        "title": "বাজেট সীমা অতিক্রম",
-        "expenseAmount": "খরচের পরিমাণ:",
-        "budgetRemaining": "বাজেট বাকি:",
-        "overBudgetBy": "বাজেট অতিক্রম করেছে:",
-        "addAnyway": "তবু যোগ করুন",
-        "expenseWillExceed": "এই খরচ আপনার {{name}} বাজেট অতিক্রম করবে।"
-      },
-      "dashboard": {
-        "financialSummary": "আর্থিক সারসংক্ষেপ",
-        "quickInsights": "দ্রুত অন্তর্দৃষ্টি",
-        "dailyAverage": "গড় দৈনিক (এই মাস)",
-        "monthlySavingsRate": "মাসিক সঞ্চয়ের হার",
-        "incomeExpenseRatio": "আয়/খরচ অনুপাত",
-        "topExpenses": "শীর্ষ ৫টি খরচ",
-        "date": "তারিখ",
-        "merchant": "ব্যবসায়ী",
-        "category": "বিভাগ",
-        "amount": "পরিমাণ",
-        "noExpensesYet": "এখনও কোনো খরচ নেই",
-        "budgetVsActual": "বাজেট বনাম প্রকৃত",
-        "budgetLabel": "বাজেট:",
-        "actualLabel": "প্রকৃত:",
-        "totalIncome": "মোট আয়",
-        "addIncomeStart": "ট্র্যাকিং শুরু করতে আয় যোগ করুন",
-        "totalExpenses": "মোট খরচ",
-        "noExpensesRecorded": "এখনও কোনো খরচ রেকর্ড হয়নি",
-        "spent": "খরচ হয়েছে",
-        "earned": "উপার্জন হয়েছে",
-        "underBudget": "বাজেটের মধ্যে"
-      },
-      "deleteBudget": {
-        "title": "বাজেট মুছুন",
-        "confirmTitle": "\"{{name}}\" মুছবেন?",
-        "confirmDesc": "এই কাজ পুনরায় করা যায় না। এটি আপনার বাজেট এবং এর অগ্রগতি স্থায়ীভাবে মুছে দেবে।"
-      },
-      "deleteTransaction": {
-        "title": "লেনদেন মুছুন",
-        "confirmTitle": "এই লেনদেন মুছবেন?",
-        "confirmDesc": "এই কাজ পুনরায় করা যায় না।",
-        "toastDeleted": "লেনদেন মুছে ফেলা হয়েছে",
-        "toastError": "লেনদেন মুছতে ত্রুটি"
-      },
-      "editRecurring": {
-        "title": "পুনরাবৃত্ত রিমাইন্ডার সম্পাদনা করবেন?"
-      },
-      "transactionDetails": {
-        "tags": "ট্যাগ",
-        "note": "নোট",
-        "receipt": "রসিদ",
-        "failedUpdateLink": "লিংক আপডেট করতে ব্যর্থ",
-        "failedRemoveLink": "লিংক সরাতে ব্যর্থ"
-      },
-      "upgrade": {
-        "unlimited": "সীমাহীন",
-        "goals": "লক্ষ্য",
-        "full": "সম্পূর্ণ",
-        "history": "ইতিহাস",
-        "smarter": "স্মার্ট",
-        "planning": "পরিকল্পনা",
-        "monthly": "মাসিক",
-        "annual": "বার্ষিক",
-        "purchaseError": "ক্রয় ত্রুটি",
-        "restoreError": "পুনরুদ্ধার ত্রুটি"
-      },
-      "paymentReminder": {
-        "noReminders": "কোনো পেমেন্ট রিমাইন্ডার পাওয়া যায়নি",
-        "deleteReminder": "রিমাইন্ডার মুছুন",
-        "toastDeleted": "রিমাইন্ডার মুছে ফেলা হয়েছে"
-      },
-      "paymentCarousel": {
-        "noReminder": "এখনও কোনো রিমাইন্ডার সেট করা হয়নি"
-      }
-    },
     "categoryBreakdown": "বিভাগ বিশ্লেষণ",
     "chartModeBoth": "উভয়",
     "chartModeExpenses": "খরচ",
@@ -1340,7 +1354,14 @@
     "title": "ইতিহাস",
     "activitiesRecorded": "কার্যকলাপ রেকর্ড করা হয়েছে",
     "noActivityYet": "এখনও কোনো কার্যকলাপ নেই",
-    "noActivityDesc": "আপনার লেনদেন এবং সেটেলমেন্ট এখানে প্রদর্শিত হবে"
+    "noActivityDesc": "আপনার লেনদেন এবং সেটেলমেন্ট এখানে প্রদর্শিত হবে",
+    "youOwe": "আপনি {{name}}-এর কাছে {{currency}} {{amount}} ঋণী",
+    "owesYou": "{{name}} আপনার কাছে {{currency}} {{amount}} ঋণী",
+    "settledDebtTo": "{{name}}-এর ঋণ পরিশোধ করা হয়েছে: {{currency}} {{amount}}",
+    "settledDebtFrom": "{{name}} থেকে ঋণ পরিশোধ পাওয়া গেছে: {{currency}} {{amount}}",
+    "paidTowards": "{{name}}-এর ঋণে {{currency}} {{amount}} পরিশোধ করা হয়েছে",
+    "deletedDebtTo": "{{name}}-এর ঋণ মুছে ফেলা হয়েছে",
+    "deletedDebtFrom": "{{name}} থেকে ঋণ মুছে ফেলা হয়েছে"
   },
   "authCallback": {
     "authenticating": "প্রমাণীকরণ চলছে...",
@@ -1463,5 +1484,28 @@
     "a5": "প্রোফাইল > ডেটা ম্যানেজমেন্ট খুলুন যাতে ডেটা এক্সপোর্ট এবং ক্লিনআপ সরঞ্জামগুলিতে অ্যাক্সেস করতে পারেন। সম্পূর্ণ অ্যাকাউন্ট ডিলিশনের জন্য সাপোর্টের সাথে যোগাযোগ করুন।",
     "q6": "আমি সাপোর্টে কিভাবে যোগাযোগ করি?",
     "a6": "সেটিংস > সাহায্য ও সহায়তা খুলুন এবং সাপোর্ট ফর্ম জমা দিন। আপনি বিস্তারিত এবং ঐচ্ছিক সংযুক্তি অন্তর্ভুক্ত করতে পারেন।"
+  },
+  "financialHealth": {
+    "today": "আজ",
+    "thisWeek": "এই সপ্তাহ",
+    "thisMonth": "এই মাস",
+    "net": "নেট",
+    "vsPrevious": "আগের তুলনায়",
+    "txnCount_one": "{{count}} লেনদেন",
+    "txnCount_other": "{{count}} লেনদেন"
+  },
+  "dateSelect": {
+    "january": "জানুয়ারি",
+    "february": "ফেব্রুয়ারি",
+    "march": "মার্চ",
+    "april": "এপ্রিল",
+    "may": "মে",
+    "june": "জুন",
+    "july": "জুলাই",
+    "august": "আগস্ট",
+    "september": "সেপ্টেম্বর",
+    "october": "অক্টোবর",
+    "november": "নভেম্বর",
+    "december": "ডিসেম্বর"
   }
 }

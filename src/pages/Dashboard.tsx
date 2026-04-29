@@ -30,6 +30,7 @@ import { Transaction, ActivityLog } from '@/types';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, getMonth, getYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
+import { formatDate } from '@/lib/formatDate';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -703,6 +704,17 @@ export function Dashboard() {
                       const isDeleted = activity.activity_type === 'debt_deleted';
                       const isCreated = activity.activity_type === 'debt_created';
                       const isPositive = activity.activity_type === 'debt_settled' || activity.activity_type === 'debt_created';
+
+                      const description = (() => {
+                        const parts = activity.description.split('|');
+                        if (parts.length < 2) return activity.description;
+                        const key = parts[0];
+                        const params: Record<string, string> = {};
+                        if (parts[1]) params.name = parts[1];
+                        if (parts[2]) params.currency = parts[2];
+                        if (parts[3]) params.amount = parts[3];
+                        return t(`activity.${key}`, params);
+                      })();
                       
                       return (
                         <div 
@@ -722,9 +734,9 @@ export function Dashboard() {
                             }
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{activity.description}</p>
+                            <p className="text-sm font-medium text-foreground truncate">{description}</p>
                             <p className="text-xs text-muted-foreground">
-                              {format(new Date(activity.created_at), 'h:mm a')}
+                              {formatDate(new Date(activity.created_at), 'h:mm a')}
                             </p>
                           </div>
                           {activity.amount && (

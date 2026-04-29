@@ -152,7 +152,7 @@ export function FinancialSummary({
           <span className="text-sm font-medium text-muted-foreground">{title}</span>
         </div>
         <span className="text-xs text-muted-foreground">
-          {period.transactionCount} txn{period.transactionCount !== 1 ? 's' : ''}
+          {t('financialHealth.txnCount', { count: period.transactionCount })}
         </span>
       </div>
 
@@ -172,7 +172,7 @@ export function FinancialSummary({
         </div>
         <div className="h-px bg-border/50" />
         <div className="flex items-baseline justify-between">
-          <span className="text-xs font-medium text-foreground">Net</span>
+          <span className="text-xs font-medium text-foreground">{t('financialHealth.net')}</span>
           <span className={cn(
             'text-base font-bold',
             period.net >= 0 ? 'text-emerald-500' : 'text-destructive'
@@ -201,7 +201,7 @@ export function FinancialSummary({
         <span className="text-muted-foreground">
           ({comparison.isIncrease ? '+' : '-'}{formatAmount(comparison.value)})
         </span>
-        <span className="text-muted-foreground ml-auto">vs previous</span>
+        <span className="text-muted-foreground ml-auto">{t('financialHealth.vsPrevious')}</span>
       </div>
     </motion.div>
   );
@@ -210,7 +210,7 @@ export function FinancialSummary({
     <div className={cn('space-y-4', className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-foreground">{t('dialogs.dashboard.financialSummary')}</h2>
+        <h2 className="text-lg font-bold text-foreground">{t('savings.dialogs.dashboard.financialSummary')}</h2>
         <span className="text-sm text-muted-foreground">
           {format(selectedDate, 'MMM dd, yyyy')}
         </span>
@@ -219,21 +219,21 @@ export function FinancialSummary({
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <SummaryCard
-          title="Today"
+          title={t('financialHealth.today')}
           period={summaries.today}
           comparison={dailyComparison}
           icon={DollarSign}
           colorClass="bg-primary/20 text-primary"
         />
         <SummaryCard
-          title="This Week"
+          title={t('financialHealth.thisWeek')}
           period={summaries.thisWeek}
           comparison={weeklyComparison}
           icon={Calendar}
           colorClass="bg-primary/20 text-primary"
         />
         <SummaryCard
-          title="This Month"
+          title={t('financialHealth.thisMonth')}
           period={summaries.thisMonth}
           comparison={monthlyComparison}
           icon={TrendingUp}
@@ -248,16 +248,16 @@ export function FinancialSummary({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h3 className="text-sm font-semibold text-foreground mb-3">{t('dialogs.dashboard.quickInsights')}</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t('savings.dialogs.dashboard.quickInsights')}</h3>
         <div className="space-y-2 text-sm">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">{t('dialogs.dashboard.dailyAverage')}</span>
+            <span className="text-muted-foreground">{t('savings.dialogs.dashboard.dailyAverage')}</span>
             <span className="font-medium text-foreground">
               {formatAmount(summaries.thisMonth.expense / new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate())}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">{t('dialogs.dashboard.monthlySavingsRate')}</span>
+            <span className="text-muted-foreground">{t('savings.dialogs.dashboard.monthlySavingsRate')}</span>
             <span className={cn(
               'font-medium',
               summaries.thisMonth.income > 0 ? 'text-emerald-500' : 'text-muted-foreground'
@@ -278,7 +278,7 @@ export function FinancialSummary({
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">{t('dialogs.dashboard.incomeExpenseRatio')}</span>
+            <span className="text-muted-foreground">{t('savings.dialogs.dashboard.incomeExpenseRatio')}</span>
             <span className="font-medium text-foreground">
               {summaries.thisMonth.expense > 0
                 ? `${(summaries.thisMonth.income / summaries.thisMonth.expense).toFixed(2)}x`

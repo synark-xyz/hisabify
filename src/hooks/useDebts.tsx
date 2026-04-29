@@ -116,9 +116,9 @@ export function useDebts(options?: UseDebtsOptions) {
         activity_type: 'debt_created',
         entity_type: 'debt',
         entity_id: data.id,
-        description: input.type === 'i_owe' 
-          ? `You owe ${input.person_name} ${input.currency} ${input.amount.toFixed(2)}`
-          : `${input.person_name} owes you ${input.currency} ${input.amount.toFixed(2)}`,
+        description: input.type === 'i_owe'
+          ? `youOwe|${input.person_name}|${input.currency}|${input.amount.toFixed(2)}`
+          : `owesYou|${input.person_name}|${input.currency}|${input.amount.toFixed(2)}`,
         amount: input.amount,
         currency: input.currency,
       });
@@ -161,8 +161,8 @@ export function useDebts(options?: UseDebtsOptions) {
         entity_type: 'debt',
         entity_id: id,
         description: isSettled
-          ? `Settled ${debt.type === 'i_owe' ? 'debt to' : 'from'} ${debt.person_name}: ${debt.currency} ${debt.amount.toFixed(2)}`
-          : `Paid ${debt.currency} ${settlementAmount.toFixed(2)} towards ${debt.person_name}`,
+          ? `${debt.type === 'i_owe' ? 'settledDebtTo' : 'settledDebtFrom'}|${debt.person_name}|${debt.currency}|${debt.amount.toFixed(2)}`
+          : `paidTowards|${debt.person_name}|${debt.currency}|${settlementAmount.toFixed(2)}`,
         amount: settlementAmount,
         currency: debt.currency,
         group_id: id,
@@ -190,7 +190,7 @@ export function useDebts(options?: UseDebtsOptions) {
           activity_type: 'debt_deleted',
           entity_type: 'debt',
           entity_id: id,
-          description: `Deleted ${debt.type === 'i_owe' ? 'debt to' : 'from'} ${debt.person_name}`,
+          description: `${debt.type === 'i_owe' ? 'deletedDebtTo' : 'deletedDebtFrom'}|${debt.person_name}`,
           amount: debt.amount,
           currency: debt.currency,
         });

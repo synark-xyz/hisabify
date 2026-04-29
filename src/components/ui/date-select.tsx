@@ -30,7 +30,7 @@ export function DateSelect({
 
     const dateValue = value || new Date();
     
-    const monthKeys = ['transactions.dateSelect.january', 'transactions.dateSelect.february', 'transactions.dateSelect.march', 'transactions.dateSelect.april', 'transactions.dateSelect.may', 'transactions.dateSelect.june', 'transactions.dateSelect.july', 'transactions.dateSelect.august', 'transactions.dateSelect.september', 'transactions.dateSelect.october', 'transactions.dateSelect.november', 'transactions.dateSelect.december'];
+    const monthKeys = ['dateSelect.january', 'dateSelect.february', 'dateSelect.march', 'dateSelect.april', 'dateSelect.may', 'dateSelect.june', 'dateSelect.july', 'dateSelect.august', 'dateSelect.september', 'dateSelect.october', 'dateSelect.november', 'dateSelect.december'];
     const months = monthKeys.map(key => t(key));
 
     const [day, setDay] = useState(dateValue.getDate().toString());

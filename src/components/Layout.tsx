@@ -9,6 +9,7 @@ import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Header } from '@/components/Header';
 import { HisabifyLogo } from "@/components/HisabifyLogo";
 import { cn } from '@/lib/utils';
+import { useFABContext } from "@/contexts/FABContext";
 
 const PAGE_TITLES: Record<string, string> = {
     '/': 'nav.dashboard',
@@ -53,6 +54,7 @@ export function Layout() {
 
     const location = useLocation();
     const navigate = useNavigate();
+    const { isGlobalFABHidden } = useFABContext();
     const { isKeyboardOpen } = useVisualViewport();
     const { t } = useTranslation();
 
@@ -173,12 +175,12 @@ export function Layout() {
 
             {/* Mobile FAB */}
             <AnimatePresence>
-                {!isKeyboardOpen && (
+                {!isKeyboardOpen && !isGlobalFABHidden && (
                     <motion.button
                         onClick={() => setShowManual(true)}
                         aria-label="Add transaction"
                         data-testid="fab-button"
-                        className="fixed right-4 z-50 w-14 h-14 rounded-full bg-accent text-accent-foreground shadow-fab flex items-center justify-center lg:hidden"
+                        className="fixed right-8 z-50 w-14 h-14 rounded-full bg-accent text-accent-foreground shadow-fab flex items-center justify-center lg:hidden"
                         style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}

@@ -23,6 +23,7 @@ import { InstallPage } from "@/pages/InstallPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { SplashScreen } from "@/components/SplashScreen";
 import NotFound from "@/pages/NotFound";
+import { FABProvider } from "@/contexts/FABContext";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
 import { DeleteAccountPage } from "@/pages/DeleteAccountPage";
@@ -268,7 +269,7 @@ const App = () => (
                       <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
                     </div>
                   }>
-                    <RootLogic />
+                    <FABProvider><RootLogic /></FABProvider>
                   </Suspense>
                 </CurrencyProvider>
               </ProfileProvider>

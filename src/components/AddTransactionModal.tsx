@@ -202,6 +202,8 @@ export function AddTransactionModal({
           onScanComplete={handleReceiptComplete}
         />
       </Suspense>
+
+
     </>
   );
 }

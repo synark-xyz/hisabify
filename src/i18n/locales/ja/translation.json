@@ -884,6 +884,8 @@
   },
   "analytics": {
     "actual": "実績",
+    "budgetVsActual": "予算対実績",
+    "underBudget": "予算より{{amount}}少ない",
     "addTransactions": "取引を追加",
     "average": "平均",
     "biggestExpenseCategory": "最大の支出カテゴリー",
@@ -974,6 +976,7 @@
     "vsLastMonth": "前月比{{value}}pts",
     "vsLastYear": "前年比{{value}}%",
     "yearVsYear": "年間比較",
+    "tip": "💡 ヒント",
     "yourBiggestSpendingArea": "最大の支出エリアは{{category}}です",
     "weekSunday": "日曜日",
     "weekMonday": "月曜日",
@@ -1028,7 +1031,8 @@
     "payNow": "今すぐ支払う",
     "toCollect": "回収する",
     "remind": "リマインド",
-    "overdue": "期限切れ"
+    "overdue": "期限切れ",
+    "collectReminderTitle": "債務回収リマインダー"
   },
   "recurring": {
     "title": "繰り返し",

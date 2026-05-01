@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { localizeNumber } from '@/lib/i18nNumber';
 
 interface MiniDonutProps {
   value: number;
@@ -56,7 +57,7 @@ export function MiniDonut({
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         <span className="text-sm font-bold text-foreground">
-          {Math.round(value)}
+          {localizeNumber(Math.round(value))}
         </span>
       </div>
     </div>

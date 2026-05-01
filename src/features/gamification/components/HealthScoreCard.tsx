@@ -8,6 +8,7 @@ import { getMilestoneBadge, getScoreColor, SCORE_WEIGHTS } from '../utils/health
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import { shareOrCopy, APP_BASE_URL } from '@/lib/shareUtils';
+import { localizeNumber } from '@/lib/i18nNumber';
 import { MiniDonut } from './MiniDonut';
 import {
     Popover,
@@ -64,8 +65,8 @@ export function HealthScoreCard() {
             color: '#10B981',
             maxPoints: SCORE_WEIGHTS.budget,
             description: score.metrics.budgetAdherence >= 50
-                ? t('healthScore.remaining', { pct: score.metrics.budgetAdherence.toFixed(0) })
-                : t('healthScore.overBudget', { pct: (100 - score.metrics.budgetAdherence).toFixed(0) }),
+                ? t('healthScore.remaining', { pct: localizeNumber(score.metrics.budgetAdherence) })
+                : t('healthScore.overBudget', { pct: localizeNumber(100 - score.metrics.budgetAdherence) }),
         },
         {
             label: t('healthScore.savingsLabel'),
@@ -74,8 +75,8 @@ export function HealthScoreCard() {
             color: '#4F6BF5',
             maxPoints: SCORE_WEIGHTS.savings,
             description: score.metrics.savingsRate >= 20
-                ? t('healthScore.savingsRateGood', { rate: score.metrics.savingsRate.toFixed(0) })
-                : t('healthScore.savingsRateOk', { rate: score.metrics.savingsRate.toFixed(0) }),
+                ? t('healthScore.savingsRateGood', { rate: localizeNumber(score.metrics.savingsRate) })
+                : t('healthScore.savingsRateOk', { rate: localizeNumber(score.metrics.savingsRate) }),
         },
         {
             label: t('healthScore.activityLabel'),
@@ -139,7 +140,7 @@ export function HealthScoreCard() {
                                             <span className="text-sm font-medium text-foreground">{t('healthScore.budgeting')}</span>
                                         </div>
                                         <span className="text-sm font-mono font-bold text-emerald-500">
-                                            {score.breakdown.budget}/{SCORE_WEIGHTS.budget}
+                                            {localizeNumber(score.breakdown.budget)}/{localizeNumber(SCORE_WEIGHTS.budget)}
                                         </span>
                                     </div>
                                     <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
@@ -149,10 +150,10 @@ export function HealthScoreCard() {
                                         />
                                     </div>
                                     <p className="text-[10px] text-muted-foreground">
-                                        {score.metrics.budgetAdherence >= 50 
-                                            ? t('healthScore.remaining', { pct: score.metrics.budgetAdherence.toFixed(0) })
-                                            : t('healthScore.overBudget', { pct: (100 - score.metrics.budgetAdherence).toFixed(0) })} • {t('healthScore.budgeting')}
-                                    </p>
+                                            {score.metrics.budgetAdherence >= 50
+                                                ? t('healthScore.remaining', { pct: localizeNumber(score.metrics.budgetAdherence) })
+                                                : t('healthScore.overBudget', { pct: localizeNumber(100 - score.metrics.budgetAdherence) })} • {t('healthScore.budgeting')}
+                                        </p>
                                 </div>
 
                                 {/* 2. Savings Score */}
@@ -163,7 +164,7 @@ export function HealthScoreCard() {
                                             <span className="text-sm font-medium text-foreground">{t('healthScore.savings')}</span>
                                         </div>
                                         <span className="text-sm font-mono font-bold text-blue-500">
-                                            {score.breakdown.savings}/{SCORE_WEIGHTS.savings}
+                                            {localizeNumber(score.breakdown.savings)}/{localizeNumber(SCORE_WEIGHTS.savings)}
                                         </span>
                                     </div>
                                     <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
@@ -173,7 +174,7 @@ export function HealthScoreCard() {
                                         />
                                     </div>
                                         <p className="text-[10px] text-muted-foreground">
-                                            {score.metrics.savingsRate.toFixed(1)}% {t('healthScore.rate')} • {t('healthScore.target')}: 20% (50/30/20 {t('healthScore.rule')})
+                                            {localizeNumber(score.metrics.savingsRate)}% {t('healthScore.rate')} • {t('healthScore.target')}: {localizeNumber(20)}% (50/30/20 {t('healthScore.rule')})
                                         </p>
                                 </div>
 
@@ -185,7 +186,7 @@ export function HealthScoreCard() {
                                             <span className="text-sm font-medium text-foreground">{t('healthScore.trendsLabel')}</span>
                                         </div>
                                         <span className="text-sm font-mono font-bold text-amber-500">
-                                            {score.breakdown.trends}/{SCORE_WEIGHTS.trends}
+                                            {localizeNumber(score.breakdown.trends)}/{localizeNumber(SCORE_WEIGHTS.trends)}
                                         </span>
                                     </div>
                                     <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
@@ -195,7 +196,7 @@ export function HealthScoreCard() {
                                         />
                                     </div>
                                         <p className="text-[10px] text-muted-foreground">
-                                            {score.metrics.expenseGrowthRate > 0 ? '+' : ''}{score.metrics.expenseGrowthRate.toFixed(1)}% {t('healthScore.momGrowth')} • {t('healthScore.alert')}: {score.metrics.expenseGrowthRate > 10 ? t('healthScore.spendCreepDetected') : t('healthScore.normal')}
+                                            {score.metrics.expenseGrowthRate > 0 ? '+' : ''}{localizeNumber(score.metrics.expenseGrowthRate)}% {t('healthScore.momGrowth')} • {t('healthScore.alert')}: {score.metrics.expenseGrowthRate > 10 ? t('healthScore.spendCreepDetected') : t('healthScore.normal')}
                                         </p>
                                 </div>
 
@@ -207,7 +208,7 @@ export function HealthScoreCard() {
                                             <span className="text-sm font-medium text-foreground">{t('healthScore.activity')}</span>
                                         </div>
                                         <span className="text-sm font-mono font-bold text-rose-500">
-                                            {score.breakdown.activity}/{SCORE_WEIGHTS.activity}
+                                            {localizeNumber(score.breakdown.activity)}/{localizeNumber(SCORE_WEIGHTS.activity)}
                                         </span>
                                     </div>
                                     <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
@@ -217,7 +218,7 @@ export function HealthScoreCard() {
                                         />
                                     </div>
                                         <p className="text-[10px] text-muted-foreground">
-                                            {t('healthScore.dailyReconSpeed')} • {SCORE_WEIGHTS.activity} {t('healthScore.ptsMax')}, -2/{t('healthScore.perDay')} {t('healthScore.inactive')}
+                                            {t('healthScore.dailyReconSpeed')} • {localizeNumber(SCORE_WEIGHTS.activity)} {t('healthScore.ptsMax')}, -2/{t('healthScore.perDay')} {t('healthScore.inactive')}
                                         </p>
                                 </div>
 
@@ -229,7 +230,7 @@ export function HealthScoreCard() {
                                             <span className="text-sm font-medium text-foreground">{t('healthScore.accuracyLabel')}</span>
                                         </div>
                                         <span className="text-sm font-mono font-bold text-purple-500">
-                                            {score.breakdown.accuracy}/{SCORE_WEIGHTS.accuracy}
+                                            {localizeNumber(score.breakdown.accuracy)}/{localizeNumber(SCORE_WEIGHTS.accuracy)}
                                         </span>
                                     </div>
                                     <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
@@ -244,28 +245,28 @@ export function HealthScoreCard() {
                                 </div>
                             </div>
 
-                            {/* 50/30/20 Rule Summary */}
-                            {score.metrics.needsPercentage > 0 && (
-                                <div className="pt-2 border-t border-border/50">
-                                    <p className="text-[10px] font-semibold text-muted-foreground mb-2">{t('healthScore.rule502030Analysis')}</p>
-                                    <div className="flex justify-between text-[10px]">
-                                        <span className={score.metrics.needsPercentage <= 55 ? 'text-emerald-500' : 'text-rose-500'}>
-                                            {t('healthScore.needs')}: {score.metrics.needsPercentage.toFixed(0)}% ({t('healthScore.target')}: 50%)
-                                        </span>
-                                        <span className={score.metrics.wantsPercentage <= 35 ? 'text-emerald-500' : 'text-rose-500'}>
-                                            {t('healthScore.wants')}: {score.metrics.wantsPercentage.toFixed(0)}% ({t('healthScore.target')}: 30%)
-                                        </span>
-                                        <span className={score.metrics.savingsRate >= 15 ? 'text-emerald-500' : 'text-rose-500'}>
-                                            {t('healthScore.savings')}: {score.metrics.savingsRate.toFixed(0)}% ({t('healthScore.target')}: 20%)
-                                        </span>
+                                {/* 50/30/20 Rule Summary */}
+                                {score.metrics.needsPercentage > 0 && (
+                                    <div className="pt-2 border-t border-border/50">
+                                        <p className="text-[10px] font-semibold text-muted-foreground mb-2">{t('healthScore.rule502030Analysis')}</p>
+                                        <div className="flex justify-between text-[10px]">
+                                            <span className={score.metrics.needsPercentage <= 55 ? 'text-emerald-500' : 'text-rose-500'}>
+                                                {t('healthScore.needs')}: {localizeNumber(score.metrics.needsPercentage)}% ({t('healthScore.target')}: {localizeNumber(50)}%)
+                                            </span>
+                                            <span className={score.metrics.wantsPercentage <= 35 ? 'text-emerald-500' : 'text-rose-500'}>
+                                                {t('healthScore.wants')}: {localizeNumber(score.metrics.wantsPercentage)}% ({t('healthScore.target')}: {localizeNumber(30)}%)
+                                            </span>
+                                            <span className={score.metrics.savingsRate >= 15 ? 'text-emerald-500' : 'text-rose-500'}>
+                                                {t('healthScore.savings')}: {localizeNumber(score.metrics.savingsRate)}% ({t('healthScore.target')}: {localizeNumber(20)}%)
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
                                 {/* Formula Summary */}
                                 <div className="pt-2 border-t border-border/50 text-[10px] text-muted-foreground">
                                     <p className="font-semibold mb-1">{t('healthScore.calculationWeights')}:</p>
-                                    <p>{t('healthScore.budgetLabel')} ({SCORE_WEIGHTS.budget}) + {t('healthScore.savingsLabel')} ({SCORE_WEIGHTS.savings}) + {t('healthScore.trendsLabel')} ({SCORE_WEIGHTS.trends}) + {t('healthScore.activityLabel')} ({SCORE_WEIGHTS.activity}) + {t('healthScore.accuracyLabel')} ({SCORE_WEIGHTS.accuracy}) = 100</p>
+                                    <p>{t('healthScore.budgetLabel')} ({localizeNumber(SCORE_WEIGHTS.budget)}) + {t('healthScore.savingsLabel')} ({localizeNumber(SCORE_WEIGHTS.savings)}) + {t('healthScore.trendsLabel')} ({localizeNumber(SCORE_WEIGHTS.trends)}) + {t('healthScore.activityLabel')} ({localizeNumber(SCORE_WEIGHTS.activity)}) + {t('healthScore.accuracyLabel')} ({localizeNumber(SCORE_WEIGHTS.accuracy)}) = {localizeNumber(100)}</p>
                                 </div>
                         </div>
                     </PopoverContent>

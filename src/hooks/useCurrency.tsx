@@ -9,6 +9,7 @@ interface CurrencyContextType {
   currency: string;
   setCurrency: (currency: string) => Promise<void>;
   formatAmount: (amount: number) => string;
+  formatCompact: (amount: number) => string;
   currencySymbol: string;
   refreshCurrency: () => Promise<void>;
   currencyVersion: number; // Used to trigger re-renders when currency changes
@@ -274,11 +275,33 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }).format(amount);
   }, [currency, language]);
 
+  const formatCompact = useCallback((amount: number) => {
+    const currencyLocale = currencyData[currency]?.locale || 'en-US';
+    let locale: string;
+    switch (language) {
+      case 'bn':
+        locale = 'bn-BD';
+        break;
+      case 'ja':
+        locale = 'ja-JP';
+        break;
+      default:
+        locale = currencyLocale;
+    }
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(amount);
+  }, [currency, language]);
+
   return (
     <CurrencyContext.Provider value={{
       currency,
       setCurrency,
       formatAmount,
+      formatCompact,
       currencySymbol,
       refreshCurrency,
       currencyVersion

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Handshake, ArrowRight, AlertCircle, Plus } from 'lucide-react';
 import { useDebts } from '@/hooks/useDebts';
@@ -6,14 +7,16 @@ import { cn } from '@/lib/utils';
 import { isPast } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
+import { AddPaymentReminderModal } from '@/components/AddPaymentReminderModal';
 
 export function DebtTriageWidget() {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const formatNumber = (n: number) => new Intl.NumberFormat(getLanguageLocale(language)).format(n);
   const navigate = useNavigate();
-  const { formatAmount } = useCurrency();
+  const { formatAmount, currency } = useCurrency();
   const { outstandingDebts, iOwe, theyOwe, totalIOwe, totalTheyOwe, loading } = useDebts();
+  const [showReminder, setShowReminder] = useState(false);
 
   if (loading) return null;
 
@@ -103,13 +106,24 @@ export function DebtTriageWidget() {
           <p className="text-[10px] text-muted-foreground mb-2.5">{formatNumber(theyOwe.length)} {t('debt.debt')}</p>
           <button
             type="button"
-            onClick={() => navigate('/debts?tab=they_owe')}
+            onClick={() => setShowReminder(true)}
             className="w-full py-1.5 rounded-lg text-emerald-500 text-[11px] font-bold hover:bg-emerald-500/10 transition-colors"
           >
             {t('debt.remind')}
           </button>
         </div>
       </div>
+
+      <AddPaymentReminderModal
+        open={showReminder}
+        onOpenChange={setShowReminder}
+        onSuccess={() => setShowReminder(false)}
+        initialData={{
+          title: t('debt.collectReminderTitle'),
+          amount: totalTheyOwe,
+          currency,
+        }}
+      />
 
       {/* Urgency strip */}
       <div className="px-4 pb-3 border-t border-border/50">

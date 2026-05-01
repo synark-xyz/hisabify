@@ -95,14 +95,14 @@ export function InsightsCards({ insights }: InsightsCardsProps) {
                     </p>
                     {insight.suggestion && (
                       <p className="text-xs text-primary font-bold mt-2 leading-relaxed italic">
-                        💡 Tip: {insight.suggestion}
+                        {t('analytics.tip')}: {insight.suggestion}
                       </p>
                     )}
                     {insight.value !== undefined && insight.type !== 'comparison' && (
                       <p className="text-lg font-bold text-foreground mt-2">
                         {insight.type === 'alert' && insight.id === 'biggest-expense'
                           ? formatAmount(insight.value)
-                          : `${insight.value.toFixed(0)}${insight.id.includes('streak') ? ' days' : '%'}`}
+                          : `${insight.value.toFixed(0)}${insight.id.includes('streak') ? ` ${t('dashboard.days')}` : '%'}`}
                       </p>
                     )}
                   </div>

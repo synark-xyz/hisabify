@@ -243,11 +243,11 @@
     "inactive": "নিষ্ক্রিয়",
     "budgetVarianceTracking": "বাজেট বনাম প্রকৃত ব্যয় ট্র্যাকিং",
     "calculationWeights": "গণনা মাপক",
-    "remaining": "{{pct}}% বাকি",
+    "remaining": "বাজেট {{pct}}% বাকি আছে",
     "overBudget": "{{pct}}% বাজেট অতিক্রম",
-    "savingsRateGood": "{{rate}}% সঞ্চয় হার ✓",
-    "savingsRateOk": "{{rate}}% সঞ্চয় হার",
-    "dailyLoggingStreak": "দৈনিক লগ স্ট্রিক",
+    "savingsRateGood": "সঞ্চয়ের হার {{rate}}% ✓",
+    "savingsRateOk": "সঞ্চয়ের হার {{rate}}%",
+    "dailyLoggingStreak": "দৈনিক ডেটা লগ স্ট্রিক",
     "logMoreTransactions": "আরও লেনদেন লগ করুন",
     "calculatedDesc": "আপনার আর্থিক স্বাস্থ্য ৫০টি মূল মেট্রিক্সের উপর ভিত্তি করে গণনা করা হয়।",
     "budget": "বাজেট",
@@ -884,6 +884,8 @@
   },
   "analytics": {
     "actual": "বাস্তব",
+    "budgetVsActual": "বাজেট বনাম বাস্তব",
+    "underBudget": "বাজেটের চেয়ে {{amount}} কম",
     "addTransactions": "লেনদেন যোগ করুন",
     "average": "গড়",
     "biggestExpenseCategory": "সবচেয়ে বড় খরচ ক্যাটেগরি",
@@ -974,6 +976,7 @@
     "vsLastMonth": "গত মাসের তুলনায় {{value}} পয়েন্ট",
     "vsLastYear": "গত বছরের তুলনায় {{value}}%",
     "yearVsYear": "বছর বনাম বছর",
+    "tip": "💡 টিপস",
     "yourBiggestSpendingArea": "আপনার সবচেয়ে বড় খরচ এলাকা হল {{category}}",
     "weekSunday": "রবিবার",
     "weekMonday": "সোমবার",
@@ -1028,7 +1031,8 @@
     "payNow": "এখনই প্রদান করুন",
     "toCollect": "সংগ্রহ করার জন্য",
     "remind": "মনে করিয়ে দিন",
-    "overdue": "মেয়াদোত্তীর্ণ"
+    "overdue": "মেয়াদোত্তীর্ণ",
+    "collectReminderTitle": "ঋণ সংগ্রহের অনুস্মারক"
   },
   "recurring": {
     "title": "আবৃত",

@@ -918,6 +918,8 @@
   },
   "analytics": {
     "actual": "Actual",
+    "budgetVsActual": "Budget vs Actual",
+    "underBudget": "Under budget by {{amount}}",
     "addTransactions": "Add Transactions",
     "average": "Average",
     "biggestExpenseCategory": "Biggest Expense Category",
@@ -1008,6 +1010,7 @@
     "vsLastMonth": "{{value}} pts vs last month",
     "vsLastYear": "{{value}}% vs last year",
     "yearVsYear": "Year vs Year",
+    "tip": "💡 Tip",
     "yourBiggestSpendingArea": "Your biggest spending area is {{category}}",
     "weekSunday": "Sunday",
     "weekMonday": "Monday",
@@ -1063,7 +1066,8 @@
     "payNow": "Pay now",
     "toCollect": "To Collect",
     "remind": "Remind",
-    "overdue": "Overdue"
+    "overdue": "Overdue",
+    "collectReminderTitle": "Collect debt payment"
   },
   "recurring": {
     "title": "Recurring",

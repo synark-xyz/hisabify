@@ -144,7 +144,8 @@
     "upgradeToPro": "プロにアップグレード",
     "viewAll": "すべて表示",
     "weeklyAverage": "週平均",
-    "year": "{{year}}年"
+    "year": "{{year}}年",
+    "savings": "貯蓄"
   },
   "streamingGreeting": {
     "welcomeFirstTime": "Hisabifyへようこそ。最初の取引を追加して始めましょう。",
@@ -1032,7 +1033,9 @@
     "toCollect": "回収する",
     "remind": "リマインド",
     "overdue": "期限切れ",
-    "collectReminderTitle": "債務回収リマインダー"
+    "collectReminderTitle": "債務回収リマインダー",
+    "owe_message": "{{name}}への借金: {{amount}}",
+    "settle_message": "{{name}}の借金を返済しました: {{amount}}"
   },
   "recurring": {
     "title": "繰り返し",

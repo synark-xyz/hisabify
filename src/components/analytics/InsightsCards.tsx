@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, AlertTriangle, Trophy, BarChart3 } from 'lucide-react';
+import { localizeNumber } from '@/lib/i18nNumber';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -102,7 +103,7 @@ export function InsightsCards({ insights }: InsightsCardsProps) {
                       <p className="text-lg font-bold text-foreground mt-2">
                         {insight.type === 'alert' && insight.id === 'biggest-expense'
                           ? formatAmount(insight.value)
-                          : `${insight.value.toFixed(0)}${insight.id.includes('streak') ? ` ${t('dashboard.days')}` : '%'}`}
+                          : `${localizeNumber(Math.round(insight.value))}${insight.id.includes('streak') ? ` ${t('dashboard.days')}` : '%'}`}
                       </p>
                     )}
                   </div>

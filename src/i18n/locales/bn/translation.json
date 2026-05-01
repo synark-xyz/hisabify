@@ -29,7 +29,8 @@
     "yesterday": "গতকাল",
     "hisabify": "Hisabify",
     "comingSoon": "শীঘ্রই আসছে",
-    "and": "এবং"
+    "and": "এবং",
+    "other": "অন্যান্য"
   },
   "nav": {
     "dashboard": "ড্যাশবোর্ড",
@@ -144,7 +145,8 @@
     "upgradeToPro": "প্রো আপগ্রেড করুন",
     "viewAll": "সব দেখুন",
     "weeklyAverage": "সাপ্তাহিক গড়",
-    "year": "{{year}} সাল"
+    "year": "{{year}} সাল",
+    "savings": "সঞ্চয়"
   },
   "streamingGreeting": {
     "welcomeFirstTime": "Hisabify-এ স্বাগতম। আপনার প্রথম লেনদেন যোগ করে শুরু করুন।",
@@ -864,7 +866,8 @@
       "completed": "সম্পন্ন",
       "of": "এর",
       "completedOn": "সম্পন্ন {{date}}",
-      "dueOn": "পাওনা {{date}}"
+      "dueOn": "পাওনা {{date}}",
+      "target": "সঞ্চয় লক্ষ্যমাত্রা"
     },
     "charts": {
       "expensesByCategory": "ক্যাটেগরি অনুযায়ী খরচ",
@@ -1032,7 +1035,9 @@
     "toCollect": "সংগ্রহ করার জন্য",
     "remind": "মনে করিয়ে দিন",
     "overdue": "মেয়াদোত্তীর্ণ",
-    "collectReminderTitle": "ঋণ সংগ্রহের অনুস্মারক"
+    "collectReminderTitle": "ঋণ সংগ্রহের অনুস্মারক",
+    "owe_message": "{{name}}-এর কাছে আপনার ঋণ {{amount}}",
+    "settle_message": "{{name}}-এর ঋণ পরিশোধ করা হয়েছে: {{amount}}"
   },
   "recurring": {
     "title": "আবৃত",

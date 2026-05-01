@@ -6,6 +6,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useTranslation } from 'react-i18next';
 import { CategorySpending } from '@/types';
 import { cn } from '@/lib/utils';
+import { localizeNumber } from '@/lib/i18nNumber';
 import { IconButton } from '@/components/ui/icon-button';
 import type { PieSectorDataItem } from 'recharts/types/polar/Pie';
 
@@ -33,6 +34,7 @@ const COLORS = getChartColors();
 
 type ChartCategoryDatum = CategorySpending & {
   category: string;
+  localizedName: string;
   color: string;
 };
 
@@ -77,10 +79,10 @@ const renderActiveShape = (props: ActiveShapeProps) => {
         style={{ filter: `drop-shadow(0 0 12px ${fill}90)` }}
       />
       <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={26} fontWeight="bold">
-        {`${(percent * 100).toFixed(0)}%`}
+        {`${localizeNumber(Math.round(percent * 100))}%`}
       </text>
-      <text x={cx} y={cy + 18} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={15} fontWeight="600">
-        {payload.category}
+        <text x={cx} y={cy + 18} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={15} fontWeight="600">
+        {payload.localizedName}
       </text>
     </g>
   );
@@ -96,6 +98,9 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
   const chartData = data.map((item, index) => ({
     ...item,
     category: item.name,
+    localizedName: item.name === 'Other'
+      ? t('transaction.categoryOther', 'অন্যান্য')
+      : t(`categories.${item.name}`, item.name),
     color: item.color || COLORS[index % COLORS.length],
   }));
 
@@ -143,7 +148,7 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
               innerRadius={70}
               outerRadius={105}
               dataKey="amount"
-              nameKey="category"
+              nameKey="localizedName"
               onMouseEnter={(_: unknown, index: number) => setActiveIndex(index)}
               onClick={handleSegmentClick}
               paddingAngle={3}
@@ -207,7 +212,7 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
                     'text-sm font-bold truncate',
                     activeIndex === index ? 'text-accent text-glow' : 'text-foreground'
                   )}>
-                    {t(`categories.${item.category}`, item.category)}
+                    {item.localizedName}
                   </p>
                   <p className="text-xs font-medium text-muted-foreground">{formatAmount(item.amount)}</p>
                 </div>

@@ -1,7 +1,11 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend, Area, AreaChart } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
+import { format } from 'date-fns';
+import { bn, ja } from 'date-fns/locale';
 import type { Props as TooltipProps, Payload, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
 interface MonthlyTrendData {
@@ -15,22 +19,44 @@ interface MonthlyTrendChartProps {
   data: MonthlyTrendData[];
 }
 
+const ENGLISH_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
   const { t } = useTranslation();
   const { formatAmount } = useCurrency();
+  const { language } = useLanguage();
+
+  const dateLocale = language === 'bn' ? bn : language === 'ja' ? ja : undefined;
+
+  const compactFormatter = useMemo(
+    () => new Intl.NumberFormat(getLanguageLocale(language), { notation: 'compact', maximumFractionDigits: 1 }),
+    [language]
+  );
+
+  const localizeMonth = (engMonth: string) => {
+    const idx = ENGLISH_MONTHS.indexOf(engMonth);
+    if (idx === -1) return engMonth;
+    return format(new Date(2000, idx, 1), 'MMM', { locale: dateLocale });
+  };
+
+  const legendKeyMap: Record<string, string> = {
+    income: t('dashboard.income'),
+    expenses: t('dashboard.expenses'),
+    savings: t('dashboard.savings'),
+  };
 
   const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg px-4 py-3 shadow-lg">
-          <p className="text-sm font-semibold text-foreground mb-2">{label}</p>
+          <p className="text-sm font-semibold text-foreground mb-2">{localizeMonth(String(label ?? ''))}</p>
           {payload.map((entry: Payload<ValueType, NameType>, index: number) => (
             <div key={index} className="flex items-center gap-2">
               <div 
                 className="w-2 h-2 rounded-full" 
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-sm text-muted-foreground capitalize">{entry.name}:</span>
+              <span className="text-sm text-muted-foreground">{legendKeyMap[String(entry.name)] ?? entry.name}:</span>
               <span className="text-sm font-semibold text-foreground">
                 {formatAmount(Number(entry.value || 0))}
               </span>
@@ -72,18 +98,19 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
               axisLine={false}
               tickLine={false}
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              tickFormatter={localizeMonth}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-              tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+              tickFormatter={(value) => compactFormatter.format(Number(value))}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              verticalAlign="top" 
+            <Legend
+              verticalAlign="top"
               height={36}
-              formatter={(value) => <span className="text-foreground capitalize">{value}</span>}
+              formatter={(value) => <span className="text-foreground">{legendKeyMap[value] ?? value}</span>}
             />
             <Area
               type="monotone"

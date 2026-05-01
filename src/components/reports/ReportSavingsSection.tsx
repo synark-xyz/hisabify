@@ -6,6 +6,8 @@ import { HandCoins, CheckCircle2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useCurrency } from "@/hooks/useCurrency";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/formatDate";
+import { localizeNumber } from "@/lib/i18nNumber";
 
 interface SavingsGoalEntry {
   name: string;
@@ -93,7 +95,7 @@ export function ReportSavingsSection({ savingsPerformance }: ReportSavingsSectio
                   <div className="flex items-end justify-between mb-2">
                     <div className="flex items-baseline gap-1">
                       <span className={cn("text-lg font-bold tabular-nums", colorClass)}>
-                        {pct.toFixed(0)}%
+                        {localizeNumber(pct)}%
                       </span>
                       <span className="text-xs text-muted-foreground">{t("reports.savings.target")}</span>
                     </div>
@@ -106,9 +108,9 @@ export function ReportSavingsSection({ savingsPerformance }: ReportSavingsSectio
                       {formatAmount(goal.currentAmount)} <span className="text-muted-foreground/60">{t("reports.savings.of")}</span> {formatAmount(goal.targetAmount)}
                     </span>
                     {isCompleted && goal.completedAt ? (
-                      <span className="text-chart-4">{format(parseISO(goal.completedAt), "MMM d")}</span>
+                      <span className="text-chart-4">{formatDate(goal.completedAt, "MMM d")}</span>
                     ) : goal.deadline ? (
-                      <span>{format(parseISO(goal.deadline), "MMM d, yyyy")}</span>
+                      <span>{formatDate(goal.deadline, "MMM d, yyyy")}</span>
                     ) : null}
                   </div>
                 </div>

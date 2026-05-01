@@ -25,6 +25,7 @@ import {
   AnalyticsInsight,
 } from '@/types';
 import { format, startOfYear, endOfYear, subYears } from 'date-fns';
+import { bn, ja } from 'date-fns/locale';
 import { cn, getLocalizedCategoryName } from '@/lib/utils';
 import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
 
@@ -79,8 +80,8 @@ export function EnhancedAnalyticsChart({
   const [fullYearData, setFullYearData] = useState<ChartDatum[]>([]);
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategorySpending[]>([]);
   const compactNumberFormatter = useMemo(
-    () => new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }),
-    []
+    () => new Intl.NumberFormat(getLanguageLocale(language), { notation: 'compact', maximumFractionDigits: 1 }),
+    [language]
   );
 
   const fetchAnalyticsData = useCallback(async () => {
@@ -145,7 +146,11 @@ export function EnhancedAnalyticsChart({
       const expenseTransactions = currentTransactions.filter((tx) => tx.type === 'expense' && !tx.savings_goal_id);
       const savingsTransactions = currentTransactions.filter((tx) => tx.type === 'expense' && getTransactionCategoryName(tx) === 'Savings');
       const incomeTransactions = currentTransactions.filter((tx) => tx.type === 'income');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const localeMap: Record<string, typeof bn> = { bn, ja };
+      const locale = localeMap[language] || undefined;
+      const monthNames = Array.from({ length: 12 }, (_, i) =>
+        format(new Date(2000, i, 1), 'MMM', { locale })
+      );
 
       let savingsRunningTotal = 0;
       const currentYearData = monthNames.map((monthName, monthIndex) => {
@@ -451,7 +456,7 @@ export function EnhancedAnalyticsChart({
           </div>
 
           <div className="bg-muted/30 p-1 rounded-full flex gap-1 w-fit">
-            {CHART_MODE_OPTIONS.map((mode) => (
+                {CHART_MODE_OPTIONS.map((mode) => (
               <button
                 key={mode}
                 onClick={() => setChartMode(mode)}
@@ -460,7 +465,7 @@ export function EnhancedAnalyticsChart({
                   chartMode === mode ? 'bg-emerald-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                {mode}
+                {t(`analytics.${mode === 'both' ? 'chartModeBoth' : mode === 'savings' ? 'chartModeSavings' : 'chartModeExpenses'}`)}
               </button>
             ))}
           </div>

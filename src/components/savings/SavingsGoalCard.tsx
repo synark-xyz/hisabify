@@ -31,6 +31,7 @@ import {
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
 import { useCurrency } from '@/hooks/useCurrency';
+import { formatDate } from '@/lib/formatDate';
 import { PremiumGuard } from '@/components/PremiumGuard';
 import { cn } from '@/lib/utils';
 import { localizeNumber } from '@/lib/i18nNumber';
@@ -252,7 +253,7 @@ export function SavingsGoalCard({
 <div className="space-y-1.5 px-2"> {/* Extra padding to prevent clipping */}
                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   <span>{t('savings.progress')}</span>
-                  <span className="text-foreground">{goal.percentage}%</span>
+                  <span className="text-foreground">{localizeNumber(goal.percentage)}%</span>
                 </div>
                 <Progress
                   value={goal.percentage}
@@ -346,7 +347,7 @@ export function SavingsGoalCard({
                     <span>
                       {goal.daysLeft !== null && goal.daysLeft >= 0
                         ? t('savings.daysLeft', { days: localizeNumber(goal.daysLeft) })
-                        : format(new Date(goal.deadline), 'MMM d, yyyy')}
+                        : formatDate(new Date(goal.deadline), 'MMM d, yyyy')}
                     </span>
                   </div>
                 )}
@@ -371,9 +372,9 @@ export function SavingsGoalCard({
                     </div>
                     <div className="mt-1 flex items-center justify-between">
                       <span className="text-muted-foreground">{t('savings.completedAt')}</span>
-                      <span className="font-semibold text-foreground">
-                        {format(new Date(goal.completed_at || goal.updated_at), 'MMM d, yyyy')}
-                      </span>
+                         <span className="font-semibold text-foreground">
+                         {formatDate(new Date(goal.completed_at || goal.updated_at), 'MMM d, yyyy')}
+                       </span>
                     </div>
                   </div>
                 ) : (
@@ -384,7 +385,7 @@ export function SavingsGoalCard({
                         <span className="text-muted-foreground">{t('savings.projectedCompletion')}</span>
                         <span className="font-semibold text-foreground">
                           {goal.suggestedDeadline
-                            ? format(new Date(goal.suggestedDeadline), 'MMM d, yyyy')
+                            ? formatDate(new Date(goal.suggestedDeadline), 'MMM d, yyyy')
                             : goal.projectedCompletionLabel || t('savings.needsMoreData')}
                         </span>
                       </div>
@@ -411,40 +412,40 @@ export function SavingsGoalCard({
                       <div className={cn('rounded-xl border px-3 py-2', paceToneClass)}>
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-semibold">
-                            {goal.paceStatus === 'ahead' ? t('savings.paceAhead') : goal.paceStatus === 'behind' ? t('savings.paceBehind') : t('savings.paceOnTrack')}
-                          </span>
-                          <span>{formatAmount(goal.currentPeriodAmount)}</span>
-                        </div>
-                        <p className="mt-1 text-[11px]">
-                          {goal.paceStatus === 'behind'
-                            ? t('savings.neededThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })
-                            : t('savings.dueThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Desktop: Sparkline always visible in footer */}
-                    {sparklineData.length > 0 && (
-                      <div className="h-20">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={sparklineData}>
-                            <XAxis dataKey="label" hide />
-                            <YAxis hide />
-                            <Tooltip
-                              formatter={(value: number, name: string) => [formatAmount(value), name === 'target' ? t('savings.chartRequired') : t('savings.chartSaved')]}
-                              labelFormatter={(label) => label}
-                            />
-                            <ReferenceLine y={goal.requiredPerPeriod} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
-                            <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} />
-                            <Line type="monotone" dataKey="amount" stroke={goal.color} strokeWidth={2} dot={false} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-
-                    {goal.paceStatus === 'behind' && goal.suggestedDeadline && (
-                      <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-amber-700">
-                        <span>{t('savings.paceAtThis', { date: format(new Date(goal.suggestedDeadline), 'MMM d, yyyy') })}</span>
+                           {goal.paceStatus === 'ahead' ? t('savings.paceAhead') : goal.paceStatus === 'behind' ? t('savings.paceBehind') : t('savings.paceOnTrack')}
+                           </span>
+                           <span>{formatAmount(goal.currentPeriodAmount)}</span>
+                         </div>
+                         <p className="mt-1 text-[11px]">
+                           {goal.paceStatus === 'behind'
+                             ? t('savings.neededThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })
+                             : t('savings.dueThis', { amount: formatAmount(goal.requiredPerPeriod), period: goal.periodLabel })}
+                         </p>
+                       </div>
+                     )}
+ 
+                     {/* Desktop: Sparkline always visible in footer */}
+                     {sparklineData.length > 0 && (
+                       <div className="h-20">
+                         <ResponsiveContainer width="100%" height="100%">
+                           <LineChart data={sparklineData}>
+                             <XAxis dataKey="label" hide />
+                             <YAxis hide />
+                             <Tooltip
+                               formatter={(value: number, name: string) => [formatAmount(value), name === 'target' ? t('savings.chartRequired') : t('savings.chartSaved')]}
+                               labelFormatter={(label) => label}
+                             />
+                             <ReferenceLine y={goal.requiredPerPeriod} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />
+                             <Line type="monotone" dataKey="target" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} />
+                             <Line type="monotone" dataKey="amount" stroke={goal.color} strokeWidth={2} dot={false} />
+                           </LineChart>
+                         </ResponsiveContainer>
+                       </div>
+                     )}
+ 
+                     {goal.paceStatus === 'behind' && goal.suggestedDeadline && (
+                       <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-amber-700">
+                         <span>{t('savings.paceAtThis', { date: formatDate(new Date(goal.suggestedDeadline), 'MMM d, yyyy') })}</span>
                         <Button
                           type="button"
                           size="sm"
@@ -473,7 +474,7 @@ export function SavingsGoalCard({
                       goal.contributionHistory.slice().reverse().map((entry) => (
                         <div key={entry.id} className="flex items-center justify-between rounded-2xl border border-border/50 p-3 text-sm">
                           <div>
-                            <p className="font-semibold text-foreground">{format(new Date(entry.date), 'MMM d, yyyy')}</p>
+                             <p className="font-semibold text-foreground">{formatDate(new Date(entry.date), 'MMM d, yyyy')}</p>
                             <p className="text-xs text-muted-foreground">{entry.note || goal.name}</p>
                           </div>
                           <div className="text-right">

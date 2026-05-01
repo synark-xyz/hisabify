@@ -31,6 +31,7 @@ import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, getMonth, getYe
 import { cn } from '@/lib/utils';
 import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
 import { formatDate } from '@/lib/formatDate';
+import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,6 +61,7 @@ export function Dashboard() {
   const isLightMode = theme === 'light' && variant !== 'cyberpunk';
   const useDarkText = (variant === 'cyberpunk' && theme === 'light') || (variant !== 'cyberpunk' && theme === 'light');
   const { formatAmount, currencyVersion, currency } = useCurrency();
+  const { language } = useLanguage();
   const { convertAmount } = useExchangeRate();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -707,13 +709,33 @@ export function Dashboard() {
 
                       const description = (() => {
                         const parts = activity.description.split('|');
-                        if (parts.length < 2) return activity.description;
-                        const key = parts[0];
-                        const params: Record<string, string> = {};
-                        if (parts[1]) params.name = parts[1];
-                        if (parts[2]) params.currency = parts[2];
-                        if (parts[3]) params.amount = parts[3];
-                        return t(`activity.${key}`, params);
+                        if (parts.length >= 2) {
+                          const key = parts[0];
+                          const params: Record<string, string> = {};
+                          if (parts[1]) params.name = parts[1];
+                          if (parts[2]) params.currency = parts[2];
+                          if (parts[3]) params.amount = localizeNumber(parseFloat(parts[3]), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          return t(`activity.${key}`, params);
+                        }
+                        // Fallback: parse legacy English-format strings from DB
+                        const desc = activity.description;
+                        const fmt = (n: string) => localizeNumber(parseFloat(n), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        let m: RegExpMatchArray | null;
+                        m = desc.match(/^You owe (.+?) ([A-Z]{3}) ([\d.]+)$/);
+                        if (m) return t('activity.youOwe', { name: m[1], currency: m[2], amount: fmt(m[3]) });
+                        m = desc.match(/^(.+?) owes you ([A-Z]{3}) ([\d.]+)$/);
+                        if (m) return t('activity.owesYou', { name: m[1], currency: m[2], amount: fmt(m[3]) });
+                        m = desc.match(/^Settled debt to (.+?): ([A-Z]{3}) ([\d.]+)$/);
+                        if (m) return t('activity.settledDebtTo', { name: m[1], currency: m[2], amount: fmt(m[3]) });
+                        m = desc.match(/^Settled debt from (.+?): ([A-Z]{3}) ([\d.]+)$/);
+                        if (m) return t('activity.settledDebtFrom', { name: m[1], currency: m[2], amount: fmt(m[3]) });
+                        m = desc.match(/^Paid ([A-Z]{3}) ([\d.]+) towards (.+)$/);
+                        if (m) return t('activity.paidTowards', { name: m[3], currency: m[1], amount: fmt(m[2]) });
+                        m = desc.match(/^Deleted debt to (.+)$/);
+                        if (m) return t('activity.deletedDebtTo', { name: m[1] });
+                        m = desc.match(/^Deleted debt from (.+)$/);
+                        if (m) return t('activity.deletedDebtFrom', { name: m[1] });
+                        return desc;
                       })();
                       
                       return (
@@ -736,7 +758,7 @@ export function Dashboard() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{description}</p>
                             <p className="text-xs text-muted-foreground">
-                              {formatDate(new Date(activity.created_at), 'h:mm a')}
+                              {new Intl.DateTimeFormat(getLanguageLocale(language), { hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(activity.created_at))}
                             </p>
                           </div>
                           {activity.amount && (
@@ -744,7 +766,7 @@ export function Dashboard() {
                               'text-sm font-semibold',
                               isPositive ? 'text-emerald-500' : 'text-rose-500'
                             )}>
-                              {activity.currency} {activity.amount.toFixed(2)}
+                              {activity.currency} {localizeNumber(activity.amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           )}
                         </div>

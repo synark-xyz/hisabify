@@ -252,7 +252,8 @@
     "upgradeToPro": "Upgrade to Pro",
     "viewAll": "View All",
     "weeklyAverage": "Weekly Average",
-    "year": "Year {{year}}"
+    "year": "Year {{year}}",
+    "savings": "Savings"
   },
   "streamingGreeting": {
     "welcomeFirstTime": "Welcome to Hisabify. Start by adding your first transaction.",
@@ -1067,7 +1068,9 @@
     "toCollect": "To Collect",
     "remind": "Remind",
     "overdue": "Overdue",
-    "collectReminderTitle": "Collect debt payment"
+    "collectReminderTitle": "Collect debt payment",
+    "owe_message": "You owe {{name}} {{amount}}",
+    "settle_message": "{{name}}'s debt settled: {{amount}}"
   },
   "recurring": {
     "title": "Recurring",

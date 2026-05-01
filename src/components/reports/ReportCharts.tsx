@@ -22,6 +22,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
+import { localizeNumber } from "@/lib/i18nNumber";
 
 interface ReportChartsProps {
   reportData: ReportData;
@@ -54,7 +55,7 @@ const renderActiveShape = (props: ActiveShapeProps) => {
         style={{ filter: `drop-shadow(0 0 8px ${fill}80)` }}
       />
       <text x={cx} y={cy - 10} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={20} fontWeight="bold">
-        {`${(percent * 100).toFixed(0)}%`}
+        {`${localizeNumber(percent * 100)}%`}
       </text>
       <text x={cx} y={cy + 14} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={12} fontWeight="500">
         {payload.category}
@@ -155,16 +156,16 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                     />
                     <div className="min-w-0">
                       <p className={cn("text-xs font-semibold truncate", activeIndex === index ? "text-foreground" : "text-foreground/80")}>{item.category}</p>
-                      <p className="text-xs text-muted-foreground">{item.percentage.toFixed(0)}%</p>
+                      <p className="text-xs text-muted-foreground">{localizeNumber(item.percentage)}%</p>
                     </div>
                   </button>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
-              {t('reports.charts.noExpensesData')}
-            </div>
+              <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
+               {t('reports.charts.noExpenseData')}
+             </div>
           )}
         </CardContent>
       </Card>
@@ -231,7 +232,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                     />
                     <div className="min-w-0">
                       <p className={cn("text-xs font-semibold truncate", incomeActiveIndex === index ? "text-foreground" : "text-foreground/80")}>{item.category}</p>
-                      <p className="text-xs text-muted-foreground">{item.percentage.toFixed(0)}%</p>
+                      <p className="text-xs text-muted-foreground">{localizeNumber(item.percentage)}%</p>
                     </div>
                   </button>
                 ))}
@@ -265,7 +266,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                 margin={{ left: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis type="number" tickFormatter={(v) => `${currencySymbol}${v}`} />
+                <XAxis type="number" tickFormatter={(v) => `${currencySymbol}${localizeNumber(v)}`} />
                 <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
                 <Tooltip
                   formatter={(value: number) => formatAmount(value)}
@@ -309,7 +310,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
                   tick={{ fontSize: 11 }}
                   interval="preserveStartEnd"
                 />
-                <YAxis tickFormatter={(v) => `${currencySymbol}${v}`} />
+                <YAxis tickFormatter={(v) => `${currencySymbol}${localizeNumber(v)}`} />
                 <Tooltip
                   formatter={(value: number) => formatAmount(value)}
                   labelFormatter={(label) => `${t('reports.charts.date')}: ${label}`}

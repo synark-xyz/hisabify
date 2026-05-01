@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCurrency } from '@/hooks/useCurrency';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { localizeNumber } from '@/lib/i18nNumber';
 import type { MonthComparison, YearComparison } from '@/hooks/useAdvancedAnalytics';
 
 interface ComparisonChartsProps {
@@ -78,7 +79,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
         </p>
         <div className={`flex items-center justify-center gap-1 mt-1 text-xs ${getTrendColor(changes.income)}`}>
           {getTrendIcon(changes.income)}
-          <span>{changes.income > 0 ? '+' : ''}{changes.income.toFixed(0)}%</span>
+          <span>{changes.income > 0 ? '+' : ''}{localizeNumber(Math.round(changes.income))}%</span>
         </div>
       </div>
       <div className="p-3 rounded-xl bg-muted/50 text-center card-3d">
@@ -88,7 +89,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
         </p>
         <div className={`flex items-center justify-center gap-1 mt-1 text-xs ${getTrendColor(changes.expenses, true)}`}>
           {getTrendIcon(-changes.expenses)}
-          <span>{changes.expenses > 0 ? '+' : ''}{changes.expenses.toFixed(0)}%</span>
+          <span>{changes.expenses > 0 ? '+' : ''}{localizeNumber(Math.round(changes.expenses))}%</span>
         </div>
       </div>
       <div className="p-3 rounded-xl bg-muted/50 text-center card-3d">
@@ -98,7 +99,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
         </p>
         <div className={`flex items-center justify-center gap-1 mt-1 text-xs ${getTrendColor(changes.net)}`}>
           {getTrendIcon(changes.net)}
-          <span>{changes.net > 0 ? '+' : ''}{changes.net.toFixed(0)}%</span>
+          <span>{changes.net > 0 ? '+' : ''}{localizeNumber(Math.round(changes.net))}%</span>
         </div>
       </div>
     </div>
@@ -136,7 +137,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
                   <YAxis
                     className="text-muted-foreground text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    tickFormatter={(v) => `${localizeNumber(Math.round(v / 1000))}k`}
                   />
                   <Tooltip
                     formatter={(value: number) => formatAmount(value)}
@@ -173,7 +174,7 @@ export function ComparisonCharts({ monthComparison, yearComparison }: Comparison
                   <YAxis
                     className="text-muted-foreground text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    tickFormatter={(v) => `${localizeNumber(Math.round(v / 1000))}k`}
                   />
                   <Tooltip
                     formatter={(value: number) => formatAmount(value)}

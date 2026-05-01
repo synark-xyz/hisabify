@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { format, isToday, isYesterday } from 'date-fns';
+import { isToday, isYesterday } from 'date-fns';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
@@ -23,6 +23,7 @@ import {
 import { useActivityHistory } from '@/hooks/useActivityHistory';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { formatDate } from '@/lib/formatDate';
 
 const activityIcons: Record<string, { icon: React.ElementType; bg: string; fg: string }> = {
   transaction_added: { icon: ArrowUpRight, bg: 'bg-rose-500/10', fg: 'text-rose-500' },
@@ -32,14 +33,14 @@ const activityIcons: Record<string, { icon: React.ElementType; bg: string; fg: s
   debt_settled: { icon: CheckCircle2, bg: 'bg-emerald-500/10', fg: 'text-emerald-500' },
   debt_updated: { icon: Edit3, bg: 'bg-amber-500/10', fg: 'text-amber-500' },
   debt_deleted: { icon: Trash2, bg: 'bg-gray-500/10', fg: 'text-gray-500' },
-  budget_created: { icon: Wallet, bg: 'bg-blue-500/10', fg: 'text-blue-500' },
+  budget_created: { icon: Wallet, bg: 'bg-primary/10', fg: 'text-primary' },
   budget_updated: { icon: Edit3, bg: 'bg-amber-500/10', fg: 'text-amber-500' },
   budget_deleted: { icon: Trash2, bg: 'bg-gray-500/10', fg: 'text-gray-500' },
   savings_goal_created: { icon: HandCoins, bg: 'bg-purple-500/10', fg: 'text-purple-500' },
   savings_contribution: { icon: HandCoins, bg: 'bg-emerald-500/10', fg: 'text-emerald-500' },
   savings_goal_completed: { icon: CheckCircle2, bg: 'bg-emerald-500/10', fg: 'text-emerald-500' },
   savings_goal_archived: { icon: Archive, bg: 'bg-gray-500/10', fg: 'text-gray-500' },
-  payment_reminder_created: { icon: Bell, bg: 'bg-blue-500/10', fg: 'text-blue-500' },
+  payment_reminder_created: { icon: Bell, bg: 'bg-primary/10', fg: 'text-primary' },
   payment_reminder_paid: { icon: CheckCircle2, bg: 'bg-emerald-500/10', fg: 'text-emerald-500' },
   payment_reminder_deleted: { icon: Trash2, bg: 'bg-gray-500/10', fg: 'text-gray-500' },
   card_added: { icon: CreditCard, bg: 'bg-indigo-500/10', fg: 'text-indigo-500' },
@@ -54,12 +55,23 @@ function formatDateHeader(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr);
   if (isToday(date)) return t('common.today');
   if (isYesterday(date)) return t('common.yesterday');
-  return format(date, 'MMMM d, yyyy');
+  return formatDate(date, 'MMMM d, yyyy');
 }
 
-function ActivityItem({ activity }: { activity: ActivityLog }) {
+function ActivityItem({ activity, t }: { activity: ActivityLog; t: TFunction }) {
   const iconConfig = activityIcons[activity.activity_type] || { icon: Clock, bg: 'bg-gray-500/10', fg: 'text-gray-500' };
   const Icon = iconConfig.icon;
+
+  const description = (() => {
+    const parts = activity.description.split('|');
+    if (parts.length < 2) return activity.description;
+    const key = parts[0];
+    const params: Record<string, string> = {};
+    if (parts[1]) params.name = parts[1];
+    if (parts[2]) params.currency = parts[2];
+    if (parts[3]) params.amount = parts[3];
+    return t(`activity.${key}`, params);
+  })();
 
   return (
     <div className="flex gap-3 p-3 hover:bg-muted/50 rounded-xl transition-colors">
@@ -67,10 +79,10 @@ function ActivityItem({ activity }: { activity: ActivityLog }) {
         <Icon className={cn('w-5 h-5', iconConfig.fg)} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground">{activity.description}</p>
+        <p className="text-sm font-medium text-foreground">{description}</p>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-xs text-muted-foreground">
-            {format(new Date(activity.created_at), 'h:mm a')}
+            {formatDate(new Date(activity.created_at), 'h:mm a')}
           </span>
           {activity.amount && (
             <span className="text-xs font-semibold text-foreground bg-muted px-1.5 py-0.5 rounded">
@@ -93,7 +105,7 @@ function ActivityGroup({ dateStr, activities, t }: { dateStr: string; activities
       </div>
       <div className="space-y-1">
         {activities.map((activity) => (
-          <ActivityItem key={activity.id} activity={activity} />
+          <ActivityItem key={activity.id} activity={activity} t={t} />
         ))}
       </div>
     </div>

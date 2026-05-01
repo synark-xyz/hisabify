@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, CheckCircle, Clock, WarningCircle, List, Pencil, Gear, Headset, CaretLeft } from '@phosphor-icons/react';
+import { Bell, X, CheckCircle, Clock, WarningCircle, List, Pencil, Gear, Headset, CaretLeft, Globe } from '@phosphor-icons/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PaymentReminder } from '@/types';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useLanguage, languageNames } from '@/hooks/useLanguage';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 interface HeaderProps {
   title: string;
@@ -38,6 +40,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
   const { formatAmount } = useCurrency();
   const { reminders, markAsPaid } = usePaymentReminders();
   const { unreadCount: unreadMessagesCount } = useNotifications();
+  const { language, setLanguage } = useLanguage();
   const translatedTitle = title.startsWith('nav.') || title.startsWith('common.') || title.startsWith('profile.') || title.startsWith('referral.') || title.startsWith('debt.') || title.startsWith('activity.') || title.startsWith('categories.') || title.startsWith('settings.') || title.startsWith('calculator.')
     ? t(title)
     : title;
@@ -137,7 +140,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
         className="text-xl font-bold text-foreground"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.15 }}
       >
         {translatedTitle}
       </motion.h1>
@@ -156,6 +159,36 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
           </motion.button>
         ) : (
           <>
+            <Popover>
+              <PopoverTrigger asChild>
+                <motion.button
+                  className="w-10 h-10 rounded-full bg-card shadow-card flex items-center justify-center border border-border/50 hover:bg-accent/10 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Globe className="w-5 h-5 text-muted-foreground" weight="duotone" />
+                </motion.button>
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-2" align="end" sideOffset={8}>
+                <div className="space-y-1">
+                  {(['en', 'bn', 'ja'] as const).map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => setLanguage(lang)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        language === lang
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <span className="uppercase font-bold">{lang}</span>
+                      <span>{languageNames[lang]}</span>
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <div className="relative">

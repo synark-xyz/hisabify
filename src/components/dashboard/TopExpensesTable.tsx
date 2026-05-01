@@ -4,7 +4,7 @@ import { Transaction } from '@/types';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { t } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { getTransactionCategoryName } from '@/lib/transactionUtils';
 
 interface TopExpensesTableProps {
@@ -13,6 +13,7 @@ interface TopExpensesTableProps {
 
 export function TopExpensesTable({ transactions }: TopExpensesTableProps) {
   const { formatAmount } = useCurrency();
+  const { t } = useTranslation();
 
   // Get top 5 expenses sorted by amount
   const topExpenses = [...transactions]
@@ -26,16 +27,16 @@ export function TopExpensesTable({ transactions }: TopExpensesTableProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h3 className="text-lg font-bold text-foreground mb-4">Top 5 Expenses</h3>
+      <h3 className="text-lg font-bold text-foreground mb-4">{t('dialogs.dashboard.topExpenses')}</h3>
       {topExpenses.length > 0 ? (
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-muted-foreground">Merchant</TableHead>
-                <TableHead className="text-muted-foreground">Category</TableHead>
-                <TableHead className="text-muted-foreground">Date</TableHead>
-                <TableHead className="text-right text-muted-foreground">Amount</TableHead>
+                <TableHead className="text-muted-foreground">{t('dialogs.dashboard.merchant')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('dialogs.dashboard.category')}</TableHead>
+                <TableHead className="text-muted-foreground">{t('dialogs.dashboard.date')}</TableHead>
+                <TableHead className="text-right text-muted-foreground">{t('dialogs.dashboard.amount')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -76,7 +77,7 @@ export function TopExpensesTable({ transactions }: TopExpensesTableProps) {
       ) : (
         <div className="text-center py-8">
           <span className="text-4xl">📋</span>
-          <p className="text-muted-foreground mt-2">No expenses yet</p>
+          <p className="text-muted-foreground mt-2">{t('dialogs.dashboard.noExpensesYet')}</p>
         </div>
       )}
     </motion.div>

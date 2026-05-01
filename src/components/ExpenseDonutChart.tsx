@@ -3,7 +3,9 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { CategorySpending } from '@/types';
 import { useState, useEffect, useRef } from 'react';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { localizeNumber } from '@/lib/i18nNumber';
 import type { PieSectorDataItem } from 'recharts/types/polar/Pie';
 
 interface ExpenseDonutChartProps {
@@ -38,52 +40,11 @@ type ActiveShapeProps = PieSectorDataItem & {
   percent: number;
 };
 
-const renderActiveShape = (props: ActiveShapeProps) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
-
-  return (
-    <g>
-      {/* Outer glow ring */}
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 15}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        fillOpacity={0.2}
-        cornerRadius={10}
-        style={{ filter: `blur(4px)` }}
-      />
-      {/* Main active segment */}
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 12}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-        cornerRadius={8}
-        style={{ filter: `drop-shadow(0 0 12px ${fill}90)` }}
-      />
-      {/* Percentage text */}
-      <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={26} fontWeight="bold" className="text-glow">
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-      {/* Category name */}
-      <text x={cx} y={cy + 18} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={15} fontWeight="600">
-        {payload.name}
-      </text>
-    </g>
-  );
-};
-
 export function ExpenseDonutChart({ data, timeframeKey }: ExpenseDonutChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [clickAnimation, setClickAnimation] = useState(false);
   const { formatAmount } = useCurrency();
+  const { t } = useTranslation();
   const legendRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Reset active index when timeframe changes
@@ -106,9 +67,52 @@ export function ExpenseDonutChart({ data, timeframeKey }: ExpenseDonutChartProps
     setTimeout(() => setClickAnimation(false), 300);
   };
 
-  // Assign colors if not already set
+  const renderActiveShape = (props: ActiveShapeProps) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
+
+    return (
+      <g>
+        {/* Outer glow ring */}
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 15}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          fillOpacity={0.2}
+          cornerRadius={10}
+          style={{ filter: `blur(4px)` }}
+        />
+        {/* Main active segment */}
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 12}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          cornerRadius={8}
+          style={{ filter: `drop-shadow(0 0 12px ${fill}90)` }}
+        />
+        {/* Percentage text */}
+        <text x={cx} y={cy - 8} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={26} fontWeight="bold" className="text-glow">
+          {`${localizeNumber(Math.round(percent * 100))}%`}
+        </text>
+        {/* Category name */}
+        <text x={cx} y={cy + 18} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={15} fontWeight="600">
+          {t(`categories.${payload.name}`, payload.name)}
+        </text>
+      </g>
+    );
+  };
+
+  // Assign colors if not already set; localize category names
   const chartData = data.map((item, index) => ({
     ...item,
+    name: t(`categories.${item.name}`, item.name),
     color: item.color || COLORS[index % COLORS.length],
   }));
 

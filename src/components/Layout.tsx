@@ -7,7 +7,9 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { Header } from '@/components/Header';
+import { HisabifyLogo } from "@/components/HisabifyLogo";
 import { cn } from '@/lib/utils';
+import { useFABContext } from "@/contexts/FABContext";
 
 const PAGE_TITLES: Record<string, string> = {
     '/': 'nav.dashboard',
@@ -15,7 +17,7 @@ const PAGE_TITLES: Record<string, string> = {
     '/savings': 'nav.savings',
     '/expenses': 'nav.expenses',
     '/transactions': 'nav.transactions',
-    '/insights': 'nav.insights',
+    '/insights': 'nav.analytics',
     '/reports': 'nav.analytics',
     '/profile': 'nav.profile',
     '/profile/personal': 'profile.personalInfo',
@@ -52,6 +54,7 @@ export function Layout() {
 
     const location = useLocation();
     const navigate = useNavigate();
+    const { isGlobalFABHidden } = useFABContext();
     const { isKeyboardOpen } = useVisualViewport();
     const { t } = useTranslation();
 
@@ -91,7 +94,7 @@ export function Layout() {
                 <div className="px-5 py-5 border-b border-border/30">
                     <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-sm">
-                            <span className="text-primary-foreground font-black text-base leading-none">H</span>
+                            <HisabifyLogo size={36} showText={false} className="overflow-hidden rounded-[8px]" />
                         </div>
                         <span className="font-black text-xl tracking-tight text-foreground">Hisabify</span>
                     </div>
@@ -172,12 +175,12 @@ export function Layout() {
 
             {/* Mobile FAB */}
             <AnimatePresence>
-                {!isKeyboardOpen && (
+                {!isKeyboardOpen && !isGlobalFABHidden && (
                     <motion.button
                         onClick={() => setShowManual(true)}
                         aria-label="Add transaction"
                         data-testid="fab-button"
-                        className="fixed right-4 z-50 w-14 h-14 rounded-full bg-accent text-accent-foreground shadow-fab flex items-center justify-center lg:hidden"
+                        className="fixed right-8 z-50 w-14 h-14 rounded-full bg-accent text-accent-foreground shadow-fab flex items-center justify-center lg:hidden"
                         style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}

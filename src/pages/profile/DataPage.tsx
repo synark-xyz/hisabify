@@ -148,8 +148,8 @@ export function DataPage() {
                     className="bg-card rounded-2xl border border-border/50 overflow-hidden"
                 >
                     <div className="flex items-center gap-4 p-4">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                            <FileJson className="w-5 h-5 text-blue-500" />
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <FileJson className="w-5 h-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="font-semibold text-foreground text-sm">{t('profileData.exportData')}</p>

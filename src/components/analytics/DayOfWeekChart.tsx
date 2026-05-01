@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrency } from '@/hooks/useCurrency';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import type { DayOfWeekAnalysis } from '@/hooks/useAdvancedAnalytics';
 import type { Payload } from 'recharts/types/component/DefaultTooltipContent';
 
@@ -65,9 +65,9 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
           </motion.div>
         </div>
 
-        <div className="h-56">
+        <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis 
                 dataKey="name" 
@@ -113,22 +113,21 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
                 }}
               />
               <Bar dataKey="totalSpent" radius={[4, 4, 0, 0]}>
-                {chartData.map((entry, index) => (
+                {chartData.map((_entry, index) => (
                   <Cell key={`cell-${index}`} fill={dayColors[index]} />
                 ))}
+                <LabelList
+                  dataKey="transactionCount"
+                  position="top"
+                  style={{
+                    fontSize: 10,
+                    fill: 'hsl(var(--muted-foreground))',
+                  }}
+                  formatter={(val: number) => val > 0 ? `${val}` : ''}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
-
-        {/* Transaction counts */}
-        <div className="flex justify-between text-xs text-muted-foreground">
-          {chartData.map((d, i) => (
-            <div key={d.name} className="text-center">
-              <p>{d.transactionCount}</p>
-              <p className="text-[10px]">{t('analytics.txns')}</p>
-            </div>
-          ))}
         </div>
       </CardContent>
     </Card>

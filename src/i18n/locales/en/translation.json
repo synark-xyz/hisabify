@@ -138,7 +138,7 @@
     "expenses": "Expenses",
     "budget": "Budget",
     "savings": "Savings",
-    "analytics": "Analytics",
+    "analytics": "Insights",
     "settings": "Settings",
     "profile": "Profile",
     "transactions": "Transactions",
@@ -252,7 +252,8 @@
     "upgradeToPro": "Upgrade to Pro",
     "viewAll": "View All",
     "weeklyAverage": "Weekly Average",
-    "year": "Year {{year}}"
+    "year": "Year {{year}}",
+    "savings": "Savings"
   },
   "streamingGreeting": {
     "welcomeFirstTime": "Welcome to Hisabify. Start by adding your first transaction.",
@@ -316,7 +317,60 @@
         "name": "Getting Steady",
         "description": "Building solid financial foundations"
       }
-    }
+    },
+    "insightSpendCreep": "Your expenses grew by {{rate}} — watch your spending creep.",
+    "insightBudgetAlert": "You're at {{pct}} of your budget — slow down.",
+    "insightRule502030": "Needs {{needs}} and savings {{savings}} — follow the 50/30/20 rule.",
+    "insightLowSavings": "Your savings rate is {{rate}} — aim for 20%.",
+    "rule502030Analysis": "50/30/20 Rule Analysis",
+    "needs": "Needs",
+    "wants": "Wants",
+    "target": "Target",
+    "budgetAdherence": "Budget Adherence",
+    "budgetAdherenceDesc": "How well you stay within budget limits",
+    "savingsRate": "Savings Rate",
+    "savingsRateDesc": "Your savings vs income ratio",
+    "cashFlowTrends": "Cash Flow Trends",
+    "cashFlowTrendsDesc": "Month-over-month expense growth analysis",
+    "dailyActivity": "Daily Activity",
+    "dailyActivityDesc": "How often you log transactions",
+    "budgetAccuracy": "Budget Accuracy",
+    "budgetAccuracyDesc": "Planned vs actual spending variance",
+    "coreFormula": "Core Formula",
+    "balanceFormula": "Balance = Income − Expenses",
+    "savingsRateFormula": "Savings Rate = Savings ÷ Income",
+    "scoreBreakdown": "Score Breakdown",
+    "rate": "rate",
+    "rule": "rule",
+    "momGrowth": "MoM growth",
+    "alert": "Alert",
+    "spendCreepDetected": "Spend creep detected",
+    "normal": "Normal",
+    "dailyReconSpeed": "Daily reconciliation speed",
+    "ptsMax": "pts max",
+    "perDay": "per day",
+    "inactive": "inactive",
+    "budgetVarianceTracking": "Budget vs actual variance tracking",
+    "calculationWeights": "Calculation Weights",
+    "calculatedDesc": "Your financial health is calculated based on 5 key metrics.",
+    "remaining": "{{pct}}% remaining",
+    "overBudget": "Over budget by {{pct}}%",
+    "savingsRateGood": "{{rate}}% savings rate ✓",
+    "savingsRateOk": "{{rate}}% savings rate",
+    "dailyLoggingStreak": "Daily logging streak",
+    "logMoreTransactions": "Log more transactions",
+    "budget": "Budget",
+    "budgetLabel": "Budget",
+    "savingsLabel": "Savings",
+    "trendsLabel": "Trends",
+    "activityLabel": "Activity",
+    "accuracyLabel": "Accuracy",
+    "trends": "Trends",
+    "accuracy": "Accuracy",
+    "detailTitle": "Financial Health Detail",
+    "earnBadgePrompt": "Keep improving your habits to earn a badge!",
+    "maxPtsLabel": "max {{max}} pts",
+    "improvementTips": "Improvement Tips"
   },
   "expenses": {
     "title": "Expenses",
@@ -374,25 +428,11 @@
     "historyLimitTitle": "History limit reached",
     "historyLimitDesc": "Free plan supports the last 30 days. Upgrade for full history.",
     "calendarSelected": "selected",
-    "calendarSwipeHint": "Swipe for more",
-    "dateSelect": {
-      "january": "January",
-      "february": "February",
-      "march": "March",
-      "april": "April",
-      "may": "May",
-      "june": "June",
-      "july": "July",
-      "august": "August",
-      "september": "September",
-      "october": "October",
-      "november": "November",
-      "december": "December"
-    }
+    "calendarSwipeHint": "Swipe for more"
   },
   "budget": {
     "title": "Budget",
-    "used": "used",
+    "used": "{{amount}}% used",
     "monthly": "Monthly",
     "weekly": "Weekly",
     "yearly": "Yearly",
@@ -444,7 +484,7 @@
     "noBudgetsYet": "No Budgets Yet",
     "createFirstBudget": "Create your first budget to start tracking your spending.",
     "createBudget": "Create Budget",
-    "category": "Category",
+    "merchant": "Merchant",
     "allCategories": "All Categories",
     "budgetName": "Budget Name",
     "budgetNameOptional": "Budget Name (Optional)",
@@ -463,8 +503,7 @@
     "updateBudget": "Update Budget",
     "periodLabel": "{{start}} – {{end}}",
     "totalBudgetSpent": "{{amount}} spent",
-    "noExpensesInPeriod": "No expenses in this period",
-    "used": "{{amount}}% used"
+    "noExpensesInPeriod": "No expenses in this period"
   },
   "savings": {
     "title": "Savings",
@@ -526,6 +565,7 @@
     "returnFunds": "Return Funds",
     "returnToMainBalance": "Return to main balance",
     "moveToAnotherGoal": "Move to another goal",
+    "category": "Category",
     "amount": "Amount",
     "available": "Available",
     "deleteConfirmTitle": "Delete \"{{name}}\"?",
@@ -569,80 +609,6 @@
     "exceedsBalance": "This exceeds your current balance of {{amount}}",
     "goalCompletes": "This contribution completes the goal.",
     "budgetRemaining": "Budget remaining",
-    "dialogs": {
-      "budgetExceed": {
-        "title": "Budget Limit Exceeded",
-        "expenseAmount": "Expense amount:",
-        "budgetRemaining": "Budget remaining:",
-        "overBudgetBy": "Over budget by:",
-        "addAnyway": "Add Anyway",
-        "expenseWillExceed": "This expense will exceed your {{name}} budget."
-      },
-      "dashboard": {
-        "financialSummary": "Financial Summary",
-        "quickInsights": "Quick Insights",
-        "dailyAverage": "Daily Average (This Month)",
-        "monthlySavingsRate": "Monthly Savings Rate",
-        "incomeExpenseRatio": "Income/Expense Ratio",
-        "topExpenses": "Top Expenses",
-        "merchant": "Merchant",
-        "category": "Category",
-        "amount": "Amount",
-        "noExpensesYet": "No expenses yet",
-        "budgetVsActual": "Budget vs Actual",
-        "budgetLabel": "Budget:",
-        "actualLabel": "Actual:",
-        "totalIncome": "Total Income",
-        "addIncomeStart": "Add income to start tracking",
-        "totalExpenses": "Total Expenses",
-        "noExpensesRecorded": "No expenses recorded yet",
-        "spent": "Spent",
-        "earned": "Earned",
-        "underBudget": "Under budget"
-      },
-      "deleteBudget": {
-        "title": "Delete Budget",
-        "confirmTitle": "Delete \"{{name}}\"?",
-        "confirmDesc": "This action cannot be undone. This will permanently delete your budget and its progress."
-      },
-      "deleteTransaction": {
-        "title": "Delete Transaction",
-        "confirmTitle": "Delete this transaction?",
-        "confirmDesc": "This action cannot be undone.",
-        "toastDeleted": "Transaction deleted",
-        "toastError": "Error deleting transaction"
-      },
-      "editRecurring": {
-        "title": "Edit Recurring Reminder?"
-      },
-      "transactionDetails": {
-        "tags": "Tags",
-        "note": "Note",
-        "receipt": "Receipt",
-        "failedUpdateLink": "Failed to update link",
-        "failedRemoveLink": "Failed to remove link"
-      },
-      "upgrade": {
-        "unlimited": "Unlimited",
-        "goals": "Goals",
-        "full": "Full",
-        "history": "History",
-        "smarter": "Smarter",
-        "planning": "Planning",
-        "monthly": "Monthly",
-        "annual": "Annual",
-        "purchaseError": "Purchase error",
-        "restoreError": "Restore error"
-      },
-      "paymentReminder": {
-        "noReminders": "No payment reminders found",
-        "deleteReminder": "Delete Reminder",
-        "toastDeleted": "Reminder deleted"
-      },
-      "paymentCarousel": {
-        "noReminder": "No reminder has been set yet"
-      }
-    },
     "goalRemaining": "Goal remaining",
     "transferCap": "Transfer cap",
     "budgetEnded": "This budget period has ended. Remaining funds will be cleared soon.",
@@ -670,7 +636,9 @@
     "reserveFromBudget": "Reserve From Budget",
     "optionalBudgetLink": "Optional budget link",
     "noLinkedBudget": "No linked budget",
-    "savingsReserved": "Savings Reserved"
+    "savingsReserved": "Savings Reserved",
+    "totalNetSavings": "Total Net Savings",
+    "activeGoals": "Active Goals"
   },
   "settings": {
     "title": "Settings",
@@ -724,6 +692,9 @@
     "statusOverdue": "Overdue",
     "statusDueIn": "Due in {{days}}d",
     "statusUpcoming": "Upcoming",
+    "statusDueToday": "Due today",
+    "statusInDays": "In {{count}} days",
+    "statusInOneDay": "In 1 day",
     "deleteConfirm": "Are you sure you want to delete this reminder?",
     "errorDeleting": "Error deleting reminder",
     "deleted": "Reminder deleted",
@@ -756,7 +727,8 @@
     "reminderNotePlaceholder": "Add a note...",
     "reminderCancel": "Cancel",
     "reminderUpdate": "Update Reminder",
-    "reminderCreate": "Create Reminder"
+    "reminderCreate": "Create Reminder",
+    "savingsReminderLabel": "💰 {{goalName}} — {{frequency}} Save · {{amount}}"
   },
   "profile": {
     "title": "Profile",
@@ -905,6 +877,7 @@
       "tableHeaders": {
         "metric": "Metric",
         "value": "Value",
+        "merchant": "Merchant",
         "category": "Category",
         "amount": "Amount",
         "count": "Count",
@@ -917,7 +890,6 @@
         "spent": "Spent",
         "remaining": "Remaining",
         "usage": "Usage %",
-        "merchant": "Merchant",
         "type": "Type",
         "note": "Note"
       },
@@ -951,6 +923,8 @@
   },
   "analytics": {
     "actual": "Actual",
+    "budgetVsActual": "Budget vs Actual",
+    "underBudget": "Under budget by {{amount}}",
     "addTransactions": "Add Transactions",
     "average": "Average",
     "biggestExpenseCategory": "Biggest Expense Category",
@@ -1041,6 +1015,7 @@
     "vsLastMonth": "{{value}} pts vs last month",
     "vsLastYear": "{{value}}% vs last year",
     "yearVsYear": "Year vs Year",
+    "tip": "💡 Tip",
     "yourBiggestSpendingArea": "Your biggest spending area is {{category}}",
     "weekSunday": "Sunday",
     "weekMonday": "Monday",
@@ -1048,7 +1023,11 @@
     "weekWednesday": "Wednesday",
     "weekThursday": "Thursday",
     "weekFriday": "Friday",
-    "weekSaturday": "Saturday"
+    "weekSaturday": "Saturday",
+    "overview": "Overview",
+    "insights": "Insights",
+    "advanced": "Advanced",
+    "subtitle": "View spending patterns and financial insights"
   },
   "debt": {
     "debtTracker": "Debt Tracker",
@@ -1063,6 +1042,7 @@
     "theyOweMe": "They Owe Me",
     "personName": "Person Name",
     "personNamePlaceholder": "Enter name",
+    "category": "Category",
     "amount": "Amount",
     "dueDateOptional": "Due Date (Optional)",
     "noDueDate": "No due date set",
@@ -1091,7 +1071,10 @@
     "payNow": "Pay now",
     "toCollect": "To Collect",
     "remind": "Remind",
-    "overdue": "Overdue"
+    "overdue": "Overdue",
+    "collectReminderTitle": "Collect debt payment",
+    "owe_message": "You owe {{name}} {{amount}}",
+    "settle_message": "{{name}}'s debt settled: {{amount}}"
   },
   "recurring": {
     "title": "Recurring",
@@ -1136,6 +1119,7 @@
     "descriptionPlaceholder": "What was this for?",
     "descriptionPlaceholderLendBorrow": "Name or @handle",
     "descriptionPlaceholderTransfer": "e.g. Monthly savings transfer",
+    "category": "Category",
     "amount": "Amount",
     "paymentMethod": "Payment Method",
     "paymentMethodCash": "Cash",
@@ -1153,7 +1137,7 @@
     "splitTotal": "Split Total",
     "balanced": "Balanced",
     "splitRemaining": "Remaining",
-    "category": "Category",
+    "merchant": "Merchant",
     "categoryOptional": "Category (optional)",
     "selectCategory": "Select category",
     "selectCategoryOptional": "Select category (optional)",
@@ -1266,7 +1250,7 @@
     "title": "Categories",
     "noCategoriesAddOne": "No categories yet. Add one!",
     "addCategory": "Add Category",
-    "addSub": "+ Sub",
+    "addSub": "Sub",
     "subCount_one": "{{count}} sub",
     "subCount_other": "{{count}} subs",
     "expense": "Expense",
@@ -1342,6 +1326,7 @@
     "convertedAmount": "Converted Amount",
     "updatedAgo": "Updated {{time}}",
     "popularConversions": "Popular Conversions",
+    "category": "Category",
     "amount": "Amount",
     "from": "From",
     "to": "To",
@@ -1357,7 +1342,7 @@
     "pushNotificationsDesc": "Instant alerts on your device"
   },
   "expensesPage": {
-    "category": "Category",
+    "merchant": "Merchant",
     "subCategory": "Sub-category",
     "groupBy": "Group by"
   },
@@ -1369,7 +1354,7 @@
     "email": "Email",
     "subject": "Subject",
     "message": "Message",
-    "category": "Category",
+    "merchant": "Merchant",
     "attachments": "Attachments (optional)",
     "addFiles": "Add files",
     "yourName": "Your name",
@@ -1405,7 +1390,14 @@
     "title": "History",
     "activitiesRecorded": "activities recorded",
     "noActivityYet": "No activity yet",
-    "noActivityDesc": "Your transactions and settlements will appear here"
+    "noActivityDesc": "Your transactions and settlements will appear here",
+    "youOwe": "You owe {{name}} {{currency}} {{amount}}",
+    "owesYou": "{{name}} owes you {{currency}} {{amount}}",
+    "settledDebtTo": "Settled debt to {{name}}: {{currency}} {{amount}}",
+    "settledDebtFrom": "Settled debt from {{name}}: {{currency}} {{amount}}",
+    "paidTowards": "Paid {{currency}} {{amount}} towards {{name}}",
+    "deletedDebtTo": "Deleted debt to {{name}}",
+    "deletedDebtFrom": "Deleted debt from {{name}}"
   },
   "calTool": {
     "ac": "AC",
@@ -1432,5 +1424,103 @@
     "a5": "Open Profile > Data Management for data export and cleanup tools. Contact support if you need complete account deletion assistance.",
     "q6": "How can I contact support?",
     "a6": "Open Settings > Help & Support and submit the support form. You can include details and optional attachments."
+  },
+  "financialHealth": {
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "net": "Net",
+    "vsPrevious": "vs previous",
+    "txnCount_one": "{{count}} txn",
+    "txnCount_other": "{{count}} txns"
+  },
+  "dialogs": {
+    "budgetExceed": {
+      "title": "Budget Limit Exceeded",
+      "expenseAmount": "Expense amount:",
+      "budgetRemaining": "Budget remaining:",
+      "overBudgetBy": "Over budget by:",
+      "addAnyway": "Add Anyway",
+      "expenseWillExceed": "This expense will exceed your {{name}} budget."
+    },
+    "dashboard": {
+      "financialSummary": "Financial Summary",
+      "quickInsights": "Quick Insights",
+      "dailyAverage": "Daily Average (This Month)",
+      "monthlySavingsRate": "Monthly Savings Rate",
+      "incomeExpenseRatio": "Income/Expense Ratio",
+      "topExpenses": "Top 5 Expenses",
+      "date": "Date",
+      "merchant": "Merchant",
+      "category": "Category",
+      "amount": "Amount",
+      "noExpensesYet": "No expenses yet",
+      "budgetVsActual": "Budget vs Actual",
+      "budgetLabel": "Budget:",
+      "actualLabel": "Actual:",
+      "totalIncome": "Total Income",
+      "addIncomeStart": "Add income to start tracking",
+      "totalExpenses": "Total Expenses",
+      "noExpensesRecorded": "No expenses recorded yet",
+      "spent": "Spent",
+      "earned": "Earned",
+      "underBudget": "Under budget"
+    },
+    "deleteBudget": {
+      "title": "Delete Budget",
+      "confirmTitle": "Delete \"{{name}}\"?",
+      "confirmDesc": "This action cannot be undone. This will permanently delete your budget and its progress."
+    },
+    "deleteTransaction": {
+      "title": "Delete Transaction",
+      "confirmTitle": "Delete this transaction?",
+      "confirmDesc": "This action cannot be undone.",
+      "toastDeleted": "Transaction deleted",
+      "toastError": "Error deleting transaction"
+    },
+    "editRecurring": {
+      "title": "Edit Recurring Reminder?"
+    },
+    "transactionDetails": {
+      "tags": "Tags",
+      "note": "Note",
+      "receipt": "Receipt",
+      "failedUpdateLink": "Failed to update link",
+      "failedRemoveLink": "Failed to remove link"
+    },
+    "upgrade": {
+      "unlimited": "Unlimited",
+      "goals": "Goals",
+      "full": "Full",
+      "history": "History",
+      "smarter": "Smarter",
+      "planning": "Planning",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "purchaseError": "Purchase error",
+      "restoreError": "Restore error"
+    },
+    "paymentReminder": {
+      "noReminders": "No payment reminders found",
+      "deleteReminder": "Delete Reminder",
+      "toastDeleted": "Reminder deleted"
+    },
+    "paymentCarousel": {
+      "noReminder": "No reminder has been set yet"
+    }
+  },
+  "dateSelect": {
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
   }
 }

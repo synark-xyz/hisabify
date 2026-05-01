@@ -40,7 +40,7 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
     .slice(0, 8)
     .map((item, index) => ({
       ...item,
-      category: item.name,
+      category: t(`categories.${item.name}`, item.name),
       color: item.color || COLORS[index % COLORS.length],
     }));
 

@@ -256,6 +256,7 @@ const SheetContent: React.FC<SheetContentProps> = ({
       <div
         className="flex-1 scrollbar-hide"
         style={{
+          overflow: 'auto',
           touchAction: 'pan-y',
           WebkitOverflowScrolling: 'touch',
           minHeight: 0,

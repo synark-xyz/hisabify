@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Download, Lock, RotateCw, SlidersHorizontal } from 'lucide-react';
+import { Calendar, Download, RotateCw, SlidersHorizontal } from 'lucide-react';
 import { format, subDays, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, isBefore } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
@@ -19,9 +20,6 @@ interface DateRangeSelectorProps {
   onDateRangeChange: (range: { from: Date; to: Date }) => void;
   onExportCSV: () => void;
   minDate?: Date;
-  onUpgradeRequired?: () => void;
-  canUseCustomRange?: boolean;
-  canExport?: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
 }
@@ -41,9 +39,6 @@ export function DateRangeSelector({
   onDateRangeChange,
   onExportCSV,
   minDate,
-  onUpgradeRequired,
-  canUseCustomRange = true,
-  canExport = true,
   onRefresh,
   isRefreshing = false,
 }: DateRangeSelectorProps) {
@@ -52,13 +47,7 @@ export function DateRangeSelector({
   const handlePresetSelect = (preset: typeof presetRanges[0]) => {
     const next = preset.getValue();
 
-    if (!canUseCustomRange) {
-      onUpgradeRequired?.();
-      return;
-    }
-
     if (minDate && isBefore(next.from, minDate)) {
-      onUpgradeRequired?.();
       onDateRangeChange({
         from: minDate,
         to: isBefore(next.to, minDate) ? minDate : next.to,
@@ -71,13 +60,7 @@ export function DateRangeSelector({
 
   const handleCalendarSelect = (range: DateRange | undefined) => {
     if (range?.from && range?.to) {
-      if (!canUseCustomRange) {
-        onUpgradeRequired?.();
-        return;
-      }
-
       if (minDate && isBefore(range.from, minDate)) {
-        onUpgradeRequired?.();
         onDateRangeChange({
           from: minDate,
           to: isBefore(range.to, minDate) ? minDate : range.to,
@@ -119,9 +102,9 @@ export function DateRangeSelector({
       <div className="flex items-center gap-1.5 sm:gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30">
+            <IconButton>
               <SlidersHorizontal className="w-4 h-4 text-violet-500" />
-            </Button>
+            </IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-card border-border/60 shadow-lg">
             {presetRanges.map((preset) => (
@@ -130,42 +113,21 @@ export function DateRangeSelector({
                 onClick={() => handlePresetSelect(preset)}
                 className="cursor-pointer hover:bg-accent/50 focus:bg-accent/50"
               >
-                <span className="flex items-center gap-2">
-                  {preset.label}
-                  {minDate && isBefore(preset.getValue().from, minDate) && <Lock className="w-3 h-3 text-amber-500" />}
-                </span>
+                <span>{preset.label}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
 
         {onRefresh && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30"
-          >
+          <IconButton onClick={onRefresh} disabled={isRefreshing}>
             <RotateCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
-          </Button>
+          </IconButton>
         )}
-        
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={canExport ? onExportCSV : onUpgradeRequired}
-            className={cn(
-              "h-9 w-9 sm:h-10 sm:w-10 border-border/60 bg-card/50 hover:bg-accent/20 hover:border-accent/30",
-              canExport 
-                ? "text-emerald-500" 
-                : "text-muted-foreground"
-            )}
-          >
-            {canExport ? <Download className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-          </Button>
-        </motion.div>
+
+        <IconButton onClick={onExportCSV} className="text-emerald-500">
+          <Download className="w-4 h-4" />
+        </IconButton>
       </div>
     </motion.div>
   );

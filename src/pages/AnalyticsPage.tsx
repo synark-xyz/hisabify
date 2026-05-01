@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, RefreshCw, Lock, Crown, Share2, X } from 'lucide-react';
+import { RefreshCw, Crown, Share2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
@@ -11,7 +11,6 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
 import { useSubscription } from '@/hooks/useSubscription';
-import { UpgradeModal } from '@/components/UpgradeModal';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { CategoryBreakdownChart } from '@/components/dashboard/CategoryBreakdownChart';
 import { MonthlyTrendChart } from '@/components/dashboard/MonthlyTrendChart';
@@ -35,14 +34,12 @@ import { PremiumGuard } from '@/components/PremiumGuard';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { canUseFeature } from '@/lib/entitlements';
-import { enforceHistoryWindow, getFreeHistoryStartDate } from '@/lib/historyLimits';
 
 export function AnalyticsPage() {
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showWrapModal, setShowWrapModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState({
-    from: startOfMonth(subMonths(new Date(), 11)), // Extended to 12 months for better analysis
+    from: startOfMonth(subMonths(new Date(), 11)),
     to: endOfMonth(new Date()),
   });
   const { user } = useAuth();
@@ -50,7 +47,6 @@ export function AnalyticsPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const hasShownClampToastRef = useRef(false);
 
   const {
     transactions,
@@ -66,12 +62,8 @@ export function AnalyticsPage() {
   } = useDashboardData(dateRange);
   const hasTransactionData = transactions.length > 0;
 
-  const { isPremium, loading: subscriptionLoading } = useSubscription();
-  const canUseCustomRange = canUseFeature({ isPremium }, 'analytics_custom_range');
-  const canExportReports = canUseFeature({ isPremium }, 'report_export');
-  const freeHistoryStartDate = useMemo(() => getFreeHistoryStartDate(), []);
+  const { isPremium } = useSubscription();
 
-  // Advanced analytics hook
   const {
     spendingPatterns,
     insights,
@@ -83,44 +75,12 @@ export function AnalyticsPage() {
   } = useAdvancedAnalytics(transactions);
 
   const handleExportCSV = async () => {
-    if (!canExportReports) {
-      setShowUpgradeModal(true);
-      return;
-    }
-
     await exportToCSV({ transactions, dateRange });
   };
 
   const handleDateRangeChange = (range: { from: Date; to: Date }) => {
-    const enforced = enforceHistoryWindow(range, isPremium);
-    setDateRange(enforced.range);
-
-    if (enforced.wasClamped && !hasShownClampToastRef.current) {
-      hasShownClampToastRef.current = true;
-      toast({
-        title: t('analytics.historyLimitTitle'),
-        description: t('analytics.historyLimitDesc'),
-      });
-    }
+    setDateRange(range);
   };
-
-  useEffect(() => {
-    if (subscriptionLoading || isPremium) {
-      return;
-    }
-
-    const enforced = enforceHistoryWindow(dateRange, isPremium);
-    if (enforced.wasClamped) {
-      setDateRange(enforced.range);
-      if (!hasShownClampToastRef.current) {
-        hasShownClampToastRef.current = true;
-        toast({
-          title: t('analytics.historyLimitTitle'),
-          description: t('analytics.historyLimitDesc'),
-        });
-      }
-    }
-  }, [subscriptionLoading, isPremium, dateRange, toast, t]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -139,103 +99,97 @@ export function AnalyticsPage() {
     <>
       <PullToRefresh onRefresh={async () => { await refetch(); }}>
         <div className="max-w-6xl mx-auto pb-page-content">
-        <motion.main
-          className="px-4 pt-4 space-y-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Date Range Selector */}
-          <motion.section variants={itemVariants}>
-            <DateRangeSelector
-              dateRange={dateRange}
-              onDateRangeChange={handleDateRangeChange}
-              onExportCSV={handleExportCSV}
-              minDate={freeHistoryStartDate}
-              onUpgradeRequired={() => setShowUpgradeModal(true)}
-              canUseCustomRange={canUseCustomRange}
-              canExport={canExportReports}
-            />
-          </motion.section>
-
-          {/* Summary Cards */}
-          <motion.section variants={itemVariants}>
-            {loading ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <Skeleton key={i} className="h-24 rounded-2xl" />
-                ))}
-              </div>
-            ) : !hasTransactionData ? (
-              <motion.div
-                className="bg-card rounded-2xl p-6 border border-border/50 text-center"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <p className="text-base font-semibold text-foreground">{t('analytics.noDataYet')}</p>
-                <p className="text-sm text-muted-foreground mt-1 mb-4">
-                  {t('analytics.noDataYetDesc')}
-                </p>
-                <Button onClick={() => navigate('/transactions')}>{t('analytics.addTransactions')}</Button>
-              </motion.div>
-            ) : (
-              <SummaryCards
-                totalExpenses={totalExpenses}
-                totalIncome={totalIncome}
-                netBalance={netBalance}
-                budgetRemaining={budgetRemaining}
+          <motion.main
+            className="px-4 pt-2 pb-8 md:pt-4 md:pb-12"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Action Bar */}
+            <motion.div variants={itemVariants} className="flex items-center justify-end mb-6">
+              <DateRangeSelector
+                dateRange={dateRange}
+                onDateRangeChange={handleDateRangeChange}
+                onExportCSV={handleExportCSV}
+                onRefresh={refetch}
+                isRefreshing={loading}
               />
-            )}
-          </motion.section>
+            </motion.div>
 
-          {/* Tabs for Overview vs Advanced */}
-          {hasTransactionData && (
-          <motion.section variants={itemVariants}>
-            <Tabs defaultValue="insights" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-2xl h-12 card-3d">
-                <TabsTrigger value="insights" className="rounded-xl font-bold uppercase tracking-tight text-[10px]">{t('analytics.tabInsights')}</TabsTrigger>
-                <TabsTrigger value="overview" className="rounded-xl font-bold uppercase tracking-tight text-[10px]">{t('analytics.tabOverview')}</TabsTrigger>
-                <TabsTrigger value="advanced" className="rounded-xl font-bold uppercase tracking-tight text-[10px] relative overflow-hidden">
-                  {t('analytics.tabAdvanced')}
-                  {!isPremium && !subscriptionLoading && <Lock className="ml-1.5 w-3 h-3 text-muted-foreground/50" />}
-                </TabsTrigger>
+            {/* Summary Cards */}
+            <motion.div variants={itemVariants}>
+              <SummaryCards
+                 totalExpenses={totalExpenses}
+                 totalIncome={totalIncome}
+                 netBalance={netBalance}
+                 budgetRemaining={budgetRemaining}
+               />
+            </motion.div>
+
+            {/* Main Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+              <TabsList className="mb-6 grid grid-cols-3 w-full lg:w-auto lg:grid-cols-3 gap-1 p-1 bg-card/50 rounded-xl">
+                <TabsTrigger value="overview" className="text-xs sm:text-sm">{t('analytics.overview')}</TabsTrigger>
+                <TabsTrigger value="insights" className="text-xs sm:text-sm">{t('analytics.insights')}</TabsTrigger>
+                <TabsTrigger value="advanced" className="text-xs sm:text-sm">{t('analytics.advanced')}</TabsTrigger>
               </TabsList>
-
-              {/* Insights Tab */}
-              <TabsContent value="insights" className="space-y-6">
-                <PremiumGuard featureName={t('analytics.featureAiInsights')}>
-                  {loading ? (
-                    <>
-                      <Skeleton className="h-40 rounded-2xl" />
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[...Array(3)].map((_, i) => (
-                          <Skeleton key={i} className="h-32 rounded-2xl" />
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Insights Cards */}
-                      <InsightsCards insights={insights} />
-
-                      {/* Spending Patterns & Predictions */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <SpendingPatternsCard patterns={spendingPatterns} />
-                        <TrendPredictionChart prediction={trendPrediction} />
-                      </div>
-                    </>
-                  )}
-                </PremiumGuard>
-              </TabsContent>
 
               {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-6">
+                {/* Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <motion.div variants={itemVariants}>
+                    {loading ? (
+                      <Skeleton className="h-80 rounded-2xl" />
+                    ) : (
+                      <CategoryBreakdownChart data={categoryData} />
+                    )}
+                  </motion.div>
+                  <motion.div variants={itemVariants}>
+                    {loading ? (
+                      <Skeleton className="h-80 rounded-2xl" />
+                    ) : (
+                      <MonthlyTrendChart data={monthlyTrendData} />
+                    )}
+                  </motion.div>
+                </div>
+
+                {/* Budget vs Actual & Spending by Category */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {budgetVsActualData.length > 0 ? (
+                    <BudgetVsActualChart data={budgetVsActualData} />
+                  ) : (
+                    <motion.div
+                      className="bg-card rounded-2xl p-6 shadow-card flex flex-col items-center justify-center h-80"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      <span className="text-5xl mb-3">💰</span>
+                      <p className="text-foreground font-semibold">{t('analytics.noBudgetsSet')}</p>
+                      <p className="text-muted-foreground text-sm text-center mt-1">
+                        {t('analytics.noBudgetsDesc')}
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => navigate('/budget')}
+                      >
+                        {t('analytics.createBudget')}
+                      </Button>
+                    </motion.div>
+                  )}
+                  <SpendingByCategoryChart data={categoryData} />
+                </div>
+
+                {/* Top Expenses Table */}
+                <TopExpensesTable transactions={transactions} />
+              </TabsContent>
+
+              {/* Insights Tab */}
+              <TabsContent value="insights" className="space-y-6">
                 {loading ? (
                   <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <Skeleton className="h-80 rounded-2xl" />
-                      <Skeleton className="h-80 rounded-2xl" />
-                    </div>
+                    <Skeleton className="h-80 rounded-2xl" />
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <Skeleton className="h-80 rounded-2xl" />
                       <Skeleton className="h-80 rounded-2xl" />
@@ -243,50 +197,8 @@ export function AnalyticsPage() {
                   </>
                 ) : (
                   <>
-                    {/* Charts Row 1 - Category Breakdown & Monthly Trend */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <CategoryBreakdownChart
-                        data={categoryData}
-                        onCategoryClick={(name) => {
-                          const params = new URLSearchParams();
-                          params.set('categoryName', name);
-                          params.set('from', dateRange.from.toISOString());
-                          params.set('to', dateRange.to.toISOString());
-                          navigate(`/transactions?${params.toString()}`);
-                        }}
-                      />
-                      <MonthlyTrendChart data={monthlyTrendData} />
-                    </div>
-
-                    {/* Charts Row 2 - Budget vs Actual & Spending by Category */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {budgetVsActualData.length > 0 ? (
-                        <BudgetVsActualChart data={budgetVsActualData} />
-                      ) : (
-                        <motion.div
-                          className="bg-card rounded-2xl p-6 shadow-card flex flex-col items-center justify-center h-80"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                        >
-                          <span className="text-5xl mb-3">💰</span>
-                          <p className="text-foreground font-semibold">{t('analytics.noBudgetsSet')}</p>
-                          <p className="text-muted-foreground text-sm text-center mt-1">
-                            {t('analytics.noBudgetsDesc')}
-                          </p>
-                          <Button
-                            variant="outline"
-                            className="mt-4"
-                            onClick={() => navigate('/budget')}
-                          >
-                            {t('analytics.createBudget')}
-                          </Button>
-                        </motion.div>
-                      )}
-                      <SpendingByCategoryChart data={categoryData} />
-                    </div>
-
-                    {/* Top Expenses Table */}
-                    <TopExpensesTable transactions={transactions} />
+                    <InsightsCards insights={insights} />
+                    <SpendingPatternsCard patterns={spendingPatterns} />
                   </>
                 )}
               </TabsContent>
@@ -304,13 +216,10 @@ export function AnalyticsPage() {
                     </>
                   ) : (
                     <>
-                      {/* Comparison Charts */}
                       <ComparisonCharts
                         monthComparison={monthComparison}
                         yearComparison={yearComparison}
                       />
-
-                      {/* Heat Map & Day of Week Analysis */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <SpendingHeatMap data={heatMapData} />
                         <DayOfWeekChart data={dayOfWeekAnalysis} />
@@ -320,17 +229,9 @@ export function AnalyticsPage() {
                 </PremiumGuard>
               </TabsContent>
             </Tabs>
-          </motion.section>
-          )}
-        </motion.main>
-      </div>
+          </motion.main>
+        </div>
       </PullToRefresh>
-
-      <UpgradeModal
-        open={showUpgradeModal}
-        onOpenChange={setShowUpgradeModal}
-        source="analytics_tab"
-      />
 
       {/* Monthly Wrap Modal */}
       <AnimatePresence>

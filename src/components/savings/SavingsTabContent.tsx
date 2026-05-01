@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, HandCoins, Sparkles, ChevronRight } from "lucide-react";
 import { useSavingsGoals, SavingsGoalWithProgress } from "@/hooks/useSavingsGoals";
 import { useSubscription } from "@/hooks/useSubscription";
-import { UpgradeModal } from "@/components/UpgradeModal";
 import {
   SavingsGoalCard,
   AddSavingsGoalModal,
@@ -21,15 +20,14 @@ import { useBudgetContext } from '@/hooks/useBudgetContext';
 import { useSearchParams } from 'react-router-dom';
 import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
-
 export function SavingsTabContent() {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
+    const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
   const [mainBalance, setMainBalance] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation();
   const { formatAmount } = useCurrency();
+
 
   const {
     goals,
@@ -81,11 +79,7 @@ export function SavingsTabContent() {
   }, [fetchMainBalance]);
 
   const handleAddGoal = () => {
-    if (!isPremium && activeGoals.length >= 1) {
-      setShowUpgradeModal(true);
-    } else {
-      setShowAddModal(true);
-    }
+    setShowAddModal(true);
   };
 
   const handleSubmit = async (data: {
@@ -213,7 +207,7 @@ export function SavingsTabContent() {
                 </div>
               </motion.div>
 
-              {variant !== 'premium' && (
+              {/* {variant !== 'premium' && (
                 <motion.div
                   variants={itemVariants}
                   onClick={() => setShowUpgradeModal(true)}
@@ -230,15 +224,18 @@ export function SavingsTabContent() {
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </motion.div>
-              )}
+              )} */}
 
               <motion.div variants={itemVariants} className="flex items-center justify-between pt-2">
                 <h2 className="text-lg font-semibold">{t("savings.myGoals")}</h2>
-                {!isPremium && activeGoals.length >= 1 && (
-                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-                    {t('savings.freeLimit')}
-                  </span>
-                )}
+                <button
+                  onClick={handleAddGoal}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-foreground shadow text-sm font-semibold active:scale-95 transition-transform"
+                  aria-label={t('savings.addGoal')}
+                >
+                  <Plus className="w-4 h-4" strokeWidth={2.5} />
+                  {t('savings.addGoal')}
+                </button>
               </motion.div>
 
               {goals.length === 0 ? (
@@ -299,18 +296,7 @@ export function SavingsTabContent() {
         </motion.div>
       </div>
 
-      {/* FAB - New Goal Button - Mobile only */}
-      <motion.button
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={handleAddGoal}
-        className="fixed bottom-6 right-6 md:hidden z-50 w-14 h-14 rounded-full bg-accent shadow-lg shadow-accent/30 flex items-center justify-center text-white"
-        aria-label={t('savings.newGoal')}
-      >
-        <Plus className="w-6 h-6" />
-      </motion.button>
+
 
       <AddSavingsGoalModal
         open={showAddModal}
@@ -322,7 +308,6 @@ export function SavingsTabContent() {
         editingGoal={editingGoal}
       />
 
-      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} source="savings_goals_limit" />
     </>
   );
 }

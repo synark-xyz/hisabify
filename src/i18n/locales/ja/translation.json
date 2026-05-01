@@ -144,7 +144,8 @@
     "upgradeToPro": "プロにアップグレード",
     "viewAll": "すべて表示",
     "weeklyAverage": "週平均",
-    "year": "{{year}}年"
+    "year": "{{year}}年",
+    "savings": "貯蓄"
   },
   "streamingGreeting": {
     "welcomeFirstTime": "Hisabifyへようこそ。最初の取引を追加して始めましょう。",
@@ -208,7 +209,60 @@
         "name": "安定中",
         "description": "着実な財務基盤を構築中"
       }
-    }
+    },
+    "insightSpendCreep": "支出が{{rate}}増加しました — 支出の侵食に注意してください。",
+    "insightBudgetAlert": "予算の{{pct}}に達しました — ペースを落としてください。",
+    "insightRule502030": "ニーズ{{needs}}と貯金{{savings}} — 50/30/20のルールに従いましょう。",
+    "insightLowSavings": "貯金率は{{rate}}です — 20%を目指しましょう。",
+    "rule502030Analysis": "50/30/20 ルール分析",
+    "needs": "ニーズ",
+    "wants": "ワンツ",
+    "target": "目標",
+    "budgetAdherence": "予算順守",
+    "budgetAdherenceDesc": "予算内にどれだけ収まっているか",
+    "savingsRate": "貯金率",
+    "savingsRateDesc": "貯金と収入の比率",
+    "cashFlowTrends": "キャッシュフローの傾向",
+    "cashFlowTrendsDesc": "月ごとの支出成長分析",
+    "dailyActivity": "日々のアクティビティ",
+    "dailyActivityDesc": "どれだけ頻繁に取引を記録するか",
+    "budgetAccuracy": "予算精度",
+    "budgetAccuracyDesc": "計画と実際の支出の差異",
+    "coreFormula": "コア数式",
+    "balanceFormula": "残高 = 収入 − 支出",
+    "savingsRateFormula": "貯金率 = 貯金 ÷ 収入",
+    "scoreBreakdown": "スコア内訳",
+    "rate": "レート",
+    "rule": "ルール",
+    "momGrowth": "前月比成長",
+    "alert": "アラート",
+    "spendCreepDetected": "支出の侵食を検出",
+    "normal": "正常",
+    "dailyReconSpeed": "日々の調整スピード",
+    "ptsMax": "pts 最大",
+    "perDay": "日あたり",
+    "inactive": "非アクティブ",
+    "budgetVarianceTracking": "予算と実際の差異追跡",
+    "calculationWeights": "計算ウェイト",
+    "calculatedDesc": "財務健全性スコアは、5つの主要な指標に基づいて計算されます。",
+    "remaining": "{{pct}}% 残り",
+    "overBudget": "{{pct}}% 予算オーバー",
+    "savingsRateGood": "{{rate}}% 貯金率 ✓",
+    "savingsRateOk": "{{rate}}% 貯金率",
+    "dailyLoggingStreak": "デイリー記録ストリーク",
+    "logMoreTransactions": "取引をもっと記録",
+    "budget": "予算",
+    "budgetLabel": "予算",
+    "savingsLabel": "貯蓄",
+    "trendsLabel": "トレンド",
+    "activityLabel": "アクティビティ",
+    "accuracyLabel": "精度",
+    "trends": "トレンド",
+    "accuracy": "精度",
+    "detailTitle": "財務健全性の詳細",
+    "earnBadgePrompt": "バッジを獲得するために習慣を改善し続けましょう！",
+    "maxPtsLabel": "最大 {{max}} pt",
+    "improvementTips": "改善のヒント"
   },
   "expenses": {
     "title": "支出",
@@ -266,21 +320,7 @@
     "historyLimitTitle": "履歴の上限に達しました",
     "historyLimitDesc": "無料プランは過去30日間に対応しています。全履歴にはアップグレードしてください。",
     "calendarSelected": "選択済み",
-    "calendarSwipeHint": "スワイプして表示",
-    "dateSelect": {
-      "january": "1月",
-      "february": "2月",
-      "march": "3月",
-      "april": "4月",
-      "may": "5月",
-      "june": "6月",
-      "july": "7月",
-      "august": "8月",
-      "september": "9月",
-      "october": "10月",
-      "november": "11月",
-      "december": "12月"
-    }
+    "calendarSwipeHint": "スワイプして表示"
   },
   "budget": {
     "title": "予算",
@@ -487,7 +527,84 @@
     "reserveFromBudget": "予算から予約",
     "optionalBudgetLink": "任意 бюджетリンク",
     "noLinkedBudget": "リンクされた予算なし",
-    "savingsReserved": "貯金予約済み"
+    "savingsReserved": "貯金予約済み",
+    "totalNetSavings": "純貯蓄額",
+    "activeGoals": "進行中の目標"
+  },
+  "dialogs": {
+    "budgetExceed": {
+      "title": "予算上限を超過",
+      "expenseAmount": "支出金額:",
+      "budgetRemaining": "予算残り:",
+      "overBudgetBy": "予算超過:",
+      "addAnyway": "追加する",
+      "expenseWillExceed": "この支出は{{name}}の予算を超過します。"
+    },
+    "dashboard": {
+      "financialSummary": "財務サマリー",
+      "quickInsights": "クイック分析",
+      "dailyAverage": "日平均（今月）",
+      "monthlySavingsRate": "月間貯蓄率",
+      "incomeExpenseRatio": "収入/支出比率",
+      "topExpenses": "トップ5支出",
+      "date": "日付",
+      "merchant": "加盟店",
+      "category": "カテゴリー",
+      "amount": "金額",
+      "noExpensesYet": "支出がありません",
+      "budgetVsActual": "予算 vs 実績",
+      "budgetLabel": "予算:",
+      "actualLabel": "実績:",
+      "totalIncome": "総収入",
+      "addIncomeStart": "収入を追加して追跡を開始",
+      "totalExpenses": "総支出",
+      "noExpensesRecorded": "支出が記録されていません",
+      "spent": "支出",
+      "earned": "収入",
+      "underBudget": "予算内"
+    },
+    "deleteBudget": {
+      "title": "予算を削除",
+      "confirmTitle": "{{name}}を削除しますか？",
+      "confirmDesc": "この操作は元に戻せません。予算とその進捗が完全に削除されます。"
+    },
+    "deleteTransaction": {
+      "title": "取引を削除",
+      "confirmTitle": "この取引を削除しますか？",
+      "confirmDesc": "この操作は元に戻せません。",
+      "toastDeleted": "取引が削除されました",
+      "toastError": "取引の削除中にエラーが発生しました"
+    },
+    "editRecurring": {
+      "title": "定期リマインダーを編集しますか？"
+    },
+    "transactionDetails": {
+      "tags": "タグ",
+      "note": "メモ",
+      "receipt": "レシート",
+      "failedUpdateLink": "リンクの更新に失敗しました",
+      "failedRemoveLink": "リンクの削除に失敗しました"
+    },
+    "upgrade": {
+      "unlimited": "無制限",
+      "goals": "目標",
+      "full": "フル",
+      "history": "履歴",
+      "smarter": "スマート",
+      "planning": "計画",
+      "monthly": "月次",
+      "annual": "年次",
+      "purchaseError": "購入エラー",
+      "restoreError": "復元エラー"
+    },
+    "paymentReminder": {
+      "noReminders": "支払いリマインダーは見つかりません",
+      "deleteReminder": "リマインダーを削除",
+      "toastDeleted": "リマインダーが削除されました"
+    },
+    "paymentCarousel": {
+      "noReminder": "リマインダーはまだ設定されていません"
+    }
   },
   "settings": {
     "preferences": "環境設定",
@@ -541,6 +658,9 @@
     "statusOverdue": "期限超過",
     "statusDueIn": "{{days}}日以内が期限",
     "statusUpcoming": "今後",
+    "statusDueToday": "今日が期限",
+    "statusInDays": "{{count}}日後",
+    "statusInOneDay": "1日後",
     "deleteConfirm": "このリマインダーを削除してもよろしいですか？",
     "errorDeleting": "リマインダーの削除中にエラーが発生しました",
     "deleted": "リマインダーを削除しました",
@@ -573,7 +693,8 @@
     "reminderNotePlaceholder": "メモを追加...",
     "reminderCancel": "キャンセル",
     "reminderUpdate": "リマインダーを更新",
-    "reminderCreate": "リマインダーを作成"
+    "reminderCreate": "リマインダーを作成",
+    "savingsReminderLabel": "💰 {{goalName}} — {{frequency}} 貯金 · {{amount}}"
   },
   "profile": {
     "title": "プロフィール",
@@ -768,84 +889,12 @@
   },
   "analytics": {
     "actual": "実績",
+    "budgetVsActual": "予算対実績",
+    "underBudget": "予算より{{amount}}少ない",
     "addTransactions": "取引を追加",
     "average": "平均",
     "biggestExpenseCategory": "最大の支出カテゴリー",
     "budgetRemaining": "残りの予算",
-    "dialogs": {
-      "budgetExceed": {
-        "title": "予算上限を超過",
-        "expenseAmount": "支出金額:",
-        "budgetRemaining": "予算残り:",
-        "overBudgetBy": "予算超過:",
-        "addAnyway": "追加する",
-        "expenseWillExceed": "この支出は{{name}}の予算を超過します。"
-      },
-      "dashboard": {
-        "financialSummary": "財務サマリー",
-        "quickInsights": "クイック分析",
-        "dailyAverage": "日平均（今月）",
-        "monthlySavingsRate": "月間貯蓄率",
-        "incomeExpenseRatio": "収入/支出比率",
-        "topExpenses": "トップ支出",
-        "merchant": "加盟店",
-        "category": "カテゴリー",
-        "amount": "金額",
-        "noExpensesYet": "支出がありません",
-        "budgetVsActual": "予算 vs 実績",
-        "budgetLabel": "予算:",
-        "actualLabel": "実績:",
-        "totalIncome": "総収入",
-        "addIncomeStart": "収入を追加して追跡を開始",
-        "totalExpenses": "総支出",
-        "noExpensesRecorded": "支出が記録されていません",
-        "spent": "支出",
-        "earned": "収入",
-        "underBudget": "予算内"
-      },
-      "deleteBudget": {
-        "title": "予算を削除",
-        "confirmTitle": "{{name}}を削除しますか？",
-        "confirmDesc": "この操作は元に戻せません。予算とその進捗が完全に削除されます。"
-      },
-      "deleteTransaction": {
-        "title": "取引を削除",
-        "confirmTitle": "この取引を削除しますか？",
-        "confirmDesc": "この操作は元に戻せません。",
-        "toastDeleted": "取引が削除されました",
-        "toastError": "取引の削除中にエラーが発生しました"
-      },
-      "editRecurring": {
-        "title": "定期リマインダーを編集しますか？"
-      },
-      "transactionDetails": {
-        "tags": "タグ",
-        "note": "メモ",
-        "receipt": "レシート",
-        "failedUpdateLink": "リンクの更新に失敗しました",
-        "failedRemoveLink": "リンクの削除に失敗しました"
-      },
-      "upgrade": {
-        "unlimited": "無制限",
-        "goals": "目標",
-        "full": "フル",
-        "history": "履歴",
-        "smarter": "スマート",
-        "planning": "計画",
-        "monthly": "月次",
-        "annual": "年次",
-        "purchaseError": "購入エラー",
-        "restoreError": "復元エラー"
-      },
-      "paymentReminder": {
-        "noReminders": "支払いリマインダーは見つかりません",
-        "deleteReminder": "リマインダーを削除",
-        "toastDeleted": "リマインダーが削除されました"
-      },
-      "paymentCarousel": {
-        "noReminder": "リマインダーはまだ設定されていません"
-      }
-    },
     "categoryBreakdown": "カテゴリー内訳",
     "chartModeBoth": "両方",
     "chartModeExpenses": "支出",
@@ -932,6 +981,7 @@
     "vsLastMonth": "前月比{{value}}pts",
     "vsLastYear": "前年比{{value}}%",
     "yearVsYear": "年間比較",
+    "tip": "💡 ヒント",
     "yourBiggestSpendingArea": "最大の支出エリアは{{category}}です",
     "weekSunday": "日曜日",
     "weekMonday": "月曜日",
@@ -939,7 +989,11 @@
     "weekWednesday": "水曜日",
     "weekThursday": "木曜日",
     "weekFriday": "金曜日",
-    "weekSaturday": "土曜日"
+    "weekSaturday": "土曜日",
+    "overview": "概要",
+    "insights": "インサイト",
+    "advanced": "詳細",
+    "subtitle": "支出パターンと財務インサイトを表示"
   },
   "debt": {
     "debtTracker": "債務トラッカー",
@@ -982,7 +1036,10 @@
     "payNow": "今すぐ支払う",
     "toCollect": "回収する",
     "remind": "リマインド",
-    "overdue": "期限切れ"
+    "overdue": "期限切れ",
+    "collectReminderTitle": "債務回収リマインダー",
+    "owe_message": "{{name}}への借金: {{amount}}",
+    "settle_message": "{{name}}の借金を返済しました: {{amount}}"
   },
   "recurring": {
     "title": "繰り返し",
@@ -1109,10 +1166,15 @@
     "noBudgetsOrGoals": "予算または貯金目標がまだありません。"
   },
   "calculator": {
-    "calculator": "計算機",
-    "loanCalculator": "ローン計算機",
-    "discountTax": "割引＆税金",
-    "currencyConverter": "通貨換算"
+    "ac": "AC",
+    "toggleSign": "+/-",
+    "percent": "%",
+    "divide": "÷",
+    "multiply": "×",
+    "subtract": "-",
+    "add": "+",
+    "decimal": ".",
+    "equals": "="
   },
   "calTool": {
     "ac": "AC",
@@ -1169,7 +1231,7 @@
     "title": "カテゴリー",
     "noCategoriesAddOne": "カテゴリーがまだありません。追加してください！",
     "addCategory": "カテゴリーを追加",
-    "addSub": "+ サブ",
+    "addSub": "サブ",
     "subCount_one": "{{count}} サブ",
     "subCount_other": "{{count}} サブ",
     "expense": "支出",
@@ -1268,10 +1330,36 @@
     "placeholder": "••••••••"
   },
   "supportPage": {
-    "yourName": "お名前",
+    "name": "お名前",
+    "email": "メールアドレス",
+    "subject": "件名",
+    "message": "メッセージ",
+    "category": "カテゴリー",
+    "attachments": "添付ファイル (オプション)",
+    "addFiles": "ファイルを追加",
+    "yourName": "あなたのお名前",
     "emailPlaceholder": "you@example.com",
-    "helpWith": "何をお手伝いしましょうか？",
-    "describeIssue": "問題またはリクエストを説明してください。"
+    "helpWith": "どのようにお手伝いしましょうか？",
+    "describeIssue": "問題またはリクエストについて説明してください。",
+    "attachmentHelp": "最大{{count}}ファイル、各10MB以下。",
+    "categoryGeneral": "一般",
+    "categoryBugReport": "バグ報告",
+    "categoryFeatureRequest": "機能リクエスト",
+    "categoryBilling": "請求",
+    "categoryAccount": "アカウント",
+    "maxFilesMessage": "最大{{count}}個のファイルをアップロードできます",
+    "fileTooLarge": "{{filename}}は大きすぎます",
+    "maxFileSizePerFile": "ファイルの最大サイズは1ファイルあたり10MBです。",
+    "completeAllFields": "すべての必須フィールドを入力してください",
+    "attachmentUploadFailed": "添付ファイルをアップロードできませんでした",
+    "sendingWithoutAttachments": "アップロードされたファイルリンクなしでメールを送信しています。",
+    "requestSent": "サポートリクエストが送信されました",
+    "openingEmailClient": "メールクライアントを開いています",
+    "emailPreparedFor": "メールは{{email}}に向けて準備されます。",
+    "sendButton": "サポートに送信",
+    "sending": "送信中...",
+    "helpMessage": "ご質問やご不明な点がありますか？メッセージをお送りください。{{email}}までご連絡させていただきます。",
+    "removeFile": "{{filename}}を削除"
   },
   "index": {
     "welcome": "空のアプリへようこそ",
@@ -1282,18 +1370,14 @@
     "title": "履歴",
     "activitiesRecorded": "件のアクティビティ記録",
     "noActivityYet": "アクティビティはまだありません",
-    "noActivityDesc": "あなたの取引と決済がここに表示されます"
-  },
-  "calculator": {
-    "ac": "AC",
-    "toggleSign": "+/-",
-    "percent": "%",
-    "divide": "÷",
-    "multiply": "×",
-    "subtract": "-",
-    "add": "+",
-    "decimal": ".",
-    "equals": "="
+    "noActivityDesc": "あなたの取引と決済がここに表示されます",
+    "youOwe": "{{name}}に{{currency}} {{amount}}を借りています",
+    "owesYou": "{{name}}があなたに{{currency}} {{amount}}を借りています",
+    "settledDebtTo": "{{name}}への借金を返済しました: {{currency}} {{amount}}",
+    "settledDebtFrom": "{{name}}からの借金を返済されました: {{currency}} {{amount}}",
+    "paidTowards": "{{name}}への借金に{{currency}} {{amount}}を支払いました",
+    "deletedDebtTo": "{{name}}への借金を削除しました",
+    "deletedDebtFrom": "{{name}}からの借金を削除しました"
   },
   "authCallback": {
     "authenticating": "認証中...",
@@ -1392,38 +1476,6 @@
     "oopsPageNotFound": "申し訳ありません！ページが見つかりません",
     "returnHome": "ホームに戻る"
   },
-  "supportPage": {
-    "name": "お名前",
-    "email": "メールアドレス",
-    "subject": "件名",
-    "message": "メッセージ",
-    "category": "カテゴリー",
-    "attachments": "添付ファイル (オプション)",
-    "addFiles": "ファイルを追加",
-    "yourName": "あなたのお名前",
-    "emailPlaceholder": "you@example.com",
-    "helpWith": "どのようにお手伝いしましょうか？",
-    "describeIssue": "問題またはリクエストについて説明してください。",
-    "attachmentHelp": "最大{{count}}ファイル、各10MB以下。",
-    "categoryGeneral": "一般",
-    "categoryBugReport": "バグ報告",
-    "categoryFeatureRequest": "機能リクエスト",
-    "categoryBilling": "請求",
-    "categoryAccount": "アカウント",
-    "maxFilesMessage": "最大{{count}}個のファイルをアップロードできます",
-    "fileTooLarge": "{{filename}}は大きすぎます",
-    "maxFileSizePerFile": "ファイルの最大サイズは1ファイルあたり10MBです。",
-    "completeAllFields": "すべての必須フィールドを入力してください",
-    "attachmentUploadFailed": "添付ファイルをアップロードできませんでした",
-    "sendingWithoutAttachments": "アップロードされたファイルリンクなしでメールを送信しています。",
-    "requestSent": "サポートリクエストが送信されました",
-    "openingEmailClient": "メールクライアントを開いています",
-    "emailPreparedFor": "メールは{{email}}に向けて準備されます。",
-    "sendButton": "サポートに送信",
-    "sending": "送信中...",
-    "helpMessage": "ご質問やご不明な点がありますか？メッセージをお送りください。{{email}}までご連絡させていただきます。",
-    "removeFile": "{{filename}}を削除"
-  },
   "resetPassword": {
     "title": "パスワードをリセット",
     "enterNewPassword": "新しいパスワードを入力",
@@ -1448,5 +1500,28 @@
     "a5": "[プロフィール] > [データ管理]を開いて、データエクスポートとクリーンアップツールにアクセスします。完全なアカウント削除については、サポートにお問い合わせください。",
     "q6": "サポートに連絡するにはどうすればよいですか？",
     "a6": "[設定] > [ヘルプとサポート]を開いてサポートフォームを送信します。詳細やオプションの添付ファイルを含めることができます。"
+  },
+  "financialHealth": {
+    "today": "今日",
+    "thisWeek": "今週",
+    "thisMonth": "今月",
+    "net": "純収益",
+    "vsPrevious": "前期比",
+    "txnCount_one": "{{count}} 件",
+    "txnCount_other": "{{count}} 件"
+  },
+  "dateSelect": {
+    "january": "1月",
+    "february": "2月",
+    "march": "3月",
+    "april": "4月",
+    "may": "5月",
+    "june": "6月",
+    "july": "7月",
+    "august": "8月",
+    "september": "9月",
+    "october": "10月",
+    "november": "11月",
+    "december": "12月"
   }
 }

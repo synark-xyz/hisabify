@@ -659,6 +659,9 @@
     "statusOverdue": "বকেয়া",
     "statusDueIn": "{{days}}d এ প্রকৃত",
     "statusUpcoming": "আসন্ন",
+    "statusDueToday": "আজই শেষ হচ্ছে",
+    "statusInDays": "{{count}} দিনের মধ্যে",
+    "statusInOneDay": "১ দিনের মধ্যে",
     "deleteConfirm": "আপনি কি এই রিমাইন্ডারটি মুছতে চান?",
     "errorDeleting": "রিমাইন্ডার মুছতে ত্রুটি",
     "deleted": "রিমাইন্ডার মুছে ফেলা হয়েছে",
@@ -691,7 +694,8 @@
     "reminderNotePlaceholder": "একটি নোট যোগ করুন...",
     "reminderCancel": "বাতিল করুন",
     "reminderUpdate": "রিমাইন্ডার আপডেট করুন",
-    "reminderCreate": "রিমাইন্ডার তৈরি করুন"
+    "reminderCreate": "রিমাইন্ডার তৈরি করুন",
+    "savingsReminderLabel": "💰 {{goalName}} — {{frequency}} সঞ্চয় · {{amount}}"
   },
   "profile": {
     "name": "নাম",

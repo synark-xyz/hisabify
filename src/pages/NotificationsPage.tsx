@@ -18,10 +18,23 @@ import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { PaymentReminder } from '@/types';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { formatReminderAmount } from '@/lib/reminderAmount';
+import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useState } from 'react';
 import { TargetIcon } from 'lucide-react';
+import { enUS, bn, ja } from 'date-fns/locale';
+
+function getDateFnsLocale(lang: string) {
+  switch (lang) {
+    case 'bn':
+      return bn;
+    case 'ja':
+      return ja;
+    default:
+      return enUS;
+  }
+}
 
 type ReminderItem = 
     | { type: 'payment'; data: PaymentReminder }
@@ -30,6 +43,7 @@ type ReminderItem =
 export function NotificationsPage() {
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const { language } = useLanguage();
     const { user } = useAuth();
     const { formatAmount } = useCurrency();
     const { score } = useHealthScore();
@@ -73,15 +87,20 @@ export function NotificationsPage() {
         const daysUntil = differenceInDays(date, new Date());
 
         if (status === 'paid') {
-            return { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Paid' };
+            return { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: t('reminders.statusPaid') };
         }
         if (status === 'missed' || (status === 'upcoming' && isPast(date) && !isToday(date))) {
-            return { icon: WarningCircle, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Overdue' };
+            return { icon: WarningCircle, color: 'text-destructive', bg: 'bg-destructive/10', label: t('reminders.statusOverdue') };
         }
         if (daysUntil <= 3) {
-            return { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: `Due in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}` };
+            if (daysUntil === 0) {
+                return { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: t('reminders.statusDueToday') };
+            } else if (daysUntil === 1) {
+                return { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: t('reminders.statusInOneDay') };
+            }
+            return { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: t('reminders.statusInDays', { count: daysUntil }) };
         }
-        return { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Upcoming' };
+        return { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted', label: t('reminders.statusUpcoming') };
     };
 
     const overdueCount = reminders.filter(r => {
@@ -393,17 +412,17 @@ export function NotificationsPage() {
                                                                             {formatReminderAmount(reminder, formatAmount)}
                                                                         </p>
                                                                         <p className="text-xs text-destructive mt-1 font-medium">
-                                                                            Due: {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy')}
+                                                                            {t('reminders.statusDueIn', { days: '' }) || 'Due'}: {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy', { locale: getDateFnsLocale(language) })}
                                                                         </p>
                                                                     </div>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        onClick={() => handleMarkAsPaid(reminder)}
-                                                                        className="shrink-0 h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 border-glow"
-                                                                    >
-                                                                        Mark Paid
-                                                                    </Button>
+                                        <Button
+                                                                         size="sm"
+                                                                         variant="outline"
+                                                                         onClick={() => handleMarkAsPaid(reminder)}
+                                                                         className="shrink-0 h-10 px-4 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 border-glow"
+                                                                     >
+                                                                         {t('reminders.statusPaid')}
+                                                                     </Button>
                                                                 </div>
                                                             </motion.div>
                                                         );
@@ -414,10 +433,10 @@ export function NotificationsPage() {
 
                                     {/* All payment reminders (non-overdue) */}
                                     <section>
-                                        <h3 className="text-sm font-black text-rose-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
-                                            <Clock className="w-4 h-4" />
-                                            Payment Reminders
-                                        </h3>
+                                            <h3 className="text-sm font-black text-rose-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
+                                             <Clock className="w-4 h-4" />
+                                             {t('dashboard.reminders')}
+                                         </h3>
                                         <div className="space-y-3">
                                             {reminders.map((reminder, index) => {
                                                 const statusInfo = getStatusInfo(reminder.status, reminder.due_date);
@@ -450,7 +469,7 @@ export function NotificationsPage() {
                                                                 <div className="flex items-center gap-2 mt-1">
                                                                     <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
                                                                     <span className="text-xs text-muted-foreground">
-                                                                        • {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy')}
+                                                                        • {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy', { locale: getDateFnsLocale(language) })}
                                                                     </span>
                                                                 </div>
                                                             </div>

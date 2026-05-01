@@ -634,13 +634,18 @@ export function getSavingsReminderLabel(reminder: {
   amount: number;
   recurring_interval: string | null;
   savings_goal_id?: string | null;
-}, formatAmountFn: (value: number) => string): string {
+}, formatAmountFn: (value: number) => string, t?: (key: string, params?: Record<string, unknown>) => string): string {
   if (!reminder.savings_goal_id) {
     return reminder.title;
   }
 
   const goalName = reminder.title.replace(/^Savings:\s*/, '');
   const frequency = reminder.recurring_interval ? `${reminder.recurring_interval[0].toUpperCase()}${reminder.recurring_interval.slice(1)}` : 'Planned';
+
+  if (t) {
+    return t('reminders.savingsReminderLabel', { goalName, frequency, amount: formatAmountFn(reminder.amount) });
+  }
+
   return `💰 ${goalName} — ${frequency} Save · ${formatAmountFn(reminder.amount)}`;
 }
 

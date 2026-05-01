@@ -207,7 +207,7 @@ export function SavingsTabContent() {
                 </div>
               </motion.div>
 
-              {variant !== 'premium' && (
+              {/* {variant !== 'premium' && (
                 <motion.div
                   variants={itemVariants}
                   onClick={() => setShowUpgradeModal(true)}
@@ -224,7 +224,7 @@ export function SavingsTabContent() {
                   </div>
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </motion.div>
-              )}
+              )} */}
 
               <motion.div variants={itemVariants} className="flex items-center justify-between pt-2">
                 <h2 className="text-lg font-semibold">{t("savings.myGoals")}</h2>

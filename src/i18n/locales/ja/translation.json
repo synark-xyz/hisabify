@@ -658,6 +658,9 @@
     "statusOverdue": "期限超過",
     "statusDueIn": "{{days}}日以内が期限",
     "statusUpcoming": "今後",
+    "statusDueToday": "今日が期限",
+    "statusInDays": "{{count}}日後",
+    "statusInOneDay": "1日後",
     "deleteConfirm": "このリマインダーを削除してもよろしいですか？",
     "errorDeleting": "リマインダーの削除中にエラーが発生しました",
     "deleted": "リマインダーを削除しました",
@@ -690,7 +693,8 @@
     "reminderNotePlaceholder": "メモを追加...",
     "reminderCancel": "キャンセル",
     "reminderUpdate": "リマインダーを更新",
-    "reminderCreate": "リマインダーを作成"
+    "reminderCreate": "リマインダーを作成",
+    "savingsReminderLabel": "💰 {{goalName}} — {{frequency}} 貯金 · {{amount}}"
   },
   "profile": {
     "title": "プロフィール",

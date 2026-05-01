@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle, WarningCircle, Calendar } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useCurrency } from '@/hooks/useCurrency';
+import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import { PaymentReminder } from '@/types';
 import { format, differenceInDays, isPast, isToday } from 'date-fns';
+import { enUS, bn, ja } from 'date-fns/locale';
 import { toReminderDisplayDate } from '@/lib/reminderDate';
 import { formatReminderAmount } from '@/lib/reminderAmount';
 import { getSavingsReminderLabel, isSavingsReminder } from '@/lib/savings';
@@ -13,7 +16,20 @@ interface PaymentReminderCarouselProps {
   reminders: PaymentReminder[];
 }
 
+function getDateFnsLocale(lang: string) {
+  switch (lang) {
+    case 'bn':
+      return bn;
+    case 'ja':
+      return ja;
+    default:
+      return enUS;
+  }
+}
+
 export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselProps) {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const { formatAmount } = useCurrency();
   const navigate = useNavigate();
   const pendingReminders = reminders.filter((reminder) => {
@@ -25,7 +41,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center bg-card/50 rounded-2xl border border-dashed border-muted-foreground/20">
         <Clock className="w-12 h-12 text-muted-foreground/30 mb-3" weight="duotone" />
-        <p className="text-sm font-medium text-muted-foreground">No reminder has been set yet</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('reminders.noRemindersYet')}</p>
       </div>
     );
   }
@@ -42,7 +58,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
 
     if (reminder.status === 'paid') {
       return {
-        label: 'Paid',
+        label: t('reminders.statusPaid'),
         icon: CheckCircle,
         color: 'text-emerald-500',
         borderColor: 'border-emerald-500/20',
@@ -52,7 +68,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
 
     if (isPast(dueDate) && !isToday(dueDate)) {
       return {
-        label: 'Overdue',
+        label: t('reminders.statusOverdue'),
         icon: WarningCircle,
         color: 'text-rose-500',
         borderColor: 'border-rose-500/20',
@@ -61,8 +77,17 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
     }
 
     if (diff <= 2) {
+      const locale = getLanguageLocale(language);
+      let timeLabel: string;
+      if (diff === 0) {
+        timeLabel = t('reminders.statusDueToday');
+      } else if (diff === 1) {
+        timeLabel = t('reminders.statusInOneDay');
+      } else {
+        timeLabel = t('reminders.statusInDays', { count: diff });
+      }
       return {
-        label: `In ${diff === 0 ? 'today' : diff === 1 ? '1 day' : diff + ' days'}`,
+        label: timeLabel,
         icon: Clock,
         color: 'text-orange-500',
         borderColor: 'border-orange-500/30',
@@ -71,7 +96,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
     }
 
     return {
-      label: format(dueDate, 'MMM dd'),
+      label: format(dueDate, 'MMM dd', { locale: getDateFnsLocale(language) }),
       icon: Calendar,
       color: 'text-blue-500',
       borderColor: 'border-blue-500/20',
@@ -103,7 +128,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
           const Icon = status.icon;
           const savingsReminder = isSavingsReminder(reminder);
           const reminderTitle = savingsReminder
-            ? getSavingsReminderLabel(reminder, formatAmount)
+            ? getSavingsReminderLabel(reminder, formatAmount, t)
             : reminder.title;
 
           return (

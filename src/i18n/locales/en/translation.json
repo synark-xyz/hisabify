@@ -692,6 +692,9 @@
     "statusOverdue": "Overdue",
     "statusDueIn": "Due in {{days}}d",
     "statusUpcoming": "Upcoming",
+    "statusDueToday": "Due today",
+    "statusInDays": "In {{count}} days",
+    "statusInOneDay": "In 1 day",
     "deleteConfirm": "Are you sure you want to delete this reminder?",
     "errorDeleting": "Error deleting reminder",
     "deleted": "Reminder deleted",
@@ -724,7 +727,8 @@
     "reminderNotePlaceholder": "Add a note...",
     "reminderCancel": "Cancel",
     "reminderUpdate": "Update Reminder",
-    "reminderCreate": "Create Reminder"
+    "reminderCreate": "Create Reminder",
+    "savingsReminderLabel": "💰 {{goalName}} — {{frequency}} Save · {{amount}}"
   },
   "profile": {
     "title": "Profile",

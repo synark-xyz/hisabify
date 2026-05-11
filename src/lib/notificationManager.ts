@@ -294,25 +294,25 @@ export async function showGoalCompleted(userId: string, goalName: string, amount
   });
 }
 
-/** Generate a weekly health notification (once per ISO week). */
-export async function generateWeeklyHealthNotification(userId: string, score: number, insight: string): Promise<void> {
+/** Generate a weekly health notification (once per ISO week).
+ * @param title - Pre-translated title string (caller must supply via t()) */
+export async function generateWeeklyHealthNotification(userId: string, score: number, insight: string, title: string): Promise<void> {
   const now = new Date();
   const weekKey = `health-weekly-${getISOWeekYear(now)}-W${String(getISOWeek(now)).padStart(2, '0')}`;
   if (localStorage.getItem(weekKey)) return;
 
-  const label = score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work';
-
   await insertNotification(userId, {
     type: 'health_weekly',
-    title: `Weekly Health: ${score}/100 — ${label}`,
+    title,
     description: insight,
   });
 
   localStorage.setItem(weekKey, 'true');
 }
 
-/** Generate a weekly tip notification (once per ISO week). */
-export async function generateWeeklyTip(userId: string): Promise<void> {
+/** Generate a weekly tip notification (once per ISO week).
+ * @param tipTitle - Pre-translated title string (caller must supply via t()) */
+export async function generateWeeklyTip(userId: string, tipTitle: string): Promise<void> {
   const now = new Date();
   const weekNumber = getISOWeek(now);
   const weekKey = `tip-weekly-${getISOWeekYear(now)}-W${String(weekNumber).padStart(2, '0')}`;
@@ -322,7 +322,7 @@ export async function generateWeeklyTip(userId: string): Promise<void> {
 
   await insertNotification(userId, {
     type: 'weekly_tip',
-    title: 'Weekly Tip',
+    title: tipTitle,
     description: tip,
   });
 

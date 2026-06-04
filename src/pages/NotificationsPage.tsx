@@ -19,6 +19,7 @@ import { PaymentReminder } from '@/types';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { formatReminderAmount } from '@/lib/reminderAmount';
 import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
+import { localizeNumber } from '@/lib/i18nNumber';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useState } from 'react';
@@ -54,21 +55,30 @@ export function NotificationsPage() {
     // Generate weekly tip on mount
     useEffect(() => {
         if (user) {
-            generateWeeklyTip(user.id);
+            generateWeeklyTip(user.id, t('notificationsPage.weeklyTipTitle'));
         }
-    }, [user]);
+    }, [user, t]);
 
     // Generate weekly health notification once score loads
     useEffect(() => {
         if (user && score) {
             const insight = score.total >= 80
-                ? 'Great job! Your finances are in excellent shape this week.'
+                ? t('notificationsPage.healthInsightGood')
                 : score.total >= 50
-                    ? 'You\'re doing well. A few tweaks could push your score higher.'
-                    : 'Your financial health needs attention. Review your budgets and spending.';
-            generateWeeklyHealthNotification(user.id, score.total, insight);
+                    ? t('notificationsPage.healthInsightOk')
+                    : t('notificationsPage.healthInsightPoor');
+            const label = score.total >= 80
+                ? t('notificationsPage.weeklyHealthExcellent')
+                : score.total >= 50
+                    ? t('notificationsPage.weeklyHealthGood')
+                    : t('notificationsPage.weeklyHealthNeedsWork');
+            const title = t('notificationsPage.weeklyHealthTitle', {
+                score: localizeNumber(score.total),
+                label,
+            });
+            generateWeeklyHealthNotification(user.id, score.total, insight, title);
         }
-    }, [user, score]);
+    }, [user, score, t]);
 
     const handleMarkAsPaid = async (reminder: PaymentReminder) => {
         await markAsPaid(reminder);
@@ -164,25 +174,25 @@ export function NotificationsPage() {
 
     return (
         <div className={cn("min-h-screen", "bg-background")}>
-            <Header title="Notifications" showBack />
+            <Header title={t('notificationsPage.title')} showBack />
 
             <PullToRefresh onRefresh={handleRefresh}>
                 <main className="px-4 py-4">
                     <Tabs defaultValue="messages">
                         <TabsList className="w-full grid grid-cols-2 mb-4">
                             <TabsTrigger value="messages" className="relative">
-                                Messages
+                                {t('notificationsPage.tabMessages')}
                                 {unreadCount > 0 && (
                                     <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-accent text-accent-foreground">
-                                        {unreadCount}
+                                        {localizeNumber(unreadCount)}
                                     </span>
                                 )}
                             </TabsTrigger>
                             <TabsTrigger value="reminders" className="relative">
-                                Reminders
+                                {t('notificationsPage.tabReminders')}
                                 {overdueCount + budgetAlerts.filter(b => !b.read).length > 0 && (
                                     <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-destructive text-destructive-foreground">
-                                        {overdueCount + budgetAlerts.filter(b => !b.read).length}
+                                        {localizeNumber(overdueCount + budgetAlerts.filter(b => !b.read).length)}
                                     </span>
                                 )}
                             </TabsTrigger>
@@ -203,7 +213,7 @@ export function NotificationsPage() {
                                     </div>
                                     <h3 className="text-lg font-bold text-foreground mb-2">{t('notificationsPage.allCaughtUp')}</h3>
                                     <p className="text-muted-foreground max-w-xs">
-                                        You have no notifications yet. They'll appear here as they come in.
+                                        {t('notificationsPage.emptyMessagesDesc')}
                                     </p>
                                 </div>
                             ) : (
@@ -216,7 +226,7 @@ export function NotificationsPage() {
                                             className="text-xs text-muted-foreground hover:text-destructive"
                                             onClick={removeAll}
                                         >
-                                            Clear All
+                                            {t('notificationsPage.clearAll')}
                                         </Button>
                                     </div>
 
@@ -260,14 +270,14 @@ export function NotificationsPage() {
                                                             </p>
                                                         )}
                                                         <span className="text-[10px] text-muted-foreground uppercase tracking-tight font-black mt-1.5 block">
-                                                            {format(new Date(notification.created_at), 'MMM d, yyyy • h:mm a')}
+                                                            {format(new Date(notification.created_at), 'MMM d, yyyy • h:mm a', { locale: getDateFnsLocale(language) })}
                                                         </span>
                                                     </div>
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
                                                         className="shrink-0 h-9 w-9 p-0 rounded-xl text-muted-foreground hover:text-destructive"
-                                                        aria-label="Delete notification"
+                                                        aria-label={t('notificationsPage.deleteNotification')}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             remove(notification.id);
@@ -298,7 +308,7 @@ export function NotificationsPage() {
                                     </div>
                                     <h3 className="text-lg font-bold text-foreground mb-2">{t('notificationsPage.noReminders')}</h3>
                                     <p className="text-muted-foreground max-w-xs">
-                                        You have no reminders. Add payment reminders or create budgets to get alerts.
+                                        {t('notificationsPage.emptyRemindersDesc')}
                                     </p>
                                 </div>
                             ) : (
@@ -308,7 +318,7 @@ export function NotificationsPage() {
                                         <section>
                                             <h3 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
                                                 <TargetIcon className="w-4 h-4" />
-                                                Budget Alerts
+                                                {t('notificationsPage.budgetAlerts')}
                                             </h3>
                                             <div className="space-y-3">
                                                 {budgetAlerts.map((alert, idx) => {
@@ -352,14 +362,14 @@ export function NotificationsPage() {
                                                                         </p>
                                                                     )}
                                                                     <span className="text-[10px] text-muted-foreground uppercase tracking-tight font-black mt-1.5 block">
-                                                                        {format(new Date(alert.created_at), 'MMM d, yyyy • h:mm a')}
+                                                                        {format(new Date(alert.created_at), 'MMM d, yyyy • h:mm a', { locale: getDateFnsLocale(language) })}
                                                                     </span>
                                                                 </div>
                                                                 <Button
                                                                     size="sm"
                                                                     variant="ghost"
                                                                     className="shrink-0 h-9 w-9 p-0 rounded-xl text-muted-foreground hover:text-destructive"
-                                                                    aria-label="Delete alert"
+                                                                    aria-label={t('notificationsPage.deleteAlert')}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         remove(alert.id);
@@ -380,7 +390,7 @@ export function NotificationsPage() {
                                         <section>
                                             <h3 className="text-sm font-black text-destructive uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
                                                 <WarningCircle className="w-4 h-4" />
-                                                Attention Needed
+                                                {t('notificationsPage.attentionNeeded')}
                                             </h3>
                                             <div className="space-y-3">
                                                 {reminders
@@ -412,7 +422,7 @@ export function NotificationsPage() {
                                                                             {formatReminderAmount(reminder, formatAmount)}
                                                                         </p>
                                                                         <p className="text-xs text-destructive mt-1 font-medium">
-                                                                            {t('reminders.statusDueIn', { days: '' }) || 'Due'}: {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy', { locale: getDateFnsLocale(language) })}
+                                                                            {t('notificationsPage.dueLabel')}: {format(toReminderDisplayDate(reminder.due_date), 'MMM d, yyyy', { locale: getDateFnsLocale(language) })}
                                                                         </p>
                                                                     </div>
                                         <Button
@@ -488,7 +498,7 @@ export function NotificationsPage() {
                                                                     variant="ghost"
                                                                     onClick={() => handleDeletePaidReminder(reminder)}
                                                                     className="shrink-0 h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-destructive"
-                                                                    aria-label={`Delete paid reminder ${reminder.title}`}
+                                                                    aria-label={t('notificationsPage.deletePaidReminder', { title: reminder.title })}
                                                                 >
                                                                     <Trash className="w-4 h-4" weight="duotone" />
                                                                 </Button>
@@ -534,7 +544,7 @@ export function NotificationsPage() {
                                             {selectedNotification.title}
                                         </DialogTitle>
                                         <DialogDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                                            {format(new Date(selectedNotification.created_at), 'MMM d, yyyy • h:mm a')}
+                                            {format(new Date(selectedNotification.created_at), 'MMM d, yyyy • h:mm a', { locale: getDateFnsLocale(language) })}
                                         </DialogDescription>
                                     </div>
 
@@ -568,7 +578,7 @@ export function NotificationsPage() {
                                                 navigate(link);
                                             }}
                                         >
-                                            Open Related Page
+                                            {t('notificationsPage.openRelatedPage')}
                                         </Button>
                                     ) : (
                                         <Button
@@ -576,7 +586,7 @@ export function NotificationsPage() {
                                             className="w-full rounded-2xl h-12 font-bold text-sm border-border/50"
                                             onClick={() => setSelectedNotification(null)}
                                         >
-                                            Dismiss
+                                            {t('notificationsPage.dismiss')}
                                         </Button>
                                     )}
                                 </div>

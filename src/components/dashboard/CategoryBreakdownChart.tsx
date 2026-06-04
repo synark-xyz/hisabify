@@ -120,13 +120,13 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
     // layout prop lets framer-motion smoothly animate card height when legend mounts/unmounts
     <motion.div
       layout
-      className="w-full bg-card/50 backdrop-blur-md rounded-2xl p-6 border border-border/50 shadow-xl card-3d transition-colors"
+      className="w-full bg-card/50 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-border/50 shadow-xl card-3d transition-colors overflow-hidden"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: clickAnimation ? 0.98 : 1 }}
       transition={{ duration: 0.4, layout: { type: 'spring', stiffness: 300, damping: 30 } }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-foreground">{t('analytics.categoryBreakdown', title)}</h3>
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <h3 className="text-lg font-bold text-foreground truncate">{t('analytics.categoryBreakdown', title)}</h3>
         <IconButton onClick={() => setIsExpanded(p => !p)} aria-label={isExpanded ? 'Collapse' : 'Expand'}>
           {isExpanded
             ? <ChevronUp className="w-4 h-4 text-muted-foreground" />

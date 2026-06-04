@@ -24,6 +24,7 @@ import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
 import { useTheme } from '@/hooks/useTheme';
 import { cn, getLocalizedCategoryName } from '@/lib/utils';
+import { localizeNumber } from '@/lib/i18nNumber';
 
 interface TransactionItemProps {
   transaction: Transaction & { convertedAmount?: number };
@@ -305,7 +306,7 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
               ))}
               {overflowCount > 0 && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent/80 font-medium">
-                  +{overflowCount}
+                  +{localizeNumber(overflowCount)}
                 </span>
               )}
             </div>

@@ -24,6 +24,7 @@ import { useActivityHistory } from '@/hooks/useActivityHistory';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '@/lib/formatDate';
+import { localizeNumber } from '@/lib/i18nNumber';
 
 const activityIcons: Record<string, { icon: React.ElementType; bg: string; fg: string }> = {
   transaction_added: { icon: ArrowUpRight, bg: 'bg-rose-500/10', fg: 'text-rose-500' },
@@ -146,7 +147,7 @@ export function ActivityHistoryPage() {
         <div className="flex items-center justify-between">
           <span className="text-lg font-semibold">{t('activity.title')}</span>
           <span className="text-sm text-muted-foreground">
-            {activities.length} {t('activity.activitiesRecorded')}
+            {localizeNumber(activities.length)} {t('activity.activitiesRecorded')}
           </span>
         </div>
 

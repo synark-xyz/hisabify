@@ -54,11 +54,11 @@ export function BudgetVsActualChart({ data }: BudgetVsActualChartProps) {
 
   return (
     <motion.div
-      className="bg-card rounded-2xl p-6 shadow-card"
+      className="bg-card rounded-2xl p-4 sm:p-6 shadow-card overflow-hidden"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h3 className="text-lg font-bold text-foreground mb-4">{t('analytics.budgetVsActual')}</h3>
+      <h3 className="text-lg font-bold text-foreground mb-4 truncate">{t('analytics.budgetVsActual')}</h3>
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>

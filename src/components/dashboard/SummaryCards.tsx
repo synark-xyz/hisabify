@@ -45,26 +45,26 @@ export function SummaryCards({ totalExpenses, totalIncome, netBalance, budgetRem
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {cards.map((card, index) => {
         const Icon = card.icon;
         return (
           <motion.div
             key={card.title}
-            className="p-4 bg-card rounded-2xl shadow-card card-3d transition-all"
+            className="p-3 sm:p-4 bg-card rounded-2xl shadow-card card-3d transition-all overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             whileHover={{ scale: 1.02, y: -2 }}
           >
             <div className="flex items-center gap-2 mb-2">
-              <div className={`w-8 h-8 rounded-full ${card.iconBg} flex items-center justify-center`}>
+              <div className={`w-8 h-8 rounded-full ${card.iconBg} flex items-center justify-center shrink-0`}>
                 <Icon className={`w-4 h-4 ${card.iconColor} icon-glow`} />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-1">{card.title}</p>
+            <p className="text-xs text-muted-foreground mb-1 truncate">{card.title}</p>
             <motion.p
-              className="text-lg font-bold text-foreground text-glow"
+              className="text-lg font-bold text-foreground text-glow truncate"
               key={card.amount}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

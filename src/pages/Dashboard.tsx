@@ -276,14 +276,14 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative overflow-x-hidden">
       <ParticlesBackground />
       <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
 
           <motion.main
-            className="px-4 space-y-6 pb-24"
+            className="px-4 space-y-6 pb-24 overflow-x-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
@@ -357,7 +357,7 @@ export function Dashboard() {
                 <div className="grid grid-cols-2 gap-3">
                   <div
                     className={cn(
-                      "group p-3 rounded-2xl backdrop-blur-sm border transition-colors",
+                      "group p-3 rounded-2xl backdrop-blur-sm border transition-colors overflow-hidden",
                       useDarkText
                         ? "bg-muted/20 border-border hover:bg-muted/30"
                         : "bg-black/20 border-white/10 hover:bg-black/30"
@@ -365,16 +365,16 @@ export function Dashboard() {
                     style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={cn("p-1.5 rounded-full", useDarkText ? "bg-red-500/20" : "bg-rose-500/20")}>
+                      <div className={cn("p-1.5 rounded-full shrink-0", useDarkText ? "bg-red-500/20" : "bg-rose-500/20")}>
                         <TrendDown className={cn("w-3.5 h-3.5", useDarkText ? "text-red-600" : "text-rose-300")} weight="bold" />
                       </div>
-                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>{t('dashboard.expenses')}</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider truncate", useDarkText ? "text-foreground/70" : "text-white/70")}>{t('dashboard.expenses')}</span>
                     </div>
-                    <p className={cn("text-base font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
+                    <p className={cn("text-base font-bold tracking-tight truncate", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
                   </div>
                   <div
                     className={cn(
-                      "group p-3 rounded-2xl backdrop-blur-sm border transition-colors",
+                      "group p-3 rounded-2xl backdrop-blur-sm border transition-colors overflow-hidden",
                       useDarkText
                         ? "bg-muted/20 border-border hover:bg-muted/30"
                         : "bg-black/20 border-white/10 hover:bg-black/30"
@@ -382,12 +382,12 @@ export function Dashboard() {
                     style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={cn("p-1.5 rounded-full", useDarkText ? "bg-green-500/20" : "bg-emerald-500/20")}>
+                      <div className={cn("p-1.5 rounded-full shrink-0", useDarkText ? "bg-green-500/20" : "bg-emerald-500/20")}>
                         <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
                       </div>
-                      <span className={cn("text-xs font-bold uppercase tracking-wider", useDarkText ? "text-foreground/70" : "text-white/70")}>{t('dashboard.income')}</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider truncate", useDarkText ? "text-foreground/70" : "text-white/70")}>{t('dashboard.income')}</span>
                     </div>
-                    <p className={cn("text-base font-bold tracking-tight", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
+                    <p className={cn("text-base font-bold tracking-tight truncate", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
                   </div>
                 </div>
               </div>

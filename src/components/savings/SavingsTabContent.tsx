@@ -20,6 +20,7 @@ import { useBudgetContext } from '@/hooks/useBudgetContext';
 import { useSearchParams } from 'react-router-dom';
 import { useCurrency } from '@/hooks/useCurrency';
 import { cn } from '@/lib/utils';
+import { localizeNumber } from '@/lib/i18nNumber';
 export function SavingsTabContent() {
   const [showAddModal, setShowAddModal] = useState(false);
     const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
@@ -201,7 +202,7 @@ export function SavingsTabContent() {
                       {t('savings.activeGoals')}
                     </p>
                     <p className="text-[24px] font-bold text-foreground">
-                      {activeGoals.length}
+                      {localizeNumber(activeGoals.length)}
                     </p>
                   </div>
                 </div>

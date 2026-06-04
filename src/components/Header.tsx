@@ -22,6 +22,7 @@ import {
 import { PaymentReminder } from '@/types';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useLanguage, languageNames } from '@/hooks/useLanguage';
+import { localizeNumber } from '@/lib/i18nNumber';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 interface HeaderProps {
@@ -205,7 +206,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
                       animate={{ scale: 1 }}
                       className="absolute -top-1 -right-1 min-w-5 h-5 px-1.5 bg-destructive rounded-full border-2 border-background flex items-center justify-center z-10 shadow-sm"
                     >
-                      <span className="text-[10px] font-bold text-white leading-none">{notificationCount}</span>
+                      <span className="text-[10px] font-bold text-white leading-none">{localizeNumber(notificationCount)}</span>
                     </motion.span>
                   )}
                 </div>
@@ -225,7 +226,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
                   </div>
                   {notificationCount > 0 && (
                     <span className="min-w-5 h-5 px-2 bg-destructive rounded-full text-white text-[10px] flex items-center justify-center font-bold">
-                      {notificationCount}
+                      {localizeNumber(notificationCount)}
                     </span>
                   )}
                 </DropdownMenuItem>

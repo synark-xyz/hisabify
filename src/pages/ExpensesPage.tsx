@@ -614,11 +614,11 @@ export function ExpensesPage() {
   const isDateFocused = effectiveFocusedDate !== null;
 
   return (
-    <div className={cn('min-h-screen', 'bg-background')}>
+    <div className={cn('min-h-screen', 'bg-background', 'overflow-x-hidden')}>
       <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
           <motion.main
-            className="px-4 space-y-6 pb-24"
+            className="px-4 space-y-6 pb-24 overflow-x-hidden"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -805,10 +805,10 @@ export function ExpensesPage() {
               </div>
 
               {categoryData.length === 0 ? (
-                <div className="bg-card rounded-2xl p-6 text-center shadow-card">
-                  <ChartBar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-2" />
-                  <p className="text-muted-foreground mt-2 text-sm">{t('expenses.noExpenseData')}</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">{t('expenses.addToSeeBreakdown')}</p>
+                <div className="bg-card rounded-2xl p-4 sm:p-6 text-center shadow-card overflow-hidden">
+                  <ChartBar className="w-12 h-12 mx-auto text-muted-foreground/50 mb-2 shrink-0" />
+                  <p className="text-muted-foreground mt-2 text-sm truncate">{t('expenses.noExpenseData')}</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1 truncate">{t('expenses.addToSeeBreakdown')}</p>
                 </div>
               ) : (
                 <>
@@ -817,18 +817,18 @@ export function ExpensesPage() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="bg-card rounded-2xl p-4 shadow-card"
+                      className="bg-card rounded-2xl p-4 shadow-card overflow-hidden"
                     >
                       <div className="flex flex-wrap gap-2">
                         {categoryData.slice(0, 3).map((cat) => (
-                          <div key={cat.name} className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                            <span className="text-xs font-medium text-muted-foreground">{cat.name}</span>
-                            <span className="text-xs font-semibold">{formatAmount(cat.amount)}</span>
+                          <div key={cat.name} className="flex items-center gap-1.5 min-w-0">
+                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                            <span className="text-xs font-medium text-muted-foreground truncate">{cat.name}</span>
+                            <span className="text-xs font-semibold truncate">{formatAmount(cat.amount)}</span>
                           </div>
                         ))}
                         {categoryData.length > 3 && (
-                          <span className="text-xs text-muted-foreground">+{categoryData.length - 3} more</span>
+                          <span className="text-xs text-muted-foreground shrink-0">+{categoryData.length - 3} more</span>
                         )}
                       </div>
                     </motion.div>

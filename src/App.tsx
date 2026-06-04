@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { Capacitor } from '@capacitor/core';
 import { SplashScreen as CapacitorSplashScreen } from '@capacitor/splash-screen';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { Preferences } from '@capacitor/preferences';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -333,6 +334,7 @@ function RootLogic() {
 
       if (callbackRoute) {
         console.log('[App] Navigating to auth callback with:', { callbackRoute, fullUrl: url });
+        Browser.close().catch(() => {});
         navigate(callbackRoute, { replace: true });
       } else {
         console.log('[App] Ignoring non-auth URL:', url);

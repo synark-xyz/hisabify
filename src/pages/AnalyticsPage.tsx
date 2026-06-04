@@ -98,9 +98,9 @@ export function AnalyticsPage() {
   return (
     <>
       <PullToRefresh onRefresh={async () => { await refetch(); }}>
-        <div className="max-w-6xl mx-auto pb-page-content">
+        <div className="max-w-6xl mx-auto overflow-x-hidden">
           <motion.main
-            className="px-4 pt-2 pb-8 md:pt-4 md:pb-12"
+            className="px-4 pt-2 pb-8 md:pt-4 md:pb-12 overflow-x-hidden"
             variants={containerVariants}
             initial="hidden"
             animate="visible"

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FileBarChart, AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { format, startOfMonth } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,11 +14,9 @@ import {
 import { Link } from "react-router-dom";
 import { useReportData } from "@/hooks/useReportData";
 import { useReportTemplates, ReportFilters } from "@/hooks/useReportTemplates";
-import { useTheme } from "@/hooks/useTheme";
 import { useSubscription } from "@/hooks/useSubscription";
 import { canUseFeature } from "@/lib/entitlements";
 import { enforceHistoryWindowForFilters } from "@/lib/historyLimits";
-import { cn } from "@/lib/utils";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useToast } from "@/hooks/use-toast";
@@ -79,42 +77,16 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="px-4 pb-page-content space-y-2">
+    <div className="px-4 overflow-hidden">
       <PullToRefresh onRefresh={handleRefresh}>
-        <div className="space-y-4">
-          <div className="flex items-center gap-2.5 pb-1 border-b border-border/50 pt-4">
-            <FileBarChart className="h-5 w-5 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">{t('reports.title')}</h1>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-[300px_minmax(300px,1fr)]">
-            <div className="space-y-4">
-              <ReportFiltersPanel
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-                categories={categories}
-              />
-              <ReportTemplatesPanel
-                templates={templates}
-                currentFilters={filters}
-                onSaveTemplate={handleSaveTemplate}
-                onLoadTemplate={handleLoadTemplate}
-                onDeleteTemplate={handleDeleteTemplate}
-              />
-              <ReportExportActions
-                reportData={reportData}
-                filters={filters}
-                isLoading={isLoading}
-                canExport={canExportReports}
-                onUpgradeRequired={() => setShowUpgradeModal(true)}
-              />
-            </div>
-
-            <div className="space-y-5">
+        <div className="space-y-4 pt-3">
+          <div className="grid gap-4 lg:gap-6 lg:grid-cols-[280px_1fr]">
+            {/* Charts column — shown first on mobile via order */}
+            <div className="order-first lg:order-last space-y-4 min-w-0">
               {isLoading ? (
                 <>
                   <Skeleton className="h-32" />
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-3 md:grid-cols-2">
                     <Skeleton className="h-[300px]" />
                     <Skeleton className="h-[300px]" />
                   </div>
@@ -152,6 +124,29 @@ export default function ReportsPage() {
                   <ReportSavingsSection savingsPerformance={reportData.savingsPerformance} />
                 </>
               )}
+            </div>
+
+            {/* Filters sidebar — below charts on mobile, left column on desktop */}
+            <div className="order-last lg:order-first space-y-4 min-w-0">
+              <ReportFiltersPanel
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                categories={categories}
+              />
+              <ReportTemplatesPanel
+                templates={templates}
+                currentFilters={filters}
+                onSaveTemplate={handleSaveTemplate}
+                onLoadTemplate={handleLoadTemplate}
+                onDeleteTemplate={handleDeleteTemplate}
+              />
+              <ReportExportActions
+                reportData={reportData}
+                filters={filters}
+                isLoading={isLoading}
+                canExport={canExportReports}
+                onUpgradeRequired={() => setShowUpgradeModal(true)}
+              />
             </div>
           </div>
         </div>

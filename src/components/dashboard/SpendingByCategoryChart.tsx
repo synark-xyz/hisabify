@@ -60,17 +60,17 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
 
   return (
     <motion.div
-      className="bg-card rounded-2xl p-6 shadow-card"
+      className="bg-card rounded-2xl p-4 sm:p-6 shadow-card overflow-hidden"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h3 className="text-lg font-bold text-foreground mb-4">{t('dashboard.spendingByCategory')}</h3>
+      <h3 className="text-lg font-bold text-foreground mb-4 truncate">{t('dashboard.spendingByCategory')}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 10, right: 10, left: 80, bottom: 0 }}
+            margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
           >
             <XAxis
               type="number"
@@ -85,7 +85,7 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
               axisLine={false}
               tickLine={false}
               tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
-              width={75}
+              width={100}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }} />
             <Bar

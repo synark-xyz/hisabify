@@ -391,47 +391,47 @@ export function EnhancedAnalyticsChart({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between" whileHover={{ y: -2 }}>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{t('analytics.totalThisYear')}</span>
-          <div className="mt-1">
-            <h3 className="text-xl font-bold text-foreground">{formatAmount(metrics.totalThisYear)}</h3>
-            <p className={cn('text-xs font-medium flex items-center gap-1 mt-0.5', metrics.yoyGrowth > 0 ? 'text-destructive' : 'text-green-500')}>
-              {metrics.yoyGrowth > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between overflow-hidden" whileHover={{ y: -2 }}>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight truncate">{t('analytics.totalThisYear')}</span>
+          <div className="mt-1 min-w-0">
+            <h3 className="text-xl font-bold text-foreground truncate">{formatAmount(metrics.totalThisYear)}</h3>
+            <p className={cn('text-xs font-medium flex items-center gap-1 mt-0.5 truncate', metrics.yoyGrowth > 0 ? 'text-destructive' : 'text-green-500')}>
+              {metrics.yoyGrowth > 0 ? <TrendingUp className="w-3 h-3 shrink-0" /> : <TrendingDown className="w-3 h-3 shrink-0" />}
               {t('analytics.vsLastYear', { value: Math.abs(metrics.yoyGrowth).toFixed(1) })}
             </p>
           </div>
         </motion.div>
 
-        <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between" whileHover={{ y: -2 }}>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{t('analytics.monthlyAverage')}</span>
-          <div className="mt-1">
-            <h3 className="text-xl font-bold text-foreground">{formatAmount(metrics.avgMonthly)}</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+        <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between overflow-hidden" whileHover={{ y: -2 }}>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight truncate">{t('analytics.monthlyAverage')}</span>
+          <div className="mt-1 min-w-0">
+            <h3 className="text-xl font-bold text-foreground truncate">{formatAmount(metrics.avgMonthly)}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
               {t('analytics.thisMonth')}: <span className="font-bold text-foreground">{formatAmount(metrics.currentMonthAmount)}</span>
             </p>
           </div>
         </motion.div>
 
-        <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between" whileHover={{ y: -2 }}>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">
+        <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between overflow-hidden" whileHover={{ y: -2 }}>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight truncate">
             {t('analytics.savingsRate', { month: format(new Date(), 'MMM') })}
           </span>
-          <div className="mt-1">
-            <h3 className="text-xl font-bold text-emerald-600">{savingsRateMetrics.currentRate.toFixed(1)}%</h3>
-            <p className={cn('text-xs mt-0.5', savingsRateMetrics.delta >= 0 ? 'text-emerald-600' : 'text-amber-600')}>
+          <div className="mt-1 min-w-0">
+            <h3 className="text-xl font-bold text-emerald-600 truncate">{savingsRateMetrics.currentRate.toFixed(1)}%</h3>
+            <p className={cn('text-xs mt-0.5 truncate', savingsRateMetrics.delta >= 0 ? 'text-emerald-600' : 'text-amber-600')}>
               {t('analytics.vsLastMonth', { value: `${savingsRateMetrics.delta >= 0 ? '+' : ''}${savingsRateMetrics.delta.toFixed(1)}` })}
             </p>
           </div>
         </motion.div>
 
-        <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between" whileHover={{ y: -2 }}>
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{t('analytics.topCategory')}</span>
-          <div className="mt-1">
-            <h3 className={cn('text-xl font-bold', metrics.topCat.name === 'Savings' ? 'text-emerald-600' : 'text-primary')}>
+        <motion.div className="bg-card/60 backdrop-blur-md border border-border p-4 rounded-2xl shadow-card flex flex-col justify-between overflow-hidden" whileHover={{ y: -2 }}>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-tight truncate">{t('analytics.topCategory')}</span>
+          <div className="mt-1 min-w-0">
+            <h3 className={cn('text-xl font-bold truncate', metrics.topCat.name === 'Savings' ? 'text-emerald-600' : 'text-primary')}>
               {metrics.topCat.name === 'Savings' ? t('categories.savings') : metrics.topCat.name}
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
               <span className="font-bold text-foreground">{metrics.topCat.percentage.toFixed(0)}%</span> {t('analytics.ofSpending')}
             </p>
           </div>
@@ -622,9 +622,9 @@ export function EnhancedAnalyticsChart({
                 whileHover={{ scale: 1.01 }}
                 layout
               >
-                <div className="flex justify-between items-end text-sm">
-                  <span className="font-bold text-foreground/90 group-hover:text-foreground transition-colors">{t(`categories.${cat.name}`, cat.name)}</span>
-                  <span className="font-mono text-muted-foreground">{formatPercent(cat.percentage)}% • {formatAmount(cat.amount)}</span>
+                <div className="flex justify-between items-end text-sm gap-2">
+                  <span className="font-bold text-foreground/90 group-hover:text-foreground transition-colors truncate">{t(`categories.${cat.name}`, cat.name)}</span>
+                  <span className="font-mono text-muted-foreground shrink-0">{formatPercent(cat.percentage)}% • {formatAmount(cat.amount)}</span>
                 </div>
                 <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
                   <motion.div

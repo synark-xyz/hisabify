@@ -1,5 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { supabase } from '@/integrations/supabase/client';
 import { loginRateLimiter, isValidEmail, validatePasswordStrength, addAuthDelay } from '@/lib/security';
 import { logger } from '@/lib/logger';
@@ -139,10 +141,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const redirectTo = getOAuthRedirectUrl();
       logger.info('[OAuth] Starting flow', { provider, redirectTo });
 
+      const isNative = Capacitor.isNativePlatform();
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
+          skipBrowserRedirect: isNative,
         },
       });
 
@@ -151,6 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         logger.info('[OAuth] signInWithOAuth returned', { provider, url: data?.url ? 'present' : 'missing' });
         import('@/lib/analytics').then(({ analytics }) => analytics.trackAuth('login', provider)).catch(() => {});
+
+        if (isNative && data?.url) {
+          await Browser.open({ url: data.url, windowName: '_self' });
+        }
       }
       return { error };
     } catch (error) {

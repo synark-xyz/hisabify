@@ -84,24 +84,9 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
   const incomeCategoryColors = reportData.incomeCategoryBreakdown.map((entry) => entry.color);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        flexWrap: "nowrap",
-        overflowX: "auto",
-        gap: "24px",
-      }}
-      className="pb-2 md:gap-6"
-    >
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 min-w-0 w-full">
       {/* Expense Category Breakdown Pie Chart */}
-      <Card
-        style={{
-          flex: "0 0 auto",
-          width: "320px",
-        }}
-        className="sm:w-[85vw] md:w-auto"
-      >
+      <Card className="w-full">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('reports.charts.expensesByCategory')}</CardTitle>
         </CardHeader>
@@ -171,13 +156,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       </Card>
 
       {/* Income Category Breakdown Pie Chart */}
-      <Card
-        style={{
-          flex: "0 0 auto",
-          width: "320px",
-        }}
-        className="sm:w-[85vw] md:w-auto"
-      >
+      <Card className="w-full">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('reports.charts.incomeSources')}</CardTitle>
         </CardHeader>
@@ -247,13 +226,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       </Card>
 
       {/* Budget Performance Bar Chart */}
-      <Card
-        style={{
-          flex: "0 0 auto",
-          width: "320px",
-        }}
-        className="sm:w-[85vw] md:w-auto"
-      >
+      <Card className="w-full">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('reports.charts.budgetPerformance')}</CardTitle>
         </CardHeader>
@@ -263,11 +236,11 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               <BarChart
                 data={reportData.budgetPerformance}
                 layout="vertical"
-                margin={{ left: 20 }}
+                margin={{ left: 4, right: 8 }}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" tickFormatter={(v) => `${currencySymbol}${localizeNumber(v)}`} />
-                <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
+                <YAxis type="category" dataKey="name" width={72} tick={{ fontSize: 11 }} tickLine={false} />
                 <Tooltip
                   formatter={(value: number) => formatAmount(value)}
                   contentStyle={{
@@ -290,13 +263,7 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
       </Card>
 
       {/* Daily Expenses Area Chart */}
-      <Card
-        style={{
-          flex: "0 0 auto",
-          width: "320px",
-        }}
-        className="sm:w-[85vw] md:w-auto"
-      >
+      <Card className="w-full md:col-span-2">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('reports.charts.dailyExpensesIncome')}</CardTitle>
         </CardHeader>

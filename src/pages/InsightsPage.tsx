@@ -24,7 +24,7 @@ export function InsightsPage() {
       <TabsContent value="analytics" className="mt-0">
         <AnalyticsPage />
       </TabsContent>
-      <TabsContent value="reports" className="mt-0">
+      <TabsContent value="reports" className="mt-0 overflow-hidden">
         <ReportsPage />
       </TabsContent>
     </Tabs>

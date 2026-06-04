@@ -98,7 +98,7 @@ android {
             buildConfigField "String", "ENVIRONMENT", '"staging"'
             // Staging endpoint (same as development preview)
             buildConfigField "String", "ENDPOINT", '"https://hisabify-staging.vercel.app"'
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.debug
 //            signingConfig signingConfigs.staging
         }
@@ -111,7 +111,7 @@ android {
                 "\"${resolveSecret('REVENUECAT_API_KEY_RELEASE')}\""
             // Production endpoint
             buildConfigField "String", "ENDPOINT", '"https://hisabify-pi.vercel.app"'
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }

@@ -29,22 +29,16 @@ Hisabify is a mobile-first personal finance web application for tracking cards, 
 ## Development Commands
 
 ```bash
-# Install dependencies (prefer bun, fallback to npm)
-bun install
-# or
+# Install dependencies
 npm install
 
 # Run development server (localhost:8080)
-bun dev
-# or
 npm run dev
 
 # Managed dev server (mobile-friendly)
 npm run dev:managed
 
 # Build for production
-bun run build
-# or
 npm run build
 
 # Build for development mode
@@ -55,8 +49,6 @@ npm run lint
 
 # Run tests
 npm test
-# or
-bun test
 
 # Preview production build
 npm run preview
@@ -242,7 +234,7 @@ src/components/
 ├─ Layout.tsx              # Main layout with header + bottom nav
 ├─ AddTransactionModal.tsx # Transaction creation
 ├─ AddBudgetModal.tsx      # Budget creation
-├─ ReceiptUpload.tsx       # OCR receipt upload (Tesseract.js)
+├─ ReceiptScannerModal.tsx # OCR receipt scan (Gemini Vision)
 ├─ PremiumGuard.tsx        # Feature gating wrapper
 └─ ...
 ```
@@ -370,8 +362,8 @@ if (!hasPermission) {
 
 ### Receipt Upload with OCR & Image Optimization
 
-- **Component:** `ReceiptUpload.tsx` - Receipt capture with OCR
-- **Technology:** Tesseract.js for client-side text extraction
+- **Component:** `ReceiptScannerModal.tsx` - Receipt capture with OCR
+- **Technology:** Gemini Vision (`src/lib/geminiVision.ts`) with `src/lib/receiptParser.ts` for extraction
 - **Image Processing:** `src/lib/imageProcessor.ts`
 - **Optimization:** Compress to <500KB while preserving text readability
 - **Storage:** Supabase Storage with RLS policies (bucket: `receipts`)
@@ -441,8 +433,6 @@ if (!hasPermission) {
 **Run tests:**
 ```bash
 npm test
-# or
-bun test
 ```
 
 **Test Setup:** `src/test/setup.ts`
@@ -493,7 +483,7 @@ npx cap open android # Opens Android Studio
 - GPU-accelerated animations (60fps)
 - Platform-specific optimizations (see `src/index.css`)
 
-**Documentation:** See `CAPACITOR_LOCALHOST_SETUP.md` for detailed setup guide
+**Documentation:** See the "Localhost Development Workflow" under Capacitor Mobile above.
 
 ## Type Safety
 
@@ -520,12 +510,11 @@ npx cap open android # Opens Android Studio
 | `src/components/Layout.tsx` | Main layout wrapper |
 | `src/components/InputMethodSheet.tsx` | Unified FAB action menu (3 options) |
 | `src/components/VoiceInputFlow.tsx` | Enhanced voice memo UI with animations |
-| `src/components/ReceiptUpload.tsx` | Receipt OCR + storage |
+| `src/components/ReceiptScannerModal.tsx` | Receipt OCR (Gemini Vision) + storage |
 | `TRD.md` | Technical requirements & architecture |
 | `PRD.md` | Product requirements & roadmap |
 | `docs/UNIFIED_FAB_IMPLEMENTATION.md` | Unified FAB architecture & roadmap |
 | `docs/PERMISSIONS_FIX.md` | Complete guide for runtime permissions |
-| `CAPACITOR_LOCALHOST_SETUP.md` | Mobile localhost development setup |
 
 ## Development Workflow
 

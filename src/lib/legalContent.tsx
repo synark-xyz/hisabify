@@ -440,9 +440,11 @@ export function PrivacyContent() {
 
       <LegalSection title="8. Your Privacy Rights (GDPR & APPI)">
         <p>
-          <strong>Right to Access:</strong> Request a copy of all data we hold about you. Email
-          synarklabs@gmail.com with "Data Access Request". Response: 30 days. Format: CSV, JSON,
-          or summary. Cost: Free.
+          <strong>Right to Access:</strong> Request a copy of all data we hold about you. Email{' '}
+          <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} className="underline">
+            {LEGAL_CONTACT_EMAIL}
+          </a>{' '}
+          with "Data Access Request". Response: 30 days. Format: CSV, JSON, or summary. Cost: Free.
         </p>
         <p>
           <strong>Right to Rectification:</strong> Correct inaccurate data (wrong email, name).

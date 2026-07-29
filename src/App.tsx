@@ -28,6 +28,7 @@ import NotFound from "@/pages/NotFound";
 import { FABProvider } from "@/contexts/FABContext";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { SubscriptionTermsPage } from "@/pages/SubscriptionTermsPage";
 import { DeleteAccountPage } from "@/pages/DeleteAccountPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { initViewportHeight } from "@/lib/viewport";
@@ -269,6 +270,7 @@ function AppRoutes() {
         element={<InstallPage />}
       />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/subscription-terms" element={<SubscriptionTermsPage />} />
       <Route path="/delete-account" element={<DeleteAccountPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

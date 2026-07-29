@@ -425,6 +425,22 @@ Access is an **email allowlist**, not a role column: `public.is_admin()` (`supab
 
 Note: attachment upload failure never blocks a submission — the text is sent regardless.
 
+### Legal Documents & Data Privacy
+
+Legal copy lives in `src/lib/legalContent.tsx` (`TermsContent`, `PrivacyContent`, `LEGAL_LAST_UPDATED`, `LEGAL_CONTACT_EMAIL`) and `src/components/SubscriptionTermsContent.tsx`. Always reference `LEGAL_CONTACT_EMAIL` — never hardcode a support address.
+
+Three surfaces, and only two are routes: Privacy Policy at `/privacy`, Subscription Terms at `/subscription-terms`, and **Terms of Service has no route** — it renders in `LegalModal` (`defaultTab="terms"`), opened from Settings → Support. Don't link `/terms`; it 404s.
+
+**Account deletion is immediate and irreversible.** `/profile/data` (`DataPage.tsx`) wipes the user's rows and then calls the `delete-user` edge function. Do not add a soft-delete or 30-day grace period: the Privacy Policy's "deleted within 30 days" is a *ceiling*, which immediate deletion already satisfies, and a soft-delete without a purge job means data is never actually deleted — a worse outcome legally than what we have. A 30-day soft-delete was built and removed for exactly this reason.
+
+`useDataManagement.ts` owns the GDPR right-of-access export (CSV + JSON, both download together because the policy promises both formats) and `logPrivacyAction()`. Deletion is deliberately *not* in this hook — a second deletion path would give the app two contradictory answers to "is my account gone?".
+
+Audit rows go to `public.audit_log` (migration `20260730000000_add_privacy_audit_log.sql`), whose RLS grants own-row SELECT and INSERT only — no UPDATE or DELETE, because an audit trail the subject can rewrite is not an audit trail. Log **before** `signOut()`; the INSERT policy needs a live session. Audit writes never block the action they describe.
+
+Note `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate PK. Matching on `id` silently updates zero rows and PostgREST reports success.
+
+Compliance docs: `docs/legal/PRE_LAUNCH_CHECKLIST.md`, `docs/legal/INCORPORATION_CHECKLIST.md`, `docs/supabase/DPA_ADDENDUM.md`. Note `docs/` and `*.sql` are gitignored — commit these with `git add -f`.
+
 ### Recurring Transactions
 
 Subscription/bill templates in `recurring_expenses` that auto-log an expense each period. UI is `src/pages/more/RecurringExpensesPage.tsx` at `/more/recurring`; data via `useRecurringExpenses.ts`.
@@ -557,6 +573,11 @@ npx cap open android # Opens Android Studio
 | `src/lib/pageMotion.ts` | Shared page transition variants (reduced-motion aware) |
 | `src/lib/appStore.ts` | Play Store listing link + app version helper |
 | `src/pages/AdminPage.tsx` | Admin DB viewer (`/admin`) |
+| `src/lib/legalContent.tsx` | Terms of Service + Privacy Policy copy |
+| `src/components/SubscriptionTermsContent.tsx` | Subscription & billing terms copy |
+| `src/pages/SubscriptionTermsPage.tsx` | Subscription Terms page (`/subscription-terms`) |
+| `src/hooks/useDataManagement.ts` | GDPR data export (CSV/JSON) + privacy audit logging |
+| `src/pages/profile/DataPage.tsx` | Data & Privacy: export, analytics opt-out, deletion |
 | `src/lib/ratingPrompt.ts` | Pure rating-prompt scheduling logic |
 | `src/hooks/useRecurringExpenses.ts` | Recurring expense CRUD + `process_recurring_expenses()` RPC |
 | `src/pages/more/RecurringExpensesPage.tsx` | Recurring expense manager (`/more/recurring`) |

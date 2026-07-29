@@ -65,15 +65,14 @@ export function useDataManagement() {
       // Convert to CSV (simple flat format)
       const csvString = generateCSV(exportObject);
 
-      // Track export (optional, for GDPR logging)
-      await supabase
-        .from('audit_log')
-        .insert({
-          user_id: user.id,
-          action: 'data_export',
-          timestamp: new Date().toISOString(),
-        })
-        .throwOnError();
+      // Track export for GDPR logging. Never blocks the export itself — the
+      // user's right of access does not depend on our bookkeeping succeeding.
+      const { error: auditError } = await supabase.from('audit_log').insert({
+        user_id: user.id,
+        action: 'data_export',
+        timestamp: new Date().toISOString(),
+      });
+      if (auditError) console.error('Audit log write failed:', auditError);
 
       toast({
         title: 'Data exported successfully',
@@ -106,18 +105,20 @@ export function useDataManagement() {
           account_deletion_initiated_at: new Date().toISOString(),
           account_deletion_scheduled_for: deletionDate.toISOString(),
         })
-        .eq('id', user.id)
+        // public.users is keyed to auth by user_id; `id` is a separate
+        // surrogate PK. Matching on `id` silently updates zero rows.
+        .eq('user_id', user.id)
         .throwOnError();
 
-      // Log the deletion request (for audit trail)
-      await supabase
-        .from('audit_log')
-        .insert({
-          user_id: user.id,
-          action: 'account_deletion_initiated',
-          timestamp: new Date().toISOString(),
-        })
-        .throwOnError();
+      // Log the deletion request. Non-blocking: the authoritative record is
+      // account_deletion_scheduled_for above, which is already committed.
+      // Failing here must not tell the user their request did not go through.
+      const { error: auditError } = await supabase.from('audit_log').insert({
+        user_id: user.id,
+        action: 'account_deletion_initiated',
+        timestamp: new Date().toISOString(),
+      });
+      if (auditError) console.error('Audit log write failed:', auditError);
 
       toast({
         title: 'Account deletion initiated',

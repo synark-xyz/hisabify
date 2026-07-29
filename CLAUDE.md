@@ -403,6 +403,34 @@ if (!hasPermission) {
   - iOS: `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`
   - Runtime permission flow: `ensurePermission('microphone')` before recording
 
+### In-App Rating & Feedback
+
+Both write to a single `app_feedback` table, discriminated by a `kind` column (`'rating'` | `'feedback'`).
+
+- **Rating:** `RatingSheet.tsx` (stars + optional comment). Cadence lives in `useAppRating.ts`; the decision itself is a pure function in `src/lib/ratingPrompt.ts` (`shouldPromptRating`) so it is unit-testable. Prompts at most once per 24h, skips the first 2 days after a user is first seen, and stops permanently once the user rates or picks "Don't ask again". Local state is Capacitor `Preferences`; a once-per-session query of `app_feedback` catches users who rated on another device. Mounted in `Layout.tsx`, so it only fires on the main app pages.
+- **Feedback:** `FeedbackSheet.tsx`, opened from `Settings → Support → Feedback`. Opens full-height (`snapPoints={[1, 0.5]}`) and drags down to half. Email is read-only from the session. Attachments go to the private `feedback-attachments` bucket as `{user_id}/{timestamp}-{name}`; the table stores storage *paths*, not public URLs — resolve them with a signed URL server-side.
+- **Review prompt:** `openStoreListing()` in `src/lib/appStore.ts` drives both entry points — the 4★+ CTA in `RatingSheet` and `Settings → Support → Rate the app`.
+
+  **Do not reintroduce the [Play In-App Review API](https://developer.android.com/guide/playcore/in-app-review) here.** Google's guidance is explicit: "you should not have a call-to-action option (such as a button) to trigger the API, as a user might have already hit their quota and the flow won't be shown, presenting a broken experience to the user. For this use case, redirect the user to the Play Store instead." Both of our entry points are buttons.
+
+  It was tried and removed. The failure mode is silence, not an error: Play suppresses the dialog when the calling package was not distributed by Play (any `.staging` build — see `applicationIdSuffix` in `android/app/build.gradle`) or when the undisclosed time-bound quota is hit, and reports neither. `requestReviewFlow()` **resolves** in both cases, so a `catch`-based fallback never fires and the button does nothing at all. If you ever add an automatic, non-button trigger, that is the only context where the API is appropriate — and even then never gate UI on the dialog having shown, and never retry.
+
+### Admin Panel
+
+`src/pages/AdminPage.tsx` at `/admin` — a read-only table viewer for triaging `app_feedback` and `user_behavior_events` (newest 100 rows, columns derived from the response). Deliberately unlinked from any nav; it is reachable only by typing the URL.
+
+Access is an **email allowlist**, not a role column: `public.is_admin()` (`supabase/migrations/20260729000100_add_admin_read_access.sql`) compares `auth.jwt() ->> 'email'` against a hardcoded list, and additive `FOR SELECT ... USING (public.is_admin())` policies OR with the existing own-rows policies. Adding an admin means editing both the SQL function and `ADMIN_EMAILS` in `AdminPage.tsx` — the constant only decides whether to render, RLS is what actually enforces. Never gate this with the service-role key; it must not reach client code.
+
+  Note `openStoreListing()` must not use a `market://` URL — `Browser.open()` is Chrome Custom Tabs, which pins the intent to the browser package, and Chrome cannot resolve `market://`. The https listing is app-linked and hands off to the Play Store app anyway. The URL always names the production package; staging builds have no listing of their own.
+
+Note: attachment upload failure never blocks a submission — the text is sent regardless.
+
+### Page Transitions
+
+`src/lib/pageMotion.ts` holds the single motion definition used by both `Layout.tsx` (via `AnimatePresence`, with exit) and `PageTransition.tsx` (enter-only, for routes outside the layout). Use `usePageVariants()` rather than importing `pageVariants` directly — it returns static variants when the user prefers reduced motion.
+
+Each route owns its own `Suspense` boundary. Do not reintroduce a single app-root fallback for route chunks: it unmounts the header and bottom navigation on every lazy navigation.
+
 ### Gamification (Health Score)
 
 - Location: `src/features/gamification/`
@@ -508,6 +536,15 @@ npx cap open android # Opens Android Studio
 | `src/lib/logger.ts` | Logging service |
 | `src/lib/imageProcessor.ts` | Receipt image optimization |
 | `src/components/Layout.tsx` | Main layout wrapper |
+| `src/components/RatingSheet.tsx` | Star rating + comment bottom sheet |
+| `src/components/FeedbackSheet.tsx` | Feedback bottom sheet (type, description, attachments) |
+| `src/components/PageTransition.tsx` | Route enter animation + delayed Suspense fallback |
+| `src/lib/pageMotion.ts` | Shared page transition variants (reduced-motion aware) |
+| `src/lib/appStore.ts` | Play Store listing link + app version helper |
+| `src/pages/AdminPage.tsx` | Admin DB viewer (`/admin`) |
+| `src/lib/ratingPrompt.ts` | Pure rating-prompt scheduling logic |
+| `src/hooks/useAppRating.ts` | Rating prompt cadence + persistence |
+| `src/hooks/useAppFeedback.ts` | Submits ratings and feedback to `app_feedback` |
 | `src/components/InputMethodSheet.tsx` | Unified FAB action menu (3 options) |
 | `src/components/VoiceInputFlow.tsx` | Enhanced voice memo UI with animations |
 | `src/components/ReceiptScannerModal.tsx` | Receipt OCR (Gemini Vision) + storage |

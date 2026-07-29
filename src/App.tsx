@@ -16,6 +16,7 @@ import { CurrencyProvider } from "@/hooks/useCurrency";
 import { ProfileProvider } from "@/hooks/useProfile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
+import { PageFallback, PageTransition } from "@/components/PageTransition";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
 import { AuthPage } from "@/pages/AuthPage";
@@ -55,6 +56,7 @@ const CalculatorPage = lazy(() => import("@/pages/more/CalculatorPage").then(m =
 const LoanCalculatorPage = lazy(() => import("@/pages/more/LoanCalculatorPage").then(m => ({ default: m.LoanCalculatorPage })));
 const DiscountTaxCalculatorPage = lazy(() => import("@/pages/more/DiscountTaxCalculatorPage").then(m => ({ default: m.DiscountTaxCalculatorPage })));
 const CurrencyConverterPage = lazy(() => import("@/pages/more/CurrencyConverterPage").then(m => ({ default: m.CurrencyConverterPage })));
+const AdminPage = lazy(() => import("@/pages/AdminPage").then(m => ({ default: m.AdminPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -91,6 +93,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+/**
+ * Wrapper for protected routes that render outside <Layout> (they own their own Header).
+ * Gives them the same enter animation as layout pages, plus a local Suspense boundary so a
+ * lazy chunk load never falls through to the app-wide fallback and blanks the screen.
+ */
+function StandalonePage({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={<PageFallback />}>
+        <PageTransition>{children}</PageTransition>
+      </Suspense>
+    </ProtectedRoute>
+  );
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
@@ -211,21 +228,23 @@ function AppRoutes() {
       {/* Pages without Main Layout (No double header) */}
       <Route
         element={
-          <ProtectedRoute>
+          <StandalonePage>
             <div className="min-h-screen bg-background">
               {/* These pages have their own internal Headers */}
               <SettingsPage />
             </div>
-          </ProtectedRoute>
+          </StandalonePage>
         }
         path="/settings"
       />
 
-      <Route element={<ProtectedRoute><PreferencesPage /></ProtectedRoute>} path="/settings/preferences" />
-      <Route element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} path="/settings/notifications" />
-      <Route element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} path="/notifications" />
-      <Route element={<ProtectedRoute><SupportPage /></ProtectedRoute>} path="/support" />
-      <Route element={<ProtectedRoute><FaqPage /></ProtectedRoute>} path="/faq" />
+      <Route element={<StandalonePage><PreferencesPage /></StandalonePage>} path="/settings/preferences" />
+      <Route element={<StandalonePage><NotificationSettingsPage /></StandalonePage>} path="/settings/notifications" />
+      <Route element={<StandalonePage><NotificationsPage /></StandalonePage>} path="/notifications" />
+      <Route element={<StandalonePage><SupportPage /></StandalonePage>} path="/support" />
+      <Route element={<StandalonePage><FaqPage /></StandalonePage>} path="/faq" />
+      {/* Unlinked on purpose — reachable by URL, gated by RLS. */}
+      <Route element={<StandalonePage><AdminPage /></StandalonePage>} path="/admin" />
 
       <Route
         path="/auth"

@@ -1,4 +1,5 @@
 /build/*
 !/build/.npmkeep
-/src/release/google-services.json
-/src/staging/google-services.json
+# Firebase config — contains API keys, never commit. Matches any location:
+# app/google-services.json as well as any per-variant src/<buildType>/ override.
+google-services.json

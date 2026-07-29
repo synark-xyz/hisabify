@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp, MessageSquarePlus, Star } from 'lucide-react';
+import { Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp, MessageSquarePlus, Star, FileText, CreditCard, DatabaseZap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { FeedbackSheet } from '@/components/FeedbackSheet';
+import { LegalModal } from '@/components/LegalModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +17,7 @@ export function SettingsPage() {
     const { toast } = useToast();
     const { t } = useTranslation();
     const [showFeedback, setShowFeedback] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
     // Sourced from the native build (Gradle versionName/versionCode), never hardcoded.
     const [appVersion, setAppVersion] = useState('');
 
@@ -32,6 +34,9 @@ export function SettingsPage() {
     const menuItems = [
         { id: 'preferences', icon: Settings, label: t('settings.preferences'), path: '/settings/preferences', color: 'bg-accent/10 text-accent' },
         { id: 'notifications', icon: Bell, label: t('notifications.notifications'), path: '/settings/notifications', color: 'bg-primary/10 text-primary' },
+        // The Privacy Policy tells users to find data export and deletion under
+        // Settings, so it must be reachable from here and not only from Profile.
+        { id: 'data', icon: DatabaseZap, label: t('settingsPage.dataPrivacy'), path: '/profile/data', color: 'bg-primary/10 text-primary' },
     ];
 
     const supportItems = [
@@ -39,6 +44,8 @@ export function SettingsPage() {
         { id: 'feedback', icon: MessageSquarePlus, label: t('feedback.title'), onSelect: () => setShowFeedback(true), color: 'bg-primary/10 text-primary' },
         { id: 'rate', icon: Star, label: t('rating.rateTheApp'), onSelect: () => { void openStoreListing(); }, color: 'bg-amber-500/10 text-amber-500' },
         { id: 'privacy', icon: Shield, label: t('page.privacyPolicy'), onSelect: () => navigate('/privacy'), color: 'bg-accent/10 text-accent' },
+        { id: 'terms', icon: FileText, label: t('auth.terms'), onSelect: () => setShowTerms(true), color: 'bg-accent/10 text-accent' },
+        { id: 'subscriptionTerms', icon: CreditCard, label: t('page.subscriptionTerms'), onSelect: () => navigate('/subscription-terms'), color: 'bg-accent/10 text-accent' },
         { id: 'faq', icon: CircleHelp, label: t('page.faq'), onSelect: () => navigate('/faq'), color: 'bg-accent/10 text-accent' },
     ];
 
@@ -116,6 +123,7 @@ export function SettingsPage() {
             </main>
 
             <FeedbackSheet open={showFeedback} onOpenChange={setShowFeedback} />
+            <LegalModal open={showTerms} defaultTab="terms" onClose={() => setShowTerms(false)} />
         </div>
     );
 }

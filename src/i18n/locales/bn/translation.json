@@ -69,7 +69,8 @@
     "installApp": "অ্যাপ ইনস্টল করুন",
     "pageNotFound": "পৃষ্ঠা পাওয়া যায়নি",
     "pageNotFoundDesc": "আপনি যে পৃষ্ঠাটি খুঁজছেন সেটি বিদ্যমান নেই।",
-    "goHome": "হোমে যান"
+    "goHome": "হোমে যান",
+    "subscriptionTerms": "সাবস্ক্রিপশন শর্তাবলী"
   },
   "onboarding": {
     "selectLanguage": "আপনার ভাষা নির্বাচন করুন",
@@ -1218,7 +1219,8 @@
   "settingsPage": {
     "general": "সাধারণ",
     "support": "সাপোর্ট",
-    "version": "Hisabify {{version}}"
+    "version": "Hisabify {{version}}",
+    "dataPrivacy": "ডেটা ও গোপনীয়তা"
   },
   "profilePersonal": {
     "details": "বিবরণ",
@@ -1279,7 +1281,14 @@
     "deleteAccount": "অ্যাকাউন্ট মুছুন",
     "typeDeleteAccountConfirm": "নিশ্চিত করতে DELETE ACCOUNT লিখুন",
     "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT"
+    "deleteAccountPlaceholder": "DELETE ACCOUNT",
+    "privacy": "গোপনীয়তা",
+    "usageAnalytics": "ব্যবহারের বিশ্লেষণ",
+    "usageAnalyticsDesc": "বেনামী অ্যাপ ব্যবহারের তথ্য শেয়ার করুন। আপনার আর্থিক ডেটা কখনোই নয়।",
+    "analyticsOn": "ব্যবহারের বিশ্লেষণ চালু হয়েছে",
+    "analyticsOff": "ব্যবহারের বিশ্লেষণ বন্ধ হয়েছে",
+    "exportComplete": "এক্সপোর্ট সম্পন্ন",
+    "exportCompleteDesc": "আপনার ডেটা JSON এবং CSV হিসেবে ডাউনলোড হয়েছে।"
   },
   "notificationsPage": {
     "allCaughtUp": "সব হয়ে গেছে",

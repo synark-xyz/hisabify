@@ -1,57 +1,67 @@
 // src/hooks/useDataManagement.ts
+//
+// GDPR/APPI data-subject operations: right of access (export) and the audit
+// trail that evidences them.
+//
+// Account deletion is NOT here. It lives in src/pages/profile/DataPage.tsx and
+// is immediate and irreversible via the `delete-user` edge function. Adding a
+// second, soft-delete path would give the app two contradictory answers to
+// "is my account gone?". This hook only exposes logPrivacyAction so that the
+// existing deletion flow can record itself.
 
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface DataExportResult {
   csv: string;
   json: string;
 }
 
+export type PrivacyAction = 'data_export' | 'financial_data_deleted' | 'account_deleted';
+
 export function useDataManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Append-only compliance record. Never blocks the action it describes — a
+  // user's right of access or erasure does not depend on our bookkeeping.
+  const logPrivacyAction = async (action: PrivacyAction): Promise<void> => {
+    if (!user) return;
+    const { error } = await supabase.from('audit_log').insert({
+      user_id: user.id,
+      action,
+      timestamp: new Date().toISOString(),
+    });
+    if (error) console.error(`Audit log write failed (${action}):`, error);
+  };
 
   const exportData = async (): Promise<DataExportResult> => {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      // Fetch all user data from Supabase
       const [
+        { data: profile },
         { data: transactions },
         { data: budgets },
         { data: cards },
         { data: savingsGoals },
         { data: paymentReminders },
       ] = await Promise.all([
-        supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', user.id),
-        supabase
-          .from('budgets')
-          .select('*')
-          .eq('user_id', user.id),
-        supabase
-          .from('cards')
-          .select('*')
-          .eq('user_id', user.id),
-        supabase
-          .from('savings_goals')
-          .select('*')
-          .eq('user_id', user.id),
-        supabase
-          .from('payment_reminders')
-          .select('*')
-          .eq('user_id', user.id),
+        // public.users is keyed to auth by user_id; `id` is a separate PK.
+        supabase.from('users').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('transactions').select('*').eq('user_id', user.id),
+        supabase.from('budgets').select('*').eq('user_id', user.id),
+        supabase.from('cards').select('*').eq('user_id', user.id),
+        supabase.from('savings_goals').select('*').eq('user_id', user.id),
+        supabase.from('payment_reminders').select('*').eq('user_id', user.id),
       ]);
 
-      // Compile into export object
       const exportObject = {
         exportDate: new Date().toISOString(),
         userId: user.id,
         userEmail: user.email,
+        profile: profile ?? null,
         transactions: transactions || [],
         budgets: budgets || [],
         cards: cards || [],
@@ -59,25 +69,10 @@ export function useDataManagement() {
         paymentReminders: paymentReminders || [],
       };
 
-      // Convert to JSON
       const jsonString = JSON.stringify(exportObject, null, 2);
-
-      // Convert to CSV (simple flat format)
       const csvString = generateCSV(exportObject);
 
-      // Track export for GDPR logging. Never blocks the export itself — the
-      // user's right of access does not depend on our bookkeeping succeeding.
-      const { error: auditError } = await supabase.from('audit_log').insert({
-        user_id: user.id,
-        action: 'data_export',
-        timestamp: new Date().toISOString(),
-      });
-      if (auditError) console.error('Audit log write failed:', auditError);
-
-      toast({
-        title: 'Data exported successfully',
-        description: 'Your data has been prepared for download.',
-      });
+      await logPrivacyAction('data_export');
 
       return { csv: csvString, json: jsonString };
     } catch (error) {
@@ -85,50 +80,6 @@ export function useDataManagement() {
       toast({
         title: 'Export failed',
         description: 'Unable to export your data. Please try again.',
-        variant: 'destructive',
-      });
-      throw error;
-    }
-  };
-
-  const deleteAccount = async (): Promise<void> => {
-    if (!user) throw new Error('User not authenticated');
-
-    try {
-      // Mark account for deletion (30-day grace period)
-      const deletionDate = new Date();
-      deletionDate.setDate(deletionDate.getDate() + 30);
-
-      await supabase
-        .from('users')
-        .update({
-          account_deletion_initiated_at: new Date().toISOString(),
-          account_deletion_scheduled_for: deletionDate.toISOString(),
-        })
-        // public.users is keyed to auth by user_id; `id` is a separate
-        // surrogate PK. Matching on `id` silently updates zero rows.
-        .eq('user_id', user.id)
-        .throwOnError();
-
-      // Log the deletion request. Non-blocking: the authoritative record is
-      // account_deletion_scheduled_for above, which is already committed.
-      // Failing here must not tell the user their request did not go through.
-      const { error: auditError } = await supabase.from('audit_log').insert({
-        user_id: user.id,
-        action: 'account_deletion_initiated',
-        timestamp: new Date().toISOString(),
-      });
-      if (auditError) console.error('Audit log write failed:', auditError);
-
-      toast({
-        title: 'Account deletion initiated',
-        description: 'Your account will be permanently deleted in 30 days. You can cancel anytime.',
-      });
-    } catch (error) {
-      console.error('Account deletion failed:', error);
-      toast({
-        title: 'Deletion failed',
-        description: 'Unable to initiate account deletion. Please try again.',
         variant: 'destructive',
       });
       throw error;
@@ -146,7 +97,7 @@ export function useDataManagement() {
         .eq('action', 'data_export')
         .order('timestamp', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       return {
         lastExported: data?.timestamp ? new Date(data.timestamp) : undefined,
@@ -159,42 +110,77 @@ export function useDataManagement() {
 
   return {
     exportData,
-    deleteAccount,
     getDataExportStatus,
+    logPrivacyAction,
   };
 }
 
-// Helper: Convert export object to CSV
-function generateCSV(exportObject: any): string {
+// CSV is a convenience view of the same data the JSON export carries in full.
+// Values are quoted and embedded quotes doubled, per RFC 4180 — an unescaped
+// merchant name containing a comma or quote would otherwise corrupt the row.
+function csvCell(value: unknown): string {
+  if (value === null || value === undefined) return '""';
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+function csvSection(
+  title: string,
+  headers: string[],
+  rows: Record<string, unknown>[],
+  fields: string[],
+): string {
+  let out = `\n\n${title}\n${headers.join(',')}\n`;
+  for (const row of rows) {
+    out += fields.map((f) => csvCell(row[f])).join(',') + '\n';
+  }
+  return out;
+}
+
+interface ExportShape {
+  exportDate: string;
+  userEmail?: string;
+  transactions: Record<string, unknown>[];
+  budgets: Record<string, unknown>[];
+  cards: Record<string, unknown>[];
+  savingsGoals: Record<string, unknown>[];
+  paymentReminders: Record<string, unknown>[];
+}
+
+export function generateCSV(exportObject: ExportShape): string {
   let csv = 'Hisabify Data Export\n';
-  csv += `Export Date: ${exportObject.exportDate}\n`;
-  csv += `User Email: ${exportObject.userEmail}\n\n`;
+  csv += `Export Date,${csvCell(exportObject.exportDate)}\n`;
+  csv += `User Email,${csvCell(exportObject.userEmail)}\n`;
 
-  // Transactions section
-  csv += 'TRANSACTIONS\n';
-  csv +=
-    'Date,Merchant,Amount,Category,Notes\n';
-  exportObject.transactions.forEach((t: any) => {
-    csv += `${t.date},"${t.merchant}",${t.amount},"${t.category}","${t.notes || ''}"\n`;
-  });
-
-  csv += '\n\nBUDGETS\n';
-  csv += 'Category,Period,Limit\n';
-  exportObject.budgets.forEach((b: any) => {
-    csv += `"${b.category}","${b.period}",${b.limit}\n`;
-  });
-
-  csv += '\n\nCARDS\n';
-  csv += 'Name,Type,Last4,Balance\n';
-  exportObject.cards.forEach((c: any) => {
-    csv += `"${c.name}","${c.type}",${c.last4},${c.balance}\n`;
-  });
-
-  csv += '\n\nSAVINGS GOALS\n';
-  csv += 'Name,Target,Deadline,Progress\n';
-  exportObject.savingsGoals.forEach((s: any) => {
-    csv += `"${s.name}",${s.target},"${s.deadline}",${s.progress}\n`;
-  });
+  csv += csvSection(
+    'TRANSACTIONS',
+    ['Date', 'Merchant', 'Type', 'Amount', 'Currency', 'Note'],
+    exportObject.transactions,
+    ['date', 'merchant', 'type', 'amount', 'currency_original', 'note'],
+  );
+  csv += csvSection(
+    'BUDGETS',
+    ['Name', 'Period', 'Amount', 'Start Date', 'End Date'],
+    exportObject.budgets,
+    ['name', 'period_type', 'amount', 'start_date', 'end_date'],
+  );
+  csv += csvSection(
+    'CARDS',
+    ['Card Holder', 'Type', 'Last Four', 'Balance'],
+    exportObject.cards,
+    ['card_holder', 'card_type', 'last_four', 'balance'],
+  );
+  csv += csvSection(
+    'SAVINGS GOALS',
+    ['Name', 'Target Amount', 'Current Amount', 'Deadline'],
+    exportObject.savingsGoals,
+    ['name', 'target_amount', 'current_amount', 'deadline'],
+  );
+  csv += csvSection(
+    'PAYMENT REMINDERS',
+    ['Title', 'Amount', 'Due Date'],
+    exportObject.paymentReminders,
+    ['title', 'amount', 'due_date'],
+  );
 
   return csv;
 }

@@ -68,7 +68,8 @@
     "installApp": "アプリをインストール",
     "pageNotFound": "ページが見つかりません",
     "pageNotFoundDesc": "お探しのページは存在しません。",
-    "goHome": "ホームに戻る"
+    "goHome": "ホームに戻る",
+    "subscriptionTerms": "サブスクリプション規約"
   },
   "onboarding": {
     "selectLanguage": "言語を選択",
@@ -1221,7 +1222,8 @@
   "settingsPage": {
     "general": "一般",
     "support": "サポート",
-    "version": "Hisabify {{version}}"
+    "version": "Hisabify {{version}}",
+    "dataPrivacy": "データとプライバシー"
   },
   "profilePersonal": {
     "details": "詳細",
@@ -1279,7 +1281,14 @@
     "deleteAccount": "アカウントを削除",
     "typeDeleteAccountConfirm": "DELETE ACCOUNTと入力して確認",
     "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT"
+    "deleteAccountPlaceholder": "DELETE ACCOUNT",
+    "privacy": "プライバシー",
+    "usageAnalytics": "利用状況の分析",
+    "usageAnalyticsDesc": "匿名化されたアプリの利用状況を共有します。財務データは一切含まれません。",
+    "analyticsOn": "利用状況の分析を有効にしました",
+    "analyticsOff": "利用状況の分析を無効にしました",
+    "exportComplete": "エクスポート完了",
+    "exportCompleteDesc": "データをJSONとCSVでダウンロードしました。"
   },
   "notificationsPage": {
     "allCaughtUp": "すべて完了",

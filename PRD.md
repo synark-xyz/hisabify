@@ -59,6 +59,7 @@
 	- Categories and sub-categories
 	- Attach notes and receipts (image upload) **[PREMIUM]**
 	- Bulk CSV import (premium) **[PREMIUM]**
+	- Recurring transactions — subscription/bill templates that auto-log an expense each period (`RecurringExpensesPage.tsx` at `/more/recurring`, `useRecurringExpenses.ts`). Materialised by the `process_recurring_expenses()` RPC (`supabase/migrations/20260729111611_process_recurring_expenses.sql`): nightly at 00:05 UTC via the `process-recurring-expenses` pg_cron job, and again on every app open so a stalled cron cannot skip a cycle. Created rows carry the `recurring` tag. The `recurring_expenses` table had existed unused since 20260117155345.
 	- Auto-categorization (future/ML)
 
 - **Budgets & Goals**
@@ -93,23 +94,41 @@
 	- Category distribution (donut chart)
 	- Savings category permanently represented in analytics
 	- Savings rate insight and expense/savings combined trend view
-	- Export reports to CSV/PDF (premium) **[PREMIUM]**
+	- Export reports to CSV/PDF **[PREMIUM]** — implemented (`ReportsPage.tsx`, `ReportExportActions.tsx`, `reportExports.ts`)
 	- Custom date range comparisons (premium) **[PREMIUM]**
+
+- **Debt & Financial Tools**
+	- Debt/loan tracker with payoff progress (`DebtPage.tsx`)
+	- Loan calculator, discount/tax calculator, currency converter (`MorePage.tsx` tools)
+
+- **Smart Input & Receipt Capture**
+	- Unified FAB with three entry methods: voice, receipt scan, manual (`InputMethodSheet.tsx`)
+	- Voice-to-transaction parsing (Web Speech API + native Capacitor Speech Recognition)
+	- Receipt OCR via Gemini Vision with image compression (`ReceiptScannerModal.tsx`)
+
+- **Engagement, Feedback & Growth**
+	- Gamification health score (40% budget / 30% savings / 30% activity) on dashboard
+	- In-app star rating + feedback submission (`RatingSheet.tsx`, `FeedbackSheet.tsx`)
+	- Referral program: unique code, 30-day Pro grant on redemption (see Referral System PRD below)
+	- Activity history log (`ActivityHistoryPage.tsx`)
 
 - **Notifications & Alerts**
 	- In-app toasts for transactions and reminders
-	- Email notifications for critical alerts
-	- Push notifications (mobile/web) **[PREMIUM]**
+	- Push notifications — implemented (`usePushNotifications.ts`, `send-push-notification` edge function) **[PREMIUM]**
+	- Payment reminder scheduling — `schedule-payment-reminders` runs daily at 08:00 UTC via the `daily-payment-reminders` pg_cron job (`supabase/migrations/20260729110915_fix_payment_reminder_cron.sql`). The job had in fact existed on the project since 2026-03-18 but was never captured in a migration and failed on all 134 of its runs (`unrecognized configuration parameter "app.settings.service_role_key"`), so no reminder was ever delivered. Credentials now resolve from Vault; **each environment needs its `project_url` / `service_role_key` secrets created once** before the job can succeed — see that migration's header.
+	- Email notifications for critical alerts (not yet implemented)
 
 - **Integrations & Sync**
-	- Supabase backend (auth + DB)
-	- Third-party calendar sync (read-only) **[PREMIUM]**
+	- Supabase backend (auth + DB + Edge Functions)
+	- RevenueCat for subscription entitlement/IAP (`useRevenueCat.ts`, `revenuecat-webhook` function) — supersedes the Stripe plan in the Subscription PRD section below, which is unimplemented legacy schema
+	- Third-party calendar sync (read-only) **[PREMIUM]** (not yet implemented)
 	- Bank sync / transaction import (out-of-scope for MVP)
 
 - **Settings & Admin**
-	- Account settings (currency, region, locale)
-	- Data export / delete
+	- Account settings (currency, region, locale) — `SettingsPage.tsx`, `PreferencesPage.tsx`
+	- Data export / account deletion — implemented (`DataPage.tsx`, `DeleteAccountPage.tsx`, `delete-user` edge function)
 	- Privacy controls
+	- Internal admin panel (`/admin`, email-allowlist gated, unlinked from nav) — read-only triage for `app_feedback` and `user_behavior_events`
 
 - **Collaboration & Sharing**
 	- Export CSV / share reports via link **[PREMIUM]**
@@ -117,12 +136,13 @@
 
 - **Offline & Sync**
 	- Basic caching for faster loads
-	- Offline creation with local queue and sync (future / premium) **[PREMIUM]**
+	- Offline creation with local queue and sync (future / premium) **[PREMIUM]** — not yet implemented
 
 - **UX / Platform**
-	- Mobile-first responsive UI
+	- Mobile-first responsive UI, shared page-transition motion system
 	- Keyboard accessibility and screen-reader support
-	- Dark mode
+	- Dark mode (+ cyberpunk theme)
+	- Onboarding flow (`OnboardingPage.tsx`)
 
 **Premium features notation**: Features marked with **[PREMIUM]** are intended for a paid tier. Consider gating these behind subscription checks in the backend and the UI.
 
@@ -172,6 +192,8 @@
 
 
 # PRD: Subscription Model (Business Model) - "Hisabify Pro"
+
+**Implementation note (2026-07-29)**: The billing layer described below (Stripe checkout, webhooks, `stripe_subscription_id`) was never wired up beyond an initial `subscriptions` table migration. Actual entitlement is delivered via **RevenueCat** (`useRevenueCat.ts`, `useSubscription.tsx`, `revenuecat-webhook` edge function) plus the separate referral-grant mechanism (`referral_granted_until`). Treat the Stripe-specific steps in this section as superseded; the tier definitions and gating list below still reflect the intended product shape.
 
 ## 1. Overview
 The goal of this initiative is to transition Hisabify from a free utility to a sustainable freemium product. By introducing a subscription model, we can cover operational costs and generate monthly recurring revenue (MRR).

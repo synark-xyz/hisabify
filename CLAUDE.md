@@ -425,6 +425,21 @@ Access is an **email allowlist**, not a role column: `public.is_admin()` (`supab
 
 Note: attachment upload failure never blocks a submission — the text is sent regardless.
 
+### Recurring Transactions
+
+Subscription/bill templates in `recurring_expenses` that auto-log an expense each period. UI is `src/pages/more/RecurringExpensesPage.tsx` at `/more/recurring`; data via `useRecurringExpenses.ts`.
+
+All the logic is in Postgres — `public.process_recurring_expenses()` (`supabase/migrations/20260729111611_process_recurring_expenses.sql`). **Do not reimplement materialisation client-side.** The function inserts one transaction per missed period, advances `next_due_date`, stamps `last_created_date`, and tags rows `recurring`. Idempotency comes from advancing the cursor in the same transaction as the insert, so re-running is a no-op — which is what makes it safe to call from two places:
+
+- `process-recurring-expenses` pg_cron job, nightly at 00:05 UTC (no JWT → `auth.uid()` is null → all users)
+- `processRecurringExpenses()` on every app open (JWT present → only that user)
+
+That single `auth.uid() is null or user_id = auth.uid()` clause is what keeps a SECURITY DEFINER function from letting one user materialise another's templates. The app-open call is deliberate redundancy: the payment-reminder cron sat dead for four months before anyone noticed, so recurring does not depend on cron alone.
+
+Templates are created in the user's base currency and inserted with `exchange_rate = 1`. There is no conversion because `public.exchange_rates` is empty — the app caches rates in memory client-side, so Postgres has no rate to honestly apply. Keep the currency picker out of the template form unless that changes.
+
+Catch-up is capped at 24 periods per template per run; the remainder is picked up by the next tick.
+
 ### Page Transitions
 
 `src/lib/pageMotion.ts` holds the single motion definition used by both `Layout.tsx` (via `AnimatePresence`, with exit) and `PageTransition.tsx` (enter-only, for routes outside the layout). Use `usePageVariants()` rather than importing `pageVariants` directly — it returns static variants when the user prefers reduced motion.
@@ -543,6 +558,8 @@ npx cap open android # Opens Android Studio
 | `src/lib/appStore.ts` | Play Store listing link + app version helper |
 | `src/pages/AdminPage.tsx` | Admin DB viewer (`/admin`) |
 | `src/lib/ratingPrompt.ts` | Pure rating-prompt scheduling logic |
+| `src/hooks/useRecurringExpenses.ts` | Recurring expense CRUD + `process_recurring_expenses()` RPC |
+| `src/pages/more/RecurringExpensesPage.tsx` | Recurring expense manager (`/more/recurring`) |
 | `src/hooks/useAppRating.ts` | Rating prompt cadence + persistence |
 | `src/hooks/useAppFeedback.ts` | Submits ratings and feedback to `app_feedback` |
 | `src/components/InputMethodSheet.tsx` | Unified FAB action menu (3 options) |

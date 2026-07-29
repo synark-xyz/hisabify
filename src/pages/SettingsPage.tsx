@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp } from 'lucide-react';
+import { Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp, MessageSquarePlus, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
+import { FeedbackSheet } from '@/components/FeedbackSheet';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { openStoreListing } from '@/lib/appStore';
 import { cn } from '@/lib/utils';
 
 export function SettingsPage() {
@@ -13,6 +15,7 @@ export function SettingsPage() {
     const { signOut } = useAuth();
     const { toast } = useToast();
     const { t } = useTranslation();
+    const [showFeedback, setShowFeedback] = useState(false);
 
     const handleSignOut = async () => {
         await signOut();
@@ -26,9 +29,11 @@ export function SettingsPage() {
     ];
 
     const supportItems = [
-        { id: 'help', icon: Headset, label: t('common.helpSupport'), path: '/support', color: 'bg-accent/10 text-accent' },
-        { id: 'privacy', icon: Shield, label: t('page.privacyPolicy'), path: '/privacy', color: 'bg-accent/10 text-accent' },
-        { id: 'faq', icon: CircleHelp, label: t('page.faq'), path: '/faq', color: 'bg-accent/10 text-accent' },
+        { id: 'help', icon: Headset, label: t('common.helpSupport'), onSelect: () => navigate('/support'), color: 'bg-accent/10 text-accent' },
+        { id: 'feedback', icon: MessageSquarePlus, label: t('feedback.title'), onSelect: () => setShowFeedback(true), color: 'bg-primary/10 text-primary' },
+        { id: 'rate', icon: Star, label: t('rating.rateTheApp'), onSelect: () => { void openStoreListing(); }, color: 'bg-amber-500/10 text-amber-500' },
+        { id: 'privacy', icon: Shield, label: t('page.privacyPolicy'), onSelect: () => navigate('/privacy'), color: 'bg-accent/10 text-accent' },
+        { id: 'faq', icon: CircleHelp, label: t('page.faq'), onSelect: () => navigate('/faq'), color: 'bg-accent/10 text-accent' },
     ];
 
     return (
@@ -69,7 +74,7 @@ export function SettingsPage() {
                         {supportItems.map((item, idx) => (
                             <motion.div
                                 key={item.id}
-                                onClick={() => navigate(item.path)}
+                                onClick={item.onSelect}
                                 className={`flex items-center justify-between py-4 cursor-pointer hover:bg-muted/50 transition-colors ${idx !== supportItems.length - 1 ? 'border-b border-border/50' : ''}`}
                                 whileTap={{ scale: 0.98 }}
                             >
@@ -101,6 +106,8 @@ export function SettingsPage() {
                 </p>
 
             </main>
+
+            <FeedbackSheet open={showFeedback} onOpenChange={setShowFeedback} />
         </div>
     );
 }

@@ -961,6 +961,51 @@ export type Database = {
         }
         Relationships: []
       }
+      app_feedback: {
+        Row: {
+          id: string
+          user_id: string
+          kind: string
+          rating: number | null
+          feedback_type: string | null
+          other_label: string | null
+          email: string | null
+          message: string | null
+          attachments: string[]
+          app_version: string | null
+          platform: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          kind: string
+          rating?: number | null
+          feedback_type?: string | null
+          other_label?: string | null
+          email?: string | null
+          message?: string | null
+          attachments?: string[]
+          app_version?: string | null
+          platform?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          kind?: string
+          rating?: number | null
+          feedback_type?: string | null
+          other_label?: string | null
+          email?: string | null
+          message?: string | null
+          attachments?: string[]
+          app_version?: string | null
+          platform?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

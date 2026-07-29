@@ -147,14 +147,32 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def googleServicesPresent =
-        file('src/release/google-services.json').exists() ||
-        file('src/staging/google-services.json').exists()
-    if (googleServicesPresent) {
-        apply plugin: 'com.google.gms.google-services'
-        apply plugin: 'com.google.firebase.crashlytics'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work: ${e.message}")
+// Firebase is an unconditional compile dependency above, so the google-services plugin MUST
+// run. Skipping it produces no `google_app_id` resource, the default FirebaseApp never
+// auto-initializes, and the first PushNotifications.register() throws
+// "Default FirebaseApp is not initialized" on Capacitor's native plugin thread — killing the
+// process where no JS try/catch can reach it. Fail at configuration time instead.
+def googleServicesFile = [
+        'google-services.json',
+        'src/release/google-services.json',
+        'src/staging/google-services.json',
+        'src/debug/google-services.json',
+].find { file(it).exists() }
+
+if (!googleServicesFile) {
+    throw new GradleException("""
+Missing google-services.json — this build would crash on launch.
+
+Download it from the Firebase console and place it at:
+    android/app/google-services.json
+
+It must contain a client entry for every applicationId this project builds:
+    io.synark.hisabify           (release)
+    io.synark.hisabify.staging   (debug + staging — see applicationIdSuffix)
+Register both packages as Android apps in the Firebase project, otherwise the
+google-services plugin fails with "No matching client found for package name".
+""")
 }
+
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'

@@ -1299,11 +1299,7 @@
   "profileData": {
     "exportData": "Export Data",
     "deleteFinancialData": "Delete Financial Data",
-    "typeDeleteConfirm": "Type DELETE to confirm",
     "deleteAccount": "Delete Account",
-    "typeDeleteAccountConfirm": "Type DELETE ACCOUNT to confirm",
-    "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT",
     "privacy": "Privacy",
     "usageAnalytics": "Usage analytics",
     "usageAnalyticsDesc": "Share anonymised app usage. Never your financial data.",

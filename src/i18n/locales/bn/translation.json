@@ -1279,11 +1279,7 @@
   "profileData": {
     "exportData": "ডেটা এক্সপোর্ট করুন",
     "deleteFinancialData": "ফাইন্যান্সিয়াল ডেটা মুছুন",
-    "typeDeleteConfirm": "নিশ্চিত করতে DELETE লিখুন",
     "deleteAccount": "অ্যাকাউন্ট মুছুন",
-    "typeDeleteAccountConfirm": "নিশ্চিত করতে DELETE ACCOUNT লিখুন",
-    "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT",
     "privacy": "গোপনীয়তা",
     "usageAnalytics": "ব্যবহারের বিশ্লেষণ",
     "usageAnalyticsDesc": "বেনামী অ্যাপ ব্যবহারের তথ্য শেয়ার করুন। আপনার আর্থিক ডেটা কখনোই নয়।",

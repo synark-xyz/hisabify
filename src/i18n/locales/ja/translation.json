@@ -1279,11 +1279,7 @@
   "profileData": {
     "exportData": "データをエクスポート",
     "deleteFinancialData": "財務データを削除",
-    "typeDeleteConfirm": "DELETEと入力して確認",
     "deleteAccount": "アカウントを削除",
-    "typeDeleteAccountConfirm": "DELETE ACCOUNTと入力して確認",
-    "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT",
     "privacy": "プライバシー",
     "usageAnalytics": "利用状況の分析",
     "usageAnalyticsDesc": "匿名化されたアプリの利用状況を共有します。財務データは一切含まれません。",

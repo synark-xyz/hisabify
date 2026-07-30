@@ -1555,7 +1555,14 @@
       "note": "Note",
       "receipt": "Receipt",
       "failedUpdateLink": "Failed to update link",
-      "failedRemoveLink": "Failed to remove link"
+      "failedRemoveLink": "Failed to remove link",
+      "budgetImpact": "Budget Impact",
+      "goalImpact": "Goal Impact",
+      "goalProgress": "{{amount}} saved ({{percent}}%) · {{remaining}} to go",
+      "patternInsights": "Pattern Insights",
+      "merchantVisits": "This month at {{merchant}} · {{count}} visits",
+      "merchantTotal": "Total: {{total}} · Avg: {{avg}}/visit",
+      "recurringMatch": "Matches a recurring expense"
     },
     "upgrade": {
       "unlimited": "Unlimited",

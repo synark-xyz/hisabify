@@ -157,6 +157,27 @@ free, and needs real code:
   being table-agnostic — worth a short comment explaining why, so it doesn't
   get "cleaned up" back to fully generic later.
 
+**Verified locally against real Supabase, not just visually inspected.**
+`/admin` is reachable at `localhost:8080/admin` (or `npm run dev:managed` for
+device testing) under the signed-in admin user, and `fetchRows()` already
+queries the live project on demand (no mocking) — so this is testable in a
+normal dev session, not just in production. Confirm during implementation:
+- The generic cell renderer truncates every column to
+  `max-w-[24rem] truncate` (`AdminPage.tsx:143`). `detail` is free text up to
+  whatever length the sheet allows and **must not** be silently clipped with no
+  way to read the rest — at minimum the existing `title={text}` tooltip must
+  actually surface the full text on hover/tap, or `detail` needs its own
+  non-truncated treatment (e.g. wrap instead of truncate for that one column).
+- `status` should be visually distinguishable at a glance (e.g. pending rows
+  and their Approve button should not blend into a wall of monospace text) —
+  a color-coded badge, not another plain truncated cell.
+- Confirm the pending-count badge and the Approve button are both visible
+  without horizontal scrolling on a typical laptop viewport, given the table
+  already scrolls (`overflow-x-auto`) once several columns are present.
+- After clicking Approve & delete, the row must refresh (or the badge count
+  drop) so the admin gets immediate visual confirmation the action landed —
+  no silent success.
+
 New edge function `process-deletion-request`:
 
 **Input:** `{ requestId: string }`

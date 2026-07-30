@@ -191,8 +191,8 @@ export function SubscriptionTermsContent() {
         </p>
         <ol className="list-decimal pl-4 space-y-1">
           <li>We issue the refund first</li>
-          <li>Then your account is immediately terminated</li>
-          <li>All data is deleted within 30 days</li>
+          <li>Your account deletion request is then submitted for review, per the process described above</li>
+          <li>All data is deleted within 30 days of your original request, once approved</li>
         </ol>
         <p>
           This prevents "refund + keep the data" abuse.

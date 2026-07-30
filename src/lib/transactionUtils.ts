@@ -60,3 +60,50 @@ export const getTransactionCategoryColor = (tx: Transaction): string => {
 
     return '#6B7280'; // Gray
 };
+
+export interface BudgetSnapshot {
+  amount: number;
+  spent: number;
+  remaining: number;
+  percentage: number;
+  status: BudgetStatus;
+}
+
+export type BudgetStatus = 'safe' | 'warning' | 'utilized' | 'exceeded';
+
+export function computeBudgetImpact(txAmount: number, budget: BudgetSnapshot): {
+  thisTxPercent: number;
+  remainingAfter: number;
+  status: BudgetStatus;
+} {
+  const thisTxPercent = budget.amount > 0 ? (txAmount / budget.amount) * 100 : 0;
+  const remainingAfter = budget.remaining - txAmount;
+  let status: BudgetStatus = budget.status;
+  if (remainingAfter < 0 && budget.status === 'safe') {
+    status = 'exceeded';
+  } else if (remainingAfter < 0 && budget.status !== 'exceeded') {
+    status = 'exceeded';
+  }
+  return { thisTxPercent, remainingAfter, status };
+}
+
+export function computeGoalImpact(txAmount: number, goal: {
+  currentAmount: number;
+  targetAmount: number;
+  remaining: number;
+  percentage: number;
+}): {
+  thisTxPercent: number;
+  remainingAfter: number;
+} {
+  const thisTxPercent = goal.targetAmount > 0 ? (txAmount / goal.targetAmount) * 100 : 0;
+  const remainingAfter = goal.remaining - txAmount;
+  return { thisTxPercent, remainingAfter };
+}
+
+export function shouldShowMerchantPattern(
+  visitCount: number,
+  hasRecurringMatch: boolean
+): boolean {
+  return visitCount >= 2 || (visitCount >= 1 && hasRecurringMatch);
+}

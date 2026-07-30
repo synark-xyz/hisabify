@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ChevronLeft } from 'lucide-react';
@@ -15,8 +15,9 @@ import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
+import { useRecurringExpenses } from '@/hooks/useRecurringExpenses';
 import { useToast } from '@/hooks/use-toast';
-import { getTransactionCategoryName, computeBudgetImpact, computeGoalImpact } from '@/lib/transactionUtils';
+import { getTransactionCategoryName, computeBudgetImpact, computeGoalImpact, shouldShowMerchantPattern } from '@/lib/transactionUtils';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -55,6 +56,7 @@ export function TransactionDetailsPage() {
   const { convertAmount } = useExchangeRate();
   const { budgets } = useBudgets();
   const { activeGoals } = useSavingsGoals();
+  const { recurringExpenses } = useRecurringExpenses();
   const { toast } = useToast();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
@@ -122,6 +124,61 @@ export function TransactionDetailsPage() {
     });
     return () => { cancelled = true; };
   }, [transaction, currency, convertAmount]);
+
+  const [merchantPattern, setMerchantPattern] = useState<{
+    count: number;
+    total: number;
+  } | null>(null);
+  const [loadingPattern, setLoadingPattern] = useState(false);
+
+  useEffect(() => {
+    if (!transaction?.merchant || !user) {
+      setMerchantPattern(null);
+      return;
+    }
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    let cancelled = false;
+    setLoadingPattern(true);
+
+    void supabase
+      .from('transactions')
+      .select('amount')
+      .eq('user_id', user.id)
+      .eq('merchant', transaction.merchant)
+      .eq('type', transaction.type)
+      .neq('id', transaction.id)
+      .gte('date', monthStart.toISOString())
+      .lte('date', monthEnd.toISOString())
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (data && data.length > 0) {
+          const total = data.reduce((sum, t) => sum + Number(t.amount), 0);
+          setMerchantPattern({ count: data.length, total });
+        } else {
+          setMerchantPattern({ count: 0, total: 0 });
+        }
+        setLoadingPattern(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [transaction?.merchant, transaction?.type, transaction?.id, user]);
+
+  const hasRecurringMatch = useMemo(() => {
+    if (!transaction?.merchant) return false;
+    const merchant = transaction.merchant.toLowerCase();
+    const amount = Math.abs(Number(transaction.amount));
+    return recurringExpenses.some(re => {
+      const title = (re.title || '').toLowerCase();
+      const titleMatch = title.includes(merchant) || merchant.includes(title);
+      if (!titleMatch) return false;
+      const diff = Math.abs(amount - re.amount) / re.amount;
+      return diff <= 0.2;
+    });
+  }, [transaction?.merchant, transaction?.amount, recurringExpenses]);
 
   const handleAssign = useCallback(
     async (entityType: 'budget' | 'goal', entityId: string) => {
@@ -400,6 +457,33 @@ export function TransactionDetailsPage() {
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Pattern Insights */}
+          {merchantPattern && !loadingPattern && shouldShowMerchantPattern(merchantPattern.count, hasRecurringMatch) && (
+            <div className="rounded-xl bg-accent/[0.03] border border-accent/10 p-3.5">
+              <p className="text-xs text-muted-foreground font-medium mb-2 flex items-center gap-1.5">
+                <span>📈</span>
+                <span>{t('dialogs.transactionDetails.patternInsights')}</span>
+              </p>
+              <p className="text-sm font-medium">
+                {t('dialogs.transactionDetails.merchantVisits', {
+                  merchant: transaction.merchant,
+                  count: merchantPattern.count + 1,
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t('dialogs.transactionDetails.merchantTotal', {
+                  total: formatAmount(Math.abs(merchantPattern.total) + Math.abs(displayAmount)),
+                  avg: formatAmount((Math.abs(merchantPattern.total) + Math.abs(displayAmount)) / (merchantPattern.count + 1)),
+                })}
+              </p>
+              {hasRecurringMatch && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t('dialogs.transactionDetails.recurringMatch')}
+                </p>
+              )}
             </div>
           )}
 

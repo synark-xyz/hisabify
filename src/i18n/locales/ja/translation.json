@@ -69,7 +69,8 @@
     "pageNotFound": "ページが見つかりません",
     "pageNotFoundDesc": "お探しのページは存在しません。",
     "goHome": "ホームに戻る",
-    "subscriptionTerms": "サブスクリプション規約"
+    "subscriptionTerms": "サブスクリプション規約",
+    "termsConditions": "利用規約"
   },
   "onboarding": {
     "selectLanguage": "言語を選択",
@@ -1222,6 +1223,7 @@
   "settingsPage": {
     "general": "一般",
     "support": "サポート",
+    "legal": "法的情報",
     "version": "Hisabify {{version}}",
     "dataPrivacy": "データとプライバシー"
   },

@@ -24,7 +24,8 @@
     "pageNotFound": "Page Not Found",
     "pageNotFoundDesc": "The page you're looking for doesn't exist.",
     "goHome": "Go Home",
-    "subscriptionTerms": "Subscription Terms"
+    "subscriptionTerms": "Subscription Terms",
+    "termsConditions": "Terms & Conditions"
   },
   "deleteAccount": {
     "title": "Delete Your Account",
@@ -1242,6 +1243,7 @@
   "settingsPage": {
     "general": "General",
     "support": "Support",
+    "legal": "Legal",
     "version": "Hisabify {{version}}",
     "dataPrivacy": "Data & Privacy"
   },

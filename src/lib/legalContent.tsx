@@ -1,6 +1,10 @@
 /**
  * Single source of truth for Terms of Service and Privacy Policy content.
- * Used by both the in-app LegalModal (AuthPage) and the full PrivacyPolicyPage.
+ * Rendered by LegalModal (AuthPage signup consent) and by the routed legal
+ * pages, which share the LegalDocPage shell.
+ *
+ * Neither content component renders the "Last updated" line — whoever renders
+ * a document owns that, so a page showing two documents prints it once.
  */
 
 export const LEGAL_LAST_UPDATED = 'July 2026';
@@ -203,10 +207,6 @@ export function TermsContent() {
           .
         </p>
       </LegalSection>
-
-      <p className="text-[10px] text-muted-foreground pt-4 text-center">
-        Last updated: {LEGAL_LAST_UPDATED}
-      </p>
     </div>
   );
 }
@@ -594,10 +594,6 @@ export function PrivacyContent() {
           develops.
         </p>
       </LegalSection>
-
-      <p className="text-[10px] text-muted-foreground pt-4 text-center">
-        Last updated: {LEGAL_LAST_UPDATED}
-      </p>
     </div>
   );
 }

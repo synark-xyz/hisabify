@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { TermsContent, PrivacyContent } from '@/lib/legalContent';
+import { TermsContent, PrivacyContent, LEGAL_LAST_UPDATED } from '@/lib/legalContent';
 import { useTranslation } from 'react-i18next';
 
 export type LegalTab = 'terms' | 'privacy';
@@ -39,6 +39,12 @@ export function LegalModal({ open, defaultTab = 'terms', onClose }: LegalModalPr
             </ScrollArea>
           </TabsContent>
         </Tabs>
+
+        {/* Outside Tabs so it applies to whichever document is showing. The
+            content components no longer carry this line; see legalContent.tsx. */}
+        <p className="text-[10px] text-muted-foreground px-5 pb-4 text-center">
+          Last updated: {LEGAL_LAST_UPDATED}
+        </p>
       </DialogContent>
     </Dialog>
   );

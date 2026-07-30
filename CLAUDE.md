@@ -429,7 +429,15 @@ Note: attachment upload failure never blocks a submission — the text is sent r
 
 Legal copy lives in `src/lib/legalContent.tsx` (`TermsContent`, `PrivacyContent`, `LEGAL_LAST_UPDATED`, `LEGAL_CONTACT_EMAIL`) and `src/components/SubscriptionTermsContent.tsx`. Always reference `LEGAL_CONTACT_EMAIL` — never hardcode a support address.
 
-Three surfaces, and only two are routes: Privacy Policy at `/privacy`, Subscription Terms at `/subscription-terms`, and **Terms of Service has no route** — it renders in `LegalModal` (`defaultTab="terms"`), opened from Settings → Support. Don't link `/terms`; it 404s.
+Two routes, both public (outside `ProtectedRoute`, so store listings and signed-out readers can reach them): **Terms & Conditions at `/terms`** — Terms of Service *and* Subscription & Billing on one page, under group headings, because each document restarts its numbering at 1 — and **Privacy Policy at `/privacy`**. `/subscription-terms` is a redirect to `/terms`, kept because a store listing may still point at it.
+
+Privacy stays its own route on purpose: Play Console Data Safety and App Store Connect want a URL whose page *is* the privacy policy, so don't fold it into `/terms`.
+
+Both routes render through `LegalDocPage` (`src/components/LegalDocPage.tsx`), which owns the page chrome and the "Last updated" line. **Neither `TermsContent` nor `PrivacyContent` renders that line** — whoever renders a document owns it, so a page showing two documents prints it once. `LegalModal` renders its own copy for the same reason.
+
+`LegalDocPage` deliberately has **no `ScrollArea`**; the page scrolls natively. The previous `h-[calc(100vh-140px)]` inner box guessed at a header height that varies with `env(safe-area-inset-top)`, clipping the last sections on notched devices and leaving dead space elsewhere, and nested scroll also costs iOS momentum scrolling. Don't reintroduce it.
+
+`LegalModal` is now **AuthPage-only** — a modal is right at signup, where navigating away would abandon registration. Settings links to the routes instead.
 
 **Account deletion is immediate and irreversible.** `/profile/data` (`DataPage.tsx`) wipes the user's rows and then calls the `delete-user` edge function. Do not add a soft-delete or 30-day grace period: the Privacy Policy's "deleted within 30 days" is a *ceiling*, which immediate deletion already satisfies, and a soft-delete without a purge job means data is never actually deleted — a worse outcome legally than what we have. A 30-day soft-delete was built and removed for exactly this reason.
 
@@ -598,7 +606,8 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/pages/AdminPage.tsx` | Admin DB viewer (`/admin`) |
 | `src/lib/legalContent.tsx` | Terms of Service + Privacy Policy copy |
 | `src/components/SubscriptionTermsContent.tsx` | Subscription & billing terms copy |
-| `src/pages/SubscriptionTermsPage.tsx` | Subscription Terms page (`/subscription-terms`) |
+| `src/components/LegalDocPage.tsx` | Shared shell for routed legal docs (chrome + "Last updated") |
+| `src/pages/TermsPage.tsx` | Terms & Conditions page (`/terms`) — ToS + Subscription & Billing |
 | `src/hooks/useDataManagement.ts` | GDPR data export (CSV/JSON) + privacy audit logging |
 | `src/pages/profile/DataPage.tsx` | Data & Privacy: export, analytics opt-out, deletion |
 | `src/lib/ratingPrompt.ts` | Pure rating-prompt scheduling logic |

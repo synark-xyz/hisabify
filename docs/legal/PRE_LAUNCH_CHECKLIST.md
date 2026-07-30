@@ -52,11 +52,13 @@ This checklist ensures all legal requirements are met before public launch.
 
 ### Legal Page Links
 - [ ] `/privacy` route renders full Privacy Policy
-- [ ] `/subscription-terms` route renders Subscription Terms
-- [ ] Terms of Service opens via `LegalModal` (terms tab) — there is no `/terms` route
-- [ ] In-app Settings → Support links all three documents
-- [ ] Settings → Data & Privacy links Privacy Policy and Subscription Terms
-- [ ] Footer displays "Last updated: [DATE]" on all legal pages
+- [ ] `/terms` route renders Terms of Service *and* Subscription & Billing, each under its own heading
+- [ ] `/subscription-terms` redirects to `/terms` (kept for any live store-listing link)
+- [ ] Both routes load while signed out, and Back goes to `/auth`
+- [ ] Terms of Service still opens via `LegalModal` at signup (AuthPage only)
+- [ ] In-app Settings → Legal links Terms & Conditions and Privacy Policy
+- [ ] Settings → Data & Privacy links Privacy Policy and Terms & Conditions
+- [ ] "Last updated: [DATE]" displays exactly once per legal page and once in `LegalModal`
 
 ### Third-Party Compliance
 - [ ] Supabase DPA signed and archived

@@ -92,7 +92,7 @@ export function DataPage() {
 
     const legalLinks = [
         { path: '/privacy', label: t('page.privacyPolicy') },
-        { path: '/subscription-terms', label: t('page.subscriptionTerms') },
+        { path: '/terms', label: t('page.termsConditions') },
     ];
 
     const deleteAllTableData = async (userId: string) => {

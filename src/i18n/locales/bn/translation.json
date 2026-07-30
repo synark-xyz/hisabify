@@ -70,7 +70,8 @@
     "pageNotFound": "পৃষ্ঠা পাওয়া যায়নি",
     "pageNotFoundDesc": "আপনি যে পৃষ্ঠাটি খুঁজছেন সেটি বিদ্যমান নেই।",
     "goHome": "হোমে যান",
-    "subscriptionTerms": "সাবস্ক্রিপশন শর্তাবলী"
+    "subscriptionTerms": "সাবস্ক্রিপশন শর্তাবলী",
+    "termsConditions": "শর্তাবলী"
   },
   "onboarding": {
     "selectLanguage": "আপনার ভাষা নির্বাচন করুন",
@@ -1219,6 +1220,7 @@
   "settingsPage": {
     "general": "সাধারণ",
     "support": "সাপোর্ট",
+    "legal": "আইনি",
     "version": "Hisabify {{version}}",
     "dataPrivacy": "ডেটা ও গোপনীয়তা"
   },

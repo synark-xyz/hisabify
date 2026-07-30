@@ -55,3 +55,4 @@ docs/
 !supabase/migrations/*.sql
 *.prefs
 android/.project
+coverage/

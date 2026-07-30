@@ -23,7 +23,9 @@
     "installApp": "Install App",
     "pageNotFound": "Page Not Found",
     "pageNotFoundDesc": "The page you're looking for doesn't exist.",
-    "goHome": "Go Home"
+    "goHome": "Go Home",
+    "subscriptionTerms": "Subscription Terms",
+    "termsConditions": "Terms & Conditions"
   },
   "deleteAccount": {
     "title": "Delete Your Account",
@@ -1241,7 +1243,9 @@
   "settingsPage": {
     "general": "General",
     "support": "Support",
-    "version": "Hisabify {{version}}"
+    "legal": "Legal",
+    "version": "Hisabify {{version}}",
+    "dataPrivacy": "Data & Privacy"
   },
   "profilePersonal": {
     "details": "Details",
@@ -1299,7 +1303,14 @@
     "deleteAccount": "Delete Account",
     "typeDeleteAccountConfirm": "Type DELETE ACCOUNT to confirm",
     "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT"
+    "deleteAccountPlaceholder": "DELETE ACCOUNT",
+    "privacy": "Privacy",
+    "usageAnalytics": "Usage analytics",
+    "usageAnalyticsDesc": "Share anonymised app usage. Never your financial data.",
+    "analyticsOn": "Usage analytics enabled",
+    "analyticsOff": "Usage analytics disabled",
+    "exportComplete": "Export complete",
+    "exportCompleteDesc": "Your data has been downloaded as JSON and CSV."
   },
   "notificationsPage": {
     "allCaughtUp": "All Caught Up",

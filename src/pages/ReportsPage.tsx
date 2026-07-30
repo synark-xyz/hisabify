@@ -15,7 +15,6 @@ import { Link } from "react-router-dom";
 import { useReportData } from "@/hooks/useReportData";
 import { useReportTemplates, ReportFilters } from "@/hooks/useReportTemplates";
 import { useSubscription } from "@/hooks/useSubscription";
-import { canUseFeature } from "@/lib/entitlements";
 import { enforceHistoryWindowForFilters } from "@/lib/historyLimits";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { UpgradeModal } from "@/components/UpgradeModal";
@@ -36,7 +35,6 @@ export default function ReportsPage() {
 
   const { reportData, isLoading, isError, categories } = useReportData(filters);
   const { templates, createTemplate, deleteTemplate } = useReportTemplates();
-  const canExportReports = canUseFeature({ isPremium }, "report_export");
 
   const applyFreeHistoryWindow = (nextFilters: ReportFilters): ReportFilters => {
     const clamped = enforceHistoryWindowForFilters(nextFilters.dateFrom, nextFilters.dateTo, isPremium);
@@ -144,7 +142,6 @@ export default function ReportsPage() {
                 reportData={reportData}
                 filters={filters}
                 isLoading={isLoading}
-                canExport={canExportReports}
                 onUpgradeRequired={() => setShowUpgradeModal(true)}
               />
             </div>

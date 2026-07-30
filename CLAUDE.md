@@ -425,6 +425,30 @@ Access is an **email allowlist**, not a role column: `public.is_admin()` (`supab
 
 Note: attachment upload failure never blocks a submission — the text is sent regardless.
 
+### Legal Documents & Data Privacy
+
+Legal copy lives in `src/lib/legalContent.tsx` (`TermsContent`, `PrivacyContent`, `LEGAL_LAST_UPDATED`, `LEGAL_CONTACT_EMAIL`) and `src/components/SubscriptionTermsContent.tsx`. Always reference `LEGAL_CONTACT_EMAIL` — never hardcode a support address.
+
+Two routes, both public (outside `ProtectedRoute`, so store listings and signed-out readers can reach them): **Terms & Conditions at `/terms`** — Terms of Service *and* Subscription & Billing on one page, under group headings, because each document restarts its numbering at 1 — and **Privacy Policy at `/privacy`**. `/subscription-terms` is a redirect to `/terms`, kept because a store listing may still point at it.
+
+Privacy stays its own route on purpose: Play Console Data Safety and App Store Connect want a URL whose page *is* the privacy policy, so don't fold it into `/terms`.
+
+Both routes render through `LegalDocPage` (`src/components/LegalDocPage.tsx`), which owns the page chrome and the "Last updated" line. **Neither `TermsContent` nor `PrivacyContent` renders that line** — whoever renders a document owns it, so a page showing two documents prints it once. `LegalModal` renders its own copy for the same reason.
+
+`LegalDocPage` deliberately has **no `ScrollArea`**; the page scrolls natively. The previous `h-[calc(100vh-140px)]` inner box guessed at a header height that varies with `env(safe-area-inset-top)`, clipping the last sections on notched devices and leaving dead space elsewhere, and nested scroll also costs iOS momentum scrolling. Don't reintroduce it.
+
+`LegalModal` is now **AuthPage-only** — a modal is right at signup, where navigating away would abandon registration. Settings links to the routes instead.
+
+**Account deletion is immediate and irreversible.** `/profile/data` (`DataPage.tsx`) wipes the user's rows and then calls the `delete-user` edge function. Do not add a soft-delete or 30-day grace period: the Privacy Policy's "deleted within 30 days" is a *ceiling*, which immediate deletion already satisfies, and a soft-delete without a purge job means data is never actually deleted — a worse outcome legally than what we have. A 30-day soft-delete was built and removed for exactly this reason.
+
+`useDataManagement.ts` owns the GDPR right-of-access export (CSV + JSON, both download together because the policy promises both formats) and `logPrivacyAction()`. Deletion is deliberately *not* in this hook — a second deletion path would give the app two contradictory answers to "is my account gone?".
+
+Audit rows go to `public.audit_log` (migration `20260730000000_add_privacy_audit_log.sql`), whose RLS grants own-row SELECT and INSERT only — no UPDATE or DELETE, because an audit trail the subject can rewrite is not an audit trail. Log **before** `signOut()`; the INSERT policy needs a live session. Audit writes never block the action they describe.
+
+Note `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate PK. Matching on `id` silently updates zero rows and PostgREST reports success.
+
+Compliance docs: `docs/legal/PRE_LAUNCH_CHECKLIST.md`, `docs/legal/INCORPORATION_CHECKLIST.md`, `docs/supabase/DPA_ADDENDUM.md`. Note `docs/` and `*.sql` are gitignored — commit these with `git add -f`.
+
 ### Recurring Transactions
 
 Subscription/bill templates in `recurring_expenses` that auto-log an expense each period. UI is `src/pages/more/RecurringExpensesPage.tsx` at `/more/recurring`; data via `useRecurringExpenses.ts`.
@@ -528,6 +552,29 @@ npx cap open android # Opens Android Studio
 
 **Documentation:** See the "Localhost Development Workflow" under Capacitor Mobile above.
 
+### Android Gradle: AGP 9 + Kotlin in node_modules plugins
+
+AGP 9.3.1 registers its own `kotlin` extension (built-in Kotlin — `android.builtInKotlin` is left at its
+default in `android/gradle.properties`). Two consequences for Capacitor plugin `build.gradle` files:
+
+- **Never `apply plugin: 'org.jetbrains.kotlin.android'`** in a subproject. It fails at configuration with
+  `Cannot add extension with name 'kotlin', as there is an extension already registered with that name`,
+  and the cascading `does not specify compileSdk` error is just fallout from the aborted evaluation.
+- **`android { kotlinOptions { } }` no longer exists** — it came from KGP. Use the top-level
+  `kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_… } }`, importing
+  `org.jetbrains.kotlin.gradle.dsl.JvmTarget` (KGP is still on the buildscript classpath for the DSL types).
+
+Both RevenueCat plugins ship the KGP `apply` line and need this treatment. **Do not hand-edit
+`node_modules` to fix it** — that was the state this repo was in, and it silently reverts on `npm install`,
+which is how `-ui` ended up half-fixed (KGP removed, `kotlinOptions` left behind). Fixes live in
+`patches/`, reapplied by `patch-package` via the `postinstall` script. To change one: edit the file in
+`node_modules`, then `npx patch-package <pkg>` — and `rm -rf <pkg>/android/build` first, or the Gradle
+output directory lands in the patch (a 1KB patch becomes 99KB of `.dex`).
+
+Capacitor 8 modules compile at Java 21, so javac must *be* 21 or they fail with `invalid source release: 21`.
+The `java-base` toolchain in `android/build.gradle`'s `allprojects` block pins 21 and lets the foojay
+resolver in `settings.gradle` download it, so no specific system JDK is required.
+
 ## Type Safety
 
 - Path alias: `@/*` → `./src/*`
@@ -557,6 +604,12 @@ npx cap open android # Opens Android Studio
 | `src/lib/pageMotion.ts` | Shared page transition variants (reduced-motion aware) |
 | `src/lib/appStore.ts` | Play Store listing link + app version helper |
 | `src/pages/AdminPage.tsx` | Admin DB viewer (`/admin`) |
+| `src/lib/legalContent.tsx` | Terms of Service + Privacy Policy copy |
+| `src/components/SubscriptionTermsContent.tsx` | Subscription & billing terms copy |
+| `src/components/LegalDocPage.tsx` | Shared shell for routed legal docs (chrome + "Last updated") |
+| `src/pages/TermsPage.tsx` | Terms & Conditions page (`/terms`) — ToS + Subscription & Billing |
+| `src/hooks/useDataManagement.ts` | GDPR data export (CSV/JSON) + privacy audit logging |
+| `src/pages/profile/DataPage.tsx` | Data & Privacy: export, analytics opt-out, deletion |
 | `src/lib/ratingPrompt.ts` | Pure rating-prompt scheduling logic |
 | `src/hooks/useRecurringExpenses.ts` | Recurring expense CRUD + `process_recurring_expenses()` RPC |
 | `src/pages/more/RecurringExpensesPage.tsx` | Recurring expense manager (`/more/recurring`) |

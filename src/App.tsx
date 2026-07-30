@@ -28,6 +28,7 @@ import NotFound from "@/pages/NotFound";
 import { FABProvider } from "@/contexts/FABContext";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { TermsPage } from "@/pages/TermsPage";
 import { DeleteAccountPage } from "@/pages/DeleteAccountPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { initViewportHeight } from "@/lib/viewport";
@@ -268,7 +269,13 @@ function AppRoutes() {
         path="/install"
         element={<InstallPage />}
       />
+      {/* Public on purpose: store listings, the signup screen and external
+          reviewers must reach these without a session. */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      {/* Subscription & Billing folded into /terms. Kept as a redirect because
+          a store listing may still point here. */}
+      <Route path="/subscription-terms" element={<Navigate to="/terms" replace />} />
       <Route path="/delete-account" element={<DeleteAccountPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

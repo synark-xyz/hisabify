@@ -34,6 +34,7 @@ import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { processRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { getAuthCallbackRouteFromUrl } from "@/lib/authRedirect";
 
@@ -56,6 +57,7 @@ const CalculatorPage = lazy(() => import("@/pages/more/CalculatorPage").then(m =
 const LoanCalculatorPage = lazy(() => import("@/pages/more/LoanCalculatorPage").then(m => ({ default: m.LoanCalculatorPage })));
 const DiscountTaxCalculatorPage = lazy(() => import("@/pages/more/DiscountTaxCalculatorPage").then(m => ({ default: m.DiscountTaxCalculatorPage })));
 const CurrencyConverterPage = lazy(() => import("@/pages/more/CurrencyConverterPage").then(m => ({ default: m.CurrencyConverterPage })));
+const RecurringExpensesPage = lazy(() => import("@/pages/more/RecurringExpensesPage").then(m => ({ default: m.RecurringExpensesPage })));
 const AdminPage = lazy(() => import("@/pages/AdminPage").then(m => ({ default: m.AdminPage })));
 
 const queryClient = new QueryClient({
@@ -223,6 +225,7 @@ function AppRoutes() {
         <Route path="/more/loan" element={<LoanCalculatorPage />} />
         <Route path="/more/discount" element={<DiscountTaxCalculatorPage />} />
         <Route path="/more/currency" element={<CurrencyConverterPage />} />
+        <Route path="/more/recurring" element={<RecurringExpensesPage />} />
       </Route>
 
       {/* Pages without Main Layout (No double header) */}
@@ -336,6 +339,13 @@ function RootLogic() {
 
   // Register Android device for FCM push notifications
   usePushNotifications();
+
+  // Catch up any recurring expenses the nightly cron has not materialised yet.
+  // Idempotent and scoped to the signed-in user by the RPC itself.
+  useEffect(() => {
+    if (!user) return;
+    void processRecurringExpenses();
+  }, [user]);
 
   // Initialize viewport height fix for mobile
   useEffect(() => {

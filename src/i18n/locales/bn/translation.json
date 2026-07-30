@@ -30,7 +30,8 @@
     "hisabify": "Hisabify",
     "comingSoon": "শীঘ্রই আসছে",
     "and": "এবং",
-    "other": "অন্যান্য"
+    "other": "অন্যান্য",
+    "loading": "লোড হচ্ছে…"
   },
   "nav": {
     "dashboard": "ড্যাশবোর্ড",
@@ -1053,7 +1054,17 @@
     "yearly": "বার্ষিক",
     "nextDue": "পরবর্তী দেনা",
     "noRecurring": "কোনো আবৃত লেনদেন নেই",
-    "none": "একবার"
+    "none": "একবার",
+    "subtitle": "বিল ও সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে যোগ করুন",
+    "description": "প্রতি চক্রে এগুলো স্বয়ংক্রিয়ভাবে খরচ হিসেবে যুক্ত হয়, তাই সাবস্ক্রিপশন বারবার হাতে লিখতে হয় না।",
+    "name": "নাম",
+    "namePlaceholder": "যেমন Netflix, বাসা ভাড়া, জিম",
+    "startsOn": "শুরুর তারিখ",
+    "noCategory": "কোনো ক্যাটাগরি নেই",
+    "nextOn": "পরবর্তী {{date}}",
+    "paused": "বিরতিতে",
+    "pause": "বিরতি",
+    "resume": "চালু করুন"
   },
   "categories": {
     "categories": "বিভাগ",
@@ -1207,7 +1218,7 @@
   "settingsPage": {
     "general": "সাধারণ",
     "support": "সাপোর্ট",
-    "version": "Hisabify v1.0.0 (Build 240)"
+    "version": "Hisabify {{version}}"
   },
   "profilePersonal": {
     "details": "বিবরণ",

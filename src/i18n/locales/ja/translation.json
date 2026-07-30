@@ -29,7 +29,8 @@
     "yesterday": "昨日",
     "hisabify": "Hisabify",
     "comingSoon": "近日公開",
-    "and": "と"
+    "and": "と",
+    "loading": "読み込み中…"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -1051,7 +1052,17 @@
     "yearly": "毎年",
     "nextDue": "次回支払日",
     "noRecurring": "繰り返し取引はありません",
-    "none": "一回のみ"
+    "none": "一回のみ",
+    "subtitle": "請求とサブスクを自動記録",
+    "description": "各期間に自動で支出として記録されるため、サブスクを手入力する必要はありません。",
+    "name": "名前",
+    "namePlaceholder": "例: Netflix、家賃、ジム",
+    "startsOn": "開始日",
+    "noCategory": "カテゴリなし",
+    "nextOn": "次回 {{date}}",
+    "paused": "一時停止中",
+    "pause": "一時停止",
+    "resume": "再開"
   },
   "categories": {
     "categories": "カテゴリー",
@@ -1210,7 +1221,7 @@
   "settingsPage": {
     "general": "一般",
     "support": "サポート",
-    "version": "Hisabify v1.0.0 (Build 240)"
+    "version": "Hisabify {{version}}"
   },
   "profilePersonal": {
     "details": "詳細",

@@ -175,7 +175,8 @@
     "yesterday": "Yesterday",
     "hisabify": "Hisabify",
     "comingSoon": "Coming Soon",
-    "and": "and"
+    "and": "and",
+    "loading": "Loading…"
   },
   "onboarding": {
     "selectLanguage": "Choose your language",
@@ -1087,7 +1088,17 @@
     "yearly": "Yearly",
     "nextDue": "Next due",
     "noRecurring": "No recurring transactions",
-    "none": "One-time"
+    "none": "One-time",
+    "subtitle": "Auto-log bills and subscriptions",
+    "description": "These are logged as expenses automatically each period, so you never re-enter a subscription by hand.",
+    "name": "Name",
+    "namePlaceholder": "e.g. Netflix, Rent, Gym",
+    "startsOn": "Starts on",
+    "noCategory": "No category",
+    "nextOn": "Next on {{date}}",
+    "paused": "Paused",
+    "pause": "Pause",
+    "resume": "Resume"
   },
   "categories": {
     "categories": "Categories",
@@ -1230,7 +1241,7 @@
   "settingsPage": {
     "general": "General",
     "support": "Support",
-    "version": "Hisabify v1.0.0 (Build 240)"
+    "version": "Hisabify {{version}}"
   },
   "profilePersonal": {
     "details": "Details",

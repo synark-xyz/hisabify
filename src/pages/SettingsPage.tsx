@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp, MessageSquarePlus, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { FeedbackSheet } from '@/components/FeedbackSheet';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { openStoreListing } from '@/lib/appStore';
+import { getAppVersion, openStoreListing } from '@/lib/appStore';
 import { cn } from '@/lib/utils';
 
 export function SettingsPage() {
@@ -16,6 +16,12 @@ export function SettingsPage() {
     const { toast } = useToast();
     const { t } = useTranslation();
     const [showFeedback, setShowFeedback] = useState(false);
+    // Sourced from the native build (Gradle versionName/versionCode), never hardcoded.
+    const [appVersion, setAppVersion] = useState('');
+
+    useEffect(() => {
+        void getAppVersion().then(setAppVersion);
+    }, []);
 
     const handleSignOut = async () => {
         await signOut();
@@ -101,9 +107,11 @@ export function SettingsPage() {
                     {t('auth.logout')}
                 </motion.button>
 
-                <p className="text-center text-xs text-muted-foreground font-mono mt-8">
-                    {t('settingsPage.version')}
-                </p>
+                {appVersion && (
+                    <p className="text-center text-xs text-muted-foreground font-mono mt-8">
+                        {t('settingsPage.version', { version: appVersion })}
+                    </p>
+                )}
 
             </main>
 

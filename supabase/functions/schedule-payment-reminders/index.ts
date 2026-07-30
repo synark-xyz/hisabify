@@ -2,19 +2,17 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
- * Invoked daily at 08:00 UTC by a Supabase pg_cron job.
+ * Invoked daily at 08:00 UTC by the `daily-payment-reminders` pg_cron job.
  * Queries payment reminders due within notify_before_days and sends
  * a push notification to each user (Android FCM) via send-push-notification.
  *
- * CRON setup (run once in Supabase SQL editor):
- *   select cron.schedule(
- *     'daily-payment-reminders',
- *     '0 8 * * *',
- *     $$ select net.http_post(
- *       url := 'https://<project-ref>.supabase.co/functions/v1/schedule-payment-reminders',
- *       headers := '{"Authorization": "Bearer <service-role-key>"}'::jsonb
- *     ) $$
- *   );
+ * The cron job lives in supabase/migrations/20260729110915_fix_payment_reminder_cron.sql —
+ * do not hand-create it in the SQL editor, or it goes missing from the repo again.
+ *
+ * Do NOT inline the service-role key into the cron command. cron.job.command is
+ * readable by anything with DB access, so a `'Bearer <key>'` literal there is a
+ * standing key leak. The job reads it from Vault instead; that migration documents
+ * the one-time vault.create_secret() setup each environment needs.
  */
 serve(async (req: Request) => {
   if (req.method !== 'POST') {

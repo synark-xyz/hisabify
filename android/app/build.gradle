@@ -102,7 +102,7 @@ android {
             buildConfigField "String", "ENVIRONMENT", '"staging"'
             // Staging endpoint (same as development preview)
             buildConfigField "String", "ENDPOINT", '"https://hisabify-staging.vercel.app"'
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.debug
 //            signingConfig signingConfigs.staging
         }
@@ -115,7 +115,7 @@ android {
                 "\"${resolveSecret('REVENUECAT_API_KEY_RELEASE')}\""
             // Production endpoint
             buildConfigField "String", "ENDPOINT", '"https://hisabify-pi.vercel.app"'
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }
@@ -137,9 +137,9 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
-    implementation 'com.revenuecat.purchases:purchases:10.8.0'
-    implementation 'com.revenuecat.purchases:purchases-ui:10.8.0'
-    implementation platform('com.google.firebase:firebase-bom:34.14.0')
+    implementation 'com.revenuecat.purchases:purchases:10.15.1'
+    implementation 'com.revenuecat.purchases:purchases-ui:10.15.1'
+    implementation platform('com.google.firebase:firebase-bom:34.16.0')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
     implementation 'com.google.firebase:firebase-messaging'

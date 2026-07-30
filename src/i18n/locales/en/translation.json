@@ -1562,7 +1562,7 @@
       "patternInsights": "Pattern Insights",
       "merchantVisits": "This month at {{merchant}} · {{count}} visits",
       "merchantTotal": "Total: {{total}} · Avg: {{avg}}/visit",
-      "recurringMatch": "Matches a recurring expense"
+      "recurringMatch": "Matches recurring"
     },
     "upgrade": {
       "unlimited": "Unlimited",

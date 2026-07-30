@@ -35,7 +35,7 @@ describe('computeGoalImpact', () => {
     expect(result.remainingAfter).toBeCloseTo(105, 1);
   });
 
-  it('caps percentage at 100', () => {
+  it('calculates correct percentage with overshoot', () => {
     const goal = { currentAmount: 450, targetAmount: 500, remaining: 50, percentage: 90 };
     const result = computeGoalImpact(100, goal);
     expect(result.thisTxPercent).toBeCloseTo(20, 1);

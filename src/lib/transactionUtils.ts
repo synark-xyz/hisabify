@@ -79,9 +79,7 @@ export function computeBudgetImpact(txAmount: number, budget: BudgetSnapshot): {
   const thisTxPercent = budget.amount > 0 ? (txAmount / budget.amount) * 100 : 0;
   const remainingAfter = budget.remaining - txAmount;
   let status: BudgetStatus = budget.status;
-  if (remainingAfter < 0 && budget.status === 'safe') {
-    status = 'exceeded';
-  } else if (remainingAfter < 0 && budget.status !== 'exceeded') {
+  if (remainingAfter < 0 && budget.status !== 'exceeded') {
     status = 'exceeded';
   }
   return { thisTxPercent, remainingAfter, status };

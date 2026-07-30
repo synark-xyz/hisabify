@@ -138,8 +138,8 @@ export function TransactionDetailsPage() {
     }
 
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1 - 2);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 2);
 
     let cancelled = false;
     setLoadingPattern(true);
@@ -167,17 +167,18 @@ export function TransactionDetailsPage() {
     return () => { cancelled = true; };
   }, [transaction?.merchant, transaction?.type, transaction?.id, user]);
 
-  const hasRecurringMatch = useMemo(() => {
-    if (!transaction?.merchant) return false;
+  const matchedRecurring = useMemo<{ name: string; amount: number } | null>(() => {
+    if (!transaction?.merchant) return null;
     const merchant = transaction.merchant.toLowerCase();
     const amount = Math.abs(Number(transaction.amount));
-    return recurringExpenses.some(re => {
+    const match = recurringExpenses.find(re => {
       const title = (re.title || '').toLowerCase();
       const titleMatch = title.includes(merchant) || merchant.includes(title);
       if (!titleMatch) return false;
       const diff = Math.abs(amount - re.amount) / re.amount;
       return diff <= 0.2;
     });
+    return match ? { name: match.title, amount: match.amount } : null;
   }, [transaction?.merchant, transaction?.amount, recurringExpenses]);
 
   const handleAssign = useCallback(
@@ -390,7 +391,7 @@ export function TransactionDetailsPage() {
                 </span>
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {t('budget.remainingUsed', { remaining: formatAmount(linkedBudget!.spent), percent: linkedBudget!.percentage.toFixed(0) })}
+                {t('budget.spent')}: {formatAmount(linkedBudget!.spent)} ({t('budget.used', { amount: linkedBudget!.percentage.toFixed(0) })})
                 {' · '}
                 <span className={budgetImpact.remainingAfter < 0 ? 'text-destructive font-medium' : ''}>
                   {t('budget.left')}: {formatAmount(Math.max(0, budgetImpact.remainingAfter))}
@@ -461,7 +462,7 @@ export function TransactionDetailsPage() {
           )}
 
           {/* Pattern Insights */}
-          {merchantPattern && !loadingPattern && shouldShowMerchantPattern(merchantPattern.count, hasRecurringMatch) && (
+          {merchantPattern && !loadingPattern && shouldShowMerchantPattern(merchantPattern.count, !!matchedRecurring) && (
             <div className="rounded-xl bg-accent/[0.03] border border-accent/10 p-3.5">
               <p className="text-xs text-muted-foreground font-medium mb-2 flex items-center gap-1.5">
                 <span>📈</span>
@@ -479,9 +480,9 @@ export function TransactionDetailsPage() {
                   avg: formatAmount((Math.abs(merchantPattern.total) + Math.abs(displayAmount)) / (merchantPattern.count + 1)),
                 })}
               </p>
-              {hasRecurringMatch && (
+              {matchedRecurring && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {t('dialogs.transactionDetails.recurringMatch')}
+                  {t('dialogs.transactionDetails.recurringMatch')} "{matchedRecurring.name}" (${matchedRecurring.amount.toFixed(2)}/mo)
                 </p>
               )}
             </div>

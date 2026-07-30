@@ -52,12 +52,15 @@ async function wipeStorageFolder(
   supabaseAdmin: ReturnType<typeof createClient>,
   bucket: string,
   userId: string,
-) {
+): Promise<string | null> {
   const { data: files, error: listError } = await supabaseAdmin.storage.from(bucket).list(userId);
-  if (listError || !files || files.length === 0) return;
+  if (listError) return `${bucket} list: ${listError.message}`;
+  if (!files || files.length === 0) return null;
 
   const paths = files.map((f) => `${userId}/${f.name}`);
-  await supabaseAdmin.storage.from(bucket).remove(paths);
+  const { error: removeError } = await supabaseAdmin.storage.from(bucket).remove(paths);
+  if (removeError) return `${bucket} remove: ${removeError.message}`;
+  return null;
 }
 
 serve(async (req) => {
@@ -116,13 +119,35 @@ serve(async (req) => {
     const tables: string[] = [...DATA_SCOPE_TABLES];
     if (scope === 'account') tables.push(...ACCOUNT_SCOPE_EXTRA_TABLES);
 
-    await Promise.all(tables.map((table) => supabaseAdmin.from(table).delete().eq('user_id', userId)));
-    await wipeStorageFolder(supabaseAdmin, 'receipts', userId);
+    const tableResults = await Promise.all(
+      tables.map(async (table) => {
+        const { error } = await supabaseAdmin.from(table).delete().eq('user_id', userId);
+        return error ? `${table}: ${error.message}` : null;
+      }),
+    );
+
+    const wipeErrors = tableResults.filter((e): e is string => e !== null);
+
+    const receiptsError = await wipeStorageFolder(supabaseAdmin, 'receipts', userId);
+    if (receiptsError) wipeErrors.push(receiptsError);
 
     if (scope === 'account') {
-      await wipeStorageFolder(supabaseAdmin, 'feedback-attachments', userId);
+      const feedbackError = await wipeStorageFolder(supabaseAdmin, 'feedback-attachments', userId);
+      if (feedbackError) wipeErrors.push(feedbackError);
+    }
+
+    if (wipeErrors.length > 0) {
+      console.error(`Wipe partially failed for request ${requestId}:`, wipeErrors);
+      return jsonResponse({ error: 'Wipe partially failed', details: wipeErrors }, 500);
+    }
+
+    if (scope === 'account') {
       // public.users is keyed to auth by user_id; id is a separate surrogate PK.
-      await supabaseAdmin.from('users').delete().eq('user_id', userId);
+      const { error: usersDeleteError } = await supabaseAdmin.from('users').delete().eq('user_id', userId);
+      if (usersDeleteError) {
+        console.error('Failed to delete users row:', usersDeleteError.message);
+        return jsonResponse({ error: 'Failed to delete users row' }, 500);
+      }
 
       const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (authDeleteError) {
@@ -133,12 +158,10 @@ serve(async (req) => {
 
     const { data: adminUser } = await supabaseUser.auth.getUser();
 
-    await supabaseAdmin.from('audit_log').insert({
-      user_id: userId,
-      action: scope === 'account' ? 'account_deleted' : 'financial_data_deleted',
-    });
-
-    await supabaseAdmin
+    // Atomic completion: only the caller whose UPDATE actually matches a row
+    // still 'pending' gets to write the audit entry, so two concurrent
+    // approvals of the same request can't both "win" and double-log.
+    const { data: completedRows, error: completeError } = await supabaseAdmin
       .from('deletion_requests')
       .update({
         status: 'completed',
@@ -147,7 +170,23 @@ serve(async (req) => {
         user_id: null,
         email: null,
       })
-      .eq('id', requestId);
+      .eq('id', requestId)
+      .eq('status', 'pending')
+      .select('id');
+
+    if (completeError) {
+      console.error('Failed to finalize deletion_requests row:', completeError.message);
+      return jsonResponse({ error: 'Failed to finalize request' }, 500);
+    }
+    if (!completedRows || completedRows.length === 0) {
+      // Another concurrent call already completed (or cancelled) this request.
+      return jsonResponse({ error: 'Request already processed' }, 409);
+    }
+
+    await supabaseAdmin.from('audit_log').insert({
+      user_id: userId,
+      action: scope === 'account' ? 'account_deleted' : 'financial_data_deleted',
+    });
 
     return jsonResponse({ success: true }, 200);
   } catch (err) {

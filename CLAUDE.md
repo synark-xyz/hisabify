@@ -544,6 +544,29 @@ npx cap open android # Opens Android Studio
 
 **Documentation:** See the "Localhost Development Workflow" under Capacitor Mobile above.
 
+### Android Gradle: AGP 9 + Kotlin in node_modules plugins
+
+AGP 9.3.1 registers its own `kotlin` extension (built-in Kotlin — `android.builtInKotlin` is left at its
+default in `android/gradle.properties`). Two consequences for Capacitor plugin `build.gradle` files:
+
+- **Never `apply plugin: 'org.jetbrains.kotlin.android'`** in a subproject. It fails at configuration with
+  `Cannot add extension with name 'kotlin', as there is an extension already registered with that name`,
+  and the cascading `does not specify compileSdk` error is just fallout from the aborted evaluation.
+- **`android { kotlinOptions { } }` no longer exists** — it came from KGP. Use the top-level
+  `kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_… } }`, importing
+  `org.jetbrains.kotlin.gradle.dsl.JvmTarget` (KGP is still on the buildscript classpath for the DSL types).
+
+Both RevenueCat plugins ship the KGP `apply` line and need this treatment. **Do not hand-edit
+`node_modules` to fix it** — that was the state this repo was in, and it silently reverts on `npm install`,
+which is how `-ui` ended up half-fixed (KGP removed, `kotlinOptions` left behind). Fixes live in
+`patches/`, reapplied by `patch-package` via the `postinstall` script. To change one: edit the file in
+`node_modules`, then `npx patch-package <pkg>` — and `rm -rf <pkg>/android/build` first, or the Gradle
+output directory lands in the patch (a 1KB patch becomes 99KB of `.dex`).
+
+Capacitor 8 modules compile at Java 21, so javac must *be* 21 or they fail with `invalid source release: 21`.
+The `java-base` toolchain in `android/build.gradle`'s `allprojects` block pins 21 and lets the foojay
+resolver in `settings.gradle` download it, so no specific system JDK is required.
+
 ## Type Safety
 
 - Path alias: `@/*` → `./src/*`

@@ -7,7 +7,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'
+        classpath 'com.android.tools.build:gradle:9.3.1'
         classpath 'com.google.gms:google-services:4.4.4'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.3'
 
@@ -25,6 +25,12 @@ allprojects {
     }
     tasks.withType(JavaCompile).configureEach {
         options.compilerArgs.addAll(["-Xlint:unchecked", "-Xlint:deprecation"])
+    }
+    // Capacitor 8 modules compile at Java 21, so javac must BE 21 or they fail with
+    // "invalid source release: 21". Rather than requiring a matching JDK on every
+    // machine, let the foojay resolver in settings.gradle provision one.
+    plugins.withId('java-base') {
+        java.toolchain.languageVersion = JavaLanguageVersion.of(21)
     }
 }
 

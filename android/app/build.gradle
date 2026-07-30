@@ -11,6 +11,10 @@ def resolveSecret = { propName ->
 }
 
 android {
+    lint {
+        abortOnError false
+        warning 'unchecked', 'deprecation'
+    }
     namespace = "io.synark.hisabify"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
@@ -25,11 +29,6 @@ android {
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini!*~'
         }
-    }
-    lintOptions {
-        abortOnError false
-        warning 'unchecked'
-        warning 'deprecation'
     }
     // Signing configurations for release and staging. Values are read from local.properties
     // or environment variables via the resolveSecret helper defined above.

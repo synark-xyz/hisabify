@@ -240,4 +240,4 @@ Two Important findings from task review, both fixed by replacing everything from
 - `grep -n "rejected"` on the file returns zero matches — no `'rejected'` status was introduced.
 - `grep -n "audit_log"` on the file returns exactly one match: the `insert()` at line 186 — `audit_log` never appears in a delete/wipe table list, so it's never itself wiped.
 
-**Commit:** `d2af8d0` — "Harden process-deletion-request: surface wipe errors, make completion atomic"
+**Commit:** `5e53b8b` — "Harden process-deletion-request: surface wipe errors, make completion atomic"

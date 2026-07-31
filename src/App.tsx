@@ -16,6 +16,7 @@ import { CurrencyProvider } from "@/hooks/useCurrency";
 import { ProfileProvider } from "@/hooks/useProfile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
+import { PageFallback, PageTransition } from "@/components/PageTransition";
 import { Dashboard } from "@/pages/Dashboard";
 import { ExpensesPage } from "@/pages/ExpensesPage";
 import { AuthPage } from "@/pages/AuthPage";
@@ -27,12 +28,14 @@ import NotFound from "@/pages/NotFound";
 import { FABProvider } from "@/contexts/FABContext";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { TermsPage } from "@/pages/TermsPage";
 import { DeleteAccountPage } from "@/pages/DeleteAccountPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { initViewportHeight } from "@/lib/viewport";
 import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { processRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useKeyboardHeight } from "@/hooks/useKeyboardHeight";
 import { getAuthCallbackRouteFromUrl } from "@/lib/authRedirect";
 
@@ -55,6 +58,8 @@ const CalculatorPage = lazy(() => import("@/pages/more/CalculatorPage").then(m =
 const LoanCalculatorPage = lazy(() => import("@/pages/more/LoanCalculatorPage").then(m => ({ default: m.LoanCalculatorPage })));
 const DiscountTaxCalculatorPage = lazy(() => import("@/pages/more/DiscountTaxCalculatorPage").then(m => ({ default: m.DiscountTaxCalculatorPage })));
 const CurrencyConverterPage = lazy(() => import("@/pages/more/CurrencyConverterPage").then(m => ({ default: m.CurrencyConverterPage })));
+const RecurringExpensesPage = lazy(() => import("@/pages/more/RecurringExpensesPage").then(m => ({ default: m.RecurringExpensesPage })));
+const AdminPage = lazy(() => import("@/pages/AdminPage").then(m => ({ default: m.AdminPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -91,6 +96,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+/**
+ * Wrapper for protected routes that render outside <Layout> (they own their own Header).
+ * Gives them the same enter animation as layout pages, plus a local Suspense boundary so a
+ * lazy chunk load never falls through to the app-wide fallback and blanks the screen.
+ */
+function StandalonePage({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={<PageFallback />}>
+        <PageTransition>{children}</PageTransition>
+      </Suspense>
+    </ProtectedRoute>
+  );
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
@@ -206,26 +226,29 @@ function AppRoutes() {
         <Route path="/more/loan" element={<LoanCalculatorPage />} />
         <Route path="/more/discount" element={<DiscountTaxCalculatorPage />} />
         <Route path="/more/currency" element={<CurrencyConverterPage />} />
+        <Route path="/more/recurring" element={<RecurringExpensesPage />} />
       </Route>
 
       {/* Pages without Main Layout (No double header) */}
       <Route
         element={
-          <ProtectedRoute>
+          <StandalonePage>
             <div className="min-h-screen bg-background">
               {/* These pages have their own internal Headers */}
               <SettingsPage />
             </div>
-          </ProtectedRoute>
+          </StandalonePage>
         }
         path="/settings"
       />
 
-      <Route element={<ProtectedRoute><PreferencesPage /></ProtectedRoute>} path="/settings/preferences" />
-      <Route element={<ProtectedRoute><NotificationSettingsPage /></ProtectedRoute>} path="/settings/notifications" />
-      <Route element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} path="/notifications" />
-      <Route element={<ProtectedRoute><SupportPage /></ProtectedRoute>} path="/support" />
-      <Route element={<ProtectedRoute><FaqPage /></ProtectedRoute>} path="/faq" />
+      <Route element={<StandalonePage><PreferencesPage /></StandalonePage>} path="/settings/preferences" />
+      <Route element={<StandalonePage><NotificationSettingsPage /></StandalonePage>} path="/settings/notifications" />
+      <Route element={<StandalonePage><NotificationsPage /></StandalonePage>} path="/notifications" />
+      <Route element={<StandalonePage><SupportPage /></StandalonePage>} path="/support" />
+      <Route element={<StandalonePage><FaqPage /></StandalonePage>} path="/faq" />
+      {/* Unlinked on purpose — reachable by URL, gated by RLS. */}
+      <Route element={<StandalonePage><AdminPage /></StandalonePage>} path="/admin" />
 
       <Route
         path="/auth"
@@ -246,7 +269,13 @@ function AppRoutes() {
         path="/install"
         element={<InstallPage />}
       />
+      {/* Public on purpose: store listings, the signup screen and external
+          reviewers must reach these without a session. */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      {/* Subscription & Billing folded into /terms. Kept as a redirect because
+          a store listing may still point here. */}
+      <Route path="/subscription-terms" element={<Navigate to="/terms" replace />} />
       <Route path="/delete-account" element={<DeleteAccountPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -317,6 +346,13 @@ function RootLogic() {
 
   // Register Android device for FCM push notifications
   usePushNotifications();
+
+  // Catch up any recurring expenses the nightly cron has not materialised yet.
+  // Idempotent and scoped to the signed-in user by the RPC itself.
+  useEffect(() => {
+    if (!user) return;
+    void processRecurringExpenses();
+  }, [user]);
 
   // Initialize viewport height fix for mobile
   useEffect(() => {

@@ -48,6 +48,11 @@ android/app/src/staging/google-services.json
 UX-Redesign/
 .superpowers/
 docs/
+# Ignore stray SQL scratch files / dumps, but never the migration history —
+# this rule had already silently kept 3 applied migrations out of the repo,
+# including the one defining the payment-reminder cron job.
 *.sql
+!supabase/migrations/*.sql
 *.prefs
 android/.project
+coverage/

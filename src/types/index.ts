@@ -148,6 +148,31 @@ export interface ExchangeRate {
   created_at: string;
 }
 
+export type RecurringFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * A template that auto-creates an expense transaction each period.
+ * Materialised by the `process_recurring_expenses()` RPC — nightly via pg_cron,
+ * and again whenever the app opens, so a stalled cron cannot silently skip a cycle.
+ */
+export interface RecurringExpense {
+  id: string;
+  user_id: string;
+  category_id: string | null;
+  card_id: string | null;
+  title: string;
+  amount: number;
+  currency: string;
+  frequency: RecurringFrequency;
+  start_date: string;
+  next_due_date: string;
+  last_created_date: string | null;
+  is_active: boolean;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PaymentReminder {
   id: string;
   user_id: string;

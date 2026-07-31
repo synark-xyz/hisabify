@@ -1,9 +1,9 @@
-import { Calculator, CreditCard, Percent, ArrowRightLeft, Tag, Handshake, Clock } from 'lucide-react';
+import { Calculator, CreditCard, Percent, ArrowRightLeft, Tag, Handshake, Clock, Repeat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
-const iconMap = { Calculator, CreditCard, Percent, ArrowRightLeft, Tag, Handshake, Clock };
+const iconMap = { Calculator, CreditCard, Percent, ArrowRightLeft, Tag, Handshake, Clock, Repeat };
 
 export function MorePage() {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ export function MorePage() {
   ];
 
   const financeTracking = [
+    { id: 'recurring', icon: 'Repeat', label: t('recurring.title'), description: t('recurring.subtitle'), path: '/more/recurring', color: 'bg-emerald-500/10 text-emerald-500' },
     { id: 'debts', icon: 'Handshake', label: t('morePage.debtTracker'), description: t('morePage.trackDebts'), path: '/debts', color: 'bg-rose-500/10 text-rose-500' },
     { id: 'activity', icon: 'Clock', label: t('morePage.activityHistory'), description: t('morePage.viewActivity'), path: '/activity', color: 'bg-purple-500/10 text-purple-500' },
   ];

@@ -23,7 +23,9 @@
     "installApp": "Install App",
     "pageNotFound": "Page Not Found",
     "pageNotFoundDesc": "The page you're looking for doesn't exist.",
-    "goHome": "Go Home"
+    "goHome": "Go Home",
+    "subscriptionTerms": "Subscription Terms",
+    "termsConditions": "Terms & Conditions"
   },
   "deleteAccount": {
     "title": "Delete Your Account",
@@ -175,7 +177,8 @@
     "yesterday": "Yesterday",
     "hisabify": "Hisabify",
     "comingSoon": "Coming Soon",
-    "and": "and"
+    "and": "and",
+    "loading": "Loading…"
   },
   "onboarding": {
     "selectLanguage": "Choose your language",
@@ -1087,7 +1090,17 @@
     "yearly": "Yearly",
     "nextDue": "Next due",
     "noRecurring": "No recurring transactions",
-    "none": "One-time"
+    "none": "One-time",
+    "subtitle": "Auto-log bills and subscriptions",
+    "description": "These are logged as expenses automatically each period, so you never re-enter a subscription by hand.",
+    "name": "Name",
+    "namePlaceholder": "e.g. Netflix, Rent, Gym",
+    "startsOn": "Starts on",
+    "noCategory": "No category",
+    "nextOn": "Next on {{date}}",
+    "paused": "Paused",
+    "pause": "Pause",
+    "resume": "Resume"
   },
   "categories": {
     "categories": "Categories",
@@ -1230,7 +1243,9 @@
   "settingsPage": {
     "general": "General",
     "support": "Support",
-    "version": "Hisabify v1.0.0 (Build 240)"
+    "legal": "Legal",
+    "version": "Hisabify {{version}}",
+    "dataPrivacy": "Data & Privacy"
   },
   "profilePersonal": {
     "details": "Details",
@@ -1288,7 +1303,14 @@
     "deleteAccount": "Delete Account",
     "typeDeleteAccountConfirm": "Type DELETE ACCOUNT to confirm",
     "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT"
+    "deleteAccountPlaceholder": "DELETE ACCOUNT",
+    "privacy": "Privacy",
+    "usageAnalytics": "Usage analytics",
+    "usageAnalyticsDesc": "Share anonymised app usage. Never your financial data.",
+    "analyticsOn": "Usage analytics enabled",
+    "analyticsOff": "Usage analytics disabled",
+    "exportComplete": "Export complete",
+    "exportCompleteDesc": "Your data has been downloaded as JSON and CSV."
   },
   "notificationsPage": {
     "allCaughtUp": "All Caught Up",
@@ -1546,5 +1568,49 @@
     "october": "October",
     "november": "November",
     "december": "December"
+  },
+  "rating": {
+    "title": "Enjoying Hisabify?",
+    "subtitle": "Tap a star to rate your experience.",
+    "starLabel": "Rate {{count}} out of 5",
+    "commentLabel": "Tell us more (optional)",
+    "commentPlaceholder": "What's working well, or what could be better?",
+    "submit": "Submit rating",
+    "submitting": "Submitting...",
+    "submitFailed": "Couldn't submit your rating. Please try again.",
+    "dontAskAgain": "Don't ask again",
+    "thanksTitle": "Thank you!",
+    "thanksHighMessage": "We're glad Hisabify is working for you. Would you share that on Google Play?",
+    "thanksLowMessage": "Thanks for the honest feedback — we'll use it to make Hisabify better.",
+    "rateOnPlayStore": "Rate on Google Play",
+    "close": "Close",
+    "rateTheApp": "Rate the app"
+  },
+  "feedback": {
+    "title": "Feedback",
+    "email": "Email",
+    "type": "Type",
+    "type_bug": "Bug",
+    "type_improvement": "Improvement",
+    "type_feature_request": "Feature request",
+    "type_deletion_request": "Deletion request",
+    "type_other": "Other",
+    "otherLabel": "Tell us the type",
+    "otherPlaceholder": "e.g. Billing question",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe it in as much detail as you can.",
+    "attachments": "Attachments (optional)",
+    "addFiles": "Add files",
+    "attachmentHelp": "Up to {{count}} files, max 10 MB each.",
+    "maxFiles": "You can upload up to {{count}} files",
+    "fileTooLarge": "{{filename}} is too large",
+    "maxFileSize": "Maximum size is 10 MB per file.",
+    "removeFile": "Remove {{filename}}",
+    "completeFields": "Please complete all required fields",
+    "submit": "Send feedback",
+    "sending": "Sending...",
+    "sent": "Feedback sent",
+    "sentDescription": "Thank you — we read every message.",
+    "submitFailed": "Couldn't send your feedback. Please try again."
   }
 }

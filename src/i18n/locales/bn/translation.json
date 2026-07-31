@@ -30,7 +30,8 @@
     "hisabify": "Hisabify",
     "comingSoon": "শীঘ্রই আসছে",
     "and": "এবং",
-    "other": "অন্যান্য"
+    "other": "অন্যান্য",
+    "loading": "লোড হচ্ছে…"
   },
   "nav": {
     "dashboard": "ড্যাশবোর্ড",
@@ -68,7 +69,9 @@
     "installApp": "অ্যাপ ইনস্টল করুন",
     "pageNotFound": "পৃষ্ঠা পাওয়া যায়নি",
     "pageNotFoundDesc": "আপনি যে পৃষ্ঠাটি খুঁজছেন সেটি বিদ্যমান নেই।",
-    "goHome": "হোমে যান"
+    "goHome": "হোমে যান",
+    "subscriptionTerms": "সাবস্ক্রিপশন শর্তাবলী",
+    "termsConditions": "শর্তাবলী"
   },
   "onboarding": {
     "selectLanguage": "আপনার ভাষা নির্বাচন করুন",
@@ -1053,7 +1056,17 @@
     "yearly": "বার্ষিক",
     "nextDue": "পরবর্তী দেনা",
     "noRecurring": "কোনো আবৃত লেনদেন নেই",
-    "none": "একবার"
+    "none": "একবার",
+    "subtitle": "বিল ও সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে যোগ করুন",
+    "description": "প্রতি চক্রে এগুলো স্বয়ংক্রিয়ভাবে খরচ হিসেবে যুক্ত হয়, তাই সাবস্ক্রিপশন বারবার হাতে লিখতে হয় না।",
+    "name": "নাম",
+    "namePlaceholder": "যেমন Netflix, বাসা ভাড়া, জিম",
+    "startsOn": "শুরুর তারিখ",
+    "noCategory": "কোনো ক্যাটাগরি নেই",
+    "nextOn": "পরবর্তী {{date}}",
+    "paused": "বিরতিতে",
+    "pause": "বিরতি",
+    "resume": "চালু করুন"
   },
   "categories": {
     "categories": "বিভাগ",
@@ -1207,7 +1220,9 @@
   "settingsPage": {
     "general": "সাধারণ",
     "support": "সাপোর্ট",
-    "version": "Hisabify v1.0.0 (Build 240)"
+    "legal": "আইনি",
+    "version": "Hisabify {{version}}",
+    "dataPrivacy": "ডেটা ও গোপনীয়তা"
   },
   "profilePersonal": {
     "details": "বিবরণ",
@@ -1268,7 +1283,14 @@
     "deleteAccount": "অ্যাকাউন্ট মুছুন",
     "typeDeleteAccountConfirm": "নিশ্চিত করতে DELETE ACCOUNT লিখুন",
     "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT"
+    "deleteAccountPlaceholder": "DELETE ACCOUNT",
+    "privacy": "গোপনীয়তা",
+    "usageAnalytics": "ব্যবহারের বিশ্লেষণ",
+    "usageAnalyticsDesc": "বেনামী অ্যাপ ব্যবহারের তথ্য শেয়ার করুন। আপনার আর্থিক ডেটা কখনোই নয়।",
+    "analyticsOn": "ব্যবহারের বিশ্লেষণ চালু হয়েছে",
+    "analyticsOff": "ব্যবহারের বিশ্লেষণ বন্ধ হয়েছে",
+    "exportComplete": "এক্সপোর্ট সম্পন্ন",
+    "exportCompleteDesc": "আপনার ডেটা JSON এবং CSV হিসেবে ডাউনলোড হয়েছে।"
   },
   "notificationsPage": {
     "allCaughtUp": "সব হয়ে গেছে",
@@ -1542,5 +1564,49 @@
     "october": "অক্টোবর",
     "november": "নভেম্বর",
     "december": "ডিসেম্বর"
+  },
+  "rating": {
+    "title": "Hisabify কেমন লাগছে?",
+    "subtitle": "আপনার অভিজ্ঞতা জানাতে স্টারে ট্যাপ করুন।",
+    "starLabel": "৫-এর মধ্যে {{count}} রেটিং দিন",
+    "commentLabel": "আরও কিছু বলুন (ঐচ্ছিক)",
+    "commentPlaceholder": "কী ভালো লাগছে, বা কী আরও ভালো হতে পারে?",
+    "submit": "রেটিং পাঠান",
+    "submitting": "পাঠানো হচ্ছে...",
+    "submitFailed": "রেটিং পাঠানো যায়নি। আবার চেষ্টা করুন।",
+    "dontAskAgain": "আর জিজ্ঞাসা করবেন না",
+    "thanksTitle": "ধন্যবাদ!",
+    "thanksHighMessage": "Hisabify আপনার কাজে আসছে জেনে ভালো লাগল। Google Play-তে কি সেটা জানাবেন?",
+    "thanksLowMessage": "সৎ মতামতের জন্য ধন্যবাদ — Hisabify আরও ভালো করতে এটি কাজে লাগাব।",
+    "rateOnPlayStore": "Google Play-তে রেটিং দিন",
+    "close": "বন্ধ করুন",
+    "rateTheApp": "অ্যাপ রেটিং দিন"
+  },
+  "feedback": {
+    "title": "মতামত",
+    "email": "ইমেইল",
+    "type": "ধরন",
+    "type_bug": "ত্রুটি",
+    "type_improvement": "উন্নতি",
+    "type_feature_request": "নতুন ফিচারের অনুরোধ",
+    "type_deletion_request": "মুছে ফেলার অনুরোধ",
+    "type_other": "অন্যান্য",
+    "otherLabel": "ধরনটি লিখুন",
+    "otherPlaceholder": "যেমন: বিলিং সংক্রান্ত প্রশ্ন",
+    "description": "বিবরণ",
+    "descriptionPlaceholder": "যতটা সম্ভব বিস্তারিত লিখুন।",
+    "attachments": "সংযুক্তি (ঐচ্ছিক)",
+    "addFiles": "ফাইল যোগ করুন",
+    "attachmentHelp": "সর্বোচ্চ {{count}}টি ফাইল, প্রতিটি ১০ MB পর্যন্ত।",
+    "maxFiles": "আপনি সর্বোচ্চ {{count}}টি ফাইল আপলোড করতে পারবেন",
+    "fileTooLarge": "{{filename}} আকারে অনেক বড়",
+    "maxFileSize": "প্রতিটি ফাইল সর্বোচ্চ ১০ MB।",
+    "removeFile": "{{filename}} সরান",
+    "completeFields": "সব আবশ্যক ঘর পূরণ করুন",
+    "submit": "মতামত পাঠান",
+    "sending": "পাঠানো হচ্ছে...",
+    "sent": "মতামত পাঠানো হয়েছে",
+    "sentDescription": "ধন্যবাদ — আমরা প্রতিটি বার্তা পড়ি।",
+    "submitFailed": "মতামত পাঠানো যায়নি। আবার চেষ্টা করুন।"
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, LayoutDashboardIcon, Target, List, Lightbulb, Grid } from 'lucide-react';
@@ -6,6 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
+import { RatingSheet } from '@/components/RatingSheet';
+import { PageFallback } from '@/components/PageTransition';
+import { usePageVariants } from '@/lib/pageMotion';
+import { useAppRating } from '@/hooks/useAppRating';
 import { Header } from '@/components/Header';
 import { HisabifyLogo } from "@/components/HisabifyLogo";
 import { cn } from '@/lib/utils';
@@ -57,6 +61,9 @@ export function Layout() {
     const { isGlobalFABHidden } = useFABContext();
     const { isKeyboardOpen } = useVisualViewport();
     const { t } = useTranslation();
+    // Periodic "how are we doing?" prompt — fires at most once a day until the user rates.
+    const rating = useAppRating();
+    const pageVariants = usePageVariants();
 
     const navItems = getSidebarNavItems(t);
 
@@ -159,12 +166,16 @@ export function Layout() {
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={location.pathname}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                            variants={pageVariants}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
                         >
-                            <Outlet />
+                            {/* Suspense sits inside the layout so a lazily-loaded page swaps
+                                under a header and bottom nav that never unmount. */}
+                            <Suspense fallback={<PageFallback />}>
+                                <Outlet />
+                            </Suspense>
                         </motion.div>
                     </AnimatePresence>
                 </main>
@@ -198,6 +209,14 @@ export function Layout() {
                 open={showManual}
                 onOpenChange={setShowManual}
                 onSuccess={() => {}}
+            />
+
+            <RatingSheet
+                open={rating.open}
+                onOpenChange={rating.setOpen}
+                onRated={rating.markRated}
+                onDismissForever={rating.dismissForever}
+                onDismissForNow={rating.dismissForNow}
             />
         </div>
     );

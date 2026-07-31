@@ -29,22 +29,16 @@ Hisabify is a mobile-first personal finance web application for tracking cards, 
 ## Development Commands
 
 ```bash
-# Install dependencies (prefer bun, fallback to npm)
-bun install
-# or
+# Install dependencies
 npm install
 
 # Run development server (localhost:8080)
-bun dev
-# or
 npm run dev
 
 # Managed dev server (mobile-friendly)
 npm run dev:managed
 
 # Build for production
-bun run build
-# or
 npm run build
 
 # Build for development mode
@@ -55,8 +49,6 @@ npm run lint
 
 # Run tests
 npm test
-# or
-bun test
 
 # Preview production build
 npm run preview
@@ -242,7 +234,7 @@ src/components/
 ├─ Layout.tsx              # Main layout with header + bottom nav
 ├─ AddTransactionModal.tsx # Transaction creation
 ├─ AddBudgetModal.tsx      # Budget creation
-├─ ReceiptUpload.tsx       # OCR receipt upload (Tesseract.js)
+├─ ReceiptScannerModal.tsx # OCR receipt scan (Gemini Vision)
 ├─ PremiumGuard.tsx        # Feature gating wrapper
 └─ ...
 ```
@@ -370,8 +362,8 @@ if (!hasPermission) {
 
 ### Receipt Upload with OCR & Image Optimization
 
-- **Component:** `ReceiptUpload.tsx` - Receipt capture with OCR
-- **Technology:** Tesseract.js for client-side text extraction
+- **Component:** `ReceiptScannerModal.tsx` - Receipt capture with OCR
+- **Technology:** Gemini Vision (`src/lib/geminiVision.ts`) with `src/lib/receiptParser.ts` for extraction
 - **Image Processing:** `src/lib/imageProcessor.ts`
 - **Optimization:** Compress to <500KB while preserving text readability
 - **Storage:** Supabase Storage with RLS policies (bucket: `receipts`)
@@ -411,6 +403,73 @@ if (!hasPermission) {
   - iOS: `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`
   - Runtime permission flow: `ensurePermission('microphone')` before recording
 
+### In-App Rating & Feedback
+
+Both write to a single `app_feedback` table, discriminated by a `kind` column (`'rating'` | `'feedback'`).
+
+- **Rating:** `RatingSheet.tsx` (stars + optional comment). Cadence lives in `useAppRating.ts`; the decision itself is a pure function in `src/lib/ratingPrompt.ts` (`shouldPromptRating`) so it is unit-testable. Prompts at most once per 24h, skips the first 2 days after a user is first seen, and stops permanently once the user rates or picks "Don't ask again". Local state is Capacitor `Preferences`; a once-per-session query of `app_feedback` catches users who rated on another device. Mounted in `Layout.tsx`, so it only fires on the main app pages.
+- **Feedback:** `FeedbackSheet.tsx`, opened from `Settings → Support → Feedback`. Opens full-height (`snapPoints={[1, 0.5]}`) and drags down to half. Email is read-only from the session. Attachments go to the private `feedback-attachments` bucket as `{user_id}/{timestamp}-{name}`; the table stores storage *paths*, not public URLs — resolve them with a signed URL server-side.
+- **Review prompt:** `openStoreListing()` in `src/lib/appStore.ts` drives both entry points — the 4★+ CTA in `RatingSheet` and `Settings → Support → Rate the app`.
+
+  **Do not reintroduce the [Play In-App Review API](https://developer.android.com/guide/playcore/in-app-review) here.** Google's guidance is explicit: "you should not have a call-to-action option (such as a button) to trigger the API, as a user might have already hit their quota and the flow won't be shown, presenting a broken experience to the user. For this use case, redirect the user to the Play Store instead." Both of our entry points are buttons.
+
+  It was tried and removed. The failure mode is silence, not an error: Play suppresses the dialog when the calling package was not distributed by Play (any `.staging` build — see `applicationIdSuffix` in `android/app/build.gradle`) or when the undisclosed time-bound quota is hit, and reports neither. `requestReviewFlow()` **resolves** in both cases, so a `catch`-based fallback never fires and the button does nothing at all. If you ever add an automatic, non-button trigger, that is the only context where the API is appropriate — and even then never gate UI on the dialog having shown, and never retry.
+
+### Admin Panel
+
+`src/pages/AdminPage.tsx` at `/admin` — a read-only table viewer for triaging `app_feedback` and `user_behavior_events` (newest 100 rows, columns derived from the response). Deliberately unlinked from any nav; it is reachable only by typing the URL.
+
+Access is an **email allowlist**, not a role column: `public.is_admin()` (`supabase/migrations/20260729000100_add_admin_read_access.sql`) compares `auth.jwt() ->> 'email'` against a hardcoded list, and additive `FOR SELECT ... USING (public.is_admin())` policies OR with the existing own-rows policies. Adding an admin means editing both the SQL function and `ADMIN_EMAILS` in `AdminPage.tsx` — the constant only decides whether to render, RLS is what actually enforces. Never gate this with the service-role key; it must not reach client code.
+
+  Note `openStoreListing()` must not use a `market://` URL — `Browser.open()` is Chrome Custom Tabs, which pins the intent to the browser package, and Chrome cannot resolve `market://`. The https listing is app-linked and hands off to the Play Store app anyway. The URL always names the production package; staging builds have no listing of their own.
+
+Note: attachment upload failure never blocks a submission — the text is sent regardless.
+
+### Legal Documents & Data Privacy
+
+Legal copy lives in `src/lib/legalContent.tsx` (`TermsContent`, `PrivacyContent`, `LEGAL_LAST_UPDATED`, `LEGAL_CONTACT_EMAIL`) and `src/components/SubscriptionTermsContent.tsx`. Always reference `LEGAL_CONTACT_EMAIL` — never hardcode a support address.
+
+Two routes, both public (outside `ProtectedRoute`, so store listings and signed-out readers can reach them): **Terms & Conditions at `/terms`** — Terms of Service *and* Subscription & Billing on one page, under group headings, because each document restarts its numbering at 1 — and **Privacy Policy at `/privacy`**. `/subscription-terms` is a redirect to `/terms`, kept because a store listing may still point at it.
+
+Privacy stays its own route on purpose: Play Console Data Safety and App Store Connect want a URL whose page *is* the privacy policy, so don't fold it into `/terms`.
+
+Both routes render through `LegalDocPage` (`src/components/LegalDocPage.tsx`), which owns the page chrome and the "Last updated" line. **Neither `TermsContent` nor `PrivacyContent` renders that line** — whoever renders a document owns it, so a page showing two documents prints it once. `LegalModal` renders its own copy for the same reason.
+
+`LegalDocPage` deliberately has **no `ScrollArea`**; the page scrolls natively. The previous `h-[calc(100vh-140px)]` inner box guessed at a header height that varies with `env(safe-area-inset-top)`, clipping the last sections on notched devices and leaving dead space elsewhere, and nested scroll also costs iOS momentum scrolling. Don't reintroduce it.
+
+`LegalModal` is now **AuthPage-only** — a modal is right at signup, where navigating away would abandon registration. Settings links to the routes instead.
+
+**Account deletion is immediate and irreversible.** `/profile/data` (`DataPage.tsx`) wipes the user's rows and then calls the `delete-user` edge function. Do not add a soft-delete or 30-day grace period: the Privacy Policy's "deleted within 30 days" is a *ceiling*, which immediate deletion already satisfies, and a soft-delete without a purge job means data is never actually deleted — a worse outcome legally than what we have. A 30-day soft-delete was built and removed for exactly this reason.
+
+`useDataManagement.ts` owns the GDPR right-of-access export (CSV + JSON, both download together because the policy promises both formats) and `logPrivacyAction()`. Deletion is deliberately *not* in this hook — a second deletion path would give the app two contradictory answers to "is my account gone?".
+
+Audit rows go to `public.audit_log` (migration `20260730000000_add_privacy_audit_log.sql`), whose RLS grants own-row SELECT and INSERT only — no UPDATE or DELETE, because an audit trail the subject can rewrite is not an audit trail. Log **before** `signOut()`; the INSERT policy needs a live session. Audit writes never block the action they describe.
+
+Note `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate PK. Matching on `id` silently updates zero rows and PostgREST reports success.
+
+Compliance docs: `docs/legal/PRE_LAUNCH_CHECKLIST.md`, `docs/legal/INCORPORATION_CHECKLIST.md`, `docs/supabase/DPA_ADDENDUM.md`. Note `docs/` and `*.sql` are gitignored — commit these with `git add -f`.
+
+### Recurring Transactions
+
+Subscription/bill templates in `recurring_expenses` that auto-log an expense each period. UI is `src/pages/more/RecurringExpensesPage.tsx` at `/more/recurring`; data via `useRecurringExpenses.ts`.
+
+All the logic is in Postgres — `public.process_recurring_expenses()` (`supabase/migrations/20260729111611_process_recurring_expenses.sql`). **Do not reimplement materialisation client-side.** The function inserts one transaction per missed period, advances `next_due_date`, stamps `last_created_date`, and tags rows `recurring`. Idempotency comes from advancing the cursor in the same transaction as the insert, so re-running is a no-op — which is what makes it safe to call from two places:
+
+- `process-recurring-expenses` pg_cron job, nightly at 00:05 UTC (no JWT → `auth.uid()` is null → all users)
+- `processRecurringExpenses()` on every app open (JWT present → only that user)
+
+That single `auth.uid() is null or user_id = auth.uid()` clause is what keeps a SECURITY DEFINER function from letting one user materialise another's templates. The app-open call is deliberate redundancy: the payment-reminder cron sat dead for four months before anyone noticed, so recurring does not depend on cron alone.
+
+Templates are created in the user's base currency and inserted with `exchange_rate = 1`. There is no conversion because `public.exchange_rates` is empty — the app caches rates in memory client-side, so Postgres has no rate to honestly apply. Keep the currency picker out of the template form unless that changes.
+
+Catch-up is capped at 24 periods per template per run; the remainder is picked up by the next tick.
+
+### Page Transitions
+
+`src/lib/pageMotion.ts` holds the single motion definition used by both `Layout.tsx` (via `AnimatePresence`, with exit) and `PageTransition.tsx` (enter-only, for routes outside the layout). Use `usePageVariants()` rather than importing `pageVariants` directly — it returns static variants when the user prefers reduced motion.
+
+Each route owns its own `Suspense` boundary. Do not reintroduce a single app-root fallback for route chunks: it unmounts the header and bottom navigation on every lazy navigation.
+
 ### Gamification (Health Score)
 
 - Location: `src/features/gamification/`
@@ -441,8 +500,6 @@ if (!hasPermission) {
 **Run tests:**
 ```bash
 npm test
-# or
-bun test
 ```
 
 **Test Setup:** `src/test/setup.ts`
@@ -493,7 +550,30 @@ npx cap open android # Opens Android Studio
 - GPU-accelerated animations (60fps)
 - Platform-specific optimizations (see `src/index.css`)
 
-**Documentation:** See `CAPACITOR_LOCALHOST_SETUP.md` for detailed setup guide
+**Documentation:** See the "Localhost Development Workflow" under Capacitor Mobile above.
+
+### Android Gradle: AGP 9 + Kotlin in node_modules plugins
+
+AGP 9.3.1 registers its own `kotlin` extension (built-in Kotlin — `android.builtInKotlin` is left at its
+default in `android/gradle.properties`). Two consequences for Capacitor plugin `build.gradle` files:
+
+- **Never `apply plugin: 'org.jetbrains.kotlin.android'`** in a subproject. It fails at configuration with
+  `Cannot add extension with name 'kotlin', as there is an extension already registered with that name`,
+  and the cascading `does not specify compileSdk` error is just fallout from the aborted evaluation.
+- **`android { kotlinOptions { } }` no longer exists** — it came from KGP. Use the top-level
+  `kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_… } }`, importing
+  `org.jetbrains.kotlin.gradle.dsl.JvmTarget` (KGP is still on the buildscript classpath for the DSL types).
+
+Both RevenueCat plugins ship the KGP `apply` line and need this treatment. **Do not hand-edit
+`node_modules` to fix it** — that was the state this repo was in, and it silently reverts on `npm install`,
+which is how `-ui` ended up half-fixed (KGP removed, `kotlinOptions` left behind). Fixes live in
+`patches/`, reapplied by `patch-package` via the `postinstall` script. To change one: edit the file in
+`node_modules`, then `npx patch-package <pkg>` — and `rm -rf <pkg>/android/build` first, or the Gradle
+output directory lands in the patch (a 1KB patch becomes 99KB of `.dex`).
+
+Capacitor 8 modules compile at Java 21, so javac must *be* 21 or they fail with `invalid source release: 21`.
+The `java-base` toolchain in `android/build.gradle`'s `allprojects` block pins 21 and lets the foojay
+resolver in `settings.gradle` download it, so no specific system JDK is required.
 
 ## Type Safety
 
@@ -518,14 +598,30 @@ npx cap open android # Opens Android Studio
 | `src/lib/logger.ts` | Logging service |
 | `src/lib/imageProcessor.ts` | Receipt image optimization |
 | `src/components/Layout.tsx` | Main layout wrapper |
+| `src/components/RatingSheet.tsx` | Star rating + comment bottom sheet |
+| `src/components/FeedbackSheet.tsx` | Feedback bottom sheet (type, description, attachments) |
+| `src/components/PageTransition.tsx` | Route enter animation + delayed Suspense fallback |
+| `src/lib/pageMotion.ts` | Shared page transition variants (reduced-motion aware) |
+| `src/lib/appStore.ts` | Play Store listing link + app version helper |
+| `src/pages/AdminPage.tsx` | Admin DB viewer (`/admin`) |
+| `src/lib/legalContent.tsx` | Terms of Service + Privacy Policy copy |
+| `src/components/SubscriptionTermsContent.tsx` | Subscription & billing terms copy |
+| `src/components/LegalDocPage.tsx` | Shared shell for routed legal docs (chrome + "Last updated") |
+| `src/pages/TermsPage.tsx` | Terms & Conditions page (`/terms`) — ToS + Subscription & Billing |
+| `src/hooks/useDataManagement.ts` | GDPR data export (CSV/JSON) + privacy audit logging |
+| `src/pages/profile/DataPage.tsx` | Data & Privacy: export, analytics opt-out, deletion |
+| `src/lib/ratingPrompt.ts` | Pure rating-prompt scheduling logic |
+| `src/hooks/useRecurringExpenses.ts` | Recurring expense CRUD + `process_recurring_expenses()` RPC |
+| `src/pages/more/RecurringExpensesPage.tsx` | Recurring expense manager (`/more/recurring`) |
+| `src/hooks/useAppRating.ts` | Rating prompt cadence + persistence |
+| `src/hooks/useAppFeedback.ts` | Submits ratings and feedback to `app_feedback` |
 | `src/components/InputMethodSheet.tsx` | Unified FAB action menu (3 options) |
 | `src/components/VoiceInputFlow.tsx` | Enhanced voice memo UI with animations |
-| `src/components/ReceiptUpload.tsx` | Receipt OCR + storage |
+| `src/components/ReceiptScannerModal.tsx` | Receipt OCR (Gemini Vision) + storage |
 | `TRD.md` | Technical requirements & architecture |
 | `PRD.md` | Product requirements & roadmap |
 | `docs/UNIFIED_FAB_IMPLEMENTATION.md` | Unified FAB architecture & roadmap |
 | `docs/PERMISSIONS_FIX.md` | Complete guide for runtime permissions |
-| `CAPACITOR_LOCALHOST_SETUP.md` | Mobile localhost development setup |
 
 ## Development Workflow
 

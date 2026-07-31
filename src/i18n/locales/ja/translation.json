@@ -29,7 +29,8 @@
     "yesterday": "昨日",
     "hisabify": "Hisabify",
     "comingSoon": "近日公開",
-    "and": "と"
+    "and": "と",
+    "loading": "読み込み中…"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -67,7 +68,9 @@
     "installApp": "アプリをインストール",
     "pageNotFound": "ページが見つかりません",
     "pageNotFoundDesc": "お探しのページは存在しません。",
-    "goHome": "ホームに戻る"
+    "goHome": "ホームに戻る",
+    "subscriptionTerms": "サブスクリプション規約",
+    "termsConditions": "利用規約"
   },
   "onboarding": {
     "selectLanguage": "言語を選択",
@@ -1051,7 +1054,17 @@
     "yearly": "毎年",
     "nextDue": "次回支払日",
     "noRecurring": "繰り返し取引はありません",
-    "none": "一回のみ"
+    "none": "一回のみ",
+    "subtitle": "請求とサブスクを自動記録",
+    "description": "各期間に自動で支出として記録されるため、サブスクを手入力する必要はありません。",
+    "name": "名前",
+    "namePlaceholder": "例: Netflix、家賃、ジム",
+    "startsOn": "開始日",
+    "noCategory": "カテゴリなし",
+    "nextOn": "次回 {{date}}",
+    "paused": "一時停止中",
+    "pause": "一時停止",
+    "resume": "再開"
   },
   "categories": {
     "categories": "カテゴリー",
@@ -1210,7 +1223,9 @@
   "settingsPage": {
     "general": "一般",
     "support": "サポート",
-    "version": "Hisabify v1.0.0 (Build 240)"
+    "legal": "法的情報",
+    "version": "Hisabify {{version}}",
+    "dataPrivacy": "データとプライバシー"
   },
   "profilePersonal": {
     "details": "詳細",
@@ -1268,7 +1283,14 @@
     "deleteAccount": "アカウントを削除",
     "typeDeleteAccountConfirm": "DELETE ACCOUNTと入力して確認",
     "deletePlaceholder": "DELETE",
-    "deleteAccountPlaceholder": "DELETE ACCOUNT"
+    "deleteAccountPlaceholder": "DELETE ACCOUNT",
+    "privacy": "プライバシー",
+    "usageAnalytics": "利用状況の分析",
+    "usageAnalyticsDesc": "匿名化されたアプリの利用状況を共有します。財務データは一切含まれません。",
+    "analyticsOn": "利用状況の分析を有効にしました",
+    "analyticsOff": "利用状況の分析を無効にしました",
+    "exportComplete": "エクスポート完了",
+    "exportCompleteDesc": "データをJSONとCSVでダウンロードしました。"
   },
   "notificationsPage": {
     "allCaughtUp": "すべて完了",
@@ -1545,5 +1567,49 @@
     "october": "10月",
     "november": "11月",
     "december": "12月"
+  },
+  "rating": {
+    "title": "Hisabify はいかがですか？",
+    "subtitle": "星をタップして評価してください。",
+    "starLabel": "5段階中 {{count}} で評価",
+    "commentLabel": "詳しく教えてください（任意）",
+    "commentPlaceholder": "良かった点、改善してほしい点は何ですか？",
+    "submit": "評価を送信",
+    "submitting": "送信中...",
+    "submitFailed": "評価を送信できませんでした。もう一度お試しください。",
+    "dontAskAgain": "今後表示しない",
+    "thanksTitle": "ありがとうございます！",
+    "thanksHighMessage": "Hisabify をお役立ていただけて嬉しいです。Google Play でも共有していただけますか？",
+    "thanksLowMessage": "率直なご意見をありがとうございます。Hisabify の改善に活用します。",
+    "rateOnPlayStore": "Google Play で評価する",
+    "close": "閉じる",
+    "rateTheApp": "アプリを評価"
+  },
+  "feedback": {
+    "title": "フィードバック",
+    "email": "メールアドレス",
+    "type": "種類",
+    "type_bug": "不具合",
+    "type_improvement": "改善",
+    "type_feature_request": "機能リクエスト",
+    "type_deletion_request": "削除リクエスト",
+    "type_other": "その他",
+    "otherLabel": "種類を入力してください",
+    "otherPlaceholder": "例：請求に関する質問",
+    "description": "詳細",
+    "descriptionPlaceholder": "できるだけ詳しくご記入ください。",
+    "attachments": "添付ファイル（任意）",
+    "addFiles": "ファイルを追加",
+    "attachmentHelp": "最大 {{count}} 件、1 件あたり 10 MB まで。",
+    "maxFiles": "アップロードできるのは最大 {{count}} 件です",
+    "fileTooLarge": "{{filename}} はサイズが大きすぎます",
+    "maxFileSize": "1 ファイルあたり最大 10 MB です。",
+    "removeFile": "{{filename}} を削除",
+    "completeFields": "必須項目をすべて入力してください",
+    "submit": "フィードバックを送信",
+    "sending": "送信中...",
+    "sent": "フィードバックを送信しました",
+    "sentDescription": "ありがとうございます。すべてのメッセージに目を通しています。",
+    "submitFailed": "フィードバックを送信できませんでした。もう一度お試しください。"
   }
 }

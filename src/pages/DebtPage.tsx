@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { PageShell } from '@/components/PageShell';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Handshake, User, Calendar, ChevronDown, ChevronUp, Trash2, CheckCircle2, CircleDollarSign, AlertCircle, LayoutGrid } from 'lucide-react';
+import { Plus, Handshake, User, Calendar, ChevronDown, ChevronUp, Trash2, CheckCircle2, CircleDollarSign, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -301,15 +302,7 @@ export function DebtPage() {
     : debts.filter((d) => d.type === activeTab);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3 flex-nowrap">
-          <button onClick={() => navigate('/more')} className="p-2 -ml-2 hover:bg-accent/10 rounded-lg shrink-0">
-            <LayoutGrid className="w-5 h-5 text-accent" />
-          </button>
-          <h1 className="text-lg font-semibold truncate">{t('debt.debtTracker')}</h1>
-        </div>
-      </div>
+    <PageShell title="debt.debtTracker" backTo="/more" withBottomNav className="px-0 py-0">
       <div className="px-4 py-4 space-y-4">
         {/* Add button */}
         <div className="flex items-center justify-between">
@@ -524,6 +517,6 @@ export function DebtPage() {
           />
         )}
       </AnimatePresence>
-    </div>
+    </PageShell>
   );
 }

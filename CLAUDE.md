@@ -439,7 +439,28 @@ Both routes render through `LegalDocPage` (`src/components/LegalDocPage.tsx`), w
 
 `LegalModal` is now **AuthPage-only** — a modal is right at signup, where navigating away would abandon registration. Settings links to the routes instead.
 
-**Account deletion is immediate and irreversible.** `/profile/data` (`DataPage.tsx`) wipes the user's rows and then calls the `delete-user` edge function. Do not add a soft-delete or 30-day grace period: the Privacy Policy's "deleted within 30 days" is a *ceiling*, which immediate deletion already satisfies, and a soft-delete without a purge job means data is never actually deleted — a worse outcome legally than what we have. A 30-day soft-delete was built and removed for exactly this reason.
+**Account deletion is manual and review-gated, not instant.** `/profile/data` (`DataPage.tsx`) no
+longer deletes anything on click. Both "Delete Financial Data" and "Delete Account" open
+`DeletionRequestSheet`, which inserts a row into `deletion_requests` (optional exit reason +
+free-text detail — GDPR Art. 12 requires erasure requests to be actionable without answering
+anything). The account stays fully usable, and the request cancellable, until an admin approves
+it in `/admin`, which invokes `supabase/functions/process-deletion-request` — the single
+authoritative wipe covering every user-scoped table and both storage buckets (`receipts`,
+`feedback-attachments`).
+
+This replaced an instant, client-side delete (`deleteAllTableData()` + the `delete-user` edge
+function) for two reasons: it only wiped 7 of 15+ user-scoped tables, and instant deletion gave
+no chance to capture why a user was leaving. It does **not** reintroduce the soft-delete/grace-
+period this file used to warn against — that warning's reasoning (a soft-delete without a purge
+job means data is never actually deleted) still holds, and still applies here: there is a real
+purge (`process-deletion-request`), it is triggered by a human clicking Approve, not a background
+job that can silently stop running (see the payment-reminder-cron incident referenced under
+Recurring Transactions), and the `deletion_requests` row is anonymised (`user_id`/`email` nulled)
+on fulfilment rather than kept indefinitely tied to an identity. `audit_log` remains the
+permanent, non-anonymised record that erasure happened, for exactly the reason it was built.
+
+Do not re-add a client-side wipe-table list anywhere — `process-deletion-request`'s table list is
+the only one, specifically because a second list is how the 7-of-15 gap happened the first time.
 
 `useDataManagement.ts` owns the GDPR right-of-access export (CSV + JSON, both download together because the policy promises both formats) and `logPrivacyAction()`. Deletion is deliberately *not* in this hook — a second deletion path would give the app two contradictory answers to "is my account gone?".
 
@@ -469,6 +490,59 @@ Catch-up is capped at 24 periods per template per run; the remainder is picked u
 `src/lib/pageMotion.ts` holds the single motion definition used by both `Layout.tsx` (via `AnimatePresence`, with exit) and `PageTransition.tsx` (enter-only, for routes outside the layout). Use `usePageVariants()` rather than importing `pageVariants` directly — it returns static variants when the user prefers reduced motion.
 
 Each route owns its own `Suspense` boundary. Do not reintroduce a single app-root fallback for route chunks: it unmounts the header and bottom navigation on every lazy navigation.
+
+### Page chrome: one appbar per page
+
+Two appbars exist, and the route decides which one you get. **Never render both, and never
+hand-roll a third.**
+
+- **Tab routes** — the five paths in `NAV_TABS` (`src/lib/navTabs.ts`). `Layout` renders
+  `Header` (avatar, notifications, menu) for these, gated on `isTabRoute()`. `Header` has no
+  back mode; it is landing-only and `Layout` is its sole caller.
+- **Everything else** — the page renders `<PageShell title backTo>` (`src/components/PageShell.tsx`):
+  a compact bar with a back button and title, no avatar, no hamburger. `PageShell` owns
+  `env(safe-area-inset-top)`, because no `Header` sits above it.
+
+`NAV_TABS` is the single source of truth for the bottom nav, the desktop sidebar, and
+`isTabRoute`. Adding a tab means adding it there and nowhere else; the three used to keep
+separate copies.
+
+Which route group a child page belongs to decides only whether the bottom nav is present:
+
+| | Route group | Chrome |
+|---|---|---|
+| **Inside a parent** (`/debts`, `/activity`, `/categories`, `/more/*`, `/transactions/:id`) | `Layout` group in `App.tsx` | `PageShell` + bottom nav + FAB + sidebar |
+| **Isolated** (`/settings/*`, `/profile/*`, `/support`, `/faq`, `/notifications`, `/admin`, `/terms`, `/privacy`) | `StandalonePage` group | `PageShell` only |
+
+Pass `withBottomNav` from Layout-group pages. It controls **bottom padding only** — the nav
+itself comes from `Layout`.
+
+This replaced eight hand-copied bar blocks (identical apart from the title) plus a parallel
+`<Header showBack>` convention on ten more pages. Every one of those pages was rendering two
+stacked bars, because `Layout` drew its own header underneath. If you find yourself writing
+`sticky top-0 z-40 bg-background/80 …`, you want `PageShell`.
+
+### Overlays: never stack two of them
+
+The app runs **three** overlay systems with no shared z-scale: Radix Dialog (`z-[55]`),
+Radix Sheet (`z-[60]`), and react-modal-sheet (`base-modal-sheet.tsx`, its own portal).
+Which one wins is incidental, so a modal opened from inside another modal renders wrong —
+double-dimmed backdrop, two close buttons, one card floating over the other.
+
+Transaction details is a **page** (`/transactions/:id`, `TransactionDetailsPage.tsx`), not a
+dialog, precisely so `AssignmentSheet` and `EditTransactionModal` each open as a single layer
+over it.
+
+It is a `PageShell` page like every other non-tab route — see "Page chrome" below. It replaced `TransactionDetailsDialog`, which nested `AssignmentSheet` inside its
+`DialogContent`. Do not turn it back into a modal, and do not render a Sheet or
+`BaseModalSheet` from inside a `DialogContent` anywhere else — put the trigger on a page.
+`src/components/ui/__tests__/dialog-sheet-stacking.test.tsx` guards the Sheet-over-Dialog
+z-order for the one remaining nested case (`SuggestionBanner`).
+
+Amounts on the details page are converted live via `useExchangeRate`, matching how
+`ExpensesPage` renders the list row. Do **not** read `transactions.amount_converted` for
+display: it is frozen at the base currency in force when the row was written, so it disagrees
+with the list the moment a user switches base currency.
 
 ### Gamification (Health Score)
 
@@ -597,13 +671,16 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/lib/security.ts` | Security utilities |
 | `src/lib/logger.ts` | Logging service |
 | `src/lib/imageProcessor.ts` | Receipt image optimization |
-| `src/components/Layout.tsx` | Main layout wrapper |
+| `src/components/Layout.tsx` | Main layout wrapper (tab `Header`, bottom nav, FAB, sidebar) |
+| `src/components/PageShell.tsx` | Compact appbar + content shell for every non-tab page |
+| `src/lib/navTabs.ts` | The five tabs — bottom nav, sidebar, and `isTabRoute` |
 | `src/components/RatingSheet.tsx` | Star rating + comment bottom sheet |
 | `src/components/FeedbackSheet.tsx` | Feedback bottom sheet (type, description, attachments) |
 | `src/components/PageTransition.tsx` | Route enter animation + delayed Suspense fallback |
 | `src/lib/pageMotion.ts` | Shared page transition variants (reduced-motion aware) |
 | `src/lib/appStore.ts` | Play Store listing link + app version helper |
 | `src/pages/AdminPage.tsx` | Admin DB viewer (`/admin`) |
+| `src/pages/TransactionDetailsPage.tsx` | Transaction details (`/transactions/:id`) — a page, not a modal |
 | `src/lib/legalContent.tsx` | Terms of Service + Privacy Policy copy |
 | `src/components/SubscriptionTermsContent.tsx` | Subscription & billing terms copy |
 | `src/components/LegalDocPage.tsx` | Shared shell for routed legal docs (chrome + "Last updated") |

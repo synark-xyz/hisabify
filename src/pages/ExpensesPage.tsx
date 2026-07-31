@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal, ChartBar } from 'lucide-react';
 import { cn, getLocalizedCategoryName } from '@/lib/utils';
@@ -9,7 +9,6 @@ import { ExpenseOverview } from '@/components/ExpenseOverview';
 import { ExpenseDonutChart } from '@/components/ExpenseDonutChart';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
-import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { AddPaymentReminderModal } from '@/components/AddPaymentReminderModal';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -78,7 +77,6 @@ export function ExpensesPage() {
   const [showUnclearedOnly, setShowUnclearedOnly] = useState(false);
   const [filterPaymentMethod, setFilterPaymentMethod] = useState<PaymentMethod | 'all'>('all');
   const [groupBy, setGroupBy] = useState<GroupByOption>('none');
-  const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [reminderTransaction, setReminderTransaction] = useState<Transaction | null>(null);
@@ -88,6 +86,7 @@ export function ExpensesPage() {
   // Deferred category name filter — applied once categories are loaded
   const pendingCategoryNameRef = useRef<string | null>(null);
 
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { currency, currencyVersion } = useCurrency();
   const { convertAmount } = useExchangeRate();
@@ -598,6 +597,11 @@ export function ExpensesPage() {
     setFocusedDate(null);
   }, []);
 
+  const openDetails = useCallback(
+    (tx: Transaction) => navigate(`/transactions/${tx.id}`),
+    [navigate]
+  );
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -1091,7 +1095,7 @@ export function ExpensesPage() {
                     <TransactionItem
                       key={tx.id}
                       transaction={tx}
-                      onViewDetails={setViewingTransaction}
+                      onViewDetails={openDetails}
                       onEdit={setEditingTransaction}
                       onDelete={setDeletingTransaction}
                       revealedId={revealedTransactionId}
@@ -1113,7 +1117,7 @@ export function ExpensesPage() {
                           <TransactionItem
                             key={tx.id}
                             transaction={tx}
-                            onViewDetails={setViewingTransaction}
+                            onViewDetails={openDetails}
                             onEdit={setEditingTransaction}
                             onDelete={setDeletingTransaction}
                             revealedId={revealedTransactionId}
@@ -1208,14 +1212,6 @@ export function ExpensesPage() {
           </motion.main>
         </div>
       </PullToRefresh>
-
-      <TransactionDetailsDialog
-        open={!!viewingTransaction}
-        onOpenChange={(open) => !open && setViewingTransaction(null)}
-        transaction={viewingTransaction}
-        onEdit={(tx) => { setViewingTransaction(null); setEditingTransaction(tx); }}
-        onDelete={(tx) => { setViewingTransaction(null); setDeletingTransaction(tx); }}
-      />
 
       <EditTransactionModal
         open={!!editingTransaction}

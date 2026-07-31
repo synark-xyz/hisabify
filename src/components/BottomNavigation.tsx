@@ -1,25 +1,16 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { List, Target, LayoutDashboardIcon, Lightbulb, Grid } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
-
-
-const getNavItems = (t: (key: string) => string) => [
-  { path: '/', icon: LayoutDashboardIcon, label: t('nav.dashboard') },
-  { path: '/budget', icon: Target, label: t('nav.budget') },
-  { path: '/transactions', icon: List, label: t('nav.expenses') },
-  { path: '/insights', icon: Lightbulb, label: t('nav.insights') },
-  { path: '/more', icon: Grid, label: t('nav.more') },
-];
+import { NAV_TABS, isTabActive } from '@/lib/navTabs';
 
 export function BottomNavigation() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { isKeyboardOpen } = useVisualViewport();
-  const navItems = getNavItems(t);
+  const navItems = NAV_TABS;
 
   return (
     <AnimatePresence>
@@ -33,7 +24,7 @@ export function BottomNavigation() {
         >
       <div className="max-w-2xl mx-auto grid grid-cols-5 items-center h-20 md:h-20 relative">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/') && item.path !== '/';
+          const isActive = isTabActive(item.path, location.pathname);
           const Icon = item.icon;
 
           return (
@@ -51,7 +42,7 @@ export function BottomNavigation() {
                 <span
                   className={cn('text-xs font-semibold max-w-full truncate', isActive ? 'opacity-100' : 'opacity-60')}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </span>
                 {isActive && (
                   <motion.div

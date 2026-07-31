@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, CheckCircle, Clock, WarningCircle, List, Pencil, Gear, Headset, CaretLeft, Globe } from '@phosphor-icons/react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Bell, X, CheckCircle, Clock, WarningCircle, List, Gear, Headset } from '@phosphor-icons/react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,30 +21,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PaymentReminder } from '@/types';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useLanguage, languageNames } from '@/hooks/useLanguage';
 import { localizeNumber } from '@/lib/i18nNumber';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 interface HeaderProps {
+  /** A `nav.*` i18n key. Only the five tab routes render this header. */
   title: string;
-  showBack?: boolean;
-  onBack?: () => void;
-  variant?: 'default' | 'profile';
 }
 
-export function Header({ title, showBack, onBack, variant = 'default' }: HeaderProps) {
+/**
+ * The landing appbar: avatar, page title, notifications and menu. Rendered by
+ * `Layout` for tab routes only. Child pages use `PageShell` instead — this
+ * component deliberately has no back mode, so there is one bar per role.
+ */
+export function Header({ title }: HeaderProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const { user } = useAuth();
   const { profile } = useProfile();
   const { formatAmount } = useCurrency();
   const { reminders, markAsPaid } = usePaymentReminders();
   const { unreadCount: unreadMessagesCount } = useNotifications();
-  const { language, setLanguage } = useLanguage();
-  const translatedTitle = title.startsWith('nav.') || title.startsWith('common.') || title.startsWith('profile.') || title.startsWith('referral.') || title.startsWith('debt.') || title.startsWith('activity.') || title.startsWith('categories.') || title.startsWith('settings.') || title.startsWith('calculator.')
-    ? t(title)
-    : title;
+  const translatedTitle = t(title);
   const [open, setOpen] = useState(false);
 
   const userInitial = profile.display_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
@@ -82,28 +79,7 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
     await markAsPaid(reminder);
   };
 
-  const getClosePagePath = (pathname: string) => {
-    if (pathname.startsWith('/profile/')) return '/profile';
-    if (pathname === '/profile') return '/';
-    if (pathname.startsWith('/settings/')) return '/settings';
-    if (pathname === '/settings') return '/';
-    if (pathname === '/privacy' || pathname === '/faq' || pathname === '/support') return '/settings';
-    if (pathname === '/notifications') return '/';
-    return '/';
-  };
-
-  const handleLeftAction = () => {
-    if (showBack) {
-      if (onBack) {
-        onBack();
-        return;
-      }
-      navigate(getClosePagePath(location.pathname));
-      return;
-    }
-
-    navigate('/profile');
-  };
+  const handleLeftAction = () => navigate('/profile');
 
   return (
     <motion.header
@@ -120,21 +96,13 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        {showBack ? (
-          <div className="w-10 h-10 rounded-full bg-card shadow-sm border border-border/50 flex items-center justify-center">
-            <CaretLeft className="w-5 h-5 text-foreground" weight="bold" />
-          </div>
-        ) : (
-          <>
-            <Avatar className="w-12 h-12 border-2 border-accent/30">
-              <AvatarImage src={avatarUrl} />
-              <AvatarFallback className="bg-gradient-to-br from-accent/20 to-primary/20 text-foreground font-semibold">
-                {userInitial}
-              </AvatarFallback>
-            </Avatar>
-            <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-background" />
-          </>
-        )}
+        <Avatar className="w-12 h-12 border-2 border-accent/30">
+          <AvatarImage src={avatarUrl} />
+          <AvatarFallback className="bg-gradient-to-br from-accent/20 to-primary/20 text-foreground font-semibold">
+            {userInitial}
+          </AvatarFallback>
+        </Avatar>
+        <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-background" />
       </motion.button>
 
       <motion.h1
@@ -147,49 +115,6 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
       </motion.h1>
 
       <div className="flex items-center gap-3">
-        {showBack ? (
-          <div className="w-10" />
-        ) : variant === 'profile' ? (
-          <motion.button
-            onClick={() => navigate('/profile/personal')}
-            className="relative w-10 h-10 rounded-full bg-card shadow-card flex items-center justify-center border border-border/50"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Pencil className="w-5 h-5 text-accent" weight="duotone" />
-          </motion.button>
-        ) : (
-          <>
-            <Popover>
-              <PopoverTrigger asChild>
-                <motion.button
-                  className="w-10 h-10 rounded-full bg-card shadow-card flex items-center justify-center border border-border/50 hover:bg-accent/10 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Globe className="w-5 h-5 text-muted-foreground" weight="duotone" />
-                </motion.button>
-              </PopoverTrigger>
-              <PopoverContent className="w-40 p-2" align="end" sideOffset={8}>
-                <div className="space-y-1">
-                  {(['en', 'bn', 'ja'] as const).map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setLanguage(lang)}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        language === lang
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      <span className="uppercase font-bold">{lang}</span>
-                      <span>{languageNames[lang]}</span>
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <div className="relative">
@@ -242,10 +167,6 @@ export function Header({ title, showBack, onBack, variant = 'default' }: HeaderP
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-
-          </>
-        )}
       </div>
       </div>
     </motion.header>

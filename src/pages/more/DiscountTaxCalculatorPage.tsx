@@ -1,5 +1,6 @@
 import { useReducer, useState } from 'react';
-import { ChevronLeft, Percent, Crown } from 'lucide-react';
+import { PageShell } from '@/components/PageShell';
+import { Percent, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -111,19 +112,14 @@ export function DiscountTaxCalculatorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button onClick={() => navigate('/more')} className="p-2 -ml-2 hover:bg-accent/10 rounded-lg">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold flex items-center gap-2">
-            <Percent className="w-5 h-5" /> {t('morePage.discountTax')}
-          </h1>
-        </div>
-      </header>
+    <PageShell title="morePage.discountTax" backTo="/more" withBottomNav className="px-0 py-0">
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Percent className="w-3.5 h-3.5" />
+          {t('morePage.discountTax')}
+        </h2>
+
         {/* Currency Selector (Pro Feature) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -216,9 +212,9 @@ export function DiscountTaxCalculatorPage() {
             </div>
           </div>
         )}
-      </main>
+      </div>
 
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} source="discount_calculator" />
-    </div>
+    </PageShell>
   );
 }

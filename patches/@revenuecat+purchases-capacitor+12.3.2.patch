@@ -1,0 +1,12 @@
+diff --git a/node_modules/@revenuecat/purchases-capacitor/android/build.gradle b/node_modules/@revenuecat/purchases-capacitor/android/build.gradle
+index 2a71c19..cdade9a 100644
+--- a/node_modules/@revenuecat/purchases-capacitor/android/build.gradle
++++ b/node_modules/@revenuecat/purchases-capacitor/android/build.gradle
+@@ -19,7 +19,6 @@ buildscript {
+ }
+ 
+ apply plugin: 'com.android.library'
+-apply plugin: 'org.jetbrains.kotlin.android'
+ 
+ android {
+     namespace = "com.revenuecat.purchases.capacitor"

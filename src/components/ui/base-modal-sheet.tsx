@@ -184,7 +184,12 @@ const SheetContainer: React.FC<SheetContainerProps> = ({ children, className }) 
   return (
     <ReactModalSheet.Container
       className={cn("text-card-foreground shadow-2xl rounded-t-3xl", className)}
-      style={{ background: 'hsl(var(--card))' }}
+      style={{
+        background: 'hsl(var(--card))',
+        display: 'flex',
+        flexDirection: 'column',
+        maxHeight: '100%',
+      }}
     >
       {children}
     </ReactModalSheet.Container>
@@ -199,7 +204,7 @@ interface SheetHeaderProps {
 
 const SheetHeader: React.FC<SheetHeaderProps> = ({ children, className }) => {
   return (
-    <ReactModalSheet.Header className={cn("relative bg-card border-b border-border/50", className)}>
+    <ReactModalSheet.Header className={cn("relative flex-shrink-0 bg-card border-b border-border/50", className)}>
       <div className="flex justify-center pt-3 pb-0">
         <div className="w-[100px] h-[5px] rounded-full bg-muted-foreground/20" />
       </div>

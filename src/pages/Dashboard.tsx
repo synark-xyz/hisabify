@@ -232,6 +232,19 @@ export function Dashboard() {
     });
   }, [paymentReminders]);
 
+  // Activity history preview: debt activity and transactions interleaved by recency,
+  // capped at 5 rows so the card grows with the page instead of needing its own scroll.
+  const recentActivity = useMemo(() => {
+    const debtTypes = ['debt_created', 'debt_settled', 'debt_updated', 'debt_deleted'];
+    const entries = [
+      ...activityLogs
+        .filter((a) => debtTypes.includes(a.activity_type))
+        .map((activity) => ({ kind: 'activity' as const, at: new Date(activity.created_at).getTime(), activity })),
+      ...transactions.map((tx) => ({ kind: 'transaction' as const, at: new Date(tx.date).getTime(), tx })),
+    ];
+    return entries.sort((a, b) => b.at - a.at).slice(0, 5);
+  }, [activityLogs, transactions]);
+
   const netBalance = totalIncome - totalExpenses;
   const showGettingStarted = isFirstTimeUser === true;
 
@@ -476,9 +489,11 @@ export function Dashboard() {
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   style={{ willChange: 'transform, opacity' }}
                 >
+                  {/* Opaque gradient, not glass: glass-card-accent is a 10% tint over the page
+                      background, so the white text on it was unreadable in light mode. */}
                   <div
                     onClick={() => setShowUpgradeModal(true)}
-                    className="relative overflow-hidden rounded-2xl p-4 glass-card-accent shadow-lg shadow-purple-500/20 cursor-pointer group transition-all active:scale-95"
+                    className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-purple-500/20 cursor-pointer group transition-all active:scale-95"
                   >
                     <div
                       className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-colors"
@@ -698,11 +713,24 @@ export function Dashboard() {
                 </motion.button>
               </div>
               <div className="bg-card rounded-2xl p-3 space-y-2 shadow-sm">
-                {transactions.length > 0 || activityLogs.length > 0 ? (
-                  <>
-                    {/* Debt/Settlement activities */}
-                    {activityLogs.filter(a => ['debt_created', 'debt_settled', 'debt_updated', 'debt_deleted'].includes(a.activity_type)).map((activity) => {
-                      const isSettled = activity.activity_type === 'debt_settled';
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((item, idx) => {
+                    if (item.kind === 'transaction') {
+                      return (
+                        <TransactionItem
+                          key={item.tx.id}
+                          transaction={item.tx}
+                          index={idx}
+                          onEdit={setEditingTransaction}
+                          onDelete={setDeletingTransaction}
+                          revealedId={revealedTransactionId}
+                          onReveal={setRevealedTransactionId}
+                        />
+                      );
+                    }
+
+                    const activity = item.activity;
+                    const isSettled = activity.activity_type === 'debt_settled';
                       const isDeleted = activity.activity_type === 'debt_deleted';
                       const isCreated = activity.activity_type === 'debt_created';
                       const isPositive = activity.activity_type === 'debt_settled' || activity.activity_type === 'debt_created';
@@ -771,20 +799,7 @@ export function Dashboard() {
                           )}
                         </div>
                       );
-                    })}
-                    {/* Transaction items */}
-                    {transactions.map((tx, idx) => (
-                      <TransactionItem
-                        key={tx.id}
-                        transaction={tx}
-                        index={idx}
-                        onEdit={setEditingTransaction}
-                        onDelete={setDeletingTransaction}
-                        revealedId={revealedTransactionId}
-                        onReveal={setRevealedTransactionId}
-                      />
-                    ))}
-                  </>
+                  })
                 ) : (
                   <div className="py-8 text-center">
                     <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">

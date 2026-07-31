@@ -162,9 +162,10 @@ export function TermsContent() {
           <li>Terminate only if you do not respond within 7 days</li>
         </ol>
         <p>
-          <strong>Your Right:</strong> You may delete your account at any time from Profile →
-          Data Management. Upon deletion, all personal data is permanently removed within 30
-          days.
+          <strong>Your Right:</strong> You may request account deletion at any time from Profile
+          → Data &amp; Privacy. Requests are reviewed manually; upon approval, all personal data
+          is permanently removed within 30 days of your original request, with backup copies
+          purged within 90 days.
         </p>
       </LegalSection>
 
@@ -184,7 +185,8 @@ export function TermsContent() {
         </p>
         <p>
           If you disagree with updated Terms, you may request data deletion within 30 days of
-          the change notification. See our Privacy Policy for data deletion procedures.
+          the change notification. See our Privacy Policy for the data deletion request
+          procedure.
         </p>
       </LegalSection>
 
@@ -452,13 +454,15 @@ export function PrivacyContent() {
         </p>
         <p>
           <strong>Right to Erasure ("Right to be Forgotten"):</strong> Request deletion of your
-          account and all data. Go to Settings → Data Management → Delete Account or email
-          "Erasure Request". Response: 30 days. Data deleted: Within 30 days. Exceptions: Data
-          required by law (tax records).
+          data or account from Profile → Data &amp; Privacy, or email us with "Erasure Request".
+          Requests are reviewed manually rather than actioned instantly; your account remains
+          fully usable, and the request cancellable, until then. Response: 30 days. Data
+          deleted: within 30 days of your request. Backup copies: purged within 90 days.
+          Exceptions: data required by law (tax records).
         </p>
         <p>
           <strong>Right to Data Portability:</strong> Export your data in a portable format. Go
-          to Settings → Data Management → Export Data. Formats: CSV, JSON. Cost: Free. Response:
+          to Profile → Data &amp; Privacy → Export Data. Formats: CSV, JSON. Cost: Free. Response:
           Immediate (automated export).
         </p>
         <p>
@@ -482,9 +486,11 @@ export function PrivacyContent() {
           Device/usage data: 12 months, then anonymised/deleted. Crash reports: 30 days.
         </p>
         <p>
-          <strong>After Account Deletion:</strong> Personal data (email, name, password): 30
-          days. Financial data: 30 days. Backup copies: 90 days. Legal/tax records: 7 years
-          (legal requirement). Anonymised aggregate data: Indefinitely.
+          <strong>After a Deletion Request is Approved:</strong> Personal data (email, name,
+          password): 30 days. Financial data: 30 days. Backup copies: 90 days. Legal/tax
+          records: 7 years (legal requirement). Anonymised aggregate data: indefinitely. The
+          30/90-day windows are measured from when you submitted the request, not from when it
+          was approved.
         </p>
         <p>
           <strong>Special Cases:</strong> Active refund disputes: 180 days (chargeback window).

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
+import { PencilSimple } from '@phosphor-icons/react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import {
@@ -30,9 +31,20 @@ export function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-transparent pb-page-content fade-bottom-overlay">
-      <div className="max-w-md mx-auto">
-        <main className="px-4 space-y-6 pt-4">
+    <PageShell
+      title="nav.profile"
+      backTo="/"
+      className="max-w-md space-y-6 pt-4"
+      actions={
+        <button
+          onClick={() => navigate('/profile/personal')}
+          aria-label={t('profile.personalInfo')}
+          className="w-10 h-10 rounded-full bg-card shadow-card flex items-center justify-center border border-border/50"
+        >
+          <PencilSimple className="w-5 h-5 text-accent" weight="duotone" />
+        </button>
+      }
+    >
           {/* Profile Card */}
           <motion.div
             className="bg-card rounded-2xl p-6 shadow-card text-center relative pointer-events-none card-3d transition-all"
@@ -112,10 +124,7 @@ export function ProfilePage() {
             ))}
           </motion.div>
 
-        </main>
-      </div>
-
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
-    </div>
+    </PageShell>
   );
 }

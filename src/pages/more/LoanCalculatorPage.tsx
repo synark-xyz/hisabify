@@ -1,5 +1,6 @@
 import { useReducer, useState } from 'react';
-import { ChevronLeft, CreditCard, Crown } from 'lucide-react';
+import { PageShell } from '@/components/PageShell';
+import { Landmark, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -108,19 +109,14 @@ export function LoanCalculatorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button onClick={() => navigate('/more')} className="p-2 -ml-2 hover:bg-accent/10 rounded-lg">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold flex items-center gap-2">
-            <CreditCard className="w-5 h-5" /> {t('loanCalculator.title')}
-          </h1>
-        </div>
-      </header>
+    <PageShell title="loanCalculator.title" backTo="/more" withBottomNav className="px-0 py-0">
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Landmark className="w-3.5 h-3.5" />
+          {t('loanCalculator.title')}
+        </h2>
+
         {/* Currency Selector (Pro Feature) */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -209,9 +205,9 @@ export function LoanCalculatorPage() {
             </div>
           </div>
         )}
-      </main>
+      </div>
 
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} source="loan_calculator" />
-    </div>
+    </PageShell>
   );
 }

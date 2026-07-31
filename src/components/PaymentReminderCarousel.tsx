@@ -46,12 +46,6 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
     );
   }
 
-  const shouldAnimate = pendingReminders.length > 2;
-  // Duplicate reminders only if we are animating for seamless loop
-  const displayReminders = shouldAnimate
-    ? [...pendingReminders, ...pendingReminders, ...pendingReminders]
-    : pendingReminders;
-
   const getReminderStatus = (reminder: PaymentReminder) => {
     const dueDate = toReminderDisplayDate(reminder.due_date);
     const diff = differenceInDays(dueDate, new Date());
@@ -105,25 +99,11 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
   };
 
   return (
-    <div className={cn(
-      "relative overflow-x-auto custom-scrollbar py-2 -mx-4 px-4 mask-fade-edges",
-      shouldAnimate ? "overflow-hidden" : ""
-    )}>
-      <motion.div
-        className="flex gap-3 w-max"
-        animate={shouldAnimate ? {
-          x: [0, -100 / 3 + '%'],
-        } : {}}
-        transition={shouldAnimate ? {
-          x: {
-            repeat: Infinity,
-            repeatType: 'loop',
-            duration: pendingReminders.length * 10,
-            ease: 'linear',
-          },
-        } : {}}
-      >
-        {displayReminders.map((reminder, index) => {
+    // Plain swipeable strip. The previous marquee rendered every reminder three times
+    // to fake a seamless loop, which read as duplicate entries in the list.
+    <div className="relative overflow-x-auto custom-scrollbar py-2 -mx-4 px-4 mask-fade-edges">
+      <div className="flex gap-3 w-max">
+        {pendingReminders.map((reminder) => {
           const status = getReminderStatus(reminder);
           const Icon = status.icon;
           const savingsReminder = isSavingsReminder(reminder);
@@ -133,7 +113,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
 
           return (
             <motion.div
-              key={`${reminder.id}-${index}`}
+              key={reminder.id}
               role="button"
               tabIndex={0}
               className={cn(
@@ -167,7 +147,7 @@ export function PaymentReminderCarousel({ reminders }: PaymentReminderCarouselPr
             </motion.div>
           );
         })}
-      </motion.div>
+      </div>
     </div>
   );
 }

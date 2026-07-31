@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
 import {
   Accordion,
   AccordionContent,
@@ -44,9 +44,7 @@ export function FaqPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-page-content">
-      <Header title={t('page.faq')} showBack />
-      <main className="px-4 py-6">
+    <PageShell title="page.faq" backTo="/settings" className="py-6">
         <Accordion type="single" collapsible className="w-full rounded-2xl border border-border/50 bg-card px-4">
           {faqItems.map((item) => (
             <AccordionItem key={item.id} value={item.id}>
@@ -57,7 +55,6 @@ export function FaqPage() {
             </AccordionItem>
           ))}
         </Accordion>
-      </main>
-    </div>
+    </PageShell>
   );
 }

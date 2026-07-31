@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { AlertTriangle, Bell, Smartphone } from 'lucide-react';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { requestNotificationPermission, sendNotification } from '@/lib/notifications';
 import { setBudgetAlertsEnabled } from '@/lib/notificationManager';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 
 export function NotificationSettingsPage() {
@@ -142,9 +141,7 @@ export function NotificationSettingsPage() {
     };
 
     return (
-        <div className={cn("min-h-screen pb-page-content", "bg-background")}>
-            <Header title="Notifications" showBack />
-            <main className="px-4 py-6 space-y-6">
+        <PageShell title="settings.notifications" backTo="/settings" className="py-6 space-y-6">
 
                 {/* Budget Alerts */}
                 <div className="flex items-center justify-between p-4 bg-card rounded-2xl border border-border/50">
@@ -203,7 +200,6 @@ export function NotificationSettingsPage() {
                     />
                 </div>
 
-            </main>
-        </div>
+        </PageShell>
     );
 }

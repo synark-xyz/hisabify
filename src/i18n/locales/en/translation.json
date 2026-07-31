@@ -1201,7 +1201,8 @@
     "validationSplitError": "Split Error",
     "validationSplitAmounts": "Split amounts must equal the total ({{total}}). Difference: {{diff}}",
     "validationSplitRowsEmpty": "Each split row needs a category and amount greater than 0.",
-    "transferComingSoon": "Transfer feature will be available soon"
+    "transferComingSoon": "Transfer feature will be available soon",
+    "details": "Transaction Details"
   },
   "suggestion": {
     "linkIt": "✓ Link it",

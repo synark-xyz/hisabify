@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { PageShell } from '@/components/PageShell';
 import { isToday, isYesterday } from 'date-fns';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +19,6 @@ import {
   FileText,
   Bell,
   Archive,
-  LayoutGrid,
 } from 'lucide-react';
 import { useActivityHistory } from '@/hooks/useActivityHistory';
 import { cn } from '@/lib/utils';
@@ -134,15 +134,7 @@ export function ActivityHistoryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3 flex-nowrap">
-          <button onClick={() => navigate('/more')} className="p-2 -ml-2 hover:bg-accent/10 rounded-lg shrink-0">
-            <LayoutGrid className="w-5 h-5 text-accent" />
-          </button>
-          <h1 className="text-lg font-semibold truncate">{t('activity.activityHistory')}</h1>
-        </div>
-      </div>
+    <PageShell title="activity.activityHistory" backTo="/more" withBottomNav className="px-0 py-0">
       <div className="px-4 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-lg font-semibold">{t('activity.title')}</span>
@@ -176,6 +168,6 @@ export function ActivityHistoryPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

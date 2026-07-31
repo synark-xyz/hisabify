@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp, MessageSquarePlus, Star, FileText, DatabaseZap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
 import { FeedbackSheet } from '@/components/FeedbackSheet';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { getAppVersion, openStoreListing } from '@/lib/appStore';
-import { cn } from '@/lib/utils';
 
 export function SettingsPage() {
     const navigate = useNavigate();
@@ -60,9 +59,7 @@ export function SettingsPage() {
     ];
 
     return (
-        <div className={cn("min-h-screen pb-page-content", "bg-background")}>
-            <Header title={t('settings.title')} showBack />
-            <main className="px-4 py-6 space-y-8">
+        <PageShell title="settings.title" backTo="/" className="py-6 space-y-8">
 
                 {sections.map((section) => (
                     <section key={section.id} className="space-y-4">
@@ -106,9 +103,7 @@ export function SettingsPage() {
                     </p>
                 )}
 
-            </main>
-
             <FeedbackSheet open={showFeedback} onOpenChange={setShowFeedback} />
-        </div>
+        </PageShell>
     );
 }

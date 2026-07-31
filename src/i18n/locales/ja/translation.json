@@ -1164,7 +1164,8 @@
     "validationSplitError": "分割エラー",
     "validationSplitAmounts": "分割合計は総額と一致する必要があります（{{total}}）。差額: {{diff}}",
     "validationSplitRowsEmpty": "各分割行にカテゴリーと0より大きい金額が必要です。",
-    "transferComingSoon": "振替機能は近日公開予定です"
+    "transferComingSoon": "振替機能は近日公開予定です",
+    "details": "取引の詳細"
   },
   "suggestion": {
     "linkIt": "✓ リンクする",

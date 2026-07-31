@@ -3,11 +3,10 @@
 // GDPR/APPI data-subject operations: right of access (export) and the audit
 // trail that evidences them.
 //
-// Account deletion is NOT here. It lives in src/pages/profile/DataPage.tsx and
-// is immediate and irreversible via the `delete-user` edge function. Adding a
-// second, soft-delete path would give the app two contradictory answers to
-// "is my account gone?". This hook only exposes logPrivacyAction so that the
-// existing deletion flow can record itself.
+// Account deletion uses the manual deletion-request flow (review-gated admin
+// approval via the process-deletion-request edge function) — see
+// src/hooks/useDeletionRequest.ts. This hook only handles data export and
+// exposes logPrivacyAction for non-deletion audit events.
 
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +17,7 @@ interface DataExportResult {
   json: string;
 }
 
-export type PrivacyAction = 'data_export' | 'financial_data_deleted' | 'account_deleted';
+export type PrivacyAction = 'data_export' | 'financial_data_deleted' | 'account_deleted' | 'deletion_requested' | 'deletion_request_cancelled';
 
 export function useDataManagement() {
   const { user } = useAuth();

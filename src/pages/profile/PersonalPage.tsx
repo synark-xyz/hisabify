@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Save, Shield, ChevronRight, Camera, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
 import { CustomerCenterTrigger } from '@/components/CustomerCenterTrigger';
 
 export function PersonalPage() {
@@ -141,9 +140,7 @@ export function PersonalPage() {
 
 
     return (
-        <div className={cn("min-h-screen pb-page-content", "bg-background")}>
-
-            <main className="px-4 py-6 space-y-6">
+        <PageShell title="profile.personalInfo" backTo="/profile" className="py-6 space-y-6">
 
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center justify-center">
@@ -304,7 +301,6 @@ export function PersonalPage() {
                     <CustomerCenterTrigger variant="row" />
                 </div>
 
-            </main>
-        </div>
+        </PageShell>
     );
 }

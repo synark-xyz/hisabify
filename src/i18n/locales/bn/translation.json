@@ -1166,7 +1166,8 @@
     "validationSplitError": "ভাগ ত্রুটি",
     "validationSplitAmounts": "ভাগের পরিমাণ মোটের সমান হতে হবে ({{total}})। পার্থক্য: {{diff}}",
     "validationSplitRowsEmpty": "প্রতিটি ভাগে বিভাগ ও ০ এর বেশি পরিমাণ প্রয়োজন।",
-    "transferComingSoon": "স্থানান্তর ফিচার শীঘ্রই উপলব্ধ হবে"
+    "transferComingSoon": "স্থানান্তর ফিচার শীঘ্রই উপলব্ধ হবে",
+    "details": "লেনদেনের বিবরণ"
   },
   "suggestion": {
     "linkIt": "✓ যুক্ত করুন",

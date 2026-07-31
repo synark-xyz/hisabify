@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronLeft } from 'lucide-react';
 import { PencilSimple, Trash, ChartBar, Target } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { PageShell } from '@/components/PageShell';
 import { AssignmentSheet } from '@/components/AssignmentSheet';
 import { EditTransactionModal } from '@/components/EditTransactionModal';
 import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
@@ -279,26 +279,12 @@ export function TransactionDetailsPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-background pb-safe">
-      {/* Standalone route — no Layout Header above it, so this bar owns the
-          top safe-area inset itself. */}
-      <header
-        className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 hover:bg-accent/10 rounded-lg"
-            aria-label={t('common.back')}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold truncate">{transaction.merchant}</h1>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto">
+    <PageShell
+      title={transaction.merchant}
+      backTo="/transactions"
+      withBottomNav
+      className="px-0 py-0"
+    >
         {/* Amount band */}
         <div className={cn('px-4 pt-6 pb-6', isIncome ? 'bg-emerald-500/5' : 'bg-rose-500/5')}>
           <span className={cn('text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full', typeInfo.color)}>
@@ -521,7 +507,6 @@ export function TransactionDetailsPage() {
             {t('common.edit')}
           </Button>
         </div>
-      </main>
 
       <AssignmentSheet
         open={assignSheetOpen}
@@ -548,7 +533,7 @@ export function TransactionDetailsPage() {
         transaction={transaction}
         onSuccess={() => navigate('/transactions', { replace: true })}
       />
-    </div>
+    </PageShell>
   );
 }
 

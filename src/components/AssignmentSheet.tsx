@@ -7,7 +7,7 @@ import {
 import type { BudgetWithSpending } from '@/hooks/useBudgets';
 import type { SavingsGoalWithProgress } from '@/hooks/useSavingsGoals';
 import { cn } from '@/lib/utils';
-import { ChartBar } from 'lucide-react';
+import { ChartBar, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCurrency } from '@/hooks/useCurrency';
 
@@ -122,11 +122,13 @@ export function AssignmentSheet({
                           : 'bg-muted/40 hover:bg-muted/70'
                       )}
                     >
+                      {/* goal.icon holds an icon *name* ("target"), not an emoji —
+                          rendering it directly printed the literal word. */}
                       <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{ backgroundColor: `${goal.color}22` }}
                       >
-                        {goal.icon}
+                        <Target className="w-5 h-5" style={{ color: goal.color }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{goal.name}</p>

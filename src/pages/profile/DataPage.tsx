@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageShell } from '@/components/PageShell';
 import { motion } from 'framer-motion';
 import { Download, Trash2, UserX, AlertTriangle, FileJson, BarChart3, FileText, ChevronRight, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +13,6 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
 
 // Read at analytics call sites to honour the opt-out.
 export const ANALYTICS_OPT_OUT_KEY = 'analytics_opted_out';
@@ -107,8 +107,7 @@ export function DataPage() {
     };
 
     return (
-        <div className={cn("min-h-screen", "bg-background")}>
-            <main className="px-4 py-6 space-y-3 max-w-lg mx-auto">
+        <PageShell title="profile.dataManagement" backTo="/profile" className="py-6 space-y-3 max-w-lg">
 
                 {/* ── Your Data ─────────────────────────────────────────── */}
                 <motion.p
@@ -299,8 +298,6 @@ export function DataPage() {
                     </div>
                 </motion.div>
 
-            </main>
-
             {sheetScope && (
                 <DeletionRequestSheet
                     open={!!sheetScope}
@@ -310,6 +307,6 @@ export function DataPage() {
                     onConfirm={handleConfirmDeletionRequest}
                 />
             )}
-        </div>
+        </PageShell>
     );
 }

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Moon, Sun, Monitor, ArrowLeft, Tag, Globe } from 'lucide-react';
 import { ThemeColorPicker } from '@/components/ThemeColorPicker';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
 import { useTheme } from '@/hooks/useTheme';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useLanguage, languageNames } from '@/hooks/useLanguage';
@@ -81,9 +81,7 @@ export function PreferencesPage() {
     };
 
     return (
-        <div className="min-h-screen pb-page-content bg-background">
-            <Header title={t('settings.preferences')} showBack />
-            <main className="px-4 py-6 space-y-6">
+        <PageShell title="settings.preferences" backTo="/settings" className="py-6 space-y-6">
 
                 {/* Accent Color Picker */}
                 <ThemeColorPicker />
@@ -222,7 +220,6 @@ export function PreferencesPage() {
                         </SelectContent>
                     </Select>
                 </div>
-            </main>
-        </div>
+        </PageShell>
     );
 }

@@ -48,6 +48,19 @@ function jsonResponse(body: unknown, status: number) {
   });
 }
 
+async function revertToPending(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  requestId: string,
+): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('deletion_requests')
+    .update({ status: 'pending', resolved_at: null, resolved_by: null })
+    .eq('id', requestId);
+  if (error) {
+    console.error(`Failed to revert deletion_requests ${requestId} to pending:`, error.message);
+  }
+}
+
 async function wipeStorageFolder(
   supabaseAdmin: ReturnType<typeof createClient>,
   bucket: string,
@@ -116,6 +129,33 @@ serve(async (req) => {
     const userId = request.user_id as string;
     const scope = request.scope as 'data' | 'account';
 
+    const { data: adminUser } = await supabaseUser.auth.getUser();
+
+    // Lock the request atomically before performing any destructive work.
+    // If this UPDATE hits zero rows (cancelled or already completed), bail
+    // immediately — no data has been touched yet. Deliberately does NOT null
+    // user_id/email here: anonymizing happens only after the wipe below
+    // actually succeeds, so a failure never leaves an unidentifiable,
+    // unretriable "completed" row sitting on top of undeleted data.
+    const { data: lockedRows, error: lockError } = await supabaseAdmin
+      .from('deletion_requests')
+      .update({
+        status: 'completed',
+        resolved_at: new Date().toISOString(),
+        resolved_by: adminUser?.user?.email ?? null,
+      })
+      .eq('id', requestId)
+      .eq('status', 'pending')
+      .select('id');
+
+    if (lockError) {
+      console.error('Failed to lock deletion_requests row:', lockError.message);
+      return jsonResponse({ error: 'Failed to finalize request' }, 500);
+    }
+    if (!lockedRows || lockedRows.length === 0) {
+      return jsonResponse({ error: 'Request already processed' }, 409);
+    }
+
     const tables: string[] = [...DATA_SCOPE_TABLES];
     if (scope === 'account') tables.push(...ACCOUNT_SCOPE_EXTRA_TABLES);
 
@@ -138,6 +178,10 @@ serve(async (req) => {
 
     if (wipeErrors.length > 0) {
       console.error(`Wipe partially failed for request ${requestId}:`, wipeErrors);
+      // Every delete above is idempotent (re-deleting an already-gone row/file
+      // is a no-op), so it's safe to hand this back to the pending queue for
+      // an admin to retry rather than leaving it stuck "completed".
+      await revertToPending(supabaseAdmin, requestId);
       return jsonResponse({ error: 'Wipe partially failed', details: wipeErrors }, 500);
     }
 
@@ -146,42 +190,20 @@ serve(async (req) => {
       const { error: usersDeleteError } = await supabaseAdmin.from('users').delete().eq('user_id', userId);
       if (usersDeleteError) {
         console.error('Failed to delete users row:', usersDeleteError.message);
+        await revertToPending(supabaseAdmin, requestId);
         return jsonResponse({ error: 'Failed to delete users row' }, 500);
       }
 
       const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
       if (authDeleteError) {
         console.error('Failed to delete auth user:', authDeleteError.message);
+        await revertToPending(supabaseAdmin, requestId);
         return jsonResponse({ error: 'Failed to delete auth user' }, 500);
       }
     }
 
-    const { data: adminUser } = await supabaseUser.auth.getUser();
-
-    // Atomic completion: only the caller whose UPDATE actually matches a row
-    // still 'pending' gets to write the audit entry, so two concurrent
-    // approvals of the same request can't both "win" and double-log.
-    const { data: completedRows, error: completeError } = await supabaseAdmin
-      .from('deletion_requests')
-      .update({
-        status: 'completed',
-        resolved_at: new Date().toISOString(),
-        resolved_by: adminUser?.user?.email ?? null,
-        user_id: null,
-        email: null,
-      })
-      .eq('id', requestId)
-      .eq('status', 'pending')
-      .select('id');
-
-    if (completeError) {
-      console.error('Failed to finalize deletion_requests row:', completeError.message);
-      return jsonResponse({ error: 'Failed to finalize request' }, 500);
-    }
-    if (!completedRows || completedRows.length === 0) {
-      // Another concurrent call already completed (or cancelled) this request.
-      return jsonResponse({ error: 'Request already processed' }, 409);
-    }
+    // Wipe fully succeeded — now it's safe to anonymize the request row.
+    await supabaseAdmin.from('deletion_requests').update({ user_id: null, email: null }).eq('id', requestId);
 
     await supabaseAdmin.from('audit_log').insert({
       user_id: userId,

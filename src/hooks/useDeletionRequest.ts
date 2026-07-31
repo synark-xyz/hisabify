@@ -54,18 +54,23 @@ export function useDeletionRequest() {
     }
 
     setLoading(true);
-    const { data, error } = await supabase
-      .from('deletion_requests')
-      .select('id, scope, status, reason, detail, requested_at')
-      .eq('user_id', user.id)
-      .eq('status', 'pending')
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('deletion_requests')
+        .select('id, scope, status, reason, detail, requested_at')
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .maybeSingle();
 
-    if (error) {
-      logger.error(error, { component: 'useDeletionRequest', action: 'fetchPending' });
+      if (error) {
+        logger.error(error, { component: 'useDeletionRequest', action: 'fetchPending' });
+      }
+      setPendingRequest((data as DeletionRequestRow | null) ?? null);
+    } catch (err) {
+      logger.error(err, { component: 'useDeletionRequest', action: 'fetchPending' });
+    } finally {
+      setLoading(false);
     }
-    setPendingRequest((data as DeletionRequestRow | null) ?? null);
-    setLoading(false);
   }, [user]);
 
   useEffect(() => {
@@ -106,13 +111,17 @@ export function useDeletionRequest() {
 
     setSubmitting(true);
     try {
-      const { error: updateError } = await supabase
+      const { data: updatedRows, error: updateError } = await supabase
         .from('deletion_requests')
         .update({ status: 'cancelled' })
-        .eq('id', pendingRequest.id);
+        .eq('id', pendingRequest.id)
+        .eq('status', 'pending')
+        .select('id');
 
-      if (updateError) {
-        logger.error(updateError, { component: 'useDeletionRequest', action: 'cancelRequest' });
+      if (updateError || !updatedRows?.length) {
+        if (updateError) {
+          logger.error(updateError, { component: 'useDeletionRequest', action: 'cancelRequest' });
+        }
         return false;
       }
 

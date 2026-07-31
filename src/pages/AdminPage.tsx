@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, CheckCircle2 } from 'lucide-react';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,21 +102,16 @@ export function AdminPage() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header title="Admin" showBack />
-        <main className="px-4 py-6">
-          <p className="text-sm text-muted-foreground">Not authorized.</p>
-        </main>
-      </div>
+      <PageShell title="Admin" backTo="/" className="py-6">
+        <p className="text-sm text-muted-foreground">Not authorized.</p>
+      </PageShell>
     );
   }
 
   const columns = rows.length ? Object.keys(rows[0]) : [];
 
   return (
-    <div className="min-h-screen bg-background pb-page-content">
-      <Header title="Admin" showBack />
-      <main className="px-4 py-6 space-y-4">
+    <PageShell title="Admin" backTo="/" className="py-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           {TABLES.map((name) => (
             <button
@@ -242,7 +237,6 @@ export function AdminPage() {
             </table>
           </div>
         )}
-      </main>
-    </div>
+    </PageShell>
   );
 }

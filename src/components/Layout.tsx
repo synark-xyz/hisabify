@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Plus, LayoutDashboardIcon, Target, List, Lightbulb, Grid } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { useVisualViewport } from '@/hooks/useVisualViewport';
@@ -14,42 +14,7 @@ import { Header } from '@/components/Header';
 import { HisabifyLogo } from "@/components/HisabifyLogo";
 import { cn } from '@/lib/utils';
 import { useFABContext } from "@/contexts/FABContext";
-
-const PAGE_TITLES: Record<string, string> = {
-    '/': 'nav.dashboard',
-    '/budget': 'nav.budget',
-    '/savings': 'nav.savings',
-    '/expenses': 'nav.expenses',
-    '/transactions': 'nav.transactions',
-    '/insights': 'nav.analytics',
-    '/reports': 'nav.analytics',
-    '/profile': 'nav.profile',
-    '/profile/personal': 'profile.personalInfo',
-    '/profile/data': 'profile.dataManagement',
-    '/profile/invite': 'referral.yourCode',
-    '/analytics': 'nav.analytics',
-    '/debts': 'debt.debtTracker',
-    '/activity': 'activity.activityHistory',
-    '/categories': 'categories.categories',
-    '/settings': 'nav.settings',
-    '/settings/preferences': 'settings.preferences',
-    '/settings/notifications': 'settings.notifications',
-    '/more': 'nav.more',
-    '/more/calculator': 'calculator.calculator',
-    '/more/loan': 'calculator.loanCalculator',
-    '/more/discount': 'calculator.discountTax',
-    '/more/currency': 'calculator.currencyConverter',
-};
-
-const getPageTitle = (pathname: string) => PAGE_TITLES[pathname] ?? 'common.hisabify';
-
-const getSidebarNavItems = (t: (k: string) => string) => [
-    { path: '/', icon: LayoutDashboardIcon, label: t('nav.dashboard') },
-    { path: '/budget', icon: Target, label: t('nav.budget') },
-    { path: '/transactions', icon: List, label: t('nav.expenses') },
-    { path: '/insights', icon: Lightbulb, label: t('nav.insights') },
-    { path: '/more', icon: Grid, label: t('nav.more') },
-];
+import { NAV_TABS, TAB_TITLES, isTabRoute, isTabActive } from '@/lib/navTabs';
 
 export function Layout() {
     const [showManual, setShowManual] = useState(false);
@@ -65,7 +30,7 @@ export function Layout() {
     const rating = useAppRating();
     const pageVariants = usePageVariants();
 
-    const navItems = getSidebarNavItems(t);
+    const navItems = NAV_TABS;
 
     useEffect(() => {
         const currentPath = location.pathname;
@@ -87,11 +52,9 @@ export function Layout() {
         return () => window.removeEventListener('open-input-sheet', handleOpenModal);
     }, []);
 
-    const isProfileSubPage = location.pathname.startsWith('/profile/');
-    const isProfileRootPage = location.pathname === '/profile';
-    const isDebtPage = location.pathname === '/debts';
-    const isActivityPage = location.pathname === '/activity';
-    const shouldShowBack = isProfileSubPage || isProfileRootPage || isDebtPage || isActivityPage;
+    // Only the five tabs get the landing Header. Every child route renders its own
+    // compact bar via PageShell — rendering both is what made pages look double-barred.
+    const showLandingHeader = isTabRoute(location.pathname);
 
     return (
         <div className="min-h-screen relative lg:flex">
@@ -110,9 +73,7 @@ export function Layout() {
                 {/* Nav */}
                 <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
                     {navItems.map((item) => {
-                        const isActive =
-                            location.pathname === item.path ||
-                            (item.path !== '/' && location.pathname.startsWith(item.path + '/'));
+                        const isActive = isTabActive(item.path, location.pathname);
                         const Icon = item.icon;
                         return (
                             <motion.button
@@ -127,7 +88,7 @@ export function Layout() {
                                 whileTap={{ scale: 0.98 }}
                             >
                                 <Icon className="w-5 h-5 flex-shrink-0" />
-                                {item.label}
+                                {t(item.labelKey)}
                                 {isActive && (
                                     <motion.div
                                         layoutId="sidebar-indicator"
@@ -156,11 +117,7 @@ export function Layout() {
 
             {/* Content area */}
             <div className="flex-1 min-w-0 lg:ml-64">
-                <Header
-                    title={getPageTitle(location.pathname)}
-                    variant={location.pathname === '/profile' ? 'profile' : 'default'}
-                    showBack={shouldShowBack}
-                />
+                {showLandingHeader && <Header title={TAB_TITLES[location.pathname]} />}
 
                 <main className="relative z-10 pb-page-content lg:pb-10">
                     <AnimatePresence mode="wait">

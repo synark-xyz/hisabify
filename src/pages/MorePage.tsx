@@ -28,8 +28,7 @@ export function MorePage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30"/>
-
+      {/* /more is a tab — Layout renders the landing Header. No bar here. */}
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Tools Section */}
         <section>

@@ -1304,6 +1304,8 @@
     "privacy": "Privacy",
     "usageAnalytics": "Usage analytics",
     "usageAnalyticsDesc": "Share anonymised app usage. Never your financial data.",
+    "adPrivacy": "Ad privacy settings",
+    "adPrivacyDesc": "Change your choices about how ads are personalised.",
     "analyticsOn": "Usage analytics enabled",
     "analyticsOff": "Usage analytics disabled",
     "exportComplete": "Export complete",

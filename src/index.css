@@ -415,9 +415,10 @@
     padding-top: env(safe-area-inset-top, 0px);
   }
 
-  /* Utility for page content to clear the navigation bar */
+  /* Utility for page content to clear the navigation bar (and the ad banner beneath it,
+     when one is showing — --ad-banner-h is set by useAdBanner and is 0 otherwise). */
   .pb-page-content {
-    padding-bottom: calc(140px + env(safe-area-inset-bottom, 16px));
+    padding-bottom: calc(140px + var(--ad-banner-h, 0px) + env(safe-area-inset-bottom, 16px));
   }
 
   /* Utility for the navigation bar itself to handle safe areas */

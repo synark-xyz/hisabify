@@ -62,7 +62,7 @@ export const ParticlesBackground = () => {
                             `${(particle.y + Math.random() * 30 - 15 + 100) % 100}vh`,
                             `${particle.y}vh`
                         ],
-                        opacity: theme === 'light'
+                        opacity: resolvedTheme === 'light'
                             ? [0.6, 1, 0.6]  // Clearly visible in light mode
                             : [0.5, 0.8, 0.5], // Visible in dark mode
                         scale: [1, 1.3, 1]
@@ -89,7 +89,7 @@ export const ParticlesBackground = () => {
             <div
                 className={cn(
                     "absolute inset-0",
-                    theme === 'light'
+                    resolvedTheme === 'light'
                         ? "bg-gradient-to-b from-background/20 via-transparent to-background/20"
                         : "bg-gradient-to-b from-background/40 via-transparent to-background/40"
                 )}

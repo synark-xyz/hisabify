@@ -17,14 +17,7 @@ const envSchema = z.object({
   VITE_APP_URL: z.string().url().optional(),
   VITE_APP_URL_SCHEME: z.string().optional(),
   VITE_APP_NAME: z.string().default('Hisabify'),
-  // Sentry DSN is a public, safe-to-ship URL like https://<key>@o123.ingest.sentry.io/456.
-  // Auth tokens (sntrys_...) must never live here — they belong in
-  // .env.sentry-build-plugin as SENTRY_AUTH_TOKEN.
-  VITE_SENTRY_DSN: z
-    .string()
-    .url('VITE_SENTRY_DSN must be a Sentry DSN URL, not an auth token')
-    .optional(),
-  VITE_SENTRY_RELEASE: z.string().optional(),
+  VITE_SENTRY_DSN: z.string().optional(),
   VITE_ENABLE_ANALYTICS: z.string().transform(v => v === 'true').default('false'),
   
   // Node environment
@@ -42,7 +35,6 @@ function validateEnv(): Env {
     VITE_APP_URL_SCHEME: import.meta.env.VITE_APP_URL_SCHEME,
     VITE_APP_NAME: import.meta.env.VITE_APP_NAME,
     VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
-    VITE_SENTRY_RELEASE: import.meta.env.VITE_SENTRY_RELEASE,
     VITE_ENABLE_ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS,
     MODE: import.meta.env.MODE,
   };

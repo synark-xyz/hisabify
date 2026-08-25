@@ -1,6 +1,5 @@
 import { AppError, toAppError } from './errors';
-import { isDev } from './env';
-import { Sentry, isSentryEnabled } from './sentry';
+import { isDev, isProd, env } from './env';
 
 /**
  * Error Logging Setup
@@ -19,8 +18,26 @@ interface LogContext {
 }
 
 class Logger {
-  private get sentryEnabled() {
-    return isSentryEnabled();
+  private sentryInitialized = false;
+
+  constructor() {
+    this.initSentry();
+  }
+
+  private async initSentry() {
+    // Only initialize Sentry in production with a valid DSN
+    if (isProd && env.VITE_SENTRY_DSN) {
+      try {
+        // Dynamic import to avoid loading Sentry in development
+        // Note: You would need to install @sentry/react package
+        // const Sentry = await import('@sentry/react');
+        // Sentry.init({ dsn: env.VITE_SENTRY_DSN });
+        // this.sentryInitialized = true;
+        console.info('[Logger] Sentry DSN configured - install @sentry/react for production logging');
+      } catch (e) {
+        console.warn('[Logger] Failed to initialize Sentry:', e);
+      }
+    }
   }
 
   private formatMessage(level: LogLevel, message: string, context?: LogContext): string {
@@ -43,10 +60,11 @@ class Logger {
 
   warn(message: string, context?: LogContext) {
     console.warn(this.formatMessage('warn', message, context));
-
-    if (this.sentryEnabled) {
-      Sentry.captureMessage(message, { level: 'warning', extra: context });
-    }
+    
+    // In production, you could send warnings to Sentry as well
+    // if (isProd && this.sentryInitialized) {
+    //   Sentry.captureMessage(message, 'warning');
+    // }
   }
 
   error(error: unknown, context?: LogContext) {
@@ -65,12 +83,12 @@ class Logger {
     }
 
     // In production, send to Sentry
-    if (this.sentryEnabled) {
-      Sentry.captureException(appError.originalError || appError, {
-        tags: { code: String(appError.code ?? 'unknown') },
-        extra: { ...context, appError: appError.toJSON() },
-      });
-    }
+    // if (isProd && this.sentryInitialized) {
+    //   Sentry.captureException(appError.originalError || appError, {
+    //     tags: { code: appError.code },
+    //     extra: { ...context, appError: appError.toJSON() },
+    //   });
+    // }
 
     // Send non-fatal errors to Crashlytics
     import('./analytics').then(({ analytics }) => {

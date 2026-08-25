@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 
-import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBudgetContext } from '@/hooks/useBudgetContext';
@@ -49,7 +48,6 @@ export function SavingsTabContent() {
   } = useSavingsGoals();
 
   const { isPremium } = useSubscription();
-  const { variant } = useTheme();
   const { user } = useAuth();
   const { budgets } = useBudgetContext();
 

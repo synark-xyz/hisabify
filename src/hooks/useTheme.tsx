@@ -1,9 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { injectM3Theme, DEFAULT_SEED } from '@/lib/materialTheme';
+import {
+  DEFAULT_THEME,
+  THEME_STORAGE_KEY,
+  isTheme,
+  readStoredTheme,
+  resolveTheme,
+  type ResolvedTheme,
+  type Theme,
+} from '@/lib/theme';
 
-export type Theme = 'dark' | 'light' | 'system';
-export type ResolvedTheme = 'dark' | 'light';
+export type { Theme, ResolvedTheme };
 
 interface ThemeContextType {
   theme: Theme;
@@ -16,101 +24,98 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const prefersDarkQuery = () => window.matchMedia('(prefers-color-scheme: dark)');
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem('theme') as Theme) || 'dark';
-  });
+  // Snapshot of what was persisted *before* this session wrote anything, so the
+  // DB reconcile below can tell "user has chosen" from "we defaulted".
+  const [storedAtMount] = useState(readStoredTheme);
+  const [theme, setThemeState] = useState<Theme>(storedAtMount ?? DEFAULT_THEME);
+  const [prefersDark, setPrefersDark] = useState(() => prefersDarkQuery().matches);
 
   const [seedColor, setSeedColorState] = useState<string>(() => {
     return localStorage.getItem('theme_seed_color') || DEFAULT_SEED;
   });
 
-  const [isInitialized, setIsInitialized] = useState(false);
+  const resolvedTheme = resolveTheme(theme, prefersDark);
 
-  const resolveTheme = useCallback((t: Theme): ResolvedTheme => {
-    if (t === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return t as ResolvedTheme;
-  }, []);
-
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveTheme(theme));
-
+  // Track the OS preference so `system` live-updates when the device flips.
   useEffect(() => {
-    setResolvedTheme(resolveTheme(theme));
-  }, [theme, resolveTheme]);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (theme === 'system') setResolvedTheme(resolveTheme('system'));
-    };
+    const mq = prefersDarkQuery();
+    const handleChange = (e: MediaQueryListEvent) => setPrefersDark(e.matches);
+    setPrefersDark(mq.matches);
     mq.addEventListener('change', handleChange);
     return () => mq.removeEventListener('change', handleChange);
-  }, [theme, resolveTheme]);
-
-  // Load persisted theme from DB on mount
-  useEffect(() => {
-    const init = async () => {
-      const stored = localStorage.getItem('theme') as Theme;
-      const hasExplicit = stored && ['dark', 'light', 'system'].includes(stored);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setIsInitialized(true); return; }
-
-      const { data } = await supabase
-        .from('users')
-        .select('theme')
-        .eq('user_id', user.id)
-        .single();
-
-      if (hasExplicit) {
-        setThemeState(stored);
-        if (data?.theme && data.theme !== stored) {
-          await supabase.from('users').update({ theme: stored }).eq('user_id', user.id);
-        }
-      } else if (data?.theme && ['dark', 'light', 'system'].includes(data.theme)) {
-        setThemeState(data.theme as Theme);
-        localStorage.setItem('theme', data.theme);
-      }
-
-      setIsInitialized(true);
-    };
-    init();
   }, []);
 
-  // Apply theme class to DOM + sync to DB
+  // Apply to the DOM + persist locally. Deliberately ungated: the theme must be
+  // correct on the first paint, offline and logged out included.
   useEffect(() => {
-    if (!isInitialized) return;
     const root = document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(resolvedTheme);
-    localStorage.setItem('theme', theme);
+    root.style.colorScheme = resolvedTheme;
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // storage unavailable — the in-memory theme still applies
+    }
+  }, [theme, resolvedTheme]);
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase.from('users').update({ theme }).eq('user_id', user.id)
-          .then(({ error }) => { if (error) console.warn('Theme sync failed:', error); });
+  // Reconcile with the server copy once. Best-effort: any failure leaves the
+  // locally-applied theme alone.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const user = auth?.user;
+        if (!user || cancelled) return;
+
+        const { data, error } = await supabase
+          .from('users')
+          .select('theme')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (error || cancelled) return;
+
+        if (storedAtMount) {
+          // This device has an explicit choice — it wins; push it up if stale.
+          if (data?.theme !== storedAtMount) {
+            await supabase.from('users').update({ theme: storedAtMount }).eq('user_id', user.id);
+          }
+        } else if (isTheme(data?.theme)) {
+          // Fresh install / second device: adopt the account's choice.
+          setThemeState(data.theme);
+        }
+      } catch (err) {
+        console.warn('Theme reconcile failed:', err);
       }
-    });
-  }, [theme, resolvedTheme, isInitialized]);
+    })();
+    return () => { cancelled = true; };
+  }, [storedAtMount]);
 
   // Inject M3 CSS vars whenever seed or dark/light changes
   useEffect(() => {
     injectM3Theme(seedColor, resolvedTheme === 'dark');
   }, [seedColor, resolvedTheme]);
 
-  const setTheme = (t: Theme) => setThemeState(t);
+  const setTheme = useCallback((t: Theme) => {
+    setThemeState(t);
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) return;
+        return supabase.from('users').update({ theme: t }).eq('user_id', user.id);
+      })
+      .catch((err) => console.warn('Theme sync failed:', err));
+  }, []);
 
   const setSeedColor = (hex: string) => {
     setSeedColorState(hex);
     localStorage.setItem('theme_seed_color', hex);
   };
 
-  const toggleTheme = () => {
-    const effective = theme === 'system' ? resolvedTheme : theme;
-    setThemeState(effective === 'dark' ? 'light' : 'dark');
-  };
+  const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, seedColor, setTheme, setSeedColor, toggleTheme }}>

@@ -47,8 +47,21 @@ npm run build:dev
 # Run linter
 npm run lint
 
-# Run tests
+# Run tests (Vitest, watch mode)
 npm test
+
+# Single-run unit tests / with coverage (what CI runs)
+npm run test:unit
+npm run test:coverage
+
+# One file, or one test by name
+npx vitest run src/lib/__tests__/ads.test.ts
+npx vitest run -t "shouldShowBanner"
+
+# E2E (Playwright) — needs .env.test + a dev server on :8080
+npm run test:e2e
+npm run test:e2e:ui
+npx playwright test e2e/budgets.spec.ts -g "creates a budget"
 
 # Preview production build
 npm run preview
@@ -62,6 +75,12 @@ npm run dev:android     # Quick run on Android (no rebuild)
 npm run dev:ios         # Quick run on iOS (no rebuild)
 npm run cap:run:android # Build, sync, and run on Android
 npm run cap:run:ios     # Build, sync, and run on iOS
+
+# Staging (loads the web app from a remote URL — see APP_ENV below)
+npm run dev:staging          # Local staging server on :8181
+npm run dev:staging:ngrok    # …exposed via ngrok
+npm run cap:android:staging  # Build + sync with APP_ENV=staging, open Android Studio
+npm run cap:android:release  # Build + sync with APP_ENV=production
 ```
 
 ## Project Structure
@@ -358,7 +377,7 @@ if (!hasPermission) {
 - **Three Input Methods:** Voice Memo, Receipt Scanner, Manual Entry
 - **Single Entry Point:** Unified FAB in bottom navigation center
 - **Component:** `InputMethodSheet.tsx` - Bottom sheet with 3 action cards
-- **Documentation:** `docs/UNIFIED_FAB_IMPLEMENTATION.md`
+- **Documentation:** `docs/` is gitignored — treat `InputMethodSheet.tsx` as the source of truth
 
 ### Receipt Upload with OCR & Image Optimization
 
@@ -368,11 +387,23 @@ if (!hasPermission) {
 - **Optimization:** Compress to <500KB while preserving text readability
 - **Storage:** Supabase Storage with RLS policies (bucket: `receipts`)
 - **Features:** Extracts merchant, amount, date; pre-fills transaction form
+- **A placeholder key is truthy.** `if (!apiKey)` does not catch `your_gemini_api_key` — it sails
+  through and fails as an opaque 400 from Google. `geminiVision.ts` tests the key against a
+  placeholder pattern and throws `GEMINI_KEY_MISSING`, which the modal reports as "Receipt
+  Scanning Unavailable" rather than "Scan Failed — try again" (advice for something retrying
+  cannot fix).
+- **`VITE_` vars are inlined at build time**, so an installed APK carries whatever was in `.env`
+  when it was built. Changing `.env` cannot fix a shipped binary — only `npm run build && npx cap
+  sync` and a reinstall can. It also means the key is extractable from any shipped build; restrict
+  it to the Generative Language API and cap its quota. The structurally correct fix is moving the
+  call behind the `parse-transaction` edge function, which already holds a server-side key.
+- **Store the compressed image, not the raw file.** `receipt_url` briefly held raw base64 data URLs
+  (one production row is 2.5 MB) that `select *` refetched on every transaction list load.
 - **Mobile Permissions:**
   - Android: `CAMERA`, `READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`
   - iOS: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`
   - Runtime permission flow: `ensurePermission('camera')` and `ensurePermission('photos')`
-- **Documentation:** `docs/UNIFIED_FAB_IMPLEMENTATION.md`
+- **Documentation:** `docs/` is gitignored — treat `InputMethodSheet.tsx` as the source of truth
 
 ### Voice Input for Transactions
 
@@ -470,6 +501,109 @@ Note `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate 
 
 Compliance docs: `docs/legal/PRE_LAUNCH_CHECKLIST.md`, `docs/legal/INCORPORATION_CHECKLIST.md`, `docs/supabase/DPA_ADDENDUM.md`. Note `docs/` and `*.sql` are gitignored — commit these with `git add -f`.
 
+### Ads (AdMob banner, free Android users)
+
+One anchored adaptive banner via `@capacitor-community/admob`, for signed-in non-premium users on
+**Android only**. `src/lib/ads.ts` holds the pure gate (`shouldShowBanner`) and unit-ID resolution;
+`src/hooks/useAdBanner.ts` holds every side effect. iOS is deliberately excluded — it needs the ATT
+prompt, SKAdNetwork IDs and a privacy-manifest entry, none of which exist yet.
+
+`useAdBanner()` is called once in `Layout.tsx`, and **that call site is the whole placement
+policy**: Layout-group routes get a banner, `StandalonePage` routes (settings, profile, `/terms`,
+`/privacy`, `/admin`) never do. Don't add route checks inside the hook — move the page instead.
+
+The banner is a **native view layered over the WebView**; it does not resize it. `useAdBanner`
+writes the reported height (dp, which is 1:1 with CSS px here) to `--ad-banner-h`, and
+`BottomNavigation`, the FAB in `Layout`, and `.pb-page-content` all offset by it. The variable is
+`0px` whenever no banner is showing, so web/iOS/Pro are untouched. Anything else pinned to the
+bottom of the viewport must add `var(--ad-banner-h, 0px)` too.
+
+`getBannerUnitId()` returns Google's **test** ad unit unless `VITE_ADMOB_BANNER_ID` is set *and*
+the bundle is a production build. Do not "fix" this to always use the real unit — serving or
+clicking real ads from a debug build is what gets an AdMob account suspended, and there is no
+appeal path worth relying on.
+
+Two native details are load-bearing:
+
+- `com.google.android.gms.ads.APPLICATION_ID` in `AndroidManifest.xml` — the Mobile Ads SDK
+  **crashes the app at startup** if it is absent or malformed, so it stays for every variant
+  including `.staging` (which is unregistered and simply gets no fill). The value is the
+  `admobAppId` manifest placeholder set per build type in `app/build.gradle`: Google's test app
+  ID for debug and staging, `ADMOB_APP_ID_RELEASE` (from `local.properties` or the environment)
+  for release, falling back to the test ID with a build warning when it is unset. Same reason as
+  `getBannerUnitId()` — a real app ID in a debug build is how AdMob accounts get suspended.
+- `patches/@capacitor-community+admob+8.0.0.patch` — the plugin ships three things AGP 9.3.1
+  rejects: `apply plugin: 'kotlin-android'`, `android { kotlinOptions { } }` (see the Gradle
+  section above), and `getDefaultProguardFile('proguard-android.txt')`, which AGP 9 refuses
+  because it forces `-dontoptimize`. Use `proguard-android-optimize.txt`.
+
+Consent: the plugin's mandated order is `initialize → requestConsentInfo → showConsentForm →
+showBanner`, memoised in `initAdMob()` so it runs once per session. `useAdPrivacyOptions()` (same
+file) backs the `Profile → Data & Privacy → Ad privacy settings` row — **Google's UMP terms
+require that persistent entry point** for anyone who was shown a form; it is not optional UI. It
+re-derives consent state itself rather than sharing with `useAdBanner`, because `/profile/data` is
+a `StandalonePage` route outside `Layout`.
+
+`PrivacyOptionsRequirementStatus` is compared as a string: the plugin's `consent/index` doesn't
+re-export that enum, so it is unreachable from the package root.
+
+The privacy policy in `src/lib/legalContent.tsx` was rewritten for this (advertising identifier
+disclosure, AdMob in the third-party lists, consent as the GDPR lawful basis). It previously
+promised the exact opposite. Any change to what ads collect has to go back into that file, plus
+the Play Console "Contains ads" and Data safety declarations.
+
+### Theme
+
+`useTheme()` exposes **two different things and they are not interchangeable**: `theme` is what the
+user picked (`'dark' | 'light' | 'system'`), `resolvedTheme` is what to render (`'dark' | 'light'`).
+Any presentational light/dark branch reads `resolvedTheme`; only the settings selector reads
+`theme`. Branching on the raw `theme` means `'system'` matches neither arm and silently falls
+through to the wrong styling.
+
+The pure part lives in `src/lib/theme.ts` (`resolveTheme`, `readStoredTheme`, `DEFAULT_THEME`),
+next to its hook — same pattern as `ratingPrompt.ts` and `ads.ts`.
+
+Three rules the previous implementation broke, all of which rendered Light on a dark device:
+
+- **The DOM class must never wait on the network.** It applies synchronously from `localStorage`;
+  the Supabase read is a best-effort reconcile in a `try/catch`. It used to be gated behind an
+  `isInitialized` flag set only at the end of an un-`try/catch`ed async init, so any rejection
+  (offline, cold start, logged out) left `<html>` with no class at all — and `index.css` defines
+  `:root` as the *light* palette, with `.dark` overriding. No class means light.
+- **Store `'system'` as `'system'`.** Resolving it to a concrete value before persisting destroys
+  the choice, and the next cold start writes that concrete value back over the account's `'system'`.
+- **One source of truth.** Settings must not keep its own copy of the selection.
+
+`index.html` carries a blocking pre-hydration script that applies the class before first paint.
+Without it every cold start flashes light. Don't remove it.
+
+### Activity feed
+
+`mergeActivityFeed()` in `src/lib/activityFeed.ts` is the single definition of the feed:
+`activity_log` rows and `transactions` interleaved by recency. `Dashboard` renders its first 5,
+`ActivityHistoryPage` (`/activity`) renders all of it. `formatActivityDescription()` there owns
+the `key|param|param` parse **and** the legacy English-string fallback for old DB rows.
+
+Both used to live inline in `Dashboard.tsx`, and `/activity` read `activity_log` alone — which is
+why it was empty for most users. **`activity_log` only ever receives debt events**: the sole writer
+is `useAnalytics.logActivity`, called only from debt CRUD. `useActivityHistory.logActivity` exists
+with zero callers. The page's icon map already anticipates ~23 activity types that nothing writes;
+wiring up the remaining writers is the real fix, and merging transactions is what makes the page
+correct in the meantime.
+
+### Transaction row actions
+
+`TransactionItem` reveals Edit/Delete on **long press** — 500ms, cancelled by 10px of travel
+(`LONG_PRESS_MS`, `LONG_PRESS_MOVE_TOLERANCE_PX`). Plain pointer events, no gesture library.
+
+Do not reintroduce `drag="x"`. Swipe-to-reveal competed with the list's own scrolling and fired on
+momentum; the movement tolerance is what makes a hold distinguishable from a scroll, so any
+reimplementation needs it. `didLongPress` swallows the synthetic click after a hold so a hold never
+also navigates to `/transactions/:id`, while a plain tap still does. The hold only arms when
+`onEdit`/`onDelete` are passed — `BudgetTransactionsSheet` passes neither and correctly reveals
+nothing. Long press is unreachable by keyboard and screen reader **by design**: those users get the
+same actions on `TransactionDetailsPage`, so don't build a parallel menu.
+
 ### Recurring Transactions
 
 Subscription/bill templates in `recurring_expenses` that auto-log an expense each period. UI is `src/pages/more/RecurringExpensesPage.tsx` at `/more/recurring`; data via `useRecurringExpenses.ts`.
@@ -562,21 +696,54 @@ with the list the moment a user switches base currency.
 
 ### Subscription & Feature Gating
 
-- `PremiumGuard` component wraps premium features
-- `useSubscription()` hook checks entitlement
-- Subscription data in `users.subscription_type`
-- Stripe integration planned (see TRD.md)
+Billing is **RevenueCat**, native-only. There is no Stripe integration and no web purchase path.
+
+- `useRevenueCat.ts` owns the SDK: entitlement id `hisabify-pro` (`ENTITLEMENT_ID`), plan →
+  package mapping, purchase/restore, and the RevenueCat-hosted paywall and Customer Center.
+- `useSubscription()` is the app-facing hook. `isPremium` = an active RevenueCat entitlement
+  **or** a time-boxed referral grant (`users.referral_granted_until`). `PremiumGuard` wraps
+  gated UI.
+- `users.subscription_type` (`'base' | 'pro'`) is a **mirror**, written after a successful
+  purchase. It is not the source of truth — never gate a feature on it alone.
+- The plugin is `import()`ed lazily and only when `Capacitor.isNativePlatform()`. Do not import
+  `@revenuecat/purchases-capacitor` at module scope: the plugin is a Capacitor Proxy that
+  intercepts *all* property access including `.then`, so returning it from an `async` function
+  fires the native bridge and throws `Purchases.then() is not implemented on android`. Wrap it
+  in a plain object (see `loadPlugin()`).
+
+**`ENTITLEMENT_ID` must equal the RevenueCat entitlement *identifier*, exactly.** `entitlements.active`
+is keyed by identifier, so a near-miss silently returns `false` for a genuinely paying customer —
+they are charged, stay locked out, and keep seeing ads. An audit found the code checking
+`'hisabify-pro'` against a dashboard identifier of `"Hisabify Pro"`. Identifiers cannot be renamed
+in RevenueCat; changing one means creating a new entitlement and archiving the old, which is only
+cheap while there are no live subscribers.
+
+**Never match `public.users` on `id`.** It is a `gen_random_uuid()` surrogate PK; `user_id` is the
+auth uid. `.eq('id', authUid)` matches zero rows, and supabase-js `.update()` without `.select()`
+sends `Prefer: return=minimal`, so PostgREST answers **204 with `error === null`** — a silent
+no-op that no `if (error)` will ever catch. This bug lived in three places (the hook plus both
+webhook paths). Any update to a user row should `.select()` back and warn on an empty match.
+
+Two more things the SDK will not tell you: the configure guard must key on the **user id**, not a
+bare boolean, or a second account signing in on the same process inherits the first account's
+entitlement; and `addCustomerInfoUpdateListener` is required, because without it an expiry or
+refund mid-session leaves Pro unlocked until the next foreground.
+
+Native purchases require a **Play Store app configured in RevenueCat with a Play service-account
+credential**. A `.staging` build (`applicationIdSuffix`) can never transact — its package is not in
+Play — so testing billing needs a production-id build from an internal testing track.
 
 ## Testing
 
-**Framework:** Vitest + Testing Library (with jsdom)
+**Unit/integration:** Vitest + Testing Library (jsdom). **E2E:** Playwright.
 
-**Run tests:**
-```bash
-npm test
-```
+`npm test` is watch mode; `npm run test:unit` is the single-run form and `npm run test:coverage`
+is what CI runs (`.github/workflows/ci.yml`: lint → unit tests + coverage; E2E is a separate
+manual workflow).
 
-**Test Setup:** `src/test/setup.ts`
+**Test Setup:** `src/test/setup.ts`. `vite.config.ts` injects dummy `VITE_SUPABASE_*` values into
+the test env because `src/lib/env.ts` validates with zod and **throws at import** when they are
+missing — unit tests never hit the network, so no secrets are needed.
 
 **Test File Naming:**
 - Unit tests: `*.test.ts` or `*.test.tsx`
@@ -592,20 +759,42 @@ npm test
 
 **No enforced coverage gate** - focus on testing key logic paths
 
+### E2E (Playwright)
+
+Specs live in `e2e/*.spec.ts`; `playwright.config.ts` sets `testDir: './e2e'` and
+`testMatch: '**/*.spec.ts'` so `global-setup.ts` and `fixtures/` are excluded.
+
+`e2e/global-setup.ts` logs in once and saves `storageState` to `e2e/.auth/*.json`, which every
+spec reuses (`auth.spec.ts` overrides it). That needs **two real Supabase users** — copy
+`.env.test.example` to `.env.test` and fill in `E2E_REGULAR_*` (free) and `E2E_PRO_*` (premium).
+`.env.test` is gitignored.
+
+Base URL defaults to `http://localhost:8080` locally and `http://localhost:4173` in CI; override
+with `E2E_BASE_URL`. Start a dev server before running.
+
 ## Capacitor Mobile
 
 **Config:** `capacitor.config.ts`
 **App ID:** `io.synark.hisabify`
 
+**Where the native app loads the web app from** is the `APP_ENV` environment variable read by
+`capacitor.config.ts` at sync time — **not** an edited-in-place constant. Never commit a change to
+that file to point at your machine; set the env var on the `cap sync` instead.
+
+| `APP_ENV` | `server` block | Use |
+|---|---|---|
+| `production` (default) | none — loads bundled `dist/` | Release builds |
+| `staging` | `server.url = STAGING_URL` (default `https://hisabify-pi.vercel.app`) | Testers on a remote build |
+| `local` | localhost dev server | Hot reload on a device/emulator |
+
+`webContentsDebuggingEnabled` is on for everything except `production`.
+
 **Localhost Development Workflow:**
 1. Find your local IP: `npm run local-ip`
-2. Update `capacitor.config.ts`:
-   - Set `USE_LOCALHOST = true`
-   - Android Emulator: Use `http://10.0.2.2:8080` (default)
-   - Android Device: Use your computer's IP (e.g., `http://192.168.1.100:8080`)
-   - iOS Simulator: Use `http://localhost:8080`
-3. Start dev server: `npm run dev`
-4. Run on device: `npm run dev:android` or `npm run dev:ios`
+2. Point `capacitor.config.ts`'s local URL at the right host — Android emulator `http://10.0.2.2:8080`,
+   Android device your LAN IP, iOS simulator `http://localhost:8080`
+3. Start dev server: `npm run dev` (or `npm run dev:managed`)
+4. Sync with `APP_ENV=local npx cap sync`, then `npm run dev:android` / `npm run dev:ios`
 
 **Production Build:**
 ```bash
@@ -688,6 +877,11 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/hooks/useDataManagement.ts` | GDPR data export (CSV/JSON) + privacy audit logging |
 | `src/pages/profile/DataPage.tsx` | Data & Privacy: export, analytics opt-out, deletion |
 | `src/lib/ratingPrompt.ts` | Pure rating-prompt scheduling logic |
+| `src/lib/theme.ts` | Pure theme resolution + persistence (`resolveTheme`, `readStoredTheme`) |
+| `src/lib/activityFeed.ts` | The one merge of `activity_log` + `transactions`, and the description parser |
+| `src/pages/ActivityHistoryPage.tsx` | Full activity feed (`/activity`) — same feed the Dashboard previews |
+| `src/lib/ads.ts` | Ad unit IDs + the pure `shouldShowBanner` gate |
+| `src/hooks/useAdBanner.ts` | AdMob init, UMP consent, banner lifecycle, `--ad-banner-h` |
 | `src/hooks/useRecurringExpenses.ts` | Recurring expense CRUD + `process_recurring_expenses()` RPC |
 | `src/pages/more/RecurringExpensesPage.tsx` | Recurring expense manager (`/more/recurring`) |
 | `src/hooks/useAppRating.ts` | Rating prompt cadence + persistence |
@@ -697,8 +891,10 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/components/ReceiptScannerModal.tsx` | Receipt OCR (Gemini Vision) + storage |
 | `TRD.md` | Technical requirements & architecture |
 | `PRD.md` | Product requirements & roadmap |
-| `docs/UNIFIED_FAB_IMPLEMENTATION.md` | Unified FAB architecture & roadmap |
-| `docs/PERMISSIONS_FIX.md` | Complete guide for runtime permissions |
+| `src/lib/env.ts` | zod-validated env schema (throws at import when misconfigured) |
+| `src/hooks/useRevenueCat.ts` | RevenueCat SDK: entitlement, purchases, paywall, Customer Center |
+| `src/hooks/useSubscription.tsx` | App-facing premium check (entitlement OR referral grant) |
+| `playwright.config.ts`, `e2e/` | E2E suite + shared logged-in `storageState` |
 
 ## Development Workflow
 
@@ -782,7 +978,10 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 
 - **Never commit `.env` files** - Use `.env.example` as template
 - **Client-exposed vars:** Must be prefixed with `VITE_`
-  - Example: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+  - Example: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (**not** `..._ANON_KEY` —
+    `src/lib/env.ts` validates the schema with zod and throws on import if a required var is
+    missing or malformed, so a wrong name fails the whole app at boot, not at first query)
+  - `.env.example` is the full list; `GEMINI_API_KEY` (unprefixed) is server-side only
 - **Secret keys:** Never in client code - use Supabase Edge Functions
 - **Schema changes:** Add migration in `supabase/migrations/` and regenerate types
 

@@ -173,6 +173,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut();
       logger.info('User signed out successfully');
       import('@/lib/analytics').then(({ analytics }) => { analytics.trackAuth('logout'); analytics.clearUser(); }).catch(() => {});
+      // Fire-and-forget: reset the RevenueCat identity so the next account on this device
+      // does not inherit this user's entitlements. Must never block or throw out of signOut.
+      if (Capacitor.isNativePlatform()) {
+        import('@revenuecat/purchases-capacitor')
+          .then(({ Purchases }) => Purchases.logOut())
+          .catch((error) => logger.warn('[Auth] RevenueCat logOut failed', { error: String(error) }));
+      }
     } catch (error) {
       logger.error(error, { action: 'signOut' });
     }

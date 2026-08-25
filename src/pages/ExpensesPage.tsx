@@ -16,7 +16,6 @@ import { getTransactionCategoryName, getTransactionCategoryColor, isRealExpense 
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { useTheme } from '@/hooks/useTheme';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';

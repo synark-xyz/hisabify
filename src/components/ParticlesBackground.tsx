@@ -14,7 +14,7 @@ interface Particle {
 }
 
 export const ParticlesBackground = () => {
-    const { theme } = useTheme();
+    const { resolvedTheme } = useTheme();
 
     const particles = useMemo(() => {
         return Array.from({ length: 25 }).map((_, i) => ({
@@ -28,7 +28,7 @@ export const ParticlesBackground = () => {
         }));
     }, []);
 
-    const opacity = theme === 'light' ? 0.15 : 0.12;
+    const opacity = resolvedTheme === 'light' ? 0.15 : 0.12;
     const getParticleStyle = (colorType: string) => ({
         primary: { backgroundColor: `hsl(var(--primary) / ${opacity})` },
         secondary: { backgroundColor: `hsl(var(--accent) / ${opacity})` },

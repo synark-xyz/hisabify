@@ -10,7 +10,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
 import { compressForGemini } from '@/lib/imageProcessor';
-import { callGeminiVision } from '@/lib/geminiVision';
+import { callGeminiVision, GEMINI_KEY_MISSING } from '@/lib/geminiVision';
 import { parseCurrencyFromString, normalizeCurrency } from '@/lib/currencyUtils';
 
 export interface ScannedReceiptData {
@@ -102,11 +102,14 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
         setScanLabel('Analyzing receipt...');
 
         try {
-            const dataUrl = await fileToDataURL(file);
+            const { base64, mimeType } = await compressForGemini(file);
+            // Reuse the compressed copy for preview and for the stored receipt:
+            // the raw camera file is 3-8MB, and receiptUrl ends up in
+            // transactions.receipt_url verbatim.
+            const dataUrl = `data:${mimeType};base64,${base64}`;
             setPreviewImage(dataUrl);
 
             setScanLabel('Extracting with AI...');
-            const { base64, mimeType } = await compressForGemini(file);
             const result = await callGeminiVision(base64, mimeType, userCurrency);
 
             const detectedCurrency = result.currency
@@ -126,10 +129,13 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
 
         } catch (err) {
             console.error('[ReceiptScanner] Extraction failed:', err);
+            const unconfigured = err instanceof Error && err.message === GEMINI_KEY_MISSING;
             toast({
                 variant: 'destructive',
-                title: 'Scan Failed',
-                description: 'Could not read receipt. Please try again or enter details manually.',
+                title: unconfigured ? 'Receipt Scanning Unavailable' : 'Scan Failed',
+                description: unconfigured
+                    ? 'AI receipt scanning is not set up in this build. Please enter the details manually.'
+                    : 'Could not read receipt. Please try again or enter details manually.',
             });
         } finally {
             setScanning(false);
@@ -369,10 +375,3 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
     );
 }
 
-function fileToDataURL(file: File): Promise<string> {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-    });
-}

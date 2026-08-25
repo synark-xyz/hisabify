@@ -79,12 +79,17 @@ function isEntitledFromCustomerInfo(info: CustomerInfo): boolean {
 }
 
 async function syncPremiumToSupabase(userId: string): Promise<void> {
-  const { error } = await supabase
+  // `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate PK.
+  // `.select()` so a zero-row match is visible — PostgREST returns 204/error:null otherwise.
+  const { data, error } = await supabase
     .from('users')
     .update({ subscription_type: 'pro', subscription_status: 'active' })
-    .eq('id', userId);
+    .eq('user_id', userId)
+    .select('user_id');
   if (error) {
     logger.error('[useRevenueCat] Failed to sync premium status to Supabase', { error: error.message });
+  } else if (!data?.length) {
+    logger.warn('[useRevenueCat] Premium sync matched 0 rows in public.users', { userId });
   }
 }
 
@@ -96,8 +101,11 @@ export function useRevenueCat(): UseRevenueCatReturn {
   const [revenueCatReady, setRevenueCatReady] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
 
-  const configuredRef = useRef(false);
   const pluginRef = useRef<PurchasesPlugin | null>(null);
+  // Keyed on the user id, not the user object (which is re-created on every token refresh)
+  // and not a one-shot boolean: an account switch on the same device must re-run logIn,
+  // otherwise the second user inherits the first user's entitlements.
+  const userId = user?.id;
 
   const updatePremiumState = useCallback((info: CustomerInfo) => {
     const entitled = isEntitledFromCustomerInfo(info);
@@ -106,9 +114,18 @@ export function useRevenueCat(): UseRevenueCatReturn {
   }, []);
 
   useEffect(() => {
-    if (!user || configuredRef.current) return;
+    if (!userId) {
+      // Signed out: drop the cached entitlement so the next user never sees it.
+      setIsPremium(false);
+      setCustomerInfo(null);
+      return;
+    }
 
     let cancelled = false;
+    const removers: Array<() => void> = [];
+    // Drains so a remover can never run twice, whichever side (cleanup or the async
+    // tail below) gets there first.
+    const removeListeners = () => { while (removers.length) removers.pop()!(); };
 
     (async () => {
       const loaded = await loadPlugin();
@@ -122,11 +139,11 @@ export function useRevenueCat(): UseRevenueCatReturn {
         if (Capacitor.isNativePlatform()) {
           // Native: RC is already configured in HisabifyApp.java at app startup.
           // Log in the current user so entitlements are user-scoped.
-          await Purchases.logIn({ appUserID: user.id });
+          await Purchases.logIn({ appUserID: userId });
         } else {
-          // Web: configure from JS (for dev/testing only)
+          // Web: unreachable today — loadPlugin() returns null off-native, so we bail above.
           const apiKey = import.meta.env.VITE_REVENUECAT_API_KEY as string | undefined;
-          await Purchases.configure({ apiKey, appUserID: user.id });
+          await Purchases.configure({ apiKey, appUserID: userId });
           if (import.meta.env.DEV) {
             const { LOG_LEVEL } = await import('@revenuecat/purchases-capacitor');
             await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
@@ -134,7 +151,6 @@ export function useRevenueCat(): UseRevenueCatReturn {
         }
 
         pluginRef.current = Purchases;
-        configuredRef.current = true;
 
         const { customerInfo: info } = await Purchases.getCustomerInfo();
         if (!cancelled) {
@@ -152,11 +168,17 @@ export function useRevenueCat(): UseRevenueCatReturn {
             logger.error('[useRevenueCat] foreground refresh failed', { err });
           }
         });
+        removers.push(() => { void appStateListener.remove(); });
 
-        return () => {
-          cancelled = true;
-          appStateListener.remove();
-        };
+        // Renewal / expiry / refund that lands while the app is in the foreground.
+        const callbackId = await Purchases.addCustomerInfoUpdateListener((freshInfo) => {
+          updatePremiumState(freshInfo);
+        });
+        removers.push(() => {
+          void Purchases.removeCustomerInfoUpdateListener({ listenerToRemove: callbackId });
+        });
+
+        if (cancelled) removeListeners();
       } catch (err) {
         if (!cancelled) {
           logger.error('[useRevenueCat] init failed', { err });
@@ -168,8 +190,11 @@ export function useRevenueCat(): UseRevenueCatReturn {
       if (!cancelled) setRevenueCatReady(true);
     });
 
-    return () => { cancelled = true; };
-  }, [user, updatePremiumState]);
+    return () => {
+      cancelled = true;
+      removeListeners();
+    };
+  }, [userId, updatePremiumState]);
 
   const refreshCustomerInfo = useCallback(async (): Promise<void> => {
     const Purchases = pluginRef.current;

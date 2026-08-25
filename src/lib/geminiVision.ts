@@ -1,6 +1,11 @@
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
+/** Thrown when VITE_GEMINI_API_KEY is absent or still a placeholder. */
+export const GEMINI_KEY_MISSING = 'GEMINI_KEY_MISSING';
+
+const PLACEHOLDER_KEY = /^(your[_-]|<|xxx|changeme|placeholder)/i;
+
 const DEFAULT_CATEGORIES =
   'Food, Transport, Shopping, Entertainment, Health, Bills, Other';
 
@@ -30,7 +35,9 @@ export async function callGeminiVision(
   categories: string = DEFAULT_CATEGORIES,
 ): Promise<GeminiReceiptResult> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) throw new Error('VITE_GEMINI_API_KEY not configured');
+  // .env.example ships `your_gemini_api_key`, which is truthy — a bare !apiKey
+  // check lets the placeholder through and Google answers with an opaque 400.
+  if (!apiKey || PLACEHOLDER_KEY.test(apiKey)) throw new Error(GEMINI_KEY_MISSING);
 
   const prompt = `Analyze this receipt image and extract transaction details.
 Return ONLY valid JSON (no markdown, no code fences):

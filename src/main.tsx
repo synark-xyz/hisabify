@@ -2,8 +2,12 @@ import { createRoot } from "react-dom/client";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import App from "./App.tsx";
+import { initSentry } from "./lib/sentry";
 import "./i18n";
 import "./index.css";
+
+// Init before render so errors during first paint are captured.
+initSentry();
 
 createRoot(document.getElementById("root")!).render(
   <>

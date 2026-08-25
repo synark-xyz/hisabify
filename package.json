@@ -41,6 +41,7 @@
     "cap:dev:ios:unmanaged": "npm run dev & npx cap run ios"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.0.0",
     "@capacitor-community/speech-recognition": "^7.0.1",
     "@capacitor-firebase/analytics": "^8.1.0",
     "@capacitor-firebase/crashlytics": "^8.1.0",
@@ -89,6 +90,8 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@revenuecat/purchases-capacitor": "^12.3.2",
     "@revenuecat/purchases-capacitor-ui": "^12.3.2",
+    "@sentry/react": "^10.71.0",
+    "@sentry/vite-plugin": "^5.4.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.83.0",
     "@types/papaparse": "^5.5.2",

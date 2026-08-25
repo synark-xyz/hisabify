@@ -508,6 +508,12 @@ One anchored adaptive banner via `@capacitor-community/admob`, for signed-in non
 `src/hooks/useAdBanner.ts` holds every side effect. iOS is deliberately excluded — it needs the ATT
 prompt, SKAdNetwork IDs and a privacy-manifest entry, none of which exist yet.
 
+**Bottom padding is `.pb-page-content`, never a hardcoded `pb-*`.** It resolves to
+`140px + var(--ad-banner-h, 0px) + env(safe-area-inset-bottom)`, so it tracks the nav, the FAB,
+the banner and the notch together. Dashboard shipped a hardcoded `pb-24` (96px) and had its last
+feed rows stranded underneath the nav for every free Android user. Put it on the scroll container
+(the `PullToRefresh`), which is where `ExpensesPage` and `BudgetPage` put it.
+
 `useAdBanner()` is called once in `Layout.tsx`, and **that call site is the whole placement
 policy**: Layout-group routes get a banner, `StandalonePage` routes (settings, profile, `/terms`,
 `/privacy`, `/admin`) never do. Don't add route checks inside the hook — move the page instead.
@@ -741,7 +747,9 @@ Play — so testing billing needs a production-id build from an internal testing
 is what CI runs (`.github/workflows/ci.yml`: lint → unit tests + coverage; E2E is a separate
 manual workflow).
 
-**Test Setup:** `src/test/setup.ts`. `vite.config.ts` injects dummy `VITE_SUPABASE_*` values into
+**Test Setup:** `src/test/setup.ts` also polyfills `ResizeObserver` and `matchMedia`, which jsdom
+lacks — `react-modal-sheet` constructs a `ResizeObserver` on render, so without it any component
+that merely *contains* a `BaseModalSheet` throws before a single assertion runs. `vite.config.ts` injects dummy `VITE_SUPABASE_*` values into
 the test env because `src/lib/env.ts` validates with zod and **throws at import** when they are
 missing — unit tests never hit the network, so no secrets are needed.
 

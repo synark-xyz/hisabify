@@ -31,7 +31,6 @@ import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, getMonth, getYe
 import { cn } from '@/lib/utils';
 import { mergeActivityFeed, formatActivityDescription } from '@/lib/activityFeed';
 import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
-import { formatDate } from '@/lib/formatDate';
 import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import {
   DropdownMenu,
@@ -264,7 +263,7 @@ export function Dashboard() {
     return (
       <div className="min-h-screen relative">
         <ParticlesBackground />
-        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pb-24 pt-4">
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pb-page-content pt-4">
           {/* Greeting row */}
           <div className="flex items-center gap-3 px-1">
             <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
@@ -285,7 +284,7 @@ export function Dashboard() {
   return (
     <div className="min-h-screen relative overflow-x-hidden">
       <ParticlesBackground />
-      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10">
+      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10 pb-page-content">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
 

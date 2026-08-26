@@ -19,7 +19,10 @@ vi.mock('@/hooks/useProfile', () => ({
 vi.mock('@/hooks/usePermissions', () => ({
   usePermissions: () => ({ ensurePermission: vi.fn().mockResolvedValue(true) }),
 }));
-vi.mock('@/hooks/useCurrency', () => ({ useCurrency: () => ({ currency: 'USD' }) }));
+vi.mock('@/hooks/useCurrency', () => ({
+  useCurrency: () => ({ currency: 'USD' }),
+  currencyData: {},
+}));
 vi.mock('@/hooks/useAnalytics', () => ({
   useAnalytics: () => ({ logEvent: vi.fn().mockResolvedValue(undefined) }),
 }));
@@ -81,7 +84,9 @@ describe('ReceiptScannerModal', () => {
     await pickFile(container);
 
     await waitFor(() => expect(callGeminiVision).toHaveBeenCalled());
-    expect(await screen.findByText('Lawson')).toBeInTheDocument();
+    // Merchant shows twice: once on the image overlay, once in "Extracted Details".
+    await waitFor(() => expect(screen.getAllByText('Lawson').length).toBeGreaterThan(0));
+    expect(screen.getByText('Continue')).toBeInTheDocument();
   });
 
   it('returns to the capture screen when extraction fails', async () => {

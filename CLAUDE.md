@@ -627,7 +627,7 @@ Catch-up is capped at 24 periods per template per run; the remainder is picked u
 
 ### Page Transitions
 
-`src/lib/pageMotion.ts` holds the single motion definition used by both `Layout.tsx` (via `AnimatePresence`, with exit) and `PageTransition.tsx` (enter-only, for routes outside the layout). Use `usePageVariants()` rather than importing `pageVariants` directly — it returns static variants when the user prefers reduced motion.
+Route-level transitions are **disabled on purpose**. Animating the whole route tree fought with the scroll restore in `Layout.tsx` and the Suspense fallback swap, which read as a glitch on navigation. `src/lib/pageMotion.ts` now exports no-op variants and `PageTransition.tsx` is a plain container. Do not reintroduce `AnimatePresence` around `<Outlet />`. Per-component motion inside a page is fine.
 
 Each route owns its own `Suspense` boundary. Do not reintroduce a single app-root fallback for route chunks: it unmounts the header and bottom navigation on every lazy navigation.
 

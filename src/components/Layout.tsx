@@ -8,7 +8,6 @@ import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { RatingSheet } from '@/components/RatingSheet';
 import { PageFallback } from '@/components/PageTransition';
-import { usePageVariants } from '@/lib/pageMotion';
 import { useAppRating } from '@/hooks/useAppRating';
 import { useAdBanner } from '@/hooks/useAdBanner';
 import { Header } from '@/components/Header';
@@ -32,7 +31,6 @@ export function Layout() {
     // Anchored AdMob banner for free Android users. Mounting it here *is* the placement policy:
     // Layout-group routes get a banner, StandalonePage routes (settings, profile, legal) don't.
     useAdBanner();
-    const pageVariants = usePageVariants();
 
     const navItems = NAV_TABS;
 
@@ -124,21 +122,13 @@ export function Layout() {
                 {showLandingHeader && <Header title={TAB_TITLES[location.pathname]} />}
 
                 <main className="relative z-10 pb-page-content lg:pb-10">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={location.pathname}
-                            variants={pageVariants}
-                            initial="initial"
-                            animate="animate"
-                            exit="exit"
-                        >
-                            {/* Suspense sits inside the layout so a lazily-loaded page swaps
-                                under a header and bottom nav that never unmount. */}
-                            <Suspense fallback={<PageFallback />}>
-                                <Outlet />
-                            </Suspense>
-                        </motion.div>
-                    </AnimatePresence>
+                    {/* No route-level transition: fading the whole tree in/out fought with
+                        scroll restore and the Suspense swap, which showed up as a glitch.
+                        Suspense sits inside the layout so a lazily-loaded page swaps under
+                        a header and bottom nav that never unmount. */}
+                    <Suspense fallback={<PageFallback />}>
+                        <Outlet />
+                    </Suspense>
                 </main>
             </div>
 

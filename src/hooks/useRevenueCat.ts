@@ -17,7 +17,29 @@ type CustomerInfo = import('@revenuecat/purchases-capacitor').CustomerInfo;
  * Must match exactly what you typed in RevenueCat → Entitlements → Identifier.
  * Default is 'hisabify-pro' (matching RevenueCat dashboard configuration).
  */
-export const ENTITLEMENT_ID = 'hisabify-pro';
+export const ENTITLEMENT_ID =
+  (import.meta.env.VITE_REVENUECAT_ENTITLEMENT_ID as string | undefined) || 'hisabify-pro';
+
+/**
+ * Public SDK key for the platform we are running on.
+ * Android is normally configured natively in HisabifyApp.java from BuildConfig, so this is
+ * only the fallback path; iOS and web have no native configure() call and rely on it entirely.
+ */
+function resolveApiKey(): string | undefined {
+  const env = import.meta.env;
+  const platform = Capacitor.getPlatform();
+  if (platform === 'ios') {
+    return (env.VITE_REVENUECAT_IOS_API_KEY as string | undefined)
+      || (env.VITE_REVENUECAT_API_KEY as string | undefined);
+  }
+  if (platform === 'android') {
+    // No generic fallback: Android is configured natively, and the shared VITE_ key is a
+    // test_ Test Store key in most checkouts. Silently configuring release with it would
+    // hand every user a fake entitlement.
+    return env.VITE_REVENUECAT_ANDROID_API_KEY as string | undefined;
+  }
+  return env.VITE_REVENUECAT_API_KEY as string | undefined;
+}
 
 export type PlanType = 'monthly' | 'yearly' | 'lifetime';
 
@@ -28,11 +50,15 @@ const PLAN_TO_PACKAGE_TYPE: Record<PlanType, string> = {
   lifetime: 'LIFETIME',
 };
 
-/** Maps app plan names to RevenueCat product identifiers (from RevenueCat dashboard) */
-const PLAN_TO_IDENTIFIER: Record<PlanType, string> = {
-  monthly: 'monthly',
-  yearly: 'yearly',
-  lifetime: 'lifetime',
+/**
+ * Package identifiers to match as a last resort. RevenueCat names packages built from its
+ * standard types `$rc_monthly` / `$rc_annual` / `$rc_lifetime`; a custom package keeps
+ * whatever identifier was typed in the dashboard, so accept both spellings.
+ */
+const PLAN_TO_IDENTIFIERS: Record<PlanType, string[]> = {
+  monthly: ['$rc_monthly', 'monthly'],
+  yearly: ['$rc_annual', 'yearly', 'annual'],
+  lifetime: ['$rc_lifetime', 'lifetime'],
 };
 
 interface UseRevenueCatReturn {
@@ -136,20 +162,34 @@ export function useRevenueCat(): UseRevenueCatReturn {
       const Purchases = loaded.plugin;
 
       try {
-        if (Capacitor.isNativePlatform()) {
-          // Native: RC is already configured in HisabifyApp.java at app startup.
-          // Log in the current user so entitlements are user-scoped.
-          await Purchases.logIn({ appUserID: userId });
-        } else {
-          // Web: unreachable today — loadPlugin() returns null off-native, so we bail above.
-          const apiKey = import.meta.env.VITE_REVENUECAT_API_KEY as string | undefined;
-          await Purchases.configure({ apiKey, appUserID: userId });
-          if (import.meta.env.DEV) {
-            const { LOG_LEVEL } = await import('@revenuecat/purchases-capacitor');
-            await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+        // Android configures natively at process start (HisabifyApp.java). iOS has no such
+        // hook, so ask the SDK instead of assuming: every method below rejects with
+        // "Purchases must be configured before calling this function" otherwise.
+        const { isConfigured } = await Purchases.isConfigured();
+
+        if (!isConfigured) {
+          const apiKey = resolveApiKey();
+          if (!apiKey) {
+            logger.error('[useRevenueCat] No RevenueCat API key for platform', {
+              platform: Capacitor.getPlatform(),
+            });
+            if (!cancelled) setRevenueCatReady(true);
+            return;
           }
+          await Purchases.configure({ apiKey, appUserID: userId });
+        } else {
+          // Already configured (anonymous, from the native hook): bind to this user so
+          // entitlements are user-scoped and survive a reinstall / device change.
+          await Purchases.logIn({ appUserID: userId });
         }
 
+        if (import.meta.env.DEV) {
+          const { LOG_LEVEL } = await import('@revenuecat/purchases-capacitor');
+          await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+        }
+
+        // Set before the first await below so purchase/restore callers that race the
+        // initial getCustomerInfo() still find a usable plugin.
         pluginRef.current = Purchases;
 
         const { customerInfo: info } = await Purchases.getCustomerInfo();
@@ -286,7 +326,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
       const pkg =
         CONVENIENCE[plan] ??
         offering.availablePackages.find((p) => p.packageType === PLAN_TO_PACKAGE_TYPE[plan]) ??
-        offering.availablePackages.find((p) => p.identifier === PLAN_TO_IDENTIFIER[plan]);
+        offering.availablePackages.find((p) => PLAN_TO_IDENTIFIERS[plan].includes(p.identifier));
 
       logger.info('[useRevenueCat] purchasePlan: package resolved', {
         plan,

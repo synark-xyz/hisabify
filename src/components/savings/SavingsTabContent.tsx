@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { UpgradeModal } from "@/components/UpgradeModal";
 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { localizeNumber } from '@/lib/i18nNumber';
 export function SavingsTabContent() {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [editingGoal, setEditingGoal] = useState<SavingsGoalWithProgress | null>(null);
   const [mainBalance, setMainBalance] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -78,6 +80,13 @@ export function SavingsTabContent() {
   }, [fetchMainBalance]);
 
   const handleAddGoal = () => {
+    // Free plan is capped at one active goal — the same rule BudgetDashboard applies to
+    // budgets, and the one the paywall's "unlimited savings goals" claim is sold against.
+    // Completed/archived goals don't count, so finishing a goal frees the slot.
+    if (!isPremium && activeGoals.length >= 1) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setShowAddModal(true);
   };
 
@@ -305,6 +314,12 @@ export function SavingsTabContent() {
         }}
         onSubmit={handleSubmit}
         editingGoal={editingGoal}
+      />
+
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        source="savings_goals_limit"
       />
 
     </>

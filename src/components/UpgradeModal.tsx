@@ -23,12 +23,12 @@ interface UpgradeModalProps {
 
 const DEFAULT_BENEFITS = [
   'Unlimited budgets and savings goals',
-  'All-time transaction history — no 30-day cap',
+  'All-time transaction history — free is capped at this month and last',
   'Multi-currency support with live exchange rates',
   'Financial report template with PDF & CSV report exports',
   'Advanced analytics, automation, and savings history',
-  'AI analysis of spending patterns for deeper insights and personalized financial tips',
-  'Voice note, receipt scanner, and Premium App theme -- CyberPunk, and more!'
+  'Spending pattern analysis with personalised financial tips',
+  'No ads anywhere in the app',
 ];
 
 const SOURCE_CONFIG: Record<string, {

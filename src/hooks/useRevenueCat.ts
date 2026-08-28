@@ -101,7 +101,24 @@ async function loadUIPlugin() {
 }
 
 function isEntitledFromCustomerInfo(info: CustomerInfo): boolean {
-  return ENTITLEMENT_ID in (info.entitlements.active ?? {});
+  const active = info.entitlements.active ?? {};
+  const entitled = ENTITLEMENT_ID in active;
+
+  // A paying customer with an entitlement under a *different* identifier is the one failure
+  // this hook cannot recover from and cannot see: `entitled` is false, the user is charged,
+  // and nothing throws. RevenueCat identifiers are typed by hand in the dashboard, so a
+  // near-miss ("Hisabify Pro" vs "hisabify-pro") is the likely cause. Name both sides.
+  if (!entitled) {
+    const activeKeys = Object.keys(active);
+    if (activeKeys.length > 0) {
+      logger.error('[useRevenueCat] Active entitlement(s) present but none match ENTITLEMENT_ID', {
+        expected: ENTITLEMENT_ID,
+        actual: activeKeys,
+      });
+    }
+  }
+
+  return entitled;
 }
 
 async function syncPremiumToSupabase(userId: string): Promise<void> {
@@ -133,8 +150,13 @@ export function useRevenueCat(): UseRevenueCatReturn {
   // otherwise the second user inherits the first user's entitlements.
   const userId = user?.id;
 
+  // Mirrors `isPremium` for callbacks that must read it without depending on it —
+  // `presentPaywall` needs the pre-paywall value to tell an upgrade from an existing Pro.
+  const isPremiumRef = useRef(false);
+
   const updatePremiumState = useCallback((info: CustomerInfo) => {
     const entitled = isEntitledFromCustomerInfo(info);
+    isPremiumRef.current = entitled;
     setIsPremium(entitled);
     setCustomerInfo(info);
   }, []);
@@ -142,6 +164,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
   useEffect(() => {
     if (!userId) {
       // Signed out: drop the cached entitlement so the next user never sees it.
+      isPremiumRef.current = false;
       setIsPremium(false);
       setCustomerInfo(null);
       return;
@@ -417,38 +440,44 @@ export function useRevenueCat(): UseRevenueCatReturn {
       return;
     }
 
+    // Snapshot before the paywall so we can tell "just upgraded" from "already Pro".
+    const wasEntitled = isPremiumRef.current;
+
     try {
-      await ui.RevenueCatUI.presentPaywall({
-        offering,
-        displayCloseButton: true,
-        listener: {
-          onPurchaseCompleted: async ({ customerInfo: info }) => {
-            updatePremiumState(info);
-            if (isEntitledFromCustomerInfo(info) && user) {
-              await syncPremiumToSupabase(user.id);
-              toast({ title: 'Welcome to Hisabify Pro!', description: 'Your subscription is now active.' });
-            }
-          },
-          onRestoreCompleted: ({ customerInfo: info }) => {
-            updatePremiumState(info);
-            if (isEntitledFromCustomerInfo(info)) {
-              toast({ title: 'Purchases restored', description: 'Your Pro subscription has been restored.' });
-            } else {
-              toast({ title: 'Nothing to restore', description: 'No active Pro subscription found for this account.', variant: 'destructive' });
-            }
-          },
-          onRestoreError: () => {
-            toast({ title: 'Restore failed', description: 'Could not restore purchases. Please try again.', variant: 'destructive' });
-          },
-        },
-      });
+      // DO NOT pass `listener` (or `purchaseLogic`) here. The Capacitor plugin turns their
+      // presence into `hasPaywallListener: true`, and the native side reacts with
+      //   val listener = if (hasPaywallListener) createPaywallListenerWrapper() else null
+      // That wrapper GATES every purchase on a JS round-trip — native fires
+      // `onPurchaseInitiated` and blocks until JS answers `resumePurchaseInitiated`. While
+      // PaywallActivity is in front that answer never arrives, so the CTA spins forever, the
+      // activity hits "top resumed state loss timeout", and the process is killed. Verified on
+      // device: `resumePurchaseInitiated` never appears in logcat, not even after dismissal.
+      // With no listener the native wrapper is never installed and the purchase completes
+      // entirely natively — which is why the state below is read back rather than pushed in.
+      await ui.RevenueCatUI.presentPaywall({ offering, displayCloseButton: true });
     } catch (err) {
       logger.error('[useRevenueCat] presentPaywall failed', { err });
     }
 
-    // Always refresh after paywall closes to capture any state changes
-    await refreshCustomerInfo();
-  }, [user, updatePremiumState, refreshCustomerInfo, toast]);
+    // The paywall is dismissed, so the WebView is foreground again and the bridge is reliable.
+    // `addCustomerInfoUpdateListener` may have already applied this; re-reading is idempotent.
+    const Refreshed = pluginRef.current;
+    if (!Refreshed) return;
+
+    let info: CustomerInfo;
+    try {
+      ({ customerInfo: info } = await Refreshed.getCustomerInfo());
+    } catch (err) {
+      logger.error('[useRevenueCat] presentPaywall: post-dismiss refresh failed', { err });
+      return;
+    }
+    updatePremiumState(info);
+
+    if (isEntitledFromCustomerInfo(info) && !wasEntitled) {
+      if (user) await syncPremiumToSupabase(user.id);
+      toast({ title: 'Welcome to Hisabify Pro!', description: 'Your subscription is now active.' });
+    }
+  }, [user, updatePremiumState, toast]);
 
   return {
     isPremium,

@@ -49,7 +49,10 @@ export function PageShell({
   const label = title.includes('.') ? t(title) : title;
 
   return (
-    <div className={cn('min-h-screen bg-background', !withBottomNav && 'pb-safe')}>
+    // On Layout-group routes (`withBottomNav`) the Layout `<main>` already supplies both
+    // `min-h-screen` and the bottom inset. Repeating either here stacks a second screenful
+    // of padding onto the scroll height, which reads as "scrolling runs on past the end".
+    <div className={cn(!withBottomNav && 'min-h-screen pb-safe', 'bg-background')}>
       {/* Owns the top safe-area inset: on isolated routes there is no Header above
           this to supply it, and on Layout routes the Header is not rendered. */}
       <header

@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
@@ -11,11 +11,19 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** Non-null when the session bootstrap itself failed (offline cold start, dead backend). */
+  error: unknown;
+  /** Re-runs the session bootstrap after a failure. */
+  retryBootstrap: () => void;
   signUp: (email: string, password: string, privacyPolicyAccepted: boolean) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: 'google') => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
+  /** Resolves with `{ error }` — a non-null error means the user is STILL signed in. */
+  signOut: () => Promise<{ error: Error | null }>;
 }
+
+/** Ceiling on the session bootstrap. Beyond this we show an error rather than a spinner. */
+const BOOTSTRAP_TIMEOUT_MS = 10_000;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -23,24 +31,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+
+  const retryBootstrap = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    setBootstrapAttempt((n) => n + 1);
+  }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       logger.info('[Auth] onAuthStateChange', { event, hasSession: !!session, userId: session?.user?.id?.slice(0, 8) });
       setSession(session);
       setUser(session?.user ?? null);
+      setError(null);
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      logger.info('[Auth] getSession result', { hasSession: !!session, userId: session?.user?.id?.slice(0, 8) });
-      setSession(session);
-      setUser(session?.user ?? null);
+    // `loading` MUST be cleared on every path. It previously cleared only inside `.then()`,
+    // so a rejected getSession (offline cold start, unreachable Supabase) left ProtectedRoute
+    // spinning forever with no way out. A timeout covers the promise that never settles at all.
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      logger.warn('[Auth] getSession timed out');
+      setError(new Error('Auth bootstrap timed out'));
       setLoading(false);
-    });
+    }, BOOTSTRAP_TIMEOUT_MS);
 
-    return () => subscription.unsubscribe();
-  }, []);
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        logger.info('[Auth] getSession result', { hasSession: !!session, userId: session?.user?.id?.slice(0, 8) });
+        setSession(session);
+        setUser(session?.user ?? null);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        logger.error(err, { component: 'AuthProvider', action: 'getSession' });
+        setError(err);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        clearTimeout(timeout);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
+  }, [bootstrapAttempt]);
 
   const signUp = async (email: string, password: string, privacyPolicyAccepted: boolean) => {
     try {
@@ -168,25 +213,88 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signOut = async () => {
+  /**
+   * Signs the user out, and reports whether it actually worked.
+   *
+   * Two things make the naive version fail silently:
+   *
+   * 1. `supabase.auth.signOut()` *returns* `{ error }` rather than throwing, so a
+   *    `try/catch` around it catches nothing and every failure looks like success.
+   * 2. On a network error the server-side revoke fails and gotrue returns **before**
+   *    `_removeSession()` — the local session survives, so the app is still signed in
+   *    even though the UI said otherwise.
+   *
+   * So: check the returned error, and on failure fall back to `scope: 'local'`, which skips
+   * the network entirely and just clears local storage. Signing out on this device must not
+   * depend on being online — the user asked to leave, and stranding them in a signed-in app
+   * is the one outcome that is never acceptable.
+   */
+  const signOut = async (): Promise<{ error: Error | null }> => {
+    let failure: Error | null = null;
+
     try {
-      await supabase.auth.signOut();
-      logger.info('User signed out successfully');
-      import('@/lib/analytics').then(({ analytics }) => { analytics.trackAuth('logout'); analytics.clearUser(); }).catch(() => {});
-      // Fire-and-forget: reset the RevenueCat identity so the next account on this device
-      // does not inherit this user's entitlements. Must never block or throw out of signOut.
-      if (Capacitor.isNativePlatform()) {
-        import('@revenuecat/purchases-capacitor')
-          .then(({ Purchases }) => Purchases.logOut())
-          .catch((error) => logger.warn('[Auth] RevenueCat logOut failed', { error: String(error) }));
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        failure = error;
+        logger.warn('[Auth] Global sign out failed, falling back to local', {
+          error: error.message,
+        });
       }
     } catch (error) {
-      logger.error(error, { action: 'signOut' });
+      failure = error as Error;
+      logger.warn('[Auth] Global sign out threw, falling back to local', {
+        error: String(error),
+      });
     }
+
+    if (failure) {
+      // Local scope clears the stored session without contacting the server.
+      try {
+        const { error } = await supabase.auth.signOut({ scope: 'local' });
+        if (error) {
+          logger.error(error, { action: 'signOut:local' });
+          return { error };
+        }
+        failure = null;
+      } catch (error) {
+        logger.error(error, { action: 'signOut:local' });
+        return { error: error as Error };
+      }
+    }
+
+    // Belt and braces: if the session somehow survived both attempts, the user is still
+    // signed in and must be told rather than shown a success toast.
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      const error = new Error('Session persisted after sign out');
+      logger.error(error, { action: 'signOut:verify' });
+      return { error };
+    }
+
+    logger.info('User signed out successfully');
+    setSession(null);
+    setUser(null);
+
+    import('@/lib/analytics')
+      .then(({ analytics }) => {
+        analytics.trackAuth('logout');
+        analytics.clearUser();
+      })
+      .catch(() => {});
+
+    // Fire-and-forget: reset the RevenueCat identity so the next account on this device
+    // does not inherit this user's entitlements. Must never block or throw out of signOut.
+    if (Capacitor.isNativePlatform()) {
+      import('@revenuecat/purchases-capacitor')
+        .then(({ Purchases }) => Purchases.logOut())
+        .catch((error) => logger.warn('[Auth] RevenueCat logOut failed', { error: String(error) }));
+    }
+
+    return { error: null };
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signInWithOAuth, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, error, retryBootstrap, signUp, signIn, signInWithOAuth, signOut }}>
       {children}
     </AuthContext.Provider>
   );

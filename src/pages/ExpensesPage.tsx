@@ -24,6 +24,8 @@ import { useFormatDate } from '@/lib/formatDate';
 import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
 import { useCategories } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
+import { DataErrorState } from '@/components/ErrorState';
 import { Transaction, CategorySpending, Card, Category, PaymentMethod, PAYMENT_METHOD_LABELS } from '@/types';
 import { getViewRange, type TransactionViewMode } from '@/lib/transactionDateRange';
 import { PREDEFINED_TAGS } from '@/lib/transactionConstants';
@@ -81,6 +83,7 @@ export function ExpensesPage() {
   const [reminderTransaction, setReminderTransaction] = useState<Transaction | null>(null);
   const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
   const latestRequestIdRef = useRef(0);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const hasShownHistoryClampToastRef = useRef(false);
   // Deferred category name filter — applied once categories are loaded
   const pendingCategoryNameRef = useRef<string | null>(null);
@@ -193,9 +196,13 @@ export function ExpensesPage() {
       .order('date', { ascending: false });
 
     if (error) {
-      console.error('[ExpensesPage] Error fetching transactions:', error);
+      // Was a bare console.error, so a failed load rendered the "no transactions found"
+      // empty state — telling users their spending history was empty when it wasn't.
+      logger.error(error, { component: 'ExpensesPage', action: 'fetchTransactions' });
+      if (requestId === latestRequestIdRef.current) setLoadError(error);
       return;
     }
+    if (requestId === latestRequestIdRef.current) setLoadError(null);
 
     if (!data) {
       return;
@@ -617,11 +624,11 @@ export function ExpensesPage() {
   const isDateFocused = effectiveFocusedDate !== null;
 
   return (
-    <div className={cn('min-h-screen', 'bg-background', 'overflow-x-hidden')}>
-      <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
+    <div className={cn('bg-background', 'overflow-x-hidden')}>
+      <PullToRefresh onRefresh={handleRefresh} className="h-full">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
           <motion.main
-            className="px-4 space-y-6 pb-24 overflow-x-hidden"
+            className="px-4 space-y-6 overflow-x-hidden"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -1088,7 +1095,9 @@ export function ExpensesPage() {
                 </span>
               </div>
 
-              {groupedTransactions.type === 'flat' && groupedTransactions.items.length > 0 ? (
+              {loadError ? (
+                <DataErrorState error={loadError} onRetry={fetchTransactions} />
+              ) : groupedTransactions.type === 'flat' && groupedTransactions.items.length > 0 ? (
                 <div className="space-y-3">
                   {groupedTransactions.items.map((tx) => (
                     <TransactionItem

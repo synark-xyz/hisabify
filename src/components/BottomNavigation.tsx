@@ -17,7 +17,12 @@ export function BottomNavigation() {
       {!isKeyboardOpen && (
         <motion.nav
           className="fixed left-0 right-0 z-40 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg lg:hidden"
-          // Sits directly on top of the AdMob banner when one is showing; 0 otherwise.
+          // Must be an explicit bottom offset, not `bottom-0`: the AdMob banner is a native
+          // view pinned to the bottom of the screen, so the nav has to sit on top of it.
+          // `--ad-banner-h` is 0 whenever no ad is showing, which makes this bottom-0 anyway.
+          // Dropping either half breaks something: no `bottom` at all and a fixed element
+          // falls back to its static position (off-screen); a hardcoded 0 and the banner
+          // renders over the nav.
           style={{ bottom: 'var(--ad-banner-h, 0px)' }}
           initial={{ y: 100 }}
           animate={{ y: 0 }}

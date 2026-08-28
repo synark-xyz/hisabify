@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import type { ActivityLog, Transaction } from '@/types';
 import { useActivityHistory } from '@/hooks/useActivityHistory';
+import { DataErrorState } from '@/components/ErrorState';
 import { formatActivityDescription, type ActivityFeedEntry } from '@/lib/activityFeed';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -131,7 +132,7 @@ function FeedGroup({ dateStr, entries, t, onEdit, onDelete, onViewDetails, revea
 }
 
 export function ActivityHistoryPage() {
-  const { feed, loading, refetch } = useActivityHistory();
+  const { feed, loading, error, refetch } = useActivityHistory();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -168,6 +169,8 @@ export function ActivityHistoryPage() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" />
           </div>
+        ) : error ? (
+          <DataErrorState error={error} onRetry={refetch} />
         ) : feed.length === 0 ? (
           <div className="text-center py-12">
             <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

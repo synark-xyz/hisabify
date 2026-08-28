@@ -121,19 +121,69 @@ function isEntitledFromCustomerInfo(info: CustomerInfo): boolean {
   return entitled;
 }
 
-async function syncPremiumToSupabase(userId: string): Promise<void> {
+/**
+ * Mirrors the live RevenueCat entitlement into `public.users`.
+ *
+ * Writes *both* directions. An upgrade-only write leaves the mirror permanently stale after an
+ * expiry, refund, or cancellation — the row keeps claiming `pro`/`active` forever, and anything
+ * that trusts the column (reports, emails, admin views) reads a subscription that no longer
+ * exists. `isPremium` itself always reads live RevenueCat state; this column is only a mirror,
+ * so it must be allowed to go back down.
+ */
+/**
+ * Cache key for the last value successfully mirrored for a user.
+ *
+ * Per-user, and persisted: a `useRef` is dropped on every cold start, which would make the
+ * two-way sync issue a redundant UPDATE for **every free user on every launch** — a write the
+ * old upgrade-only code never made. The entitlement is still read live from RevenueCat on each
+ * launch; this only suppresses a write that would set the row to what it already says.
+ */
+const syncedKey = (userId: string) => `hisabify:subscription-mirror:${userId}`;
+
+function readLastSynced(userId: string): boolean | undefined {
+  try {
+    const v = localStorage.getItem(syncedKey(userId));
+    return v === null ? undefined : v === 'true';
+  } catch {
+    // Private mode / storage disabled: fall back to always writing. Correctness over cost.
+    return undefined;
+  }
+}
+
+function writeLastSynced(userId: string, entitled: boolean): void {
+  try {
+    localStorage.setItem(syncedKey(userId), String(entitled));
+  } catch {
+    /* non-fatal: the mirror is still correct, just re-written next launch */
+  }
+}
+
+async function syncPremiumToSupabase(userId: string, entitled: boolean): Promise<void> {
   // `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate PK.
   // `.select()` so a zero-row match is visible — PostgREST returns 204/error:null otherwise.
   const { data, error } = await supabase
     .from('users')
-    .update({ subscription_type: 'pro', subscription_status: 'active' })
+    .update({
+      // 'base', not 'free': the column carries a CHECK (subscription_type IN ('base','pro')).
+      subscription_type: entitled ? 'pro' : 'base',
+      subscription_status: entitled ? 'active' : 'inactive',
+    })
     .eq('user_id', userId)
     .select('user_id');
   if (error) {
-    logger.error('[useRevenueCat] Failed to sync premium status to Supabase', { error: error.message });
-  } else if (!data?.length) {
-    logger.warn('[useRevenueCat] Premium sync matched 0 rows in public.users', { userId });
+    logger.error('[useRevenueCat] Failed to sync subscription status to Supabase', {
+      error: error.message,
+      entitled,
+    });
+    return;
   }
+  if (!data?.length) {
+    logger.warn('[useRevenueCat] Subscription sync matched 0 rows in public.users', { userId });
+    return;
+  }
+  // Recorded only after the row is confirmed updated, so a failed write is retried next time
+  // rather than being remembered as done.
+  writeLastSynced(userId, entitled);
 }
 
 export function useRevenueCat(): UseRevenueCatReturn {
@@ -154,12 +204,24 @@ export function useRevenueCat(): UseRevenueCatReturn {
   // `presentPaywall` needs the pre-paywall value to tell an upgrade from an existing Pro.
   const isPremiumRef = useRef(false);
 
+  // In-flight guard so a burst of identical customer-info events in one session collapses to a
+  // single write. The durable across-launch check is `readLastSynced`.
+  const syncingRef = useRef<boolean | undefined>(undefined);
+
   const updatePremiumState = useCallback((info: CustomerInfo) => {
     const entitled = isEntitledFromCustomerInfo(info);
     isPremiumRef.current = entitled;
     setIsPremium(entitled);
     setCustomerInfo(info);
-  }, []);
+
+    // Mirror every transition, not just upgrades. Expiry and refund arrive here through the
+    // customer-info listener and the foreground refresh, and they are the cases an
+    // upgrade-only sync silently misses — leaving the row stuck at pro/active forever.
+    if (userId && syncingRef.current !== entitled && readLastSynced(userId) !== entitled) {
+      syncingRef.current = entitled;
+      void syncPremiumToSupabase(userId, entitled);
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) {
@@ -167,6 +229,9 @@ export function useRevenueCat(): UseRevenueCatReturn {
       isPremiumRef.current = false;
       setIsPremium(false);
       setCustomerInfo(null);
+      // Next user on this device must be synced from scratch, not compared to the last one's.
+      // The persisted marker is per-user, so it is deliberately left alone.
+      syncingRef.current = undefined;
       return;
     }
 
@@ -295,7 +360,6 @@ export function useRevenueCat(): UseRevenueCatReturn {
       updatePremiumState(info);
 
       if (isEntitledFromCustomerInfo(info)) {
-        await syncPremiumToSupabase(user.id);
         toast({ title: 'Welcome to Hisabify Pro!', description: 'Your subscription is now active.' });
       }
     },
@@ -385,7 +449,6 @@ export function useRevenueCat(): UseRevenueCatReturn {
       const isNowPremium = isEntitledFromCustomerInfo(info);
 
       if (isNowPremium) {
-        await syncPremiumToSupabase(user.id);
         toast({ title: 'Purchases restored', description: 'Your Pro subscription has been restored.' });
       } else {
         toast({ title: 'No active subscription found', description: 'No previous Pro subscription was found for this account.', variant: 'destructive' });
@@ -474,10 +537,11 @@ export function useRevenueCat(): UseRevenueCatReturn {
     updatePremiumState(info);
 
     if (isEntitledFromCustomerInfo(info) && !wasEntitled) {
-      if (user) await syncPremiumToSupabase(user.id);
       toast({ title: 'Welcome to Hisabify Pro!', description: 'Your subscription is now active.' });
     }
-  }, [user, updatePremiumState, toast]);
+    // No `user` dependency: the Supabase mirror is written by `updatePremiumState` now, so this
+    // callback only shows a toast.
+  }, [updatePremiumState, toast]);
 
   return {
     isPremium,

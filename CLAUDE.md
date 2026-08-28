@@ -524,10 +524,38 @@ writes the reported height (dp, which is 1:1 with CSS px here) to `--ad-banner-h
 `0px` whenever no banner is showing, so web/iOS/Pro are untouched. Anything else pinned to the
 bottom of the viewport must add `var(--ad-banner-h, 0px)` too.
 
-`getBannerUnitId()` returns Google's **test** ad unit unless `VITE_ADMOB_BANNER_ID` is set *and*
-the bundle is a production build. Do not "fix" this to always use the real unit — serving or
+`getBannerUnitId(nativeAppId)` returns Google's **test** ad unit unless all three hold:
+`VITE_ADMOB_BANNER_ID` is set, `import.meta.env.PROD`, **and** the native package is
+`io.synark.hisabify` (not `.staging`). Do not "fix" this to always use the real unit — serving or
 clicking real ads from a debug build is what gets an AdMob account suspended, and there is no
 appeal path worth relying on.
+
+**The package-name check is not redundant with `PROD`.** `npm run build && npx cap sync` emits a
+production web bundle regardless of which APK variant later wraps it, so a `.staging` build used
+to pair Google's **test AdMob app ID** (from `manifestPlaceholders`) with our **real ad unit**.
+AdMob will not serve that combination, and `useAdBanner` swallows the failure by design
+(`logger.error` only — a failed ad must never break the app), so ads disappeared with no visible
+error. `useAdBanner` reads the package name once via `App.getInfo()`; web or a failed call
+resolves to `null`, which is treated as "not production" and serves test ads.
+
+Verify this against a **built APK**, not the source tree — the whole bug was that the source
+looked fine and the pairing only went wrong once a variant wrapped the bundle:
+
+```
+npm run verify:apk-ads -- android/app/build/outputs/apk/staging/app-staging.apk \
+                          android/app/build/outputs/apk/release/app-release.apk
+```
+
+It reads each APK's real package name and manifest AdMob app ID, evaluates the APK's own
+minified bundle to get the unit it would request at runtime, and asserts the per-variant policy
+(staging entirely on Google's test publisher, release on the exact `ADMOB_APP_ID_RELEASE`).
+Publisher equality alone is not enough: two apps in one AdMob account share a publisher, and
+pairing this account's unit with a different app in it is still a silent no-fill.
+
+It also warns when the APK is older than `ads.ts`, `useAdBanner.ts`, `useRevenueCat.ts` or
+`build.gradle` — a stale APK reports PASS about an artifact nobody is shipping.
+Confirmed to report FAIL on a staging APK built without the package-name guard (test app ID
+`~3347511713` + real unit `/5567338206`) and PASS for both variants with it.
 
 Two native details are load-bearing:
 
@@ -557,6 +585,70 @@ The privacy policy in `src/lib/legalContent.tsx` was rewritten for this (adverti
 disclosure, AdMob in the third-party lists, consent as the GDPR lawful basis). It previously
 promised the exact opposite. Any change to what ads collect has to go back into that file, plus
 the Play Console "Contains ads" and Data safety declarations.
+
+### Error states & offline
+
+**Never leave a spinner with no error branch.** A failed fetch that renders the empty state is
+the bug this section exists to prevent: for a long time a dead connection showed "No debts
+tracked", "All caught up", and empty charts — indistinguishable from a clean account.
+
+`ErrorState` (`src/components/ErrorState.tsx`) is the one error/empty block. Four variants —
+`offline | server | notFound | generic`. Offline and notFound get the neutral `bg-muted/40` badge,
+server and generic the `bg-destructive/10` one, because an offline device is not the user's fault
+and should not read as an alarm. **Pages should render `DataErrorState`** (same file), which takes
+the raw `error` and classifies it itself; reach for `ErrorState` directly only when the variant is
+already known (the 404 route, `ErrorBoundary`).
+
+The classification is a pure function, `toErrorVariant()` in `src/lib/errorState.ts` (same pattern
+as `ads.ts` / `theme.ts` / `subscriptionStatus.ts`), over the `toAppError()` taxonomy that already
+lived in `src/lib/errors.ts` and had no callers.
+
+Three things `toAppError` has to get right, all of which it previously got wrong:
+
+- **A Supabase/PostgREST failure is a plain object, not an `Error`.** An `instanceof Error` check
+  alone classified every single backend failure as `UNKNOWN_ERROR`. It now reads `status` off any
+  shape — and deliberately ignores `PostgrestError.code`, which is a Postgres SQLSTATE (`23505`),
+  not an HTTP status.
+- **`fetch` rejects with engine-specific text**: "Failed to fetch" (Chromium), "Load failed"
+  (WebKit), "NetworkError when attempting to fetch resource" (Gecko). Matching one spelling misses
+  the other two.
+- A transport failure carries **no status at all**, which is what distinguishes it from a 5xx.
+
+**Connectivity is two signals, never one.** `useOnline()` (`src/hooks/useOnline.ts`,
+`useSyncExternalStore` over the `online`/`offline` events — no `@capacitor/network`, it works in
+the WebView) reports *link* state, so a captive portal reads as online. `toErrorVariant` therefore
+also maps a `NETWORK_ERROR` to `offline` even when the device claims otherwise. `OfflineBanner`
+renders from `Layout`, anchored at the **top** on purpose: anything pinned to the bottom of the
+viewport has to offset by `var(--ad-banner-h, 0px)`, and the top sidesteps that entirely.
+
+**`useAuth`'s session bootstrap must clear `loading` on every path.** It used to clear it only
+inside `.then()`, with no `.catch()`, so a rejected `getSession()` left `ProtectedRoute` spinning
+forever with no way out. There is now a `.catch()`, a `finally`, and a `BOOTSTRAP_TIMEOUT_MS`
+ceiling — a promise that never settles still terminates in an error screen. `retryBootstrap()`
+re-runs it. Do not reintroduce a spinner that is not bounded by something.
+
+`ErrorBoundary` is mounted at the app root **and** around each route-level `<Suspense>` (in
+`App.tsx`'s `StandalonePage` and in `Layout`). The route-level ones exist for the failed lazy
+`import()` — offline navigation, or a stale bundle after a deploy — which otherwise escapes to the
+root boundary and blanks the whole app. The `Layout` one is keyed on `location.pathname` so
+navigating away from a crashed page clears it. Its retry bumps a `resetKey` to **remount** the
+subtree; clearing `hasError` alone re-renders the same tree, so a child that throws during render
+throws again immediately and the button looks dead.
+
+Hooks own an `error` in state (`setError` in `catch`, `setLoading(false)` in `finally` — the
+`useDashboardData` shape) and return it. A hook that returns `error` but whose consumer drops it is
+the same bug in a different place; that was true of `useDashboardData`, `useBudgets`, `useCategories`
+and `useRecurringExpenses` simultaneously. Fix swallowed errors at the shared function, not the
+call site: `fetchNotifications()` returning `[]` on failure is what made a dead connection render
+as "All caught up", so it now throws and its single caller classifies it.
+
+Copy lives in the existing `errors.*` i18n block — extend it, don't add a namespace — and must be
+added to **all three** locales. The `notFound` variant uses `errors.notFoundTitle/Description`,
+which are resource-neutral because that variant also covers a deleted transaction; `NotFound.tsx`
+passes the page-specific `notFound.title/description` explicitly.
+
+Modals, sheets and forms keep their toasts. `SplashScreen`'s progress bar is fixed-duration and
+fake — it cannot hang, and is not wired to real load state.
 
 ### Theme
 
@@ -709,8 +801,18 @@ Billing is **RevenueCat**, native-only. There is no Stripe integration and no we
 - `useSubscription()` is the app-facing hook. `isPremium` = an active RevenueCat entitlement
   **or** a time-boxed referral grant (`users.referral_granted_until`). `PremiumGuard` wraps
   gated UI.
-- `users.subscription_type` (`'base' | 'pro'`) is a **mirror**, written after a successful
-  purchase. It is not the source of truth — never gate a feature on it alone.
+- `users.subscription_type` (`'base' | 'pro'`) is a **mirror**, written from
+  `updatePremiumState` on every entitlement *transition* — upgrades and downgrades both. It is
+  not the source of truth — never gate a feature on it alone. The write is deliberately in
+  `updatePremiumState` rather than at the purchase/restore call sites: expiry, refund and
+  cancellation only ever arrive through `addCustomerInfoUpdateListener` and the foreground
+  refresh, which is why an upgrade-only sync left rows stuck at `pro`/`active` forever.
+  Note the DB CHECK is `('base','pro')` — the downgrade value is `'base'`, not `'free'`.
+  The last mirrored value is cached in `localStorage` per user (`hisabify:subscription-mirror:<id>`)
+  and only recorded **after** the update is confirmed to have matched a row. That cache is not an
+  optimisation detail: without it, syncing both directions issues a redundant UPDATE for *every
+  free user on every cold start* — a write the old upgrade-only code never made. A failed or
+  zero-row write is deliberately not cached, so it retries next launch.
 - The plugin is `import()`ed lazily and only when `Capacitor.isNativePlatform()`. Do not import
   `@revenuecat/purchases-capacitor` at module scope: the plugin is a Capacitor Proxy that
   intercepts *all* property access including `.then`, so returning it from an `async` function
@@ -734,6 +836,38 @@ Two more things the SDK will not tell you: the configure guard must key on the *
 bare boolean, or a second account signing in on the same process inherits the first account's
 entitlement; and `addCustomerInfoUpdateListener` is required, because without it an expiry or
 refund mid-session leaves Pro unlocked until the next foreground.
+
+**`/settings/subscription` is the one manage surface.** `SubscriptionPage` renders a status card
+(plan term, renews-on / access-until, store, trial and billing-issue notices) and delegates every
+action: `CustomerCenterTrigger` for cancel/change-plan/refund, `UpgradeModal` for upgrades,
+`restorePurchases` for restores. It is reachable from `Settings → Subscription` and from
+`Profile → Personal`, which now *navigates* here rather than mounting its own
+`CustomerCenterTrigger` — two copies of the trigger is how the two surfaces diverged before.
+
+The branching is a pure function, `deriveSubscriptionStatus()` in `src/lib/subscriptionStatus.ts`
+(same pattern as `ads.ts` / `theme.ts` / `ratingPrompt.ts`), returning
+`pro | referral | free | unavailable`. Three things it exists to get right:
+
+- **`EntitlementInfo.periodType` is `NORMAL | INTRO | TRIAL | PREPAID`, not the billing term.**
+  Monthly vs yearly has to be read off the product identifier; `expirationDate === null` is the
+  only reliable lifetime signal, and rendering it as a date prints "Invalid Date".
+- **No entitlement on web is not "free".** RevenueCat is native-only here, so `customerInfo` is
+  always null in a browser — the page returns `unavailable` and says subscriptions are managed in
+  the app rather than telling a paying subscriber they are on the free plan. A live referral grant
+  still shows, because that comes from Supabase.
+- **`willRenew: false` with a future `expirationDate` is the state users most need to see** — the
+  subscription is cancelled but still active. The card says so explicitly.
+
+The page reads live RevenueCat state, never `users.subscription_type` / `subscription_status`.
+The mirror now syncs downgrades too, but it is still only as fresh as the last app launch —
+an expiry that happens while the app is closed is not written until the user returns.
+
+`supabase/migrations/20260828000000_reset_stale_pro_mirror.sql` repairs the rows stranded at
+`pro`/`active` by the old upgrade-only sync. `npm run verify:migration` executes it against a
+throwaway DB carrying the real CHECK constraint and asserts it hits the intended rows, leaves
+every other row alone, is idempotent, and matches on `lower(btrim(email))` — an exact `IN (...)`
+silently no-ops on a differently cased address, and a migration that updates zero rows looks
+exactly like one that worked.
 
 Native purchases require a **Play Store app configured in RevenueCat with a Play service-account
 credential**. A `.staging` build (`applicationIdSuffix`) can never transact — its package is not in
@@ -889,6 +1023,10 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/lib/activityFeed.ts` | The one merge of `activity_log` + `transactions`, and the description parser |
 | `src/pages/ActivityHistoryPage.tsx` | Full activity feed (`/activity`) — same feed the Dashboard previews |
 | `src/lib/ads.ts` | Ad unit IDs + the pure `shouldShowBanner` gate |
+| `src/components/ErrorState.tsx` | The one error block (`ErrorState`) + the page-level `DataErrorState` |
+| `src/lib/errorState.ts` | Pure error -> variant mapping (`toErrorVariant`) |
+| `src/hooks/useOnline.ts` | Live connectivity flag (no native plugin) |
+| `src/components/OfflineBanner.tsx` | Mid-session offline bar, rendered from `Layout` |
 | `src/hooks/useAdBanner.ts` | AdMob init, UMP consent, banner lifecycle, `--ad-banner-h` |
 | `src/hooks/useRecurringExpenses.ts` | Recurring expense CRUD + `process_recurring_expenses()` RPC |
 | `src/pages/more/RecurringExpensesPage.tsx` | Recurring expense manager (`/more/recurring`) |
@@ -902,6 +1040,8 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/lib/env.ts` | zod-validated env schema (throws at import when misconfigured) |
 | `src/hooks/useRevenueCat.ts` | RevenueCat SDK: entitlement, purchases, paywall, Customer Center |
 | `src/hooks/useSubscription.tsx` | App-facing premium check (entitlement OR referral grant) |
+| `src/pages/settings/SubscriptionPage.tsx` | Manage Subscription (`/settings/subscription`) — status card + Customer Center |
+| `src/lib/subscriptionStatus.ts` | Pure derivation of the subscription display state |
 | `playwright.config.ts`, `e2e/` | E2E suite + shared logged-in `storageState` |
 
 ## Development Workflow

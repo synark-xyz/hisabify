@@ -39,8 +39,8 @@ export function BudgetPage() {
   };
 
   return (
-    <div className={cn("min-h-screen relative", "bg-background")}>
-      <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full pb-page-content fade-bottom-overlay">
+    <div className={cn("relative", "bg-background")}>
+      <PullToRefresh onRefresh={async () => { await refetch(); }} className="h-full">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
           <motion.main

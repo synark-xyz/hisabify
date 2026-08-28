@@ -23,6 +23,8 @@ import { usePaymentReminders } from '@/hooks/usePaymentReminders';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useTheme } from '@/hooks/useTheme';
 import { useFirstTimeUser } from '@/hooks/useFirstTimeUser';
+import { DataErrorState } from '@/components/ErrorState';
+import { logger } from '@/lib/logger';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { MonthlyWrapCard } from '@/components/MonthlyWrapCard';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,7 +57,8 @@ export function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { reminders: paymentReminders, refetch: refetchReminders } = usePaymentReminders();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
-  const { isFirstTimeUser, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
+  const { isFirstTimeUser, error: firstTimeError, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
+  const [loadError, setLoadError] = useState<unknown>(null);
   const { user } = useAuth();
   const { resolvedTheme } = useTheme();
   const isLightMode = resolvedTheme === 'light';
@@ -67,12 +70,21 @@ export function Dashboard() {
 
   const fetchTransactions = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    // `error` was previously destructured away, so a failed load left every total at 0 —
+    // the dashboard confidently reported a zero balance for an account that has money in it.
+    const { data, error: fetchError } = await supabase
       .from('transactions')
       .select('*, category:categories(*)')
       .eq('user_id', user.id)
       .order('date', { ascending: false })
       .limit(5);
+
+    if (fetchError) {
+      logger.error(fetchError, { component: 'Dashboard', action: 'fetchTransactions' });
+      setLoadError(fetchError);
+      return;
+    }
+    setLoadError(null);
 
     if (data) {
       const convertedData = await Promise.all(
@@ -259,11 +271,25 @@ export function Dashboard() {
   // While the first-time-user check is still resolving, render a skeleton that
   // mirrors the Dashboard's visual layout so neither the regular dashboard nor
   // the getting-started UI flashes before we know which one to show.
+  // A zero-value dashboard is worse than no dashboard: it looks like real data.
+  const dashboardError = firstTimeError ?? loadError;
+  if (dashboardError) {
+    return (
+      <DataErrorState
+        error={dashboardError}
+        onRetry={async () => {
+          setLoadError(null);
+          await Promise.all([refetchFirstTimeStatus(), fetchTransactions()]);
+        }}
+      />
+    );
+  }
+
   if (isFirstTimeUser === null) {
     return (
-      <div className="min-h-screen relative">
+      <div className="relative">
         <ParticlesBackground />
-        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pb-page-content pt-4">
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pt-4">
           {/* Greeting row */}
           <div className="flex items-center gap-3 px-1">
             <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
@@ -282,14 +308,14 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden">
+    <div className="relative overflow-x-hidden">
       <ParticlesBackground />
-      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10 pb-page-content">
+      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
 
           <motion.main
-            className="px-4 space-y-6 pb-24 overflow-x-hidden"
+            className="px-4 space-y-6 overflow-x-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, ease: "easeOut" }}

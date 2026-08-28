@@ -9,6 +9,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { format, isPast, isToday, differenceInDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generateWeeklyHealthNotification, generateWeeklyTip, AppNotification } from '@/lib/notificationManager';
+import { DataErrorState } from '@/components/ErrorState';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useHealthScore } from '@/features/gamification/hooks/useHealthScore';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +50,7 @@ export function NotificationsPage() {
     const { formatAmount } = useCurrency();
     const { score } = useHealthScore();
     const { reminders, loading, markAsPaid, deletePaidReminder } = usePaymentReminders();
-    const { notifications: appNotifications, loading: notifLoading, unreadCount, refresh, markAsRead, remove, removeAll } = useNotifications();
+    const { notifications: appNotifications, loading: notifLoading, error: notifError, unreadCount, refresh, markAsRead, remove, removeAll } = useNotifications();
     const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
 
     // Generate weekly tip on mount
@@ -206,6 +207,8 @@ export function NotificationsPage() {
                                         <Skeleton key={i} className="h-20 w-full rounded-2xl" />
                                     ))}
                                 </div>
+                            ) : notifError ? (
+                                <DataErrorState error={notifError} onRetry={refresh} />
                             ) : appNotifications.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
                                     <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
@@ -301,6 +304,8 @@ export function NotificationsPage() {
                                         <Skeleton key={i} className="h-20 w-full rounded-2xl" />
                                     ))}
                                 </div>
+                            ) : notifError ? (
+                                <DataErrorState error={notifError} onRetry={refresh} />
                             ) : combinedReminders.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
                                     <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">

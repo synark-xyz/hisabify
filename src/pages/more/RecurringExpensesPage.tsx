@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { useRecurringExpenses } from '@/hooks/useRecurringExpenses';
 import { useCategories } from '@/hooks/useCategories';
+import { DataErrorState } from '@/components/ErrorState';
 import { useCurrency } from '@/hooks/useCurrency';
 import { RecurringExpense, RecurringFrequency } from '@/types';
 import { cn } from '@/lib/utils';
@@ -28,7 +29,7 @@ export function RecurringExpensesPage() {
   const { currency, formatAmount } = useCurrency();
   const { categories } = useCategories();
   const {
-    recurringExpenses, loading,
+    recurringExpenses, loading, error, refetch,
     createRecurringExpense, updateRecurringExpense, deleteRecurringExpense,
   } = useRecurringExpenses();
 
@@ -93,6 +94,8 @@ export function RecurringExpensesPage() {
 
         {loading ? (
           <p className="text-sm text-muted-foreground py-8 text-center">{t('common.loading')}</p>
+        ) : error ? (
+          <DataErrorState error={error} onRetry={refetch} />
         ) : recurringExpenses.length === 0 ? (
           <div className="py-12 text-center space-y-2">
             <Repeat className="w-10 h-10 mx-auto text-muted-foreground/40" />

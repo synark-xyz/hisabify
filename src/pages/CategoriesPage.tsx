@@ -6,6 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCategories } from '@/hooks/useCategories';
+import { DataErrorState } from '@/components/ErrorState';
 import { AddCategoryModal } from '@/components/AddCategoryModal';
 import { Category } from '@/types';
 import { cn } from '@/lib/utils';
@@ -14,7 +15,7 @@ import { localizeNumber } from '@/lib/i18nNumber';
 
 export function CategoriesPage() {
   const navigate = useNavigate();
-  const { categories, loading, refetch } = useCategories();
+  const { categories, loading, error, refetch } = useCategories();
   const { t, i18n } = useTranslation();
 
   const [addParentOpen, setAddParentOpen] = useState(false);
@@ -163,15 +164,18 @@ export function CategoriesPage() {
           </div>
         )}
 
+        {/* Error state — distinct from "no categories yet", which it used to be indistinguishable from */}
+        {!loading && error && <DataErrorState error={error} onRetry={refetch} />}
+
         {/* Empty state */}
-        {!loading && categories.length === 0 && (
+        {!loading && !error && categories.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
             <p className="text-muted-foreground text-sm">{t('categoriesPage.noCategoriesAddOne')}</p>
           </div>
         )}
 
         {/* Sections */}
-        {!loading && categories.length > 0 && (
+        {!loading && !error && categories.length > 0 && (
           <>
             {renderSection(expenseParents, t('categoriesPage.expense'))}
             {renderSection(incomeParents, t('categoriesPage.income'))}

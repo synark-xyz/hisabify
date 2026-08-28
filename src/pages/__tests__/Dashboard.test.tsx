@@ -163,19 +163,24 @@ describe('Dashboard', () => {
     expect(await screen.findByText('dashboard.gettingStarted')).toBeInTheDocument();
   });
 
-  // Regression: the Dashboard used a hardcoded `pb-24` (96px) while the bottom nav,
-  // FAB and ad banner need `140px + var(--ad-banner-h) + safe-area`. With a banner
-  // showing, the last rows of the feed sat underneath the nav and were unreachable.
-  it('clears the bottom nav and ad banner with pb-page-content', async () => {
+  // Regression (two-sided). The bottom nav, FAB and ad banner need
+  // `140px + var(--ad-banner-h) + safe-area` of clearance, but that inset must be
+  // declared exactly ONCE, by the Layout `<main>`. Dashboard previously repeated it on
+  // three nested boxes (140 + 140 + 96), which added ~376px of empty scrollable space:
+  // the page kept scrolling long after the content ended. Assert the page owns none of
+  // it, so the inset can never be double-counted again.
+  it('does not declare its own bottom inset (Layout owns it)', async () => {
     const { container } = renderDashboard();
     await screen.findByText('dashboard.mainBalance');
-    expect(container.querySelector('.pb-page-content')).toBeTruthy();
+    expect(container.querySelector('.pb-page-content')).toBeNull();
+    expect(container.querySelector('.pb-24')).toBeNull();
+    expect(container.querySelector('.min-h-screen')).toBeNull();
   });
 
   it('renders a skeleton while the first-time check is unresolved', () => {
     firstTimeUser = null;
     const { container } = renderDashboard();
     expect(container.querySelector('.animate-pulse')).toBeTruthy();
-    expect(container.querySelector('.pb-page-content')).toBeTruthy();
+    expect(container.querySelector('.pb-page-content')).toBeNull();
   });
 });

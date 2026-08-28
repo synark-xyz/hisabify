@@ -121,7 +121,12 @@ export function Layout() {
             <div className="flex-1 min-w-0 lg:ml-64">
                 {showLandingHeader && <Header title={TAB_TITLES[location.pathname]} />}
 
-                <main className="relative z-10 pb-page-content lg:pb-10">
+                {/* This element is the single owner of the bottom inset that clears the
+                    bottom nav, the FAB and the ad banner. `min-h-screen` sits on the same
+                    box as the padding so (with border-box) the inset is absorbed into the
+                    viewport height instead of adding a screenful of dead scroll. Pages must
+                    NOT add their own `pb-page-content`/`pb-24`/`min-h-screen`. */}
+                <main className="relative z-10 min-h-screen pb-page-content lg:pb-10">
                     {/* No route-level transition: fading the whole tree in/out fought with
                         scroll restore and the Suspense swap, which showed up as a glitch.
                         Suspense sits inside the layout so a lazily-loaded page swaps under

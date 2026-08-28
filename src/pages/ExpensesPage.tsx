@@ -617,11 +617,11 @@ export function ExpensesPage() {
   const isDateFocused = effectiveFocusedDate !== null;
 
   return (
-    <div className={cn('min-h-screen', 'bg-background', 'overflow-x-hidden')}>
-      <PullToRefresh onRefresh={handleRefresh} className="h-full pb-page-content fade-bottom-overlay">
+    <div className={cn('bg-background', 'overflow-x-hidden')}>
+      <PullToRefresh onRefresh={handleRefresh} className="h-full">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
           <motion.main
-            className="px-4 space-y-6 pb-24 overflow-x-hidden"
+            className="px-4 space-y-6 overflow-x-hidden"
             variants={containerVariants}
             initial="hidden"
             animate="visible"

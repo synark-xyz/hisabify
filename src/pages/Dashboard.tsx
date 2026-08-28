@@ -261,9 +261,9 @@ export function Dashboard() {
   // the getting-started UI flashes before we know which one to show.
   if (isFirstTimeUser === null) {
     return (
-      <div className="min-h-screen relative">
+      <div className="relative">
         <ParticlesBackground />
-        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pb-page-content pt-4">
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pt-4">
           {/* Greeting row */}
           <div className="flex items-center gap-3 px-1">
             <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
@@ -282,14 +282,14 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden">
+    <div className="relative overflow-x-hidden">
       <ParticlesBackground />
-      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10 pb-page-content">
+      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
 
           <motion.main
-            className="px-4 space-y-6 pb-24 overflow-x-hidden"
+            className="px-4 space-y-6 overflow-x-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, ease: "easeOut" }}

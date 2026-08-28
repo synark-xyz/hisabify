@@ -77,7 +77,6 @@ function runtimeUnitId(apk, pkg) {
     const end = window.indexOf('function ', c.index + 1);
     const seg = window.slice(0, end > 0 ? end : undefined).replace(/^const /, 'var ');
     try {
-      // eslint-disable-next-line no-eval
       const val = eval(`${seg}; ${name}(${JSON.stringify(pkg)})`);
       if (typeof val === 'string' && val.startsWith('ca-app-pub-')) return val;
     } catch {

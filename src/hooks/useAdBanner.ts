@@ -1,11 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
-import type { PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { useAuth } from './useAuth';
-import { useSubscription } from './useSubscription';
 import { logger } from '@/lib/logger';
-import { getBannerUnitId, isProductionAds, shouldShowBanner } from '@/lib/ads';
+import { isProductionAds } from '@/lib/ads';
 
 type AdMobModule = typeof import('@capacitor-community/admob');
 
@@ -20,7 +17,7 @@ type AdMobModule = typeof import('@capacitor-community/admob');
  * "not production" and therefore serves test ads.
  */
 let appIdPromise: Promise<string | null> | null = null;
-function getNativeAppId(): Promise<string | null> {
+export function getNativeAppId(): Promise<string | null> {
   if (!appIdPromise) {
     appIdPromise = (async () => {
       if (!Capacitor.isNativePlatform()) return null;
@@ -53,7 +50,7 @@ function loadAdMob(): Promise<AdMobModule | null> {
  * entry point need this to have happened, so it is shared and memoised.
  */
 let consentPromise: Promise<AdMobModule | null> | null = null;
-function initAdMob(): Promise<AdMobModule | null> {
+export function initAdMob(): Promise<AdMobModule | null> {
   if (!consentPromise) {
     consentPromise = (async () => {
       const mod = await loadAdMob();
@@ -75,96 +72,6 @@ function initAdMob(): Promise<AdMobModule | null> {
     });
   }
   return consentPromise;
-}
-
-/**
- * The banner is a native view laid over the bottom of the WebView — it does not resize the
- * WebView, so the web layer has to move out of its way. Everything that sits at the bottom
- * (`BottomNavigation`, the FAB, `.pb-page-content`) offsets by this variable, which stays at 0
- * whenever no banner is showing.
- *
- * The plugin reports the size in dp, which is 1:1 with CSS px inside a Capacitor WebView.
- */
-function setBannerHeight(px: number): void {
-  document.documentElement.style.setProperty('--ad-banner-h', `${px}px`);
-}
-
-/**
- * Shows an anchored AdMob banner to signed-in, non-premium Android users.
- *
- * Mounted once, in `Layout` — which is also the placement policy: Layout-group routes get a
- * banner, `StandalonePage` routes (settings, profile, legal) never do.
- */
-export function useAdBanner(): void {
-  const { user } = useAuth();
-  const { isPremium, loading } = useSubscription();
-  const shownRef = useRef(false);
-
-  const wanted = shouldShowBanner({
-    platform: Capacitor.getPlatform(),
-    signedIn: Boolean(user),
-    subscriptionLoading: loading,
-    isPremium,
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-    let sizeListener: PluginListenerHandle | null = null;
-
-    // Covers both "never wanted" and "just upgraded to Pro" — the latter has a banner to remove.
-    if (!wanted) {
-      if (shownRef.current) {
-        shownRef.current = false;
-        setBannerHeight(0);
-        loadAdMob()
-          .then((mod) => mod?.AdMob.removeBanner())
-          .catch((err) => logger.error('[useAdBanner] removeBanner failed', { err }));
-      }
-      return;
-    }
-
-    (async () => {
-      const mod = await initAdMob();
-      if (!mod || cancelled) return;
-      const { AdMob, BannerAdPluginEvents, BannerAdPosition, BannerAdSize } = mod;
-
-      sizeListener = await AdMob.addListener(BannerAdPluginEvents.SizeChanged, ({ height }) => {
-        setBannerHeight(height);
-      });
-      if (cancelled) {
-        await sizeListener.remove();
-        return;
-      }
-
-      await AdMob.showBanner({
-        adId: getBannerUnitId(await getNativeAppId()),
-        adSize: BannerAdSize.ADAPTIVE_BANNER,
-        position: BannerAdPosition.BOTTOM_CENTER,
-        margin: 0,
-      });
-      shownRef.current = true;
-    })().catch((err) => {
-      // A failed ad must never break the app — no toast, no rethrow.
-      logger.error('[useAdBanner] showBanner failed', { err });
-    });
-
-    return () => {
-      cancelled = true;
-      sizeListener?.remove().catch(() => {});
-    };
-  }, [wanted]);
-
-  // Unmounting the layout (sign-out, hot reload) must not leave a native banner on screen.
-  useEffect(() => {
-    return () => {
-      if (!shownRef.current) return;
-      shownRef.current = false;
-      setBannerHeight(0);
-      loadAdMob()
-        .then((mod) => mod?.AdMob.removeBanner())
-        .catch(() => {});
-    };
-  }, []);
 }
 
 /**

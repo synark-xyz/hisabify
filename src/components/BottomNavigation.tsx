@@ -16,9 +16,7 @@ export function BottomNavigation() {
     <AnimatePresence>
       {!isKeyboardOpen && (
         <motion.nav
-          className="fixed left-0 right-0 z-40 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg lg:hidden"
-          // Sits directly on top of the AdMob banner when one is showing; 0 otherwise.
-          style={{ bottom: 'var(--ad-banner-h, 0px)' }}
+          className="fixed bottom-0 left-0 right-0 z-40 glass bg-background/80 backdrop-blur-md border-t border-border/30 pb-nav-safe shadow-lg lg:hidden"
           initial={{ y: 100 }}
           animate={{ y: 0 }}
           exit={{ y: 100 }}

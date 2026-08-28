@@ -9,9 +9,9 @@ import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { RatingSheet } from '@/components/RatingSheet';
 import { PageFallback } from '@/components/PageTransition';
 import { useAppRating } from '@/hooks/useAppRating';
-import { useAdBanner } from '@/hooks/useAdBanner';
 import { Header } from '@/components/Header';
 import { HisabifyLogo } from "@/components/HisabifyLogo";
+import { BannerAd } from '@/components/BannerAd';
 import { cn } from '@/lib/utils';
 import { useFABContext } from "@/contexts/FABContext";
 import { NAV_TABS, TAB_TITLES, isTabRoute, isTabActive } from '@/lib/navTabs';
@@ -28,9 +28,6 @@ export function Layout() {
     const { t } = useTranslation();
     // Periodic "how are we doing?" prompt — fires at most once a day until the user rates.
     const rating = useAppRating();
-    // Anchored AdMob banner for free Android users. Mounting it here *is* the placement policy:
-    // Layout-group routes get a banner, StandalonePage routes (settings, profile, legal) don't.
-    useAdBanner();
 
     const navItems = NAV_TABS;
 
@@ -138,6 +135,7 @@ export function Layout() {
             </div>
 
             {/* Mobile bottom nav */}
+            <BannerAd />
             <BottomNavigation />
 
             {/* Mobile FAB */}

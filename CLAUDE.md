@@ -538,6 +538,19 @@ AdMob will not serve that combination, and `useAdBanner` swallows the failure by
 error. `useAdBanner` reads the package name once via `App.getInfo()`; web or a failed call
 resolves to `null`, which is treated as "not production" and serves test ads.
 
+Verify this against a **built APK**, not the source tree — the whole bug was that the source
+looked fine and the pairing only went wrong once a variant wrapped the bundle:
+
+```
+npm run verify:apk-ads -- android/app/build/outputs/apk/staging/app-staging.apk \
+                          android/app/build/outputs/apk/release/app-release.apk
+```
+
+It reads each APK's real package name and manifest AdMob app ID, evaluates the APK's own
+minified bundle to get the unit it would request at runtime, and fails on a publisher mismatch.
+Confirmed to report FAIL on a staging APK built without the package-name guard (test app ID
+`~3347511713` + real unit `/5567338206`) and PASS for both variants with it.
+
 Two native details are load-bearing:
 
 - `com.google.android.gms.ads.APPLICATION_ID` in `AndroidManifest.xml` — the Mobile Ads SDK

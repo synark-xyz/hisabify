@@ -4,6 +4,7 @@ import {
   getBannerUnitId,
   isProductionAds,
   resolveBannerUnitId,
+  createBannerHeightTracker,
   TEST_BANNER_UNIT_ID,
   PRODUCTION_APP_ID,
   BannerGate,
@@ -117,5 +118,62 @@ describe('getBannerUnitId in a production bundle (the staging regression)', () =
   it('keeps initializeForTesting aligned with the unit it will request', () => {
     expect(isProductionAds('io.synark.hisabify.staging')).toBe(false);
     expect(isProductionAds(PRODUCTION_APP_ID)).toBe(true);
+  });
+});
+
+describe('createBannerHeightTracker', () => {
+  const track = () => {
+    const seen: number[] = [];
+    return { seen, t: createBannerHeightTracker((px) => seen.push(px)) };
+  };
+
+  it('reserves the height when SizeChanged arrives BEFORE Loaded', () => {
+    // The real device ordering, and the case that shipped broken: gating purely on a `loaded`
+    // flag discarded this size event, height stayed 0, and the banner covered the bottom nav.
+    const { seen, t } = track();
+    t.onSize(50);
+    t.onLoaded();
+    expect(seen.at(-1)).toBe(50);
+  });
+
+  it('reserves the height when Loaded arrives before SizeChanged', () => {
+    const { seen, t } = track();
+    t.onLoaded();
+    t.onSize(50);
+    expect(seen.at(-1)).toBe(50);
+  });
+
+  it('reserves nothing while only the view has been sized', () => {
+    // No fill yet: reserving here is what leaves a blank strip above the nav.
+    const { seen, t } = track();
+    t.onSize(50);
+    expect(seen.at(-1)).toBe(0);
+  });
+
+  it('gives the space back when the ad fails to load', () => {
+    const { seen, t } = track();
+    t.onSize(50);
+    t.onLoaded();
+    expect(seen.at(-1)).toBe(50);
+    t.onFailed();
+    expect(seen.at(-1)).toBe(0);
+  });
+
+  it('tracks a resize after the ad has loaded', () => {
+    const { seen, t } = track();
+    t.onSize(50);
+    t.onLoaded();
+    t.onSize(90);
+    expect(seen.at(-1)).toBe(90);
+  });
+
+  it('re-reserves when a later request succeeds after a failure', () => {
+    const { seen, t } = track();
+    t.onSize(50);
+    t.onLoaded();
+    t.onFailed();
+    expect(seen.at(-1)).toBe(0);
+    t.onLoaded();
+    expect(seen.at(-1)).toBe(50);
   });
 });

@@ -43,13 +43,20 @@ describe('BottomNavigation', () => {
 
   it('is anchored to the bottom of the viewport', () => {
     const nav = renderNav();
-    const classes = nav.className;
+    expect(nav.className).toContain('fixed');
+    // Regression 1: `fixed` with no bottom anchor at all falls back to the element's static
+    // position, which on a scrolled page is off-screen.
+    const hasBottomClass = /(^|\s)bottom-/.test(nav.className);
+    expect(hasBottomClass || Boolean(nav.style.bottom)).toBe(true);
+  });
 
-    expect(classes).toContain('fixed');
-    // The regression: `fixed` with no bottom anchor scrolls the bar off-screen.
-    const hasBottomClass = /(^|\s)bottom-/.test(classes);
-    const hasInlineBottom = Boolean(nav.style.bottom);
-    expect(hasBottomClass || hasInlineBottom).toBe(true);
+  it('sits above the ad banner rather than under it', () => {
+    const nav = renderNav();
+    // Regression 2: anchoring with a hardcoded `bottom-0` puts the nav flush to the screen
+    // bottom — which is exactly where the native AdMob banner is, so the banner covers it.
+    // The offset has to track --ad-banner-h, which is 0px when no ad is showing.
+    expect(nav.className).not.toMatch(/(^|\s)bottom-0(\s|$)/);
+    expect(nav.style.bottom).toContain('--ad-banner-h');
   });
 
   it('spans the full width and stays above page content', () => {

@@ -94,3 +94,41 @@ export function shouldShowBanner({
   if (subscriptionLoading) return false;
   return !isPremium;
 }
+
+/**
+ * Tracks the two AdMob events that decide how much space the banner reserves.
+ *
+ * The pair arrives in an order the plugin does not guarantee, and in practice `SizeChanged`
+ * fires *before* `Loaded` — the banner view is measured as soon as it is laid out, whether or
+ * not an ad ever fills it. That makes both naive versions wrong:
+ *
+ *   - reserve on `SizeChanged` alone  -> blank strip above the nav when the request fails
+ *   - reserve only while `loaded`     -> the size event is discarded, height stays 0, and the
+ *                                        banner renders on top of the bottom nav
+ *
+ * So remember the last reported size and apply it on whichever event completes the pair.
+ */
+export function createBannerHeightTracker(onChange: (px: number) => void) {
+  let loaded = false;
+  let lastHeight = 0;
+
+  const apply = () => onChange(loaded ? lastHeight : 0);
+
+  return {
+    /** `BannerAdPluginEvents.SizeChanged` */
+    onSize(height: number) {
+      lastHeight = height;
+      apply();
+    },
+    /** `BannerAdPluginEvents.Loaded` */
+    onLoaded() {
+      loaded = true;
+      apply();
+    },
+    /** `BannerAdPluginEvents.FailedToLoad` — give the space back. */
+    onFailed() {
+      loaded = false;
+      apply();
+    },
+  };
+}

@@ -4,7 +4,7 @@ import type { PluginListenerHandle } from '@capacitor/core';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { initAdMob, getNativeAppId } from '@/hooks/useAdBanner';
-import { shouldShowBanner, getBannerUnitId } from '@/lib/ads';
+import { shouldShowBanner, getBannerUnitId, createBannerHeightTracker } from '@/lib/ads';
 import { logger } from '@/lib/logger';
 
 type AdMobModule = typeof import('@capacitor-community/admob');
@@ -73,27 +73,24 @@ export function BannerAd() {
       const nativeAppId = await getNativeAppId();
       if (cancelled) return;
 
-      // SizeChanged fires when the banner *view* is laid out, which happens before — and
-      // independently of — an ad actually filling it. Reserving space on that alone leaves a
-      // blank strip above the nav whenever the request fails (no fill, no network), which is
-      // worse than no ad at all: broken layout with nothing in the gap. So only reserve space
-      // once an ad has really loaded, and give it back the moment one fails.
-      let loaded = false;
+      // Height bookkeeping lives in `createBannerHeightTracker` (pure, unit-tested): the
+      // SizeChanged/Loaded pair arrives in an order the plugin does not guarantee, and getting
+      // it wrong either leaves a blank strip or lets the banner cover the bottom nav.
+      const heights = createBannerHeightTracker(setBannerHeight);
 
       listeners.push(
         await AdMob.addListener(BannerAdPluginEvents.SizeChanged, ({ height }) => {
-          if (loaded) setBannerHeight(height);
+          heights.onSize(height);
         }),
       );
       listeners.push(
         await AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
-          loaded = true;
+          heights.onLoaded();
         }),
       );
       listeners.push(
         await AdMob.addListener(BannerAdPluginEvents.FailedToLoad, (err) => {
-          loaded = false;
-          setBannerHeight(0);
+          heights.onFailed();
           logger.error('[BannerAd] banner failed to load', { err });
         }),
       );

@@ -13,7 +13,7 @@
  * Usage: node scripts/verify-apk-ads.mjs <apk> [<apk> ...]
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -149,6 +149,33 @@ if (!expectedAppId) {
   );
 }
 
+/**
+ * Warn when an APK predates the sources that shape its behaviour.
+ *
+ * A stale APK is the quiet failure mode of this whole check: it reports PASS about an artifact
+ * nobody is shipping, which is exactly what happened once during development — both APKs were
+ * inspected after `useRevenueCat.ts` had already changed underneath them.
+ */
+function stalenessWarning(apk) {
+  const apkTime = statSync(apk).mtimeMs;
+  const watched = [
+    'src/lib/ads.ts',
+    'src/hooks/useAdBanner.ts',
+    'src/hooks/useRevenueCat.ts',
+    'android/app/build.gradle',
+  ];
+  const newer = watched.filter((f) => {
+    try {
+      return statSync(join(repoRoot, f)).mtimeMs > apkTime;
+    } catch {
+      return false;
+    }
+  });
+  return newer.length
+    ? `APK is older than ${newer.join(', ')} — rebuild before trusting this result`
+    : null;
+}
+
 let failed = 0;
 for (const apk of process.argv.slice(2)) {
   const pkg = packageName(apk);
@@ -161,6 +188,8 @@ for (const apk of process.argv.slice(2)) {
   console.log(`  package name    ${pkg}`);
   console.log(`  manifest app ID ${appId}`);
   console.log(`  runtime ad unit ${unit}`);
+  const stale = stalenessWarning(apk);
+  if (stale) console.log(`  WARN ${stale}`);
   if (problems.length === 0) {
     console.log('  PASS app ID and ad unit are consistent for this variant');
   } else {

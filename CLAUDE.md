@@ -547,7 +547,13 @@ npm run verify:apk-ads -- android/app/build/outputs/apk/staging/app-staging.apk 
 ```
 
 It reads each APK's real package name and manifest AdMob app ID, evaluates the APK's own
-minified bundle to get the unit it would request at runtime, and fails on a publisher mismatch.
+minified bundle to get the unit it would request at runtime, and asserts the per-variant policy
+(staging entirely on Google's test publisher, release on the exact `ADMOB_APP_ID_RELEASE`).
+Publisher equality alone is not enough: two apps in one AdMob account share a publisher, and
+pairing this account's unit with a different app in it is still a silent no-fill.
+
+It also warns when the APK is older than `ads.ts`, `useAdBanner.ts`, `useRevenueCat.ts` or
+`build.gradle` — a stale APK reports PASS about an artifact nobody is shipping.
 Confirmed to report FAIL on a staging APK built without the package-name guard (test app ID
 `~3347511713` + real unit `/5567338206`) and PASS for both variants with it.
 

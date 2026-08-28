@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { DataErrorState } from '@/components/ErrorState';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
@@ -57,6 +58,7 @@ export function AnalyticsPage() {
     monthlyTrendData,
     budgetVsActualData,
     loading,
+    error,
     refetch,
   } = useDashboardData(dateRange);
   const hasTransactionData = transactions.length > 0;
@@ -104,6 +106,12 @@ export function AnalyticsPage() {
             initial="hidden"
             animate="visible"
           >
+            {/* A failed fetch used to fall through to empty charts, which reads as "you have
+                no data" rather than "we couldn't load it". */}
+            {error && !loading ? (
+              <DataErrorState error={error} onRetry={refetch} />
+            ) : (
+            <>
             {/* Action Bar */}
             <motion.div variants={itemVariants} className="flex items-center justify-end mb-6">
               <DateRangeSelector
@@ -228,6 +236,8 @@ export function AnalyticsPage() {
                 </PremiumGuard>
               </TabsContent>
             </Tabs>
+            </>
+            )}
           </motion.main>
         </div>
       </PullToRefresh>

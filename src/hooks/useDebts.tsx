@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Debt } from '@/types';
+import { logger } from '@/lib/logger';
 
 export interface CreateDebtInput {
   person_name: string;
@@ -33,6 +34,7 @@ export interface UseDebtsOptions {
 export function useDebts(options?: UseDebtsOptions) {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const isFetchingRef = useRef(false);
@@ -49,8 +51,12 @@ export function useDebts(options?: UseDebtsOptions) {
 
       if (error) throw error;
       setDebts((data as Debt[]) || []);
+      setError(null);
     } catch (err) {
-      console.error('[useDebts] fetchDebts error:', err);
+      // Was swallowed with a console.error, which rendered a fetch failure as the
+      // "No debts tracked" empty state — indistinguishable from a clean account.
+      logger.error(err, { component: 'useDebts', action: 'fetchDebts' });
+      setError(err);
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
@@ -222,6 +228,7 @@ export function useDebts(options?: UseDebtsOptions) {
   return {
     debts,
     loading,
+    error,
     outstandingDebts,
     iOwe,
     theyOwe,

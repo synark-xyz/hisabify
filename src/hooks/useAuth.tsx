@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
@@ -11,6 +11,10 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** Non-null when the session bootstrap itself failed (offline cold start, dead backend). */
+  error: unknown;
+  /** Re-runs the session bootstrap after a failure. */
+  retryBootstrap: () => void;
   signUp: (email: string, password: string, privacyPolicyAccepted: boolean) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: 'google') => Promise<{ error: Error | null }>;
@@ -18,30 +22,70 @@ interface AuthContextType {
   signOut: () => Promise<{ error: Error | null }>;
 }
 
+/** Ceiling on the session bootstrap. Beyond this we show an error rather than a spinner. */
+const BOOTSTRAP_TIMEOUT_MS = 10_000;
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+
+  const retryBootstrap = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    setBootstrapAttempt((n) => n + 1);
+  }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       logger.info('[Auth] onAuthStateChange', { event, hasSession: !!session, userId: session?.user?.id?.slice(0, 8) });
       setSession(session);
       setUser(session?.user ?? null);
+      setError(null);
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      logger.info('[Auth] getSession result', { hasSession: !!session, userId: session?.user?.id?.slice(0, 8) });
-      setSession(session);
-      setUser(session?.user ?? null);
+    // `loading` MUST be cleared on every path. It previously cleared only inside `.then()`,
+    // so a rejected getSession (offline cold start, unreachable Supabase) left ProtectedRoute
+    // spinning forever with no way out. A timeout covers the promise that never settles at all.
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      logger.warn('[Auth] getSession timed out');
+      setError(new Error('Auth bootstrap timed out'));
       setLoading(false);
-    });
+    }, BOOTSTRAP_TIMEOUT_MS);
 
-    return () => subscription.unsubscribe();
-  }, []);
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        logger.info('[Auth] getSession result', { hasSession: !!session, userId: session?.user?.id?.slice(0, 8) });
+        setSession(session);
+        setUser(session?.user ?? null);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        logger.error(err, { component: 'AuthProvider', action: 'getSession' });
+        setError(err);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        clearTimeout(timeout);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
+  }, [bootstrapAttempt]);
 
   const signUp = async (email: string, password: string, privacyPolicyAccepted: boolean) => {
     try {
@@ -250,7 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signInWithOAuth, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, error, retryBootstrap, signUp, signIn, signInWithOAuth, signOut }}>
       {children}
     </AuthContext.Provider>
   );

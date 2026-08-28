@@ -20,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getTransactionCategoryName, computeBudgetImpact, computeGoalImpact, shouldShowMerchantPattern } from '@/lib/transactionUtils';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
+import { DataErrorState, ErrorState } from '@/components/ErrorState';
 
 /** Strip all [meta:X] prefixes from a note string for clean display */
 function getCleanNote(note: string | null): string {
@@ -62,6 +64,7 @@ export function TransactionDetailsPage() {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [convertedAmount, setConvertedAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const [assignSheetOpen, setAssignSheetOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -74,7 +77,12 @@ export function TransactionDetailsPage() {
   }, []);
 
   const fetchTransaction = useCallback(async () => {
-    if (!user || !id) return;
+    // Without this, a missing id left `loading` true and the page said "Loading…" forever.
+    if (!user || !id) {
+      setLoading(false);
+      return;
+    }
+    setLoadError(null);
 
     const { data, error } = await supabase
       .from('transactions')
@@ -85,7 +93,16 @@ export function TransactionDetailsPage() {
 
     if (!mountedRef.current) return;
 
-    if (error || !data) {
+    // A failed request is not a deleted transaction. Redirecting on both meant a network
+    // blip silently bounced the user back to the list as though the row were gone.
+    if (error) {
+      logger.error(error, { component: 'TransactionDetailsPage', action: 'fetchTransaction', id });
+      setLoadError(error);
+      setLoading(false);
+      return;
+    }
+
+    if (!data) {
       // Deleted, or not this user's row — RLS already hides other users' rows,
       // the user_id filter just makes the intent explicit.
       navigate('/transactions', { replace: true });
@@ -231,12 +248,20 @@ export function TransactionDetailsPage() {
     }
   }, [transaction, toast, t]);
 
-  if (loading || !transaction) {
+  if (loadError) {
+    return <DataErrorState fullScreen error={loadError} onRetry={fetchTransaction} />;
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
       </div>
     );
+  }
+
+  if (!transaction) {
+    return <ErrorState fullScreen variant="notFound" onGoHome={() => navigate('/transactions', { replace: true })} />;
   }
 
   const isIncome = transaction.type === 'income';

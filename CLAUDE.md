@@ -586,6 +586,70 @@ disclosure, AdMob in the third-party lists, consent as the GDPR lawful basis). I
 promised the exact opposite. Any change to what ads collect has to go back into that file, plus
 the Play Console "Contains ads" and Data safety declarations.
 
+### Error states & offline
+
+**Never leave a spinner with no error branch.** A failed fetch that renders the empty state is
+the bug this section exists to prevent: for a long time a dead connection showed "No debts
+tracked", "All caught up", and empty charts — indistinguishable from a clean account.
+
+`ErrorState` (`src/components/ErrorState.tsx`) is the one error/empty block. Four variants —
+`offline | server | notFound | generic`. Offline and notFound get the neutral `bg-muted/40` badge,
+server and generic the `bg-destructive/10` one, because an offline device is not the user's fault
+and should not read as an alarm. **Pages should render `DataErrorState`** (same file), which takes
+the raw `error` and classifies it itself; reach for `ErrorState` directly only when the variant is
+already known (the 404 route, `ErrorBoundary`).
+
+The classification is a pure function, `toErrorVariant()` in `src/lib/errorState.ts` (same pattern
+as `ads.ts` / `theme.ts` / `subscriptionStatus.ts`), over the `toAppError()` taxonomy that already
+lived in `src/lib/errors.ts` and had no callers.
+
+Three things `toAppError` has to get right, all of which it previously got wrong:
+
+- **A Supabase/PostgREST failure is a plain object, not an `Error`.** An `instanceof Error` check
+  alone classified every single backend failure as `UNKNOWN_ERROR`. It now reads `status` off any
+  shape — and deliberately ignores `PostgrestError.code`, which is a Postgres SQLSTATE (`23505`),
+  not an HTTP status.
+- **`fetch` rejects with engine-specific text**: "Failed to fetch" (Chromium), "Load failed"
+  (WebKit), "NetworkError when attempting to fetch resource" (Gecko). Matching one spelling misses
+  the other two.
+- A transport failure carries **no status at all**, which is what distinguishes it from a 5xx.
+
+**Connectivity is two signals, never one.** `useOnline()` (`src/hooks/useOnline.ts`,
+`useSyncExternalStore` over the `online`/`offline` events — no `@capacitor/network`, it works in
+the WebView) reports *link* state, so a captive portal reads as online. `toErrorVariant` therefore
+also maps a `NETWORK_ERROR` to `offline` even when the device claims otherwise. `OfflineBanner`
+renders from `Layout`, anchored at the **top** on purpose: anything pinned to the bottom of the
+viewport has to offset by `var(--ad-banner-h, 0px)`, and the top sidesteps that entirely.
+
+**`useAuth`'s session bootstrap must clear `loading` on every path.** It used to clear it only
+inside `.then()`, with no `.catch()`, so a rejected `getSession()` left `ProtectedRoute` spinning
+forever with no way out. There is now a `.catch()`, a `finally`, and a `BOOTSTRAP_TIMEOUT_MS`
+ceiling — a promise that never settles still terminates in an error screen. `retryBootstrap()`
+re-runs it. Do not reintroduce a spinner that is not bounded by something.
+
+`ErrorBoundary` is mounted at the app root **and** around each route-level `<Suspense>` (in
+`App.tsx`'s `StandalonePage` and in `Layout`). The route-level ones exist for the failed lazy
+`import()` — offline navigation, or a stale bundle after a deploy — which otherwise escapes to the
+root boundary and blanks the whole app. The `Layout` one is keyed on `location.pathname` so
+navigating away from a crashed page clears it. Its retry bumps a `resetKey` to **remount** the
+subtree; clearing `hasError` alone re-renders the same tree, so a child that throws during render
+throws again immediately and the button looks dead.
+
+Hooks own an `error` in state (`setError` in `catch`, `setLoading(false)` in `finally` — the
+`useDashboardData` shape) and return it. A hook that returns `error` but whose consumer drops it is
+the same bug in a different place; that was true of `useDashboardData`, `useBudgets`, `useCategories`
+and `useRecurringExpenses` simultaneously. Fix swallowed errors at the shared function, not the
+call site: `fetchNotifications()` returning `[]` on failure is what made a dead connection render
+as "All caught up", so it now throws and its single caller classifies it.
+
+Copy lives in the existing `errors.*` i18n block — extend it, don't add a namespace — and must be
+added to **all three** locales. The `notFound` variant uses `errors.notFoundTitle/Description`,
+which are resource-neutral because that variant also covers a deleted transaction; `NotFound.tsx`
+passes the page-specific `notFound.title/description` explicitly.
+
+Modals, sheets and forms keep their toasts. `SplashScreen`'s progress bar is fixed-duration and
+fake — it cannot hang, and is not wired to real load state.
+
 ### Theme
 
 `useTheme()` exposes **two different things and they are not interchangeable**: `theme` is what the
@@ -959,6 +1023,10 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/lib/activityFeed.ts` | The one merge of `activity_log` + `transactions`, and the description parser |
 | `src/pages/ActivityHistoryPage.tsx` | Full activity feed (`/activity`) — same feed the Dashboard previews |
 | `src/lib/ads.ts` | Ad unit IDs + the pure `shouldShowBanner` gate |
+| `src/components/ErrorState.tsx` | The one error block (`ErrorState`) + the page-level `DataErrorState` |
+| `src/lib/errorState.ts` | Pure error -> variant mapping (`toErrorVariant`) |
+| `src/hooks/useOnline.ts` | Live connectivity flag (no native plugin) |
+| `src/components/OfflineBanner.tsx` | Mid-session offline bar, rendered from `Layout` |
 | `src/hooks/useAdBanner.ts` | AdMob init, UMP consent, banner lifecycle, `--ad-banner-h` |
 | `src/hooks/useRecurringExpenses.ts` | Recurring expense CRUD + `process_recurring_expenses()` RPC |
 | `src/pages/more/RecurringExpensesPage.tsx` | Recurring expense manager (`/more/recurring`) |

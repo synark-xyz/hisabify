@@ -8,6 +8,8 @@ import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { RatingSheet } from '@/components/RatingSheet';
 import { PageFallback } from '@/components/PageTransition';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { useAppRating } from '@/hooks/useAppRating';
 import { Header } from '@/components/Header';
 import { HisabifyLogo } from "@/components/HisabifyLogo";
@@ -118,6 +120,10 @@ export function Layout() {
             <div className="flex-1 min-w-0 lg:ml-64">
                 {showLandingHeader && <Header title={TAB_TITLES[location.pathname]} />}
 
+                {/* Anchored at the top on purpose: anything pinned to the bottom of the
+                    viewport has to offset by var(--ad-banner-h), and this sidesteps that. */}
+                <OfflineBanner />
+
                 {/* This element is the single owner of the bottom inset that clears the
                     bottom nav, the FAB and the ad banner. `min-h-screen` sits on the same
                     box as the padding so (with border-box) the inset is absorbed into the
@@ -128,9 +134,13 @@ export function Layout() {
                         scroll restore and the Suspense swap, which showed up as a glitch.
                         Suspense sits inside the layout so a lazily-loaded page swaps under
                         a header and bottom nav that never unmount. */}
-                    <Suspense fallback={<PageFallback />}>
-                        <Outlet />
-                    </Suspense>
+                    {/* Keyed on the path so navigating away from a crashed page clears the
+                        error instead of pinning it over every subsequent route. */}
+                    <ErrorBoundary key={location.pathname} fullScreen={false} showGoHome={false}>
+                        <Suspense fallback={<PageFallback />}>
+                            <Outlet />
+                        </Suspense>
+                    </ErrorBoundary>
                 </main>
             </div>
 

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { DataErrorState } from '@/components/ErrorState';
 import { useBudgets, BudgetWithSpending, Budget } from '@/hooks/useBudgets';
 import { useSavingsGoals } from '@/hooks/useSavingsGoals';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -58,7 +59,7 @@ export function BudgetDashboard() {
   const [drillDownBudget, setDrillDownBudget] = useState<BudgetWithSpending | null>(null);
   const [payingBudget, setPayingBudget] = useState<BudgetWithSpending | null>(null);
 
-  const { budgets, loading, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
+  const { budgets, loading, error, deleteBudget, copyBudgetToNextPeriod, refetch } = useBudgets();
   const { activeGoals } = useSavingsGoals();
   const { formatAmount } = useCurrency();
   const { isPremium } = useSubscription();
@@ -152,6 +153,11 @@ export function BudgetDashboard() {
     return accumulator;
   }, {});
 
+
+  // Before this, a failed fetch dropped straight through to an empty budget list.
+  if (error && !loading) {
+    return <DataErrorState error={error} onRetry={refetch} />;
+  }
 
   if (loading) {
     return (

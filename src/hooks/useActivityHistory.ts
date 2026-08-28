@@ -6,6 +6,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { mergeActivityFeed, type FeedTransaction } from '@/lib/activityFeed';
 import { ActivityLog, ActivityType, EntityType } from '@/types';
 import type { Json } from '@/integrations/supabase/types';
+import { logger } from '@/lib/logger';
 
 export interface LogActivityInput {
   activity_type: ActivityType;
@@ -22,6 +23,7 @@ export function useActivityHistory() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [transactions, setTransactions] = useState<FeedTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
   const { user } = useAuth();
   const { currency } = useCurrency();
   const { convertAmount } = useExchangeRate();
@@ -64,8 +66,11 @@ export function useActivityHistory() {
         }),
       );
       setTransactions(converted as unknown as FeedTransaction[]);
+      setError(null);
     } catch (err) {
-      console.error('[useActivityHistory] fetch error:', err);
+      // Was swallowed, so a failed load rendered as "no activity yet".
+      logger.error(err, { component: 'useActivityHistory', action: 'fetchActivities' });
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -112,6 +117,7 @@ export function useActivityHistory() {
     activities,
     feed,
     loading,
+    error,
     logActivity,
     refetch: fetchActivities,
   };

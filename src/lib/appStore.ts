@@ -31,6 +31,37 @@ export async function openStoreListing(): Promise<void> {
   window.open(PLAY_STORE_URL, '_blank', 'noopener,noreferrer');
 }
 
+export const PLAY_SUBSCRIPTIONS_URL = 'https://play.google.com/store/account/subscriptions';
+const APPLE_SUBSCRIPTIONS_URL = 'https://apps.apple.com/account/subscriptions';
+
+/**
+ * Open the store's subscription management page — the one-tap cancel path.
+ *
+ * Cancellation is the store's job, not ours: there is no RevenueCat API that cancels a
+ * subscription. `sku` deep-links Play straight to that subscription; without it the user
+ * lands on their subscription list. Both stores render a harmless "no subscriptions" page
+ * when there is nothing to cancel, so this is safe to show without an entitlement check —
+ * which matters, because a missed entitlement is exactly when a user goes looking for it.
+ *
+ * Same `Browser.open()` (Chrome Custom Tabs) constraint as `openStoreListing()`: https only,
+ * never `market://`.
+ */
+export async function openManageSubscriptions(sku?: string): Promise<void> {
+  const url =
+    Capacitor.getPlatform() === 'ios'
+      ? APPLE_SUBSCRIPTIONS_URL
+      : sku
+        ? `${PLAY_SUBSCRIPTIONS_URL}?sku=${encodeURIComponent(sku)}&package=${PLAY_STORE_ID}`
+        : PLAY_SUBSCRIPTIONS_URL;
+
+  if (Capacitor.isNativePlatform()) {
+    await Browser.open({ url });
+    return;
+  }
+
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 /** Build identifier attached to feedback so reports can be traced to a release. */
 export async function getAppVersion(): Promise<string> {
   if (!Capacitor.isNativePlatform()) return 'web';

@@ -74,6 +74,20 @@ const SOURCE_CONFIG: Record<string, {
     title: 'Automate your savings plan',
     description: 'Pro unlocks auto-contribute so your savings plan can run on a recurring schedule.',
   },
+  pro_features: {
+    eyebrow: 'Pro Features',
+    title: 'Unlock Hisabify Pro',
+    description: 'Access advanced features exclusive to Pro subscribers.',
+    benefits: [
+      'Unlock Hisabify Pro',
+      'Unlimited budgets & savings goals',
+      'All-time transaction history',
+      'Multi-currency tracking with live rates',
+      'Export PDF & CSV financial reports',
+      'Advanced analytics & spending insights',
+      'No ads',
+    ],
+  },
 };
 
 function getUpgradeContent(source?: string) {

@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { usePageVariants } from '@/lib/pageMotion';
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -8,17 +7,11 @@ interface PageTransitionProps {
 }
 
 /**
- * Enter-only wrapper for routes that live outside <Layout>. They are not inside a shared
- * AnimatePresence, so there is no exit phase to coordinate — animating in is the whole job.
+ * Wrapper for routes that live outside <Layout>. Route-level motion is disabled (see
+ * lib/pageMotion), so this is now a plain container kept for the shared className slot.
  */
 export function PageTransition({ children, className }: PageTransitionProps) {
-  const variants = usePageVariants();
-
-  return (
-    <motion.div variants={variants} initial="initial" animate="animate" className={className}>
-      {children}
-    </motion.div>
-  );
+  return <div className={className}>{children}</div>;
 }
 
 /**

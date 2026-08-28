@@ -1284,6 +1284,8 @@
     "privacy": "プライバシー",
     "usageAnalytics": "利用状況の分析",
     "usageAnalyticsDesc": "匿名化されたアプリの利用状況を共有します。財務データは一切含まれません。",
+    "adPrivacy": "広告のプライバシー設定",
+    "adPrivacyDesc": "広告のパーソナライズに関する選択を変更できます。",
     "analyticsOn": "利用状況の分析を有効にしました",
     "analyticsOff": "利用状況の分析を無効にしました",
     "exportComplete": "エクスポート完了",

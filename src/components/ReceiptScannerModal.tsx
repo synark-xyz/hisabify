@@ -10,7 +10,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
 import { compressForGemini } from '@/lib/imageProcessor';
-import { callGeminiVision } from '@/lib/geminiVision';
+import { callGeminiVision, GEMINI_KEY_MISSING } from '@/lib/geminiVision';
 import { parseCurrencyFromString, normalizeCurrency } from '@/lib/currencyUtils';
 
 export interface ScannedReceiptData {
@@ -98,15 +98,30 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
     };
 
     const processImage = async (file: File) => {
+        // Privacy Mode promised the user that images stay on-device. There is no on-device
+        // OCR in this build, so the only honest options are "don't send it" or "lie". Refuse
+        // the scan and point at manual entry rather than silently uploading to Gemini.
+        if (privacyMode) {
+            toast({
+                variant: 'destructive',
+                title: 'Privacy Mode is On',
+                description: 'Receipt scanning sends the image to Google Gemini. Turn off Privacy Mode in Settings to scan, or enter the details manually.',
+            });
+            return;
+        }
+
         setScanning(true);
         setScanLabel('Analyzing receipt...');
 
         try {
-            const dataUrl = await fileToDataURL(file);
+            const { base64, mimeType } = await compressForGemini(file);
+            // Reuse the compressed copy for preview and for the stored receipt:
+            // the raw camera file is 3-8MB, and receiptUrl ends up in
+            // transactions.receipt_url verbatim.
+            const dataUrl = `data:${mimeType};base64,${base64}`;
             setPreviewImage(dataUrl);
 
             setScanLabel('Extracting with AI...');
-            const { base64, mimeType } = await compressForGemini(file);
             const result = await callGeminiVision(base64, mimeType, userCurrency);
 
             const detectedCurrency = result.currency
@@ -126,10 +141,17 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
 
         } catch (err) {
             console.error('[ReceiptScanner] Extraction failed:', err);
+            // Drop back to the capture screen. Leaving the preview up strands the user on a
+            // dead end: Continue stays disabled because there is no extractedData.
+            setPreviewImage(null);
+            setExtractedData(null);
+            const unconfigured = err instanceof Error && err.message === GEMINI_KEY_MISSING;
             toast({
                 variant: 'destructive',
-                title: 'Scan Failed',
-                description: 'Could not read receipt. Please try again or enter details manually.',
+                title: unconfigured ? 'Receipt Scanning Unavailable' : 'Scan Failed',
+                description: unconfigured
+                    ? 'AI receipt scanning is not set up in this build. Please enter the details manually.'
+                    : 'Could not read receipt. Please try again or enter details manually.',
             });
         } finally {
             setScanning(false);
@@ -206,7 +228,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                         {privacyMode && (
                                             <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4">
                                                 <p className="text-sm text-amber-600 dark:text-amber-400 text-center">
-                                                    Privacy Mode is ON — images are processed locally and never uploaded
+                                                    Privacy Mode is ON — scanning is disabled because it would send this image to Google Gemini. Turn it off in Settings to scan.
                                                 </p>
                                             </div>
                                         )}
@@ -242,6 +264,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                                     <Button
                                                         variant="outline"
                                                         onClick={handleChooseFromGallery}
+                                                        disabled={privacyMode}
                                                         className="flex-1 rounded-2xl"
                                                     >
                                                         <Image className="w-4 h-4 mr-2" />
@@ -249,6 +272,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                                     </Button>
                                                     <Button
                                                         onClick={handleTakePhoto}
+                                                        disabled={privacyMode}
                                                         className="flex-1 rounded-2xl"
                                                     >
                                                         <Camera className="w-4 h-4 mr-2" />
@@ -257,7 +281,7 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
                                                 </div>
 
                                                 <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-                                                    Powered by AI Vision. Receipt images are processed securely and never stored.
+                                                    Receipt images are sent to Google Gemini to read the merchant, amount and date.
                                                 </p>
                                             </>
                                         )}
@@ -369,10 +393,3 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
     );
 }
 
-function fileToDataURL(file: File): Promise<string> {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-    });
-}

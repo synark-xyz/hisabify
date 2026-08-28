@@ -17,7 +17,29 @@ type CustomerInfo = import('@revenuecat/purchases-capacitor').CustomerInfo;
  * Must match exactly what you typed in RevenueCat → Entitlements → Identifier.
  * Default is 'hisabify-pro' (matching RevenueCat dashboard configuration).
  */
-export const ENTITLEMENT_ID = 'hisabify-pro';
+export const ENTITLEMENT_ID =
+  (import.meta.env.VITE_REVENUECAT_ENTITLEMENT_ID as string | undefined) || 'hisabify-pro';
+
+/**
+ * Public SDK key for the platform we are running on.
+ * Android is normally configured natively in HisabifyApp.java from BuildConfig, so this is
+ * only the fallback path; iOS and web have no native configure() call and rely on it entirely.
+ */
+function resolveApiKey(): string | undefined {
+  const env = import.meta.env;
+  const platform = Capacitor.getPlatform();
+  if (platform === 'ios') {
+    return (env.VITE_REVENUECAT_IOS_API_KEY as string | undefined)
+      || (env.VITE_REVENUECAT_API_KEY as string | undefined);
+  }
+  if (platform === 'android') {
+    // No generic fallback: Android is configured natively, and the shared VITE_ key is a
+    // test_ Test Store key in most checkouts. Silently configuring release with it would
+    // hand every user a fake entitlement.
+    return env.VITE_REVENUECAT_ANDROID_API_KEY as string | undefined;
+  }
+  return env.VITE_REVENUECAT_API_KEY as string | undefined;
+}
 
 export type PlanType = 'monthly' | 'yearly' | 'lifetime';
 
@@ -28,11 +50,15 @@ const PLAN_TO_PACKAGE_TYPE: Record<PlanType, string> = {
   lifetime: 'LIFETIME',
 };
 
-/** Maps app plan names to RevenueCat product identifiers (from RevenueCat dashboard) */
-const PLAN_TO_IDENTIFIER: Record<PlanType, string> = {
-  monthly: 'monthly',
-  yearly: 'yearly',
-  lifetime: 'lifetime',
+/**
+ * Package identifiers to match as a last resort. RevenueCat names packages built from its
+ * standard types `$rc_monthly` / `$rc_annual` / `$rc_lifetime`; a custom package keeps
+ * whatever identifier was typed in the dashboard, so accept both spellings.
+ */
+const PLAN_TO_IDENTIFIERS: Record<PlanType, string[]> = {
+  monthly: ['$rc_monthly', 'monthly'],
+  yearly: ['$rc_annual', 'yearly', 'annual'],
+  lifetime: ['$rc_lifetime', 'lifetime'],
 };
 
 interface UseRevenueCatReturn {
@@ -75,16 +101,38 @@ async function loadUIPlugin() {
 }
 
 function isEntitledFromCustomerInfo(info: CustomerInfo): boolean {
-  return ENTITLEMENT_ID in (info.entitlements.active ?? {});
+  const active = info.entitlements.active ?? {};
+  const entitled = ENTITLEMENT_ID in active;
+
+  // A paying customer with an entitlement under a *different* identifier is the one failure
+  // this hook cannot recover from and cannot see: `entitled` is false, the user is charged,
+  // and nothing throws. RevenueCat identifiers are typed by hand in the dashboard, so a
+  // near-miss ("Hisabify Pro" vs "hisabify-pro") is the likely cause. Name both sides.
+  if (!entitled) {
+    const activeKeys = Object.keys(active);
+    if (activeKeys.length > 0) {
+      logger.error('[useRevenueCat] Active entitlement(s) present but none match ENTITLEMENT_ID', {
+        expected: ENTITLEMENT_ID,
+        actual: activeKeys,
+      });
+    }
+  }
+
+  return entitled;
 }
 
 async function syncPremiumToSupabase(userId: string): Promise<void> {
-  const { error } = await supabase
+  // `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate PK.
+  // `.select()` so a zero-row match is visible — PostgREST returns 204/error:null otherwise.
+  const { data, error } = await supabase
     .from('users')
     .update({ subscription_type: 'pro', subscription_status: 'active' })
-    .eq('id', userId);
+    .eq('user_id', userId)
+    .select('user_id');
   if (error) {
     logger.error('[useRevenueCat] Failed to sync premium status to Supabase', { error: error.message });
+  } else if (!data?.length) {
+    logger.warn('[useRevenueCat] Premium sync matched 0 rows in public.users', { userId });
   }
 }
 
@@ -96,19 +144,37 @@ export function useRevenueCat(): UseRevenueCatReturn {
   const [revenueCatReady, setRevenueCatReady] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
 
-  const configuredRef = useRef(false);
   const pluginRef = useRef<PurchasesPlugin | null>(null);
+  // Keyed on the user id, not the user object (which is re-created on every token refresh)
+  // and not a one-shot boolean: an account switch on the same device must re-run logIn,
+  // otherwise the second user inherits the first user's entitlements.
+  const userId = user?.id;
+
+  // Mirrors `isPremium` for callbacks that must read it without depending on it —
+  // `presentPaywall` needs the pre-paywall value to tell an upgrade from an existing Pro.
+  const isPremiumRef = useRef(false);
 
   const updatePremiumState = useCallback((info: CustomerInfo) => {
     const entitled = isEntitledFromCustomerInfo(info);
+    isPremiumRef.current = entitled;
     setIsPremium(entitled);
     setCustomerInfo(info);
   }, []);
 
   useEffect(() => {
-    if (!user || configuredRef.current) return;
+    if (!userId) {
+      // Signed out: drop the cached entitlement so the next user never sees it.
+      isPremiumRef.current = false;
+      setIsPremium(false);
+      setCustomerInfo(null);
+      return;
+    }
 
     let cancelled = false;
+    const removers: Array<() => void> = [];
+    // Drains so a remover can never run twice, whichever side (cleanup or the async
+    // tail below) gets there first.
+    const removeListeners = () => { while (removers.length) removers.pop()!(); };
 
     (async () => {
       const loaded = await loadPlugin();
@@ -119,22 +185,35 @@ export function useRevenueCat(): UseRevenueCatReturn {
       const Purchases = loaded.plugin;
 
       try {
-        if (Capacitor.isNativePlatform()) {
-          // Native: RC is already configured in HisabifyApp.java at app startup.
-          // Log in the current user so entitlements are user-scoped.
-          await Purchases.logIn({ appUserID: user.id });
-        } else {
-          // Web: configure from JS (for dev/testing only)
-          const apiKey = import.meta.env.VITE_REVENUECAT_API_KEY as string | undefined;
-          await Purchases.configure({ apiKey, appUserID: user.id });
-          if (import.meta.env.DEV) {
-            const { LOG_LEVEL } = await import('@revenuecat/purchases-capacitor');
-            await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+        // Android configures natively at process start (HisabifyApp.java). iOS has no such
+        // hook, so ask the SDK instead of assuming: every method below rejects with
+        // "Purchases must be configured before calling this function" otherwise.
+        const { isConfigured } = await Purchases.isConfigured();
+
+        if (!isConfigured) {
+          const apiKey = resolveApiKey();
+          if (!apiKey) {
+            logger.error('[useRevenueCat] No RevenueCat API key for platform', {
+              platform: Capacitor.getPlatform(),
+            });
+            if (!cancelled) setRevenueCatReady(true);
+            return;
           }
+          await Purchases.configure({ apiKey, appUserID: userId });
+        } else {
+          // Already configured (anonymous, from the native hook): bind to this user so
+          // entitlements are user-scoped and survive a reinstall / device change.
+          await Purchases.logIn({ appUserID: userId });
         }
 
+        if (import.meta.env.DEV) {
+          const { LOG_LEVEL } = await import('@revenuecat/purchases-capacitor');
+          await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+        }
+
+        // Set before the first await below so purchase/restore callers that race the
+        // initial getCustomerInfo() still find a usable plugin.
         pluginRef.current = Purchases;
-        configuredRef.current = true;
 
         const { customerInfo: info } = await Purchases.getCustomerInfo();
         if (!cancelled) {
@@ -152,11 +231,17 @@ export function useRevenueCat(): UseRevenueCatReturn {
             logger.error('[useRevenueCat] foreground refresh failed', { err });
           }
         });
+        removers.push(() => { void appStateListener.remove(); });
 
-        return () => {
-          cancelled = true;
-          appStateListener.remove();
-        };
+        // Renewal / expiry / refund that lands while the app is in the foreground.
+        const callbackId = await Purchases.addCustomerInfoUpdateListener((freshInfo) => {
+          updatePremiumState(freshInfo);
+        });
+        removers.push(() => {
+          void Purchases.removeCustomerInfoUpdateListener({ listenerToRemove: callbackId });
+        });
+
+        if (cancelled) removeListeners();
       } catch (err) {
         if (!cancelled) {
           logger.error('[useRevenueCat] init failed', { err });
@@ -168,8 +253,11 @@ export function useRevenueCat(): UseRevenueCatReturn {
       if (!cancelled) setRevenueCatReady(true);
     });
 
-    return () => { cancelled = true; };
-  }, [user, updatePremiumState]);
+    return () => {
+      cancelled = true;
+      removeListeners();
+    };
+  }, [userId, updatePremiumState]);
 
   const refreshCustomerInfo = useCallback(async (): Promise<void> => {
     const Purchases = pluginRef.current;
@@ -261,7 +349,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
       const pkg =
         CONVENIENCE[plan] ??
         offering.availablePackages.find((p) => p.packageType === PLAN_TO_PACKAGE_TYPE[plan]) ??
-        offering.availablePackages.find((p) => p.identifier === PLAN_TO_IDENTIFIER[plan]);
+        offering.availablePackages.find((p) => PLAN_TO_IDENTIFIERS[plan].includes(p.identifier));
 
       logger.info('[useRevenueCat] purchasePlan: package resolved', {
         plan,
@@ -352,38 +440,44 @@ export function useRevenueCat(): UseRevenueCatReturn {
       return;
     }
 
+    // Snapshot before the paywall so we can tell "just upgraded" from "already Pro".
+    const wasEntitled = isPremiumRef.current;
+
     try {
-      await ui.RevenueCatUI.presentPaywall({
-        offering,
-        displayCloseButton: true,
-        listener: {
-          onPurchaseCompleted: async ({ customerInfo: info }) => {
-            updatePremiumState(info);
-            if (isEntitledFromCustomerInfo(info) && user) {
-              await syncPremiumToSupabase(user.id);
-              toast({ title: 'Welcome to Hisabify Pro!', description: 'Your subscription is now active.' });
-            }
-          },
-          onRestoreCompleted: ({ customerInfo: info }) => {
-            updatePremiumState(info);
-            if (isEntitledFromCustomerInfo(info)) {
-              toast({ title: 'Purchases restored', description: 'Your Pro subscription has been restored.' });
-            } else {
-              toast({ title: 'Nothing to restore', description: 'No active Pro subscription found for this account.', variant: 'destructive' });
-            }
-          },
-          onRestoreError: () => {
-            toast({ title: 'Restore failed', description: 'Could not restore purchases. Please try again.', variant: 'destructive' });
-          },
-        },
-      });
+      // DO NOT pass `listener` (or `purchaseLogic`) here. The Capacitor plugin turns their
+      // presence into `hasPaywallListener: true`, and the native side reacts with
+      //   val listener = if (hasPaywallListener) createPaywallListenerWrapper() else null
+      // That wrapper GATES every purchase on a JS round-trip — native fires
+      // `onPurchaseInitiated` and blocks until JS answers `resumePurchaseInitiated`. While
+      // PaywallActivity is in front that answer never arrives, so the CTA spins forever, the
+      // activity hits "top resumed state loss timeout", and the process is killed. Verified on
+      // device: `resumePurchaseInitiated` never appears in logcat, not even after dismissal.
+      // With no listener the native wrapper is never installed and the purchase completes
+      // entirely natively — which is why the state below is read back rather than pushed in.
+      await ui.RevenueCatUI.presentPaywall({ offering, displayCloseButton: true });
     } catch (err) {
       logger.error('[useRevenueCat] presentPaywall failed', { err });
     }
 
-    // Always refresh after paywall closes to capture any state changes
-    await refreshCustomerInfo();
-  }, [user, updatePremiumState, refreshCustomerInfo, toast]);
+    // The paywall is dismissed, so the WebView is foreground again and the bridge is reliable.
+    // `addCustomerInfoUpdateListener` may have already applied this; re-reading is idempotent.
+    const Refreshed = pluginRef.current;
+    if (!Refreshed) return;
+
+    let info: CustomerInfo;
+    try {
+      ({ customerInfo: info } = await Refreshed.getCustomerInfo());
+    } catch (err) {
+      logger.error('[useRevenueCat] presentPaywall: post-dismiss refresh failed', { err });
+      return;
+    }
+    updatePremiumState(info);
+
+    if (isEntitledFromCustomerInfo(info) && !wasEntitled) {
+      if (user) await syncPremiumToSupabase(user.id);
+      toast({ title: 'Welcome to Hisabify Pro!', description: 'Your subscription is now active.' });
+    }
+  }, [user, updatePremiumState, toast]);
 
   return {
     isPremium,

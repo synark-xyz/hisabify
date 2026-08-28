@@ -29,8 +29,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Transaction, ActivityLog } from '@/types';
 import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, getMonth, getYear } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { mergeActivityFeed, formatActivityDescription } from '@/lib/activityFeed';
 import { localizeNumber, localizeYear } from '@/lib/i18nNumber';
-import { formatDate } from '@/lib/formatDate';
 import { useLanguage, getLanguageLocale } from '@/hooks/useLanguage';
 import {
   DropdownMenu,
@@ -57,9 +57,8 @@ export function Dashboard() {
   const { isPremium, loading: subscriptionLoading } = useSubscription();
   const { isFirstTimeUser, refetch: refetchFirstTimeStatus } = useFirstTimeUser();
   const { user } = useAuth();
-  const { variant, theme } = useTheme();
-  const isLightMode = theme === 'light' && variant !== 'cyberpunk';
-  const useDarkText = (variant === 'cyberpunk' && theme === 'light') || (variant !== 'cyberpunk' && theme === 'light');
+  const { resolvedTheme } = useTheme();
+  const isLightMode = resolvedTheme === 'light';
   const { formatAmount, currencyVersion, currency } = useCurrency();
   const { language } = useLanguage();
   const { convertAmount } = useExchangeRate();
@@ -232,18 +231,12 @@ export function Dashboard() {
     });
   }, [paymentReminders]);
 
-  // Activity history preview: debt activity and transactions interleaved by recency,
-  // capped at 5 rows so the card grows with the page instead of needing its own scroll.
-  const recentActivity = useMemo(() => {
-    const debtTypes = ['debt_created', 'debt_settled', 'debt_updated', 'debt_deleted'];
-    const entries = [
-      ...activityLogs
-        .filter((a) => debtTypes.includes(a.activity_type))
-        .map((activity) => ({ kind: 'activity' as const, at: new Date(activity.created_at).getTime(), activity })),
-      ...transactions.map((tx) => ({ kind: 'transaction' as const, at: new Date(tx.date).getTime(), tx })),
-    ];
-    return entries.sort((a, b) => b.at - a.at).slice(0, 5);
-  }, [activityLogs, transactions]);
+  // Activity history preview: the same feed /activity renders, capped at 5 rows so the
+  // card grows with the page instead of needing its own scroll.
+  const recentActivity = useMemo(
+    () => mergeActivityFeed(activityLogs, transactions, 5),
+    [activityLogs, transactions],
+  );
 
   const netBalance = totalIncome - totalExpenses;
   const showGettingStarted = isFirstTimeUser === true;
@@ -270,7 +263,7 @@ export function Dashboard() {
     return (
       <div className="min-h-screen relative">
         <ParticlesBackground />
-        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pb-24 pt-4">
+        <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 space-y-6 pb-page-content pt-4">
           {/* Greeting row */}
           <div className="flex items-center gap-3 px-1">
             <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
@@ -291,7 +284,7 @@ export function Dashboard() {
   return (
     <div className="min-h-screen relative overflow-x-hidden">
       <ParticlesBackground />
-      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10">
+      <PullToRefresh onRefresh={handleRefresh} className="h-full relative z-10 pb-page-content">
         <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
 
 
@@ -312,25 +305,23 @@ export function Dashboard() {
               <div
                 className={cn(
                   "rounded-3xl p-4 px-5 shadow-xl relative overflow-hidden transition-all",
-                  variant === 'cyberpunk'
-                    ? "card-3d bg-card border-none"
-                    : isLightMode
-                      ? "glass-card-accent text-foreground"
-                      : "bg-[image:var(--gradient-balance)] text-white"
+                  isLightMode
+                    ? "glass-card-accent text-foreground"
+                    : "bg-[image:var(--gradient-balance)] text-white"
                 )}
                 style={{ contain: 'layout', willChange: 'transform' }}
               >
                 <div
                   className={cn(
                     "absolute top-0 right-0 w-64 h-64 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none",
-                    useDarkText ? "bg-primary/10" : "bg-white/10"
+                    isLightMode ? "bg-primary/10" : "bg-white/10"
                   )}
                   style={{ willChange: 'filter', transform: 'translateZ(0)' }}
                 />
                 <div
                   className={cn(
                     "absolute bottom-0 left-0 w-48 h-48 rounded-full -ml-16 -mb-16 blur-2xl pointer-events-none",
-                    useDarkText ? "bg-accent/10" : "bg-black/10"
+                    isLightMode ? "bg-accent/10" : "bg-black/10"
                   )}
                   style={{ willChange: 'filter', transform: 'translateZ(0)' }}
                 />
@@ -341,15 +332,15 @@ export function Dashboard() {
                       <div
                         className={cn(
                           "p-1.5 rounded-lg backdrop-blur-sm",
-                          useDarkText ? "bg-primary/20" : "bg-white/20"
+                          isLightMode ? "bg-primary/20" : "bg-white/20"
                         )}
                         style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                       >
-                        <Wallet className={cn("w-4 h-4", useDarkText ? "text-primary" : "text-white")} weight="fill" />
+                        <Wallet className={cn("w-4 h-4", isLightMode ? "text-primary" : "text-white")} weight="fill" />
                       </div>
                       <span className="text-sm font-medium tracking-wide">{t('dashboard.mainBalance')}</span>
                     </div>
-                    <h2 className={cn("text-3xl font-black tracking-tight mb-1", variant === 'cyberpunk' && !useDarkText && "text-glow")}>
+                    <h2 className="text-3xl font-black tracking-tight mb-1">
                       {formatAmount(netBalance)}
                     </h2>
                   </div>
@@ -357,11 +348,11 @@ export function Dashboard() {
                     <div
                       className={cn(
                         "flex items-center gap-1.5 px-3 py-1.5 backdrop-blur-md rounded-full text-xs font-bold ring-1 shadow-sm",
-                        useDarkText ? "bg-muted/30 ring-border" : "bg-white/20 ring-white/30"
+                        isLightMode ? "bg-muted/30 ring-border" : "bg-white/20 ring-white/30"
                       )}
                       style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                     >
-                      <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
+                      <TrendUp className={cn("w-3.5 h-3.5", isLightMode ? "text-green-600" : "text-emerald-300")} weight="bold" />
                       <span>{t('dashboard.today')} {formatAmount(todayNet)}</span>
                     </div>
                   </div>
@@ -371,36 +362,36 @@ export function Dashboard() {
                   <div
                     className={cn(
                       "group p-3 rounded-2xl backdrop-blur-sm border transition-colors overflow-hidden",
-                      useDarkText
+                      isLightMode
                         ? "bg-muted/20 border-border hover:bg-muted/30"
                         : "bg-black/20 border-white/10 hover:bg-black/30"
                     )}
                     style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={cn("p-1.5 rounded-full shrink-0", useDarkText ? "bg-red-500/20" : "bg-rose-500/20")}>
-                        <TrendDown className={cn("w-3.5 h-3.5", useDarkText ? "text-red-600" : "text-rose-300")} weight="bold" />
+                      <div className={cn("p-1.5 rounded-full shrink-0", isLightMode ? "bg-red-500/20" : "bg-rose-500/20")}>
+                        <TrendDown className={cn("w-3.5 h-3.5", isLightMode ? "text-red-600" : "text-rose-300")} weight="bold" />
                       </div>
-                      <span className={cn("text-xs font-bold uppercase tracking-wider truncate", useDarkText ? "text-foreground/70" : "text-white/70")}>{t('dashboard.expenses')}</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider truncate", isLightMode ? "text-foreground/70" : "text-white/70")}>{t('dashboard.expenses')}</span>
                     </div>
-                    <p className={cn("text-base font-bold tracking-tight truncate", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
+                    <p className={cn("text-base font-bold tracking-tight truncate", isLightMode ? "text-foreground" : "text-white")}>{formatAmount(totalExpenses)}</p>
                   </div>
                   <div
                     className={cn(
                       "group p-3 rounded-2xl backdrop-blur-sm border transition-colors overflow-hidden",
-                      useDarkText
+                      isLightMode
                         ? "bg-muted/20 border-border hover:bg-muted/30"
                         : "bg-black/20 border-white/10 hover:bg-black/30"
                     )}
                     style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div className={cn("p-1.5 rounded-full shrink-0", useDarkText ? "bg-green-500/20" : "bg-emerald-500/20")}>
-                        <TrendUp className={cn("w-3.5 h-3.5", useDarkText ? "text-green-600" : "text-emerald-300")} weight="bold" />
+                      <div className={cn("p-1.5 rounded-full shrink-0", isLightMode ? "bg-green-500/20" : "bg-emerald-500/20")}>
+                        <TrendUp className={cn("w-3.5 h-3.5", isLightMode ? "text-green-600" : "text-emerald-300")} weight="bold" />
                       </div>
-                      <span className={cn("text-xs font-bold uppercase tracking-wider truncate", useDarkText ? "text-foreground/70" : "text-white/70")}>{t('dashboard.income')}</span>
+                      <span className={cn("text-xs font-bold uppercase tracking-wider truncate", isLightMode ? "text-foreground/70" : "text-white/70")}>{t('dashboard.income')}</span>
                     </div>
-                    <p className={cn("text-base font-bold tracking-tight truncate", useDarkText ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
+                    <p className={cn("text-base font-bold tracking-tight truncate", isLightMode ? "text-foreground" : "text-white")}>{formatAmount(totalIncome)}</p>
                   </div>
                 </div>
               </div>
@@ -730,57 +721,35 @@ export function Dashboard() {
                     }
 
                     const activity = item.activity;
+                    // Only debt rows exist in activity_log today, but the feed is no longer
+                    // filtered to them — anything else gets a neutral row and no navigation.
+                    const isDebt = activity.entity_type === 'debt';
                     const isSettled = activity.activity_type === 'debt_settled';
                       const isDeleted = activity.activity_type === 'debt_deleted';
-                      const isCreated = activity.activity_type === 'debt_created';
                       const isPositive = activity.activity_type === 'debt_settled' || activity.activity_type === 'debt_created';
 
-                      const description = (() => {
-                        const parts = activity.description.split('|');
-                        if (parts.length >= 2) {
-                          const key = parts[0];
-                          const params: Record<string, string> = {};
-                          if (parts[1]) params.name = parts[1];
-                          if (parts[2]) params.currency = parts[2];
-                          if (parts[3]) params.amount = localizeNumber(parseFloat(parts[3]), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                          return t(`activity.${key}`, params);
-                        }
-                        // Fallback: parse legacy English-format strings from DB
-                        const desc = activity.description;
-                        const fmt = (n: string) => localizeNumber(parseFloat(n), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        let m: RegExpMatchArray | null;
-                        m = desc.match(/^You owe (.+?) ([A-Z]{3}) ([\d.]+)$/);
-                        if (m) return t('activity.youOwe', { name: m[1], currency: m[2], amount: fmt(m[3]) });
-                        m = desc.match(/^(.+?) owes you ([A-Z]{3}) ([\d.]+)$/);
-                        if (m) return t('activity.owesYou', { name: m[1], currency: m[2], amount: fmt(m[3]) });
-                        m = desc.match(/^Settled debt to (.+?): ([A-Z]{3}) ([\d.]+)$/);
-                        if (m) return t('activity.settledDebtTo', { name: m[1], currency: m[2], amount: fmt(m[3]) });
-                        m = desc.match(/^Settled debt from (.+?): ([A-Z]{3}) ([\d.]+)$/);
-                        if (m) return t('activity.settledDebtFrom', { name: m[1], currency: m[2], amount: fmt(m[3]) });
-                        m = desc.match(/^Paid ([A-Z]{3}) ([\d.]+) towards (.+)$/);
-                        if (m) return t('activity.paidTowards', { name: m[3], currency: m[1], amount: fmt(m[2]) });
-                        m = desc.match(/^Deleted debt to (.+)$/);
-                        if (m) return t('activity.deletedDebtTo', { name: m[1] });
-                        m = desc.match(/^Deleted debt from (.+)$/);
-                        if (m) return t('activity.deletedDebtFrom', { name: m[1] });
-                        return desc;
-                      })();
-                      
+                      const description = formatActivityDescription(activity.description, t);
+
                       return (
-                        <div 
+                        <div
                           key={activity.id}
-                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => navigate('/debts')}
+                          className={cn(
+                            'flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors',
+                            isDebt && 'cursor-pointer'
+                          )}
+                          onClick={isDebt ? () => navigate('/debts') : undefined}
                         >
                           <div className={cn(
                             'w-9 h-9 rounded-full flex items-center justify-center shrink-0',
-                            isSettled ? 'bg-emerald-500/10' : isDeleted ? 'bg-gray-500/10' : 'bg-rose-500/10'
+                            !isDebt ? 'bg-muted' : isSettled ? 'bg-emerald-500/10' : isDeleted ? 'bg-gray-500/10' : 'bg-rose-500/10'
                           )}>
-                            {isSettled 
-                              ? <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
-                              : isDeleted 
-                                ? <Trash className="w-5 h-5 text-gray-500" />
-                                : <Handshake className="w-5 h-5 text-rose-500" weight="fill" />
+                            {!isDebt
+                              ? <ClockCounterClockwise className="w-5 h-5 text-muted-foreground" weight="duotone" />
+                              : isSettled
+                                ? <CheckCircle className="w-5 h-5 text-emerald-500" weight="fill" />
+                                : isDeleted
+                                  ? <Trash className="w-5 h-5 text-gray-500" />
+                                  : <Handshake className="w-5 h-5 text-rose-500" weight="fill" />
                             }
                           </div>
                           <div className="flex-1 min-w-0">

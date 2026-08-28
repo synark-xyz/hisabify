@@ -6,14 +6,13 @@ import { Moon, Sun, Monitor, ArrowLeft, Tag, Globe } from 'lucide-react';
 import { ThemeColorPicker } from '@/components/ThemeColorPicker';
 import { PageShell } from '@/components/PageShell';
 import { useTheme } from '@/hooks/useTheme';
+import type { Theme } from '@/lib/theme';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { useLanguage, languageNames } from '@/hooks/useLanguage';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-
-type ThemeOption = 'light' | 'dark' | 'system';
 
 export function PreferencesPage() {
     const { user } = useAuth();
@@ -27,7 +26,6 @@ export function PreferencesPage() {
     const [preferences, setPreferences] = useState({
         dateFormat: 'DD/MM/YYYY',
         weekStartDay: 'monday',
-        themePreference: 'system' as ThemeOption,
     });
 
     useEffect(() => {
@@ -35,7 +33,7 @@ export function PreferencesPage() {
             if (!user) return;
             const { data } = await supabase
                 .from('users')
-                .select('date_format, week_start_day, theme')
+                .select('date_format, week_start_day')
                 .eq('user_id', user.id)
                 .single();
 
@@ -43,7 +41,6 @@ export function PreferencesPage() {
                 setPreferences({
                     dateFormat: data.date_format || 'DD/MM/YYYY',
                     weekStartDay: data.week_start_day || 'monday',
-                    themePreference: (data.theme as ThemeOption) || 'system',
                 });
             }
         };
@@ -60,23 +57,11 @@ export function PreferencesPage() {
             .update({
                 date_format: newPrefs.dateFormat,
                 week_start_day: newPrefs.weekStartDay,
-                theme: newPrefs.themePreference,
             })
             .eq('user_id', user.id);
 
         if (error) {
             toast({ title: t('settings.errorSaving'), description: error.message, variant: 'destructive' });
-        }
-    };
-
-    const handleThemeChange = (newTheme: ThemeOption) => {
-        handleSavePreferences({ themePreference: newTheme });
-        if (newTheme === 'system') {
-            // In a real app, you might want to listen to system changes, but for now just check once
-            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            setTheme(systemTheme);
-        } else {
-            setTheme(newTheme);
         }
     };
 
@@ -90,9 +75,9 @@ export function PreferencesPage() {
                 <div className="p-4 bg-card rounded-2xl border border-border/50 space-y-3">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-muted rounded-xl">
-                            {preferences.themePreference === 'dark' ? (
+                            {theme === 'dark' ? (
                                 <Moon className="w-5 h-5 text-foreground" />
-                            ) : preferences.themePreference === 'light' ? (
+                            ) : theme === 'light' ? (
                                 <Sun className="w-5 h-5 text-foreground" />
                             ) : (
                                 <Monitor className="w-5 h-5 text-foreground" />
@@ -103,7 +88,7 @@ export function PreferencesPage() {
                             <p className="text-sm text-muted-foreground">{t('settings.themeDesc')}</p>
                         </div>
                     </div>
-                    <Select value={preferences.themePreference} onValueChange={(v) => handleThemeChange(v as ThemeOption)}>
+                    <Select value={theme} onValueChange={(v) => setTheme(v as Theme)}>
                         <SelectTrigger>
                             <SelectValue />
                         </SelectTrigger>

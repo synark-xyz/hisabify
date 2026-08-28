@@ -88,33 +88,46 @@ serve(async (req: Request) => {
 
   // ── Dispatch on event type ─────────────────────────────────────────────────
   if (ACTIVATE_EVENTS.has(event.type)) {
-    const { error } = await supabase
+    // `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate PK.
+    // `.select()` so a zero-row match is visible — PostgREST reports success otherwise.
+    const { data, error } = await supabase
       .from('users')
       .update({
         subscription_type: 'pro',
         subscription_status: 'active',
       })
-      .eq('id', userId);
+      .eq('user_id', userId)
+      .select('user_id');
 
     if (error) {
       console.error(`[revenuecat-webhook] Failed to activate Pro for user ${userId}:`, error.message);
       return new Response('Database update failed', { status: 500 });
     }
 
+    if (!data?.length) {
+      console.warn(`[revenuecat-webhook] Activate matched 0 rows in public.users for user ${userId}`);
+    }
+
     console.log(`[revenuecat-webhook] Pro activated for user ${userId} (event: ${event.type})`);
 
   } else if (DEACTIVATE_EVENTS.has(event.type)) {
-    const { error } = await supabase
+    // 'base', not 'free' — the CHECK constraint is subscription_type IN ('base','pro').
+    const { data, error } = await supabase
       .from('users')
       .update({
-        subscription_type: 'free',
+        subscription_type: 'base',
         subscription_status: 'cancelled',
       })
-      .eq('id', userId);
+      .eq('user_id', userId)
+      .select('user_id');
 
     if (error) {
       console.error(`[revenuecat-webhook] Failed to deactivate Pro for user ${userId}:`, error.message);
       return new Response('Database update failed', { status: 500 });
+    }
+
+    if (!data?.length) {
+      console.warn(`[revenuecat-webhook] Deactivate matched 0 rows in public.users for user ${userId}`);
     }
 
     console.log(`[revenuecat-webhook] Pro deactivated for user ${userId} (event: ${event.type})`);

@@ -44,6 +44,22 @@
     <meta name="twitter:site" content="@Lovable" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
+    <!-- Apply the persisted theme before first paint (see src/lib/theme.ts).
+         Must stay blocking and inline: a module script runs after paint. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t !== 'dark' && t !== 'light' && t !== 'system') t = 'dark';
+          var r = t === 'system'
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : t;
+          document.documentElement.classList.add(r);
+          document.documentElement.style.colorScheme = r;
+        } catch (e) { document.documentElement.classList.add('dark'); }
+      })();
+    </script>
+
     <!-- Prevent text selection and callouts on iOS -->
     <style>
       * {

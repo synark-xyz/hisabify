@@ -42,7 +42,7 @@ export default function ReportsPage() {
       hasShownClampToastRef.current = true;
       toast({
         title: "History limit reached",
-        description: "Free plan supports the last 30 days. Upgrade for full history.",
+        description: "Free plan covers this month and last month. Upgrade for full history.",
       });
       setShowUpgradeModal(true);
     }
@@ -142,6 +142,7 @@ export default function ReportsPage() {
                 reportData={reportData}
                 filters={filters}
                 isLoading={isLoading}
+                canExport={isPremium}
                 onUpgradeRequired={() => setShowUpgradeModal(true)}
               />
             </div>

@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN?: string;
   readonly VITE_ENABLE_ANALYTICS?: string;
   readonly VITE_REVENUECAT_API_KEY?: string;
+  readonly VITE_REVENUECAT_IOS_API_KEY?: string;
+  readonly VITE_REVENUECAT_ANDROID_API_KEY?: string;
   readonly VITE_REVENUECAT_ENTITLEMENT_ID?: string;
 }
 

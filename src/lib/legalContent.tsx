@@ -7,7 +7,7 @@
  * a document owns that, so a page showing two documents prints it once.
  */
 
-export const LEGAL_LAST_UPDATED = 'July 2026';
+export const LEGAL_LAST_UPDATED = 'August 2026';
 export const LEGAL_CONTACT_EMAIL = 'synarklabs@gmail.com';
 
 // ─── Shared section component ─────────────────────────────────────────────────
@@ -143,6 +143,10 @@ export function TermsContent() {
           </li>
           <li>
             <strong>Google Gemini Vision</strong> — receipt image OCR (google.com/privacy)
+          </li>
+          <li>
+            <strong>Google AdMob</strong> — advertising in the free Android app
+            (google.com/privacy)
           </li>
         </ul>
         <p>
@@ -292,6 +296,10 @@ export function PrivacyContent() {
           <li>Approximate location (geolocation for currency detection only)</li>
           <li>Feature usage (page views, button clicks, time spent)</li>
           <li>Crash reports and error logs (anonymised, no financial data)</li>
+          <li>
+            Advertising identifier (Android Advertising ID) — free Android app only, for the ads
+            described in section 6
+          </li>
         </ul>
 
         <p className="pt-2">
@@ -341,6 +349,12 @@ export function PrivacyContent() {
           issues.
         </p>
         <p>
+          <strong>Consent (Advertising):</strong> Personalised ads in the free Android app are
+          served only where you have consented via Google's consent form. Withdraw or change that
+          consent at any time under Profile → Data &amp; Privacy → Ad privacy settings. Withdrawing
+          it does not remove ads — it makes them non-personalised.
+        </p>
+        <p>
           <strong>Legal Obligation:</strong> Compliance with law enforcement requests. Tax and
           accounting records.
         </p>
@@ -373,9 +387,16 @@ export function PrivacyContent() {
           Maintain records for tax/accounting.
         </p>
         <p>
-          <strong>Data We Do NOT Use:</strong> We do NOT sell your data, use it for marketing or
-          targeted advertising, profile you for financial decisions, or train AI models on your
-          data (unless you explicitly opt-in).
+          <strong>Advertising (Free Android App):</strong> The free version of the Android app
+          shows banner ads served by Google AdMob. Your advertising identifier and device data are
+          shared with Google for this purpose — see "Data Sharing" below. We never share your
+          transactions, balances, budgets, or any other financial data with advertisers, and we do
+          not use your financial data to target ads. Subscribing to Pro removes ads entirely.
+        </p>
+        <p>
+          <strong>Data We Do NOT Use:</strong> We do NOT sell your data, profile you for financial
+          decisions, or train AI models on your data (unless you explicitly opt-in). We do not use
+          your financial data for marketing or advertising.
         </p>
       </LegalSection>
 
@@ -406,6 +427,15 @@ export function PrivacyContent() {
           by payment processor privacy policy.
         </p>
         <p>
+          <strong>Google AdMob (Advertising, Free Android App Only):</strong> Your advertising
+          identifier (Android Advertising ID), IP address, and coarse device data are shared with
+          Google to serve and measure banner ads. No transactions, balances, budgets, or other
+          financial data are shared. In the EEA, UK and Switzerland you are asked for consent
+          before any personalised ads are served, via Google's consent form; you can change that
+          choice at any time under Profile → Data &amp; Privacy → Ad privacy settings. Governed by
+          the Google Privacy Policy. Pro subscribers see no ads and no ad requests are made.
+        </p>
+        <p>
           <strong>Law Enforcement:</strong> Disclosed only if required by law (court order,
           warrant). We notify you unless legally prohibited. Exceptions: emergencies, child
           safety, national security.
@@ -415,8 +445,9 @@ export function PrivacyContent() {
           transferred. We notify you and honor your privacy rights.
         </p>
         <p>
-          <strong>We Do NOT Sell Data To:</strong> Data brokers, marketing firms, advertisers, or
-          other third parties outside the above list.
+          <strong>We Do NOT Sell Data To:</strong> Data brokers, marketing firms, or any third
+          party outside the list above. Google AdMob receives only the advertising data described
+          above, and only from the free Android app.
         </p>
       </LegalSection>
 
@@ -541,8 +572,13 @@ export function PrivacyContent() {
           Privacy & Analytics.
         </p>
         <p>
-          <strong>No Advertising Cookies:</strong> We do NOT use cookies for targeted
-          advertising or sell data to advertisers.
+          <strong>Advertising Identifiers (Free Android App):</strong> The website uses no
+          advertising cookies. The free Android app shows banner ads via Google AdMob, which uses
+          your device's Android Advertising ID to serve and measure them. In the EEA, UK and
+          Switzerland, Google's consent form asks whether you accept personalised ads before any
+          ad is requested; you can reopen it any time under Profile → Data &amp; Privacy → Ad
+          privacy settings. You can also reset or delete the identifier in your Android system
+          settings, and Pro subscribers see no ads at all.
         </p>
         <p>
           <strong>Do Not Track (DNT):</strong> If your browser has DNT enabled, we respect it

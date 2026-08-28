@@ -13,6 +13,12 @@ To become the most frictionless and engaging personal finance manager, helping u
 - [ ] **Google Authentication**: One-tap sign-in/signup integration.
 - [ ] **Data Portability**: Premium feature to export transactions to CSV, Excel, and PDF.
 - [ ] **Backup & Sync**: Ensure seamless real-time syncing across devices via Supabase.
+- [ ] **Sentry Error Tracking**: Wire up production error reporting. Scaffolding already exists but is inert.
+  - Install `@sentry/react`, add `initSentry()` called from `main.tsx`, and activate the commented-out `captureException`/`captureMessage` calls in `src/lib/logger.ts` (the existing `ErrorBoundary` already routes through `logger`).
+  - Register `sentryVitePlugin` (already a devDependency) in `vite.config.ts` for production builds only. Use `build.sourcemap: "hidden"` and `filesToDeleteAfterUpload` so maps are uploaded but never shipped; make upload failures non-fatal.
+  - Needs two separate credentials: the **public DSN** as `VITE_SENTRY_DSN` in `.env` (runtime, safe to expose) and the **secret** `SENTRY_AUTH_TOKEN` + `SENTRY_ORG` + `SENTRY_PROJECT` in `.env.sentry-build-plugin` (build-time source-map upload only, gitignored).
+  - ⚠️ Never put an `sntrys_` auth token in a `VITE_`-prefixed var — it gets baked into the public client bundle. The current token was exposed this way and should be rotated before use.
+  - Tighten `VITE_SENTRY_DSN` in `src/lib/env.ts` to `z.string().url()` so an auth token can't be pasted in by mistake.
 
 ## 🎮 2. Gamification & Retention (Medium Priority)
 - [ ] **Financial Health Score**: A 0-100 score based on budget adherence and logging consistency.

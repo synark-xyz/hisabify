@@ -23,12 +23,12 @@ interface UpgradeModalProps {
 
 const DEFAULT_BENEFITS = [
   'Unlimited budgets and savings goals',
-  'All-time transaction history — no 30-day cap',
+  'All-time transaction history — free is capped at this month and last',
   'Multi-currency support with live exchange rates',
   'Financial report template with PDF & CSV report exports',
   'Advanced analytics, automation, and savings history',
-  'AI analysis of spending patterns for deeper insights and personalized financial tips',
-  'Voice note, receipt scanner, and Premium App theme -- CyberPunk, and more!'
+  'Spending pattern analysis with personalised financial tips',
+  'No ads anywhere in the app',
 ];
 
 const SOURCE_CONFIG: Record<string, {
@@ -73,6 +73,20 @@ const SOURCE_CONFIG: Record<string, {
     eyebrow: 'Savings Automation',
     title: 'Automate your savings plan',
     description: 'Pro unlocks auto-contribute so your savings plan can run on a recurring schedule.',
+  },
+  pro_features: {
+    eyebrow: 'Pro Features',
+    title: 'Unlock Hisabify Pro',
+    description: 'Access advanced features exclusive to Pro subscribers.',
+    benefits: [
+      'Unlock Hisabify Pro',
+      'Unlimited budgets & savings goals',
+      'All-time transaction history',
+      'Multi-currency tracking with live rates',
+      'Export PDF & CSV financial reports',
+      'Advanced analytics & spending insights',
+      'No ads',
+    ],
   },
 };
 

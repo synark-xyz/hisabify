@@ -130,6 +130,34 @@ function isEntitledFromCustomerInfo(info: CustomerInfo): boolean {
  * exists. `isPremium` itself always reads live RevenueCat state; this column is only a mirror,
  * so it must be allowed to go back down.
  */
+/**
+ * Cache key for the last value successfully mirrored for a user.
+ *
+ * Per-user, and persisted: a `useRef` is dropped on every cold start, which would make the
+ * two-way sync issue a redundant UPDATE for **every free user on every launch** — a write the
+ * old upgrade-only code never made. The entitlement is still read live from RevenueCat on each
+ * launch; this only suppresses a write that would set the row to what it already says.
+ */
+const syncedKey = (userId: string) => `hisabify:subscription-mirror:${userId}`;
+
+function readLastSynced(userId: string): boolean | undefined {
+  try {
+    const v = localStorage.getItem(syncedKey(userId));
+    return v === null ? undefined : v === 'true';
+  } catch {
+    // Private mode / storage disabled: fall back to always writing. Correctness over cost.
+    return undefined;
+  }
+}
+
+function writeLastSynced(userId: string, entitled: boolean): void {
+  try {
+    localStorage.setItem(syncedKey(userId), String(entitled));
+  } catch {
+    /* non-fatal: the mirror is still correct, just re-written next launch */
+  }
+}
+
 async function syncPremiumToSupabase(userId: string, entitled: boolean): Promise<void> {
   // `public.users` is keyed to auth by `user_id`; `id` is a separate surrogate PK.
   // `.select()` so a zero-row match is visible — PostgREST returns 204/error:null otherwise.
@@ -147,9 +175,15 @@ async function syncPremiumToSupabase(userId: string, entitled: boolean): Promise
       error: error.message,
       entitled,
     });
-  } else if (!data?.length) {
-    logger.warn('[useRevenueCat] Subscription sync matched 0 rows in public.users', { userId });
+    return;
   }
+  if (!data?.length) {
+    logger.warn('[useRevenueCat] Subscription sync matched 0 rows in public.users', { userId });
+    return;
+  }
+  // Recorded only after the row is confirmed updated, so a failed write is retried next time
+  // rather than being remembered as done.
+  writeLastSynced(userId, entitled);
 }
 
 export function useRevenueCat(): UseRevenueCatReturn {
@@ -170,9 +204,9 @@ export function useRevenueCat(): UseRevenueCatReturn {
   // `presentPaywall` needs the pre-paywall value to tell an upgrade from an existing Pro.
   const isPremiumRef = useRef(false);
 
-  // Last value written to `public.users`, so an unchanged entitlement (every foreground refresh,
-  // every renewal ping) does not issue a redundant UPDATE. `undefined` = nothing written yet.
-  const lastSyncedRef = useRef<boolean | undefined>(undefined);
+  // In-flight guard so a burst of identical customer-info events in one session collapses to a
+  // single write. The durable across-launch check is `readLastSynced`.
+  const syncingRef = useRef<boolean | undefined>(undefined);
 
   const updatePremiumState = useCallback((info: CustomerInfo) => {
     const entitled = isEntitledFromCustomerInfo(info);
@@ -183,8 +217,8 @@ export function useRevenueCat(): UseRevenueCatReturn {
     // Mirror every transition, not just upgrades. Expiry and refund arrive here through the
     // customer-info listener and the foreground refresh, and they are the cases an
     // upgrade-only sync silently misses — leaving the row stuck at pro/active forever.
-    if (userId && lastSyncedRef.current !== entitled) {
-      lastSyncedRef.current = entitled;
+    if (userId && syncingRef.current !== entitled && readLastSynced(userId) !== entitled) {
+      syncingRef.current = entitled;
       void syncPremiumToSupabase(userId, entitled);
     }
   }, [userId]);
@@ -196,7 +230,8 @@ export function useRevenueCat(): UseRevenueCatReturn {
       setIsPremium(false);
       setCustomerInfo(null);
       // Next user on this device must be synced from scratch, not compared to the last one's.
-      lastSyncedRef.current = undefined;
+      // The persisted marker is per-user, so it is deliberately left alone.
+      syncingRef.current = undefined;
       return;
     }
 

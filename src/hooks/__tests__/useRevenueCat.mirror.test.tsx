@@ -148,3 +148,59 @@ describe('useRevenueCat → public.users mirror', () => {
     expect(updates.length).toBe(afterUpgrade);
   });
 });
+
+describe('cost of the mirror on repeat launches', () => {
+  beforeEach(() => {
+    updates.length = 0;
+    localStorage.clear();
+  });
+
+  it('a free user who was already synced does not re-write on the next cold start', async () => {
+    // First launch: nothing is known about this user, so the mirror is written once.
+    const first = renderHook(() => useRevenueCat());
+    await waitFor(() => expect(first.result.current.revenueCatReady).toBe(true));
+    await waitFor(() => expect(updates.length).toBe(1));
+    first.unmount();
+
+    // Second cold start, same user, same (free) entitlement. The old upgrade-only code never
+    // wrote for free users at all; syncing both directions must not turn that into a write on
+    // every single launch for the entire free tier.
+    updates.length = 0;
+    const second = renderHook(() => useRevenueCat());
+    await waitFor(() => expect(second.result.current.revenueCatReady).toBe(true));
+    // Give any stray async write a chance to land before asserting absence.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(updates).toEqual([]);
+  });
+});
+
+describe('the persisted marker must not suppress a real transition', () => {
+  beforeEach(() => {
+    updates.length = 0;
+    localStorage.clear();
+  });
+
+  it('writes the downgrade on a later launch when the cache says pro but the entitlement lapsed', async () => {
+    // Stand in for "this device last saw an active Pro subscription".
+    localStorage.setItem('hisabify:subscription-mirror:u1', 'true');
+
+    // Cold start after the sandbox subscription expired: RevenueCat resolves to not-entitled.
+    const { result } = renderHook(() => useRevenueCat());
+    await waitFor(() => expect(result.current.revenueCatReady).toBe(true));
+
+    await waitFor(() => expect(updates.length).toBe(1));
+    expect(updates[0]).toMatchObject({ subscription_type: 'base', subscription_status: 'inactive' });
+    expect(localStorage.getItem('hisabify:subscription-mirror:u1')).toBe('false');
+  });
+
+  it('keeps the mirror per-user so a second account is synced from scratch', async () => {
+    localStorage.setItem('hisabify:subscription-mirror:someone-else', 'false');
+
+    const { result } = renderHook(() => useRevenueCat());
+    await waitFor(() => expect(result.current.revenueCatReady).toBe(true));
+
+    // u1 has no marker of its own, so it must still be written.
+    await waitFor(() => expect(updates.length).toBe(1));
+    expect(localStorage.getItem('hisabify:subscription-mirror:u1')).toBe('false');
+  });
+});

@@ -738,6 +738,11 @@ Billing is **RevenueCat**, native-only. There is no Stripe integration and no we
   cancellation only ever arrive through `addCustomerInfoUpdateListener` and the foreground
   refresh, which is why an upgrade-only sync left rows stuck at `pro`/`active` forever.
   Note the DB CHECK is `('base','pro')` — the downgrade value is `'base'`, not `'free'`.
+  The last mirrored value is cached in `localStorage` per user (`hisabify:subscription-mirror:<id>`)
+  and only recorded **after** the update is confirmed to have matched a row. That cache is not an
+  optimisation detail: without it, syncing both directions issues a redundant UPDATE for *every
+  free user on every cold start* — a write the old upgrade-only code never made. A failed or
+  zero-row write is deliberately not cached, so it retries next launch.
 - The plugin is `import()`ed lazily and only when `Capacitor.isNativePlatform()`. Do not import
   `@revenuecat/purchases-capacitor` at module scope: the plugin is a Capacitor Proxy that
   intercepts *all* property access including `.then`, so returning it from an `async` function

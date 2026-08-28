@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   shouldShowBanner,
   getBannerUnitId,
+  isProductionAds,
   resolveBannerUnitId,
   TEST_BANNER_UNIT_ID,
   PRODUCTION_APP_ID,
@@ -82,5 +83,39 @@ describe('resolveBannerUnitId', () => {
   it('serves the test unit when no unit is configured', () => {
     expect(resolveBannerUnitId({ ...base, configured: undefined })).toBe(TEST_BANNER_UNIT_ID);
     expect(resolveBannerUnitId({ ...base, configured: '' })).toBe(TEST_BANNER_UNIT_ID);
+  });
+});
+
+describe('getBannerUnitId in a production bundle (the staging regression)', () => {
+  // The pure resolver above is exhaustive, but the actual bug lived in what
+  // `getBannerUnitId` reads out of `import.meta.env`. Stub PROD to reproduce the shipped
+  // bundle rather than the vitest default of PROD === false, which passes trivially.
+  const REAL_UNIT = 'ca-app-pub-9629558585756546/5567338206';
+
+  beforeEach(() => {
+    vi.stubEnv('PROD', true);
+    vi.stubEnv('VITE_ADMOB_BANNER_ID', REAL_UNIT);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('regression: a PROD bundle inside a .staging APK must not request the real unit', () => {
+    expect(getBannerUnitId('io.synark.hisabify.staging')).toBe(TEST_BANNER_UNIT_ID);
+  });
+
+  it('regression: an unknown/unreadable package must not request the real unit', () => {
+    expect(getBannerUnitId(null)).toBe(TEST_BANNER_UNIT_ID);
+    expect(getBannerUnitId()).toBe(TEST_BANNER_UNIT_ID);
+  });
+
+  it('still serves the real unit in the production APK, so this is not a blanket disable', () => {
+    expect(getBannerUnitId(PRODUCTION_APP_ID)).toBe(REAL_UNIT);
+  });
+
+  it('keeps initializeForTesting aligned with the unit it will request', () => {
+    expect(isProductionAds('io.synark.hisabify.staging')).toBe(false);
+    expect(isProductionAds(PRODUCTION_APP_ID)).toBe(true);
   });
 });

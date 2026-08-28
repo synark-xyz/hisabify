@@ -19,6 +19,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "verify:apk-ads": "node scripts/verify-apk-ads.mjs",
+    "verify:migration": "node scripts/verify-mirror-migration.mjs",
     "test:all": "npm run test:unit && npm run test:e2e",
     "test:automated": "bash scripts/run-automated-tests.sh all",
     "test:automated:unit": "bash scripts/run-automated-tests.sh unit",

@@ -787,6 +787,13 @@ The page reads live RevenueCat state, never `users.subscription_type` / `subscri
 The mirror now syncs downgrades too, but it is still only as fresh as the last app launch —
 an expiry that happens while the app is closed is not written until the user returns.
 
+`supabase/migrations/20260828000000_reset_stale_pro_mirror.sql` repairs the rows stranded at
+`pro`/`active` by the old upgrade-only sync. `npm run verify:migration` executes it against a
+throwaway DB carrying the real CHECK constraint and asserts it hits the intended rows, leaves
+every other row alone, is idempotent, and matches on `lower(btrim(email))` — an exact `IN (...)`
+silently no-ops on a differently cased address, and a migration that updates zero rows looks
+exactly like one that worked.
+
 Native purchases require a **Play Store app configured in RevenueCat with a Play service-account
 credential**. A `.staging` build (`applicationIdSuffix`) can never transact — its package is not in
 Play — so testing billing needs a production-id build from an internal testing track.

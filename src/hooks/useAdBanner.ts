@@ -1,12 +1,40 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import type { PluginListenerHandle } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useAuth } from './useAuth';
 import { useSubscription } from './useSubscription';
 import { logger } from '@/lib/logger';
 import { getBannerUnitId, isProductionAds, shouldShowBanner } from '@/lib/ads';
 
 type AdMobModule = typeof import('@capacitor-community/admob');
+
+/**
+ * Native package name, resolved once. This is what tells the web layer which APK variant it is
+ * running inside: a `.staging` build ships Google's *test* AdMob application ID in its manifest,
+ * and pairing that with our real ad unit makes AdMob refuse to serve — silently, because a
+ * failed ad must never break the app. `import.meta.env.PROD` cannot see this: `npm run build`
+ * emits a PROD bundle regardless of which variant later wraps it.
+ *
+ * Resolves to `null` on web or if the plugin call fails, which the ads module treats as
+ * "not production" and therefore serves test ads.
+ */
+let appIdPromise: Promise<string | null> | null = null;
+function getNativeAppId(): Promise<string | null> {
+  if (!appIdPromise) {
+    appIdPromise = (async () => {
+      if (!Capacitor.isNativePlatform()) return null;
+      try {
+        const { id } = await CapacitorApp.getInfo();
+        return id ?? null;
+      } catch (err) {
+        logger.error('[useAdBanner] App.getInfo failed; falling back to test ads', { err });
+        return null;
+      }
+    })();
+  }
+  return appIdPromise;
+}
 
 /** Lazy-import so the AdMob SDK never lands in the web bundle. */
 let modulePromise: Promise<AdMobModule | null> | null = null;
@@ -31,9 +59,10 @@ function initAdMob(): Promise<AdMobModule | null> {
       const mod = await loadAdMob();
       if (!mod) return null;
       const { AdMob, AdmobConsentStatus } = mod;
+      const nativeAppId = await getNativeAppId();
 
       // Order is mandated by the plugin: initialize → requestConsentInfo → showConsentForm.
-      await AdMob.initialize({ initializeForTesting: !isProductionAds() });
+      await AdMob.initialize({ initializeForTesting: !isProductionAds(nativeAppId) });
 
       let info = await AdMob.requestConsentInfo();
       if (info.isConsentFormAvailable && info.status === AdmobConsentStatus.REQUIRED) {
@@ -108,7 +137,7 @@ export function useAdBanner(): void {
       }
 
       await AdMob.showBanner({
-        adId: getBannerUnitId(),
+        adId: getBannerUnitId(await getNativeAppId()),
         adSize: BannerAdSize.ADAPTIVE_BANNER,
         position: BannerAdPosition.BOTTOM_CENTER,
         margin: 0,

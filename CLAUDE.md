@@ -524,10 +524,19 @@ writes the reported height (dp, which is 1:1 with CSS px here) to `--ad-banner-h
 `0px` whenever no banner is showing, so web/iOS/Pro are untouched. Anything else pinned to the
 bottom of the viewport must add `var(--ad-banner-h, 0px)` too.
 
-`getBannerUnitId()` returns Google's **test** ad unit unless `VITE_ADMOB_BANNER_ID` is set *and*
-the bundle is a production build. Do not "fix" this to always use the real unit — serving or
+`getBannerUnitId(nativeAppId)` returns Google's **test** ad unit unless all three hold:
+`VITE_ADMOB_BANNER_ID` is set, `import.meta.env.PROD`, **and** the native package is
+`io.synark.hisabify` (not `.staging`). Do not "fix" this to always use the real unit — serving or
 clicking real ads from a debug build is what gets an AdMob account suspended, and there is no
 appeal path worth relying on.
+
+**The package-name check is not redundant with `PROD`.** `npm run build && npx cap sync` emits a
+production web bundle regardless of which APK variant later wraps it, so a `.staging` build used
+to pair Google's **test AdMob app ID** (from `manifestPlaceholders`) with our **real ad unit**.
+AdMob will not serve that combination, and `useAdBanner` swallows the failure by design
+(`logger.error` only — a failed ad must never break the app), so ads disappeared with no visible
+error. `useAdBanner` reads the package name once via `App.getInfo()`; web or a failed call
+resolves to `null`, which is treated as "not production" and serves test ads.
 
 Two native details are load-bearing:
 
@@ -709,8 +718,13 @@ Billing is **RevenueCat**, native-only. There is no Stripe integration and no we
 - `useSubscription()` is the app-facing hook. `isPremium` = an active RevenueCat entitlement
   **or** a time-boxed referral grant (`users.referral_granted_until`). `PremiumGuard` wraps
   gated UI.
-- `users.subscription_type` (`'base' | 'pro'`) is a **mirror**, written after a successful
-  purchase. It is not the source of truth — never gate a feature on it alone.
+- `users.subscription_type` (`'base' | 'pro'`) is a **mirror**, written from
+  `updatePremiumState` on every entitlement *transition* — upgrades and downgrades both. It is
+  not the source of truth — never gate a feature on it alone. The write is deliberately in
+  `updatePremiumState` rather than at the purchase/restore call sites: expiry, refund and
+  cancellation only ever arrive through `addCustomerInfoUpdateListener` and the foreground
+  refresh, which is why an upgrade-only sync left rows stuck at `pro`/`active` forever.
+  Note the DB CHECK is `('base','pro')` — the downgrade value is `'base'`, not `'free'`.
 - The plugin is `import()`ed lazily and only when `Capacitor.isNativePlatform()`. Do not import
   `@revenuecat/purchases-capacitor` at module scope: the plugin is a Capacitor Proxy that
   intercepts *all* property access including `.then`, so returning it from an `async` function
@@ -734,6 +748,31 @@ Two more things the SDK will not tell you: the configure guard must key on the *
 bare boolean, or a second account signing in on the same process inherits the first account's
 entitlement; and `addCustomerInfoUpdateListener` is required, because without it an expiry or
 refund mid-session leaves Pro unlocked until the next foreground.
+
+**`/settings/subscription` is the one manage surface.** `SubscriptionPage` renders a status card
+(plan term, renews-on / access-until, store, trial and billing-issue notices) and delegates every
+action: `CustomerCenterTrigger` for cancel/change-plan/refund, `UpgradeModal` for upgrades,
+`restorePurchases` for restores. It is reachable from `Settings → Subscription` and from
+`Profile → Personal`, which now *navigates* here rather than mounting its own
+`CustomerCenterTrigger` — two copies of the trigger is how the two surfaces diverged before.
+
+The branching is a pure function, `deriveSubscriptionStatus()` in `src/lib/subscriptionStatus.ts`
+(same pattern as `ads.ts` / `theme.ts` / `ratingPrompt.ts`), returning
+`pro | referral | free | unavailable`. Three things it exists to get right:
+
+- **`EntitlementInfo.periodType` is `NORMAL | INTRO | TRIAL | PREPAID`, not the billing term.**
+  Monthly vs yearly has to be read off the product identifier; `expirationDate === null` is the
+  only reliable lifetime signal, and rendering it as a date prints "Invalid Date".
+- **No entitlement on web is not "free".** RevenueCat is native-only here, so `customerInfo` is
+  always null in a browser — the page returns `unavailable` and says subscriptions are managed in
+  the app rather than telling a paying subscriber they are on the free plan. A live referral grant
+  still shows, because that comes from Supabase.
+- **`willRenew: false` with a future `expirationDate` is the state users most need to see** — the
+  subscription is cancelled but still active. The card says so explicitly.
+
+The page reads live RevenueCat state, never `users.subscription_type` / `subscription_status`.
+The mirror now syncs downgrades too, but it is still only as fresh as the last app launch —
+an expiry that happens while the app is closed is not written until the user returns.
 
 Native purchases require a **Play Store app configured in RevenueCat with a Play service-account
 credential**. A `.staging` build (`applicationIdSuffix`) can never transact — its package is not in
@@ -902,6 +941,8 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/lib/env.ts` | zod-validated env schema (throws at import when misconfigured) |
 | `src/hooks/useRevenueCat.ts` | RevenueCat SDK: entitlement, purchases, paywall, Customer Center |
 | `src/hooks/useSubscription.tsx` | App-facing premium check (entitlement OR referral grant) |
+| `src/pages/settings/SubscriptionPage.tsx` | Manage Subscription (`/settings/subscription`) — status card + Customer Center |
+| `src/lib/subscriptionStatus.ts` | Pure derivation of the subscription display state |
 | `playwright.config.ts`, `e2e/` | E2E suite + shared logged-in `storageState` |
 
 ## Development Workflow

@@ -1,0 +1,18 @@
+-- Reset the two `public.users` rows left permanently stale by the upgrade-only entitlement sync.
+--
+-- `syncPremiumToSupabase` used to write only 'pro'/'active' and never a downgrade, so a sandbox
+-- subscription that expired on 2026-08-28 left those rows claiming an active Pro subscription
+-- forever. `isPremium` always reads live RevenueCat state, so nothing user-facing broke, but the
+-- column is a mirror and anything trusting it (reports, emails, admin views) reads a
+-- subscription that no longer exists. The hook now writes both directions; this repairs the
+-- rows that predate the fix.
+--
+-- Deliberately narrow: only test/sandbox accounts, and only rows still marked pro. Genuine
+-- paying customers are re-synced from live RevenueCat state on their next app launch.
+
+UPDATE public.users
+SET subscription_type = 'base',
+    subscription_status = 'inactive',
+    updated_at = NOW()
+WHERE email IN ('coxshebatech@gmail.com', 'sam103043@gmail.com')
+  AND subscription_type = 'pro';

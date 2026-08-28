@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { shouldShowBanner, getBannerUnitId, TEST_BANNER_UNIT_ID, BannerGate } from '@/lib/ads';
+import {
+  shouldShowBanner,
+  getBannerUnitId,
+  resolveBannerUnitId,
+  TEST_BANNER_UNIT_ID,
+  PRODUCTION_APP_ID,
+  BannerGate,
+} from '@/lib/ads';
 
 const freeAndroidUser: BannerGate = {
   platform: 'android',
@@ -41,5 +48,39 @@ describe('getBannerUnitId', () => {
   it('falls back to the test unit when no unit ID is configured', () => {
     // vitest runs with import.meta.env.PROD === false, which forces the fallback regardless.
     expect(getBannerUnitId()).toBe(TEST_BANNER_UNIT_ID);
+  });
+});
+
+describe('resolveBannerUnitId', () => {
+  const REAL_UNIT = 'ca-app-pub-9629558585756546/5567338206';
+  const base = {
+    configured: REAL_UNIT,
+    prodBundle: true,
+    nativeAppId: PRODUCTION_APP_ID,
+  };
+
+  it('serves the real unit only from a production bundle inside the production APK', () => {
+    expect(resolveBannerUnitId(base)).toBe(REAL_UNIT);
+  });
+
+  it('serves the test unit in a staging APK, even from a PROD web bundle', () => {
+    // The staging manifest ships Google's TEST AdMob *app* ID; pairing it with a real unit is
+    // the mismatch AdMob refuses to serve, and useAdBanner swallows that failure silently.
+    expect(resolveBannerUnitId({ ...base, nativeAppId: 'io.synark.hisabify.staging' })).toBe(
+      TEST_BANNER_UNIT_ID,
+    );
+  });
+
+  it('serves the test unit when the native package cannot be read (web, plugin failure)', () => {
+    expect(resolveBannerUnitId({ ...base, nativeAppId: null })).toBe(TEST_BANNER_UNIT_ID);
+  });
+
+  it('serves the test unit from a non-production web bundle', () => {
+    expect(resolveBannerUnitId({ ...base, prodBundle: false })).toBe(TEST_BANNER_UNIT_ID);
+  });
+
+  it('serves the test unit when no unit is configured', () => {
+    expect(resolveBannerUnitId({ ...base, configured: undefined })).toBe(TEST_BANNER_UNIT_ID);
+    expect(resolveBannerUnitId({ ...base, configured: '' })).toBe(TEST_BANNER_UNIT_ID);
   });
 });

@@ -14,7 +14,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, privacyPolicyAccepted: boolean) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider: 'google') => Promise<{ error: Error | null }>;
-  signOut: () => Promise<void>;
+  /** Resolves with `{ error }` — a non-null error means the user is STILL signed in. */
+  signOut: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -168,21 +169,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signOut = async () => {
+  /**
+   * Signs the user out, and reports whether it actually worked.
+   *
+   * Two things make the naive version fail silently:
+   *
+   * 1. `supabase.auth.signOut()` *returns* `{ error }` rather than throwing, so a
+   *    `try/catch` around it catches nothing and every failure looks like success.
+   * 2. On a network error the server-side revoke fails and gotrue returns **before**
+   *    `_removeSession()` — the local session survives, so the app is still signed in
+   *    even though the UI said otherwise.
+   *
+   * So: check the returned error, and on failure fall back to `scope: 'local'`, which skips
+   * the network entirely and just clears local storage. Signing out on this device must not
+   * depend on being online — the user asked to leave, and stranding them in a signed-in app
+   * is the one outcome that is never acceptable.
+   */
+  const signOut = async (): Promise<{ error: Error | null }> => {
+    let failure: Error | null = null;
+
     try {
-      await supabase.auth.signOut();
-      logger.info('User signed out successfully');
-      import('@/lib/analytics').then(({ analytics }) => { analytics.trackAuth('logout'); analytics.clearUser(); }).catch(() => {});
-      // Fire-and-forget: reset the RevenueCat identity so the next account on this device
-      // does not inherit this user's entitlements. Must never block or throw out of signOut.
-      if (Capacitor.isNativePlatform()) {
-        import('@revenuecat/purchases-capacitor')
-          .then(({ Purchases }) => Purchases.logOut())
-          .catch((error) => logger.warn('[Auth] RevenueCat logOut failed', { error: String(error) }));
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        failure = error;
+        logger.warn('[Auth] Global sign out failed, falling back to local', {
+          error: error.message,
+        });
       }
     } catch (error) {
-      logger.error(error, { action: 'signOut' });
+      failure = error as Error;
+      logger.warn('[Auth] Global sign out threw, falling back to local', {
+        error: String(error),
+      });
     }
+
+    if (failure) {
+      // Local scope clears the stored session without contacting the server.
+      try {
+        const { error } = await supabase.auth.signOut({ scope: 'local' });
+        if (error) {
+          logger.error(error, { action: 'signOut:local' });
+          return { error };
+        }
+        failure = null;
+      } catch (error) {
+        logger.error(error, { action: 'signOut:local' });
+        return { error: error as Error };
+      }
+    }
+
+    // Belt and braces: if the session somehow survived both attempts, the user is still
+    // signed in and must be told rather than shown a success toast.
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      const error = new Error('Session persisted after sign out');
+      logger.error(error, { action: 'signOut:verify' });
+      return { error };
+    }
+
+    logger.info('User signed out successfully');
+    setSession(null);
+    setUser(null);
+
+    import('@/lib/analytics')
+      .then(({ analytics }) => {
+        analytics.trackAuth('logout');
+        analytics.clearUser();
+      })
+      .catch(() => {});
+
+    // Fire-and-forget: reset the RevenueCat identity so the next account on this device
+    // does not inherit this user's entitlements. Must never block or throw out of signOut.
+    if (Capacitor.isNativePlatform()) {
+      import('@revenuecat/purchases-capacitor')
+        .then(({ Purchases }) => Purchases.logOut())
+        .catch((error) => logger.warn('[Auth] RevenueCat logOut failed', { error: String(error) }));
+    }
+
+    return { error: null };
   };
 
   return (

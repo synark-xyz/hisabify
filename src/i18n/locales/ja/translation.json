@@ -613,6 +613,7 @@
     "preferences": "環境設定",
     "notifications": "通知",
     "signedOut": "ログアウトしました",
+    "signOutFailed": "サインアウトに失敗しました",
     "title": "設定",
     "about": "について",
     "currency": "通貨",
@@ -1226,7 +1227,8 @@
     "support": "サポート",
     "legal": "法的情報",
     "version": "Hisabify {{version}}",
-    "dataPrivacy": "データとプライバシー"
+    "dataPrivacy": "データとプライバシー",
+    "subscription": "サブスクリプション"
   },
   "profilePersonal": {
     "details": "詳細",
@@ -1637,5 +1639,30 @@
     "sent": "フィードバックを送信しました",
     "sentDescription": "ありがとうございます。すべてのメッセージに目を通しています。",
     "submitFailed": "フィードバックを送信できませんでした。もう一度お試しください。"
+  },
+  "subscriptionPage": {
+    "proPlan": "Hisabify Pro",
+    "freeTrial": "無料トライアル",
+    "freePlan": "無料プラン",
+    "freePlanHint": "アップグレードすると、無制限の予算・貯蓄目標・レポート書き出し・広告なしの利用が可能になります。",
+    "proViaReferral": "紹介特典による Pro",
+    "referralHint": "紹介特典はこの日付で終了します。以降も Pro を利用するには登録してください。",
+    "statusUnavailable": "ここではサブスクリプションの状態を確認できません",
+    "manageInApp": "サブスクリプションの購入と管理は Hisabify モバイルアプリで行います。",
+    "renewsOn": "{{date}} に更新されます",
+    "accessUntil": "{{date}} まで利用できます",
+    "lifetimeAccess": "買い切り — 更新は不要です",
+    "purchasedVia": "{{store}} で購入",
+    "wontRenewNotice": "このサブスクリプションは解約済みで、更新されません。上記の日付までは Pro をご利用いただけます。",
+    "billingIssueNotice": "お支払いに問題があります。Pro を失わないよう、お支払い方法を更新してください。",
+    "restorePurchases": "購入を復元",
+    "billingTermsHint": "サブスクリプションは解約するまで自動更新されます。詳しい請求条件は利用規約をご覧ください。",
+    "term": {
+      "monthly": "月額",
+      "yearly": "年額",
+      "lifetime": "買い切り",
+      "unknown": "サブスクリプション"
+    },
+    "cancelSubscription": "サブスクリプションを解約"
   }
 }

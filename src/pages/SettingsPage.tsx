@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp, MessageSquarePlus, Star, FileText, DatabaseZap } from 'lucide-react';
+import { Settings, Bell, ChevronRight, LogOut, Shield, Headset, CircleHelp, MessageSquarePlus, Star, FileText, DatabaseZap, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageShell } from '@/components/PageShell';
 import { FeedbackSheet } from '@/components/FeedbackSheet';
@@ -22,13 +22,32 @@ export function SettingsPage() {
         void getAppVersion().then(setAppVersion);
     }, []);
 
+    const [signingOut, setSigningOut] = useState(false);
+
     const handleSignOut = async () => {
-        await signOut();
+        if (signingOut) return;
+        setSigningOut(true);
+        // Only claim success and leave the page if the session is actually gone. The old
+        // version navigated unconditionally, so a failed sign out looked identical to a
+        // successful one — right up until the user landed back in a signed-in app.
+        const { error } = await signOut();
+        setSigningOut(false);
+
+        if (error) {
+            toast({
+                title: t('settings.signOutFailed'),
+                description: error.message,
+                variant: 'destructive',
+            });
+            return;
+        }
+
         toast({ title: t('settings.signedOut') });
-        navigate('/auth');
+        navigate('/auth', { replace: true });
     };
 
     const generalItems = [
+        { id: 'subscription', icon: Crown, label: t('settingsPage.subscription'), onSelect: () => navigate('/settings/subscription'), color: 'bg-amber-500/10 text-amber-500' },
         { id: 'preferences', icon: Settings, label: t('settings.preferences'), onSelect: () => navigate('/settings/preferences'), color: 'bg-accent/10 text-accent' },
         { id: 'notifications', icon: Bell, label: t('notifications.notifications'), onSelect: () => navigate('/settings/notifications'), color: 'bg-primary/10 text-primary' },
         // The Privacy Policy tells users to find data export and deletion under
@@ -46,7 +65,8 @@ export function SettingsPage() {
         { id: 'rate', icon: Star, label: t('rating.rateTheApp'), onSelect: () => { void openStoreListing(); }, color: 'bg-amber-500/10 text-amber-500' },
     ];
 
-    // Subscription & Billing lives inside /terms rather than on its own row.
+    // The Subscription & Billing *terms* live inside /terms; managing the subscription
+    // itself is the General → Subscription row above.
     const legalItems = [
         { id: 'terms', icon: FileText, label: t('page.termsConditions'), onSelect: () => navigate('/terms'), color: 'bg-accent/10 text-accent' },
         { id: 'privacy', icon: Shield, label: t('page.privacyPolicy'), onSelect: () => navigate('/privacy'), color: 'bg-accent/10 text-accent' },
@@ -90,11 +110,12 @@ export function SettingsPage() {
                 {/* Sign Out */}
                 <motion.button
                     onClick={handleSignOut}
-                    className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-destructive/10 text-destructive font-bold hover:bg-destructive/20 transition-colors border-glow"
+                    disabled={signingOut}
+                    className="w-full flex items-center justify-center gap-2 p-4 rounded-2xl bg-destructive/10 text-destructive font-bold hover:bg-destructive/20 transition-colors border-glow disabled:opacity-60"
                     whileTap={{ scale: 0.95 }}
                 >
                     <LogOut className="w-5 h-5" />
-                    {t('auth.logout')}
+                    {signingOut ? t('common.loading') : t('auth.logout')}
                 </motion.button>
 
                 {appVersion && (

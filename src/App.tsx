@@ -60,6 +60,7 @@ const DiscountTaxCalculatorPage = lazy(() => import("@/pages/more/DiscountTaxCal
 const CurrencyConverterPage = lazy(() => import("@/pages/more/CurrencyConverterPage").then(m => ({ default: m.CurrencyConverterPage })));
 const RecurringExpensesPage = lazy(() => import("@/pages/more/RecurringExpensesPage").then(m => ({ default: m.RecurringExpensesPage })));
 const AdminPage = lazy(() => import("@/pages/AdminPage").then(m => ({ default: m.AdminPage })));
+const TransactionDetailsPage = lazy(() => import("@/pages/TransactionDetailsPage").then(m => ({ default: m.TransactionDetailsPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -208,16 +209,13 @@ function AppRoutes() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/transactions" element={<ExpensesPage />} />
+        <Route path="/transactions/:id" element={<TransactionDetailsPage />} />
         <Route path="/expenses" element={<Navigate to="/transactions" replace />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/analytics" element={<Navigate to="/insights?tab=analytics" replace />} />
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/savings" element={<Navigate to="/budget?tab=goals" replace />} />
         <Route path="/reports" element={<Navigate to="/insights?tab=reports" replace />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/profile/personal" element={<PersonalPage />} />
-        <Route path="/profile/data" element={<DataPage />} />
-        <Route path="/profile/invite" element={<ReferralsPage />} />
         <Route path="/debts" element={<DebtPage />} />
         <Route path="/activity" element={<ActivityHistoryPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
@@ -229,19 +227,12 @@ function AppRoutes() {
         <Route path="/more/recurring" element={<RecurringExpensesPage />} />
       </Route>
 
-      {/* Pages without Main Layout (No double header) */}
-      <Route
-        element={
-          <StandalonePage>
-            <div className="min-h-screen bg-background">
-              {/* These pages have their own internal Headers */}
-              <SettingsPage />
-            </div>
-          </StandalonePage>
-        }
-        path="/settings"
-      />
-
+      {/* Isolated pages: no bottom nav. Each renders its own PageShell bar. */}
+      <Route element={<StandalonePage><SettingsPage /></StandalonePage>} path="/settings" />
+      <Route element={<StandalonePage><ProfilePage /></StandalonePage>} path="/profile" />
+      <Route element={<StandalonePage><PersonalPage /></StandalonePage>} path="/profile/personal" />
+      <Route element={<StandalonePage><DataPage /></StandalonePage>} path="/profile/data" />
+      <Route element={<StandalonePage><ReferralsPage /></StandalonePage>} path="/profile/invite" />
       <Route element={<StandalonePage><PreferencesPage /></StandalonePage>} path="/settings/preferences" />
       <Route element={<StandalonePage><NotificationSettingsPage /></StandalonePage>} path="/settings/notifications" />
       <Route element={<StandalonePage><NotificationsPage /></StandalonePage>} path="/notifications" />

@@ -1,0 +1,34 @@
+diff --git a/node_modules/@revenuecat/purchases-capacitor-ui/android/build.gradle b/node_modules/@revenuecat/purchases-capacitor-ui/android/build.gradle
+index d965056..fa1110c 100644
+--- a/node_modules/@revenuecat/purchases-capacitor-ui/android/build.gradle
++++ b/node_modules/@revenuecat/purchases-capacitor-ui/android/build.gradle
+@@ -1,3 +1,5 @@
++import org.jetbrains.kotlin.gradle.dsl.JvmTarget
++
+ ext {
+     androidxAppCompatVersion = project.hasProperty('androidxAppCompatVersion') ? rootProject.ext.androidxAppCompatVersion : '1.7.1'
+ }
+@@ -14,7 +16,6 @@ buildscript {
+ }
+ 
+ apply plugin: 'com.android.library'
+-apply plugin: 'org.jetbrains.kotlin.android'
+ 
+ android {
+     namespace = "com.revenuecat.purchases.capacitor.ui"
+@@ -38,8 +39,13 @@ android {
+         sourceCompatibility JavaVersion.VERSION_1_8
+         targetCompatibility JavaVersion.VERSION_1_8
+     }
+-    kotlinOptions {
+-        jvmTarget = '1.8'
++}
++
++// AGP 9 removed android.kotlinOptions; its built-in Kotlin support reads this instead.
++// Mirrors @revenuecat/purchases-capacitor, which already ships the same DSL.
++kotlin {
++    compilerOptions {
++        jvmTarget = JvmTarget.JVM_1_8
+     }
+ }
+ 

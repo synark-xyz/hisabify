@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Loader2, ChevronLeft } from 'lucide-react';
+import { PageShell } from '@/components/PageShell';
+import { Plus, Loader2, Tags } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -54,8 +55,8 @@ export function CategoriesPage() {
     .sort((a, b) => getLocalizedName(a).localeCompare(getLocalizedName(b)));
 
   const renderSection = (sectionParents: Category[], sectionLabel: string) => (
-    <section className="mb-6">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-2">
+    <section className="space-y-2">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
         {sectionLabel}
       </h2>
       {sectionParents.length === 0 ? (
@@ -137,25 +138,18 @@ export function CategoriesPage() {
   );
 
   return (
-    <div
-      className={cn(
-        'min-h-screen relative',
-        'bg-background'
-      )}
-    >
-      <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto pb-page-content px-4 pt-4">
-        {/* Page header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigate('/more')} className="p-2 -ml-2 hover:bg-accent/10 rounded-lg">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <h1 className="text-xl font-bold">{t('categoriesPage.title')}</h1>
-          </div>
+    <PageShell title="categoriesPage.title" backTo="/more" withBottomNav className="px-0 py-0">
+
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Tags className="w-3.5 h-3.5" />
+            {t('categoriesPage.title')}
+          </h2>
           <Button
             size="sm"
             onClick={() => setAddParentOpen(true)}
-            className="gap-1.5"
+            className="rounded-xl gap-1.5 shrink-0"
           >
             <Plus className="h-4 w-4" />
             {t('categoriesPage.addCategory')}
@@ -201,6 +195,6 @@ export function CategoriesPage() {
         parentCategory={selectedParent}
         onSuccess={handleSuccess}
       />
-    </div>
+    </PageShell>
   );
 }

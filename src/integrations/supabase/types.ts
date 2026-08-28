@@ -1006,6 +1006,45 @@ export type Database = {
         }
         Relationships: []
       }
+      deletion_requests: {
+        Row: {
+          id: string
+          user_id: string | null
+          email: string | null
+          scope: string
+          status: string
+          reason: string | null
+          detail: string | null
+          requested_at: string
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          email?: string | null
+          scope: string
+          status?: string
+          reason?: string | null
+          detail?: string | null
+          requested_at?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          email?: string | null
+          scope?: string
+          status?: string
+          reason?: string | null
+          detail?: string | null
+          requested_at?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -24,8 +24,8 @@ export function useSubscription() {
     ? new Date(profile.referral_granted_until) > new Date()
     : false;
 
-  // PRO restrictions removed — entire app is now unlocked for all users.
-  const isPremium = true;
+  // Pro access comes from a RevenueCat entitlement, or a time-boxed referral grant.
+  const isPremium = isEntitled || hasActiveReferralGrant;
 
   /**
    * Purchase a plan by type. On native, delegates to RevenueCat.
@@ -57,7 +57,11 @@ export function useSubscription() {
 
   return {
     isPremium,
-    loading,
+    // Stay "loading" until RevenueCat has resolved, or every PremiumGuard flashes its
+    // locked overlay before the entitlement arrives. Every init path sets revenueCatReady
+    // (including failure), so this resolves for a signed-in user even with no API key.
+    // While signed out it stays true — guards only render behind ProtectedRoute anyway.
+    loading: loading || !revenueCatReady,
     revenueCatReady,
     purchasePlan,
     createCheckoutSession,

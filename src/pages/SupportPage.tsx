@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Paperclip, Send, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -212,9 +212,7 @@ export function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-page-content">
-      <Header title={t('page.helpSupport')} showBack onBack={() => navigate('/settings')} />
-      <main className="px-4 py-6 space-y-4">
+    <PageShell title="page.helpSupport" backTo="/settings" className="py-6 space-y-4">
         <Card className="border-border/50">
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">
@@ -341,7 +339,6 @@ export function SupportPage() {
             {submitting ? t('supportPage.sending') : t('supportPage.sendButton')}
           </Button>
         </form>
-      </main>
-    </div>
+    </PageShell>
   );
 }

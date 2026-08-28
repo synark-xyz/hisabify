@@ -126,7 +126,7 @@
 
 - **Settings & Admin**
 	- Account settings (currency, region, locale) — `SettingsPage.tsx`, `PreferencesPage.tsx`
-	- Data export / account deletion — implemented (`DataPage.tsx`, `DeleteAccountPage.tsx`, `delete-user` edge function)
+	- Data export / account deletion — implemented (`DataPage.tsx`, `DeleteAccountPage.tsx`); deletion is a review-gated request (`DeletionRequestSheet` → `deletion_requests` → admin approval → `process-deletion-request` edge function)
 	- Privacy controls
 	- Internal admin panel (`/admin`, email-allowlist gated, unlinked from nav) — read-only triage for `app_feedback` and `user_behavior_events`
 

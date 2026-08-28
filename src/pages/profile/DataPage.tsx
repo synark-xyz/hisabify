@@ -1,23 +1,18 @@
 import { useState } from 'react';
+import { PageShell } from '@/components/PageShell';
 import { motion } from 'framer-motion';
-import { Download, Trash2, UserX, AlertTriangle, FileJson, BarChart3, FileText, ChevronRight } from 'lucide-react';
+import { Download, Trash2, UserX, AlertTriangle, FileJson, BarChart3, FileText, ChevronRight, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDataManagement } from '@/hooks/useDataManagement';
-import { supabase } from '@/integrations/supabase/client';
+import { useDeletionRequest, DeletionScope, DeletionReason } from '@/hooks/useDeletionRequest';
+import { DeletionRequestSheet } from '@/components/DeletionRequestSheet';
+import { formatDeletionRequestedDate, formatDeletionDeadline } from '@/lib/deletionRequestBanner';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
-import {
-    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-    AlertDialogTrigger
-} from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 
 // Read at analytics call sites to honour the opt-out.
 export const ANALYTICS_OPT_OUT_KEY = 'analytics_opted_out';
@@ -46,20 +41,16 @@ const cardVariants = {
 export function DataPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { user, signOut } = useAuth();
-    const { exportData, logPrivacyAction } = useDataManagement();
+    const { user } = useAuth();
+    const { exportData } = useDataManagement();
+    const { pendingRequest, submitting, submitRequest, cancelRequest } = useDeletionRequest();
     const { toast } = useToast();
 
     const [analyticsEnabled, setAnalyticsEnabled] = useState(
         () => !localStorage.getItem(ANALYTICS_OPT_OUT_KEY),
     );
     const [loading, setLoading] = useState(false);
-    const [deleteLoading, setDeleteLoading] = useState(false);
-    const [deleteConfirmText, setDeleteConfirmText] = useState('');
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
-    const [deleteAccountConfirmText, setDeleteAccountConfirmText] = useState('');
-    const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+    const [sheetScope, setSheetScope] = useState<DeletionScope | null>(null);
 
     // The Privacy Policy promises exports in "CSV, JSON, or summary", so both
     // formats download together rather than making the user choose.
@@ -95,63 +86,28 @@ export function DataPage() {
         { path: '/terms', label: t('page.termsConditions') },
     ];
 
-    const deleteAllTableData = async (userId: string) => {
-        await Promise.all([
-            supabase.from('transactions').delete().eq('user_id', userId),
-            supabase.from('budgets').delete().eq('user_id', userId),
-            supabase.from('cards').delete().eq('user_id', userId),
-            supabase.from('savings_goals').delete().eq('user_id', userId),
-            supabase.from('payment_reminders').delete().eq('user_id', userId),
-            supabase.from('recurring_expenses').delete().eq('user_id', userId),
-            supabase.from('report_templates').delete().eq('user_id', userId),
-        ]);
+    const handleConfirmDeletionRequest = async (reason: DeletionReason | null, detail: string) => {
+        if (!sheetScope) return false;
+        const ok = await submitRequest(sheetScope, reason, detail);
+        if (ok) {
+            toast({ title: t('deletionRequest.submitted'), description: t('deletionRequest.submittedDesc') });
+        } else {
+            toast({ title: t('deletionRequest.submitFailed'), variant: 'destructive' });
+        }
+        return ok;
     };
 
-    const handleDeleteData = async () => {
-        if (deleteConfirmText !== 'DELETE') return;
-        setDeleteLoading(true);
-
-        try {
-            // Logged before the wipe: the audit_log INSERT policy needs a live
-            // session, and signOut() below ends it.
-            await logPrivacyAction('financial_data_deleted');
-            await deleteAllTableData(user!.id);
-            await signOut();
-            toast({ title: 'Data deleted', description: 'All your financial data has been removed.' });
-            navigate('/auth');
-        } catch {
-            toast({ title: 'Error', description: 'Could not delete account data', variant: 'destructive' });
-        }
-        setDeleteLoading(false);
-        setShowDeleteDialog(false);
-    };
-
-    const handleDeleteFullAccount = async () => {
-        if (deleteAccountConfirmText !== 'DELETE ACCOUNT') return;
-        setDeleteAccountLoading(true);
-
-        try {
-            // Logged first, while the session still exists. The row is
-            // orphaned by design — it evidences that erasure was requested
-            // and honoured after the account itself is gone.
-            await logPrivacyAction('account_deleted');
-            await deleteAllTableData(user!.id);
-            const { error } = await supabase.functions.invoke('delete-user');
-            if (error) throw error;
-
-            await signOut();
-            toast({ title: 'Account deleted', description: 'Your account and all data have been permanently removed.' });
-            navigate('/auth');
-        } catch {
-            toast({ title: 'Error', description: 'Could not delete your account. Please try again or contact support.', variant: 'destructive' });
-        }
-        setDeleteAccountLoading(false);
-        setShowDeleteAccountDialog(false);
+    const handleCancelRequest = async () => {
+        const ok = await cancelRequest();
+        toast(
+            ok
+                ? { title: t('deletionRequest.cancelled') }
+                : { title: t('deletionRequest.cancelFailed'), variant: 'destructive' }
+        );
     };
 
     return (
-        <div className={cn("min-h-screen", "bg-background")}>
-            <main className="px-4 py-6 space-y-3 max-w-lg mx-auto">
+        <PageShell title="profile.dataManagement" backTo="/profile" className="py-6 space-y-3 max-w-lg">
 
                 {/* ── Your Data ─────────────────────────────────────────── */}
                 <motion.p
@@ -237,6 +193,39 @@ export function DataPage() {
                     </div>
                 </motion.div>
 
+                {pendingRequest && (
+                    <motion.div
+                        custom={3.5} variants={cardVariants} initial="hidden" animate="visible"
+                        className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4"
+                    >
+                        <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">
+                                {t(
+                                    pendingRequest.scope === 'account'
+                                        ? 'deletionRequest.bannerTitleAccount'
+                                        : 'deletionRequest.bannerTitleData',
+                                    { date: formatDeletionRequestedDate(pendingRequest.requested_at) }
+                                )}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                {t('deletionRequest.bannerBody', {
+                                    deadline: formatDeletionDeadline(pendingRequest.requested_at),
+                                })}
+                            </p>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="mt-2"
+                                disabled={submitting}
+                                onClick={handleCancelRequest}
+                            >
+                                {t('deletionRequest.cancelRequest')}
+                            </Button>
+                        </div>
+                    </motion.div>
+                )}
+
                 {/* ── Danger Zone ───────────────────────────────────────── */}
                 <motion.div
                     custom={3} variants={cardVariants} initial="hidden" animate="visible"
@@ -267,53 +256,15 @@ export function DataPage() {
                     </div>
 
                     <div className="px-4 pb-4">
-                        <AlertDialog
-                            open={showDeleteDialog}
-                            onOpenChange={(open) => {
-                                setShowDeleteDialog(open);
-                                if (!open) setDeleteConfirmText('');
-                            }}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600 hover:border-amber-500/60"
+                            disabled={!!pendingRequest}
+                            onClick={() => setSheetScope('data')}
                         >
-                            <AlertDialogTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full border-amber-500/40 text-amber-600 hover:bg-amber-500/10 hover:text-amber-600 hover:border-amber-500/60"
-                                >
-                                    Delete Data
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete all financial data?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This permanently removes all transactions, budgets, cards, savings goals, and reminders.
-                                        Your login account stays active. This cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <div className="py-3 space-y-1.5">
-                                    <Label className="text-sm">
-                                        {t('profileData.typeDeleteConfirm')}
-                                    </Label>
-                                    <Input
-                                        value={deleteConfirmText}
-                                        onChange={(e) => setDeleteConfirmText(e.target.value)}
-                                        placeholder={t('profileData.deletePlaceholder')}
-                                        autoComplete="off"
-                                    />
-                                </div>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={handleDeleteData}
-                                        disabled={deleteConfirmText !== 'DELETE' || deleteLoading}
-                                        className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                        {deleteLoading ? 'Deleting…' : 'Delete Data'}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                            Delete Data
+                        </Button>
                     </div>
                 </motion.div>
 
@@ -335,54 +286,27 @@ export function DataPage() {
                     </div>
 
                     <div className="px-4 pb-4">
-                        <AlertDialog
-                            open={showDeleteAccountDialog}
-                            onOpenChange={(open) => {
-                                setShowDeleteAccountDialog(open);
-                                if (!open) setDeleteAccountConfirmText('');
-                            }}
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="w-full"
+                            disabled={!!pendingRequest}
+                            onClick={() => setSheetScope('account')}
                         >
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="sm" className="w-full">
-                                    Delete Account
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Permanently delete your account?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This removes your account and everything in it — transactions, budgets, cards,
-                                        goals, and login credentials. You will not be able to sign in again.
-                                        This cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <div className="py-3 space-y-1.5">
-                                    <Label className="text-sm">
-                                        {t('profileData.typeDeleteAccountConfirm')}
-                                    </Label>
-                                    <Input
-                                        value={deleteAccountConfirmText}
-                                        onChange={(e) => setDeleteAccountConfirmText(e.target.value)}
-                                        placeholder={t('profileData.deleteAccountPlaceholder')}
-                                        autoComplete="off"
-                                    />
-                                </div>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={handleDeleteFullAccount}
-                                        disabled={deleteAccountConfirmText !== 'DELETE ACCOUNT' || deleteAccountLoading}
-                                        className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                        {deleteAccountLoading ? 'Deleting…' : 'Delete My Account'}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                            Delete Account
+                        </Button>
                     </div>
                 </motion.div>
 
-            </main>
-        </div>
+            {sheetScope && (
+                <DeletionRequestSheet
+                    open={!!sheetScope}
+                    onOpenChange={(open) => !open && setSheetScope(null)}
+                    scope={sheetScope}
+                    submitting={submitting}
+                    onConfirm={handleConfirmDeletionRequest}
+                />
+            )}
+        </PageShell>
     );
 }

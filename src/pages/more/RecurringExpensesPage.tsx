@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { PageShell } from '@/components/PageShell';
 import { format } from 'date-fns';
-import { ChevronLeft, Plus, Repeat, Trash2, Pause, Play } from 'lucide-react';
+import { Plus, Repeat, Trash2, Pause, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -74,23 +75,21 @@ export function RecurringExpensesPage() {
     updateRecurringExpense(item.id, { is_active: !item.is_active });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/more')} aria-label={t('common.back')}>
-            <ChevronLeft className="w-5 h-5" />
+    <PageShell title="recurring.title" backTo="/more" withBottomNav className="px-0 py-0">
+
+      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Repeat className="w-3.5 h-3.5" />
+            {t('recurring.title')}
+          </h2>
+          <Button size="sm" className="rounded-xl gap-1.5 shrink-0" onClick={() => setOpen(true)}>
+            <Plus className="w-4 h-4" />
+            {t('recurring.addRecurring')}
           </Button>
-          <h1 className="font-semibold">{t('recurring.title')}</h1>
         </div>
-      </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         <p className="text-sm text-muted-foreground">{t('recurring.description')}</p>
-
-        <Button className="w-full" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          {t('recurring.addRecurring')}
-        </Button>
 
         {loading ? (
           <p className="text-sm text-muted-foreground py-8 text-center">{t('common.loading')}</p>
@@ -139,7 +138,7 @@ export function RecurringExpensesPage() {
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -216,6 +215,6 @@ export function RecurringExpensesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

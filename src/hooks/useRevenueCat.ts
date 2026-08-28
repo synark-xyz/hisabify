@@ -19,18 +19,20 @@ type CustomerInfo = import('@revenuecat/purchases-capacitor').CustomerInfo;
  */
 export const ENTITLEMENT_ID = 'hisabify-pro';
 
-export type PlanType = 'monthly' | 'yearly';
+export type PlanType = 'monthly' | 'yearly' | 'lifetime';
 
 /** Maps app plan names to RevenueCat PackageType strings */
 const PLAN_TO_PACKAGE_TYPE: Record<PlanType, string> = {
   monthly: 'MONTHLY',
   yearly: 'ANNUAL',
+  lifetime: 'LIFETIME',
 };
 
 /** Maps app plan names to RevenueCat product identifiers (from RevenueCat dashboard) */
 const PLAN_TO_IDENTIFIER: Record<PlanType, string> = {
-  monthly: 'monthly:plan-monthly',
-  yearly: 'pro_annual_auto_renew:p-annual-auto',
+  monthly: 'monthly',
+  yearly: 'yearly',
+  lifetime: 'lifetime',
 };
 
 interface UseRevenueCatReturn {
@@ -253,6 +255,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
       const CONVENIENCE: Partial<Record<PlanType, PurchasesPackage | null>> = {
         monthly: offering.monthly,
         yearly: offering.annual,
+        lifetime: offering.lifetime,
       };
 
       const pkg =

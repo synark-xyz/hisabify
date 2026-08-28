@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Bell, CheckCircle, WarningCircle, Clock, TrendUp, Target, Heartbeat, Lightbulb, Receipt, Trash } from '@phosphor-icons/react';
-import { Header } from '@/components/Header';
+import { PageShell } from '@/components/PageShell';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -173,11 +173,11 @@ export function NotificationsPage() {
 
 
     return (
-        <div className={cn("min-h-screen", "bg-background")}>
-            <Header title={t('notificationsPage.title')} showBack />
-
+        // PullToRefresh needs to own the scroll container, so the shell's own
+        // padding is zeroed and applied inside it instead.
+        <PageShell title="notificationsPage.title" backTo="/" className="px-0 py-0">
             <PullToRefresh onRefresh={handleRefresh}>
-                <main className="px-4 py-4">
+                <div className="px-4 py-4">
                     <Tabs defaultValue="messages">
                         <TabsList className="w-full grid grid-cols-2 mb-4">
                             <TabsTrigger value="messages" className="relative">
@@ -513,7 +513,7 @@ export function NotificationsPage() {
                             )}
                         </TabsContent>
                     </Tabs>
-                </main>
+                </div>
             </PullToRefresh>
 
             {/* Notification Detail Dialog */}
@@ -595,6 +595,6 @@ export function NotificationsPage() {
                     })()}
                 </DialogContent>
             </Dialog>
-        </div>
+        </PageShell>
     );
 }

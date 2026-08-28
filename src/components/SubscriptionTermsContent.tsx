@@ -176,8 +176,14 @@ export function SubscriptionTermsContent() {
           credits are forfeited with no refund.
         </p>
         <p>
-          <strong>No Recovery:</strong> Once your account is deleted, credits cannot be
-          recovered. Deletion is permanent within 30 days.
+          <strong>No Recovery:</strong> Once a deletion request is approved, credits cannot be
+          recovered. Deletion is permanent within 30 days of your original request.
+        </p>
+        <p>
+          <strong>Store Subscriptions:</strong> Deleting your account does not cancel an active
+          Google Play or App Store subscription, and does not trigger a refund. Cancel your
+          subscription separately through the store before requesting deletion if you want to
+          stop being billed.
         </p>
         <p>
           <strong>Refund + Deletion Sequence:</strong> If you request both a refund AND account
@@ -185,8 +191,8 @@ export function SubscriptionTermsContent() {
         </p>
         <ol className="list-decimal pl-4 space-y-1">
           <li>We issue the refund first</li>
-          <li>Then your account is immediately terminated</li>
-          <li>All data is deleted within 30 days</li>
+          <li>Your account deletion request is then submitted for review, per the process described above</li>
+          <li>All data is deleted within 30 days of your original request, once approved</li>
         </ol>
         <p>
           This prevents "refund + keep the data" abuse.

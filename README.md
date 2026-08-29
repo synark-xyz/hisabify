@@ -189,7 +189,7 @@ Where to look next
 - Supabase local/staging/prod setup: `SUPABASE_SETUP.md`
 - Architecture & tech guidance: `TRD.md`
 - AI development guidance: `CLAUDE.md`
-- Mobile app setup: `CAPACITOR_LOCALHOST_SETUP.md`
+- Mobile app setup: the **Capacitor Mobile** section of `CLAUDE.md`, and `docs/ANDROID_ENVIRONMENTS.md` for build environments
 - Changes & updates: `CHANGELOG.md`
 - UI components: `src/components/` and `src/components/ui/`
 - Hooks and domain logic: `src/hooks/`

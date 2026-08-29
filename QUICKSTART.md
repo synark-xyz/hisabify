@@ -244,8 +244,8 @@ npm run cap:android  # Opens Android Studio
 npm run cap:ios      # Opens Xcode
 ```
 
-**📖 Complete mobile setup guide:** [CAPACITOR_LOCALHOST_SETUP.md](./CAPACITOR_LOCALHOST_SETUP.md)
-**📱 Mobile deployment guide:** [MOBILE_DEPLOYMENT.md](./MOBILE_DEPLOYMENT.md)
+**📖 Complete mobile setup guide:** the **Capacitor Mobile** section of [CLAUDE.md](./CLAUDE.md)
+**📱 Android build environments:** [docs/ANDROID_ENVIRONMENTS.md](./docs/ANDROID_ENVIRONMENTS.md)
 
 ### Available Mobile Scripts
 

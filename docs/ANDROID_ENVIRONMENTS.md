@@ -126,7 +126,7 @@ For local development, manually set `APP_ENV='local'` in `capacitor.config.ts`, 
 npm run dev:android
 ```
 
-See `CAPACITOR_LOCALHOST_SETUP.md` for the full local dev guide.
+See the **Capacitor Mobile** section of `CLAUDE.md` for the full local dev guide (the old `CAPACITOR_LOCALHOST_SETUP.md` is archived — it documented a `USE_LOCALHOST` constant that no longer exists).
 
 ---
 

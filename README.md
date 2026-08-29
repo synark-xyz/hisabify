@@ -8,10 +8,11 @@ Key user-facing functionality
 - Create budgets and savings goals
 - Set recurring payment reminders
 - View simple analytics and monthly overviews
+- Upgrade to Hisabify Pro (in-app subscription); the free tier on Android shows a single anchored ad banner
 
 For non-technical information about features, roadmap, and priorities see `PRD.md`.
 
-If you want to contribute code or run the project locally, see `CONTRIBUTING.md` (or open an issue requesting setup guidance).
+If you want to contribute code or run the project locally, see the Quick local setup section below and `CLAUDE.md` for architecture and conventions.
 
 For Supabase local, staging, and production migration workflows, see `SUPABASE_SETUP.md`.
 
@@ -34,10 +35,10 @@ Most attractive features
 
 For contributors
 ----------------
-We welcome contributors. This repo is private — please open issues or send PRs to the `main` branch and follow this flow:
+We welcome contributors. This repo is private — please open issues or send PRs to the `develop` branch and follow this flow:
 
 - Create a short issue describing the change or enhancement.
-- Branch from `main` using `feat/`, `fix/`, or `chore/` prefixes (e.g. `feat/payment-reminders`).
+- Branch from `develop` using `feat/`, `fix/`, or `chore/` prefixes (e.g. `feat/payment-reminders`).
 - Open a pull request describing the user problem and solution; link the related issue.
 
 Tech snapshot (quick)
@@ -77,16 +78,21 @@ Perfect for rapid development with instant hot reload:
 # 1. Find your local IP address
 npm run local-ip
 
-# 2. Update capacitor.config.ts with your IP (or use default 10.0.2.2 for emulator)
-# Set USE_LOCALHOST = true
+# 2. Point capacitor.config.ts's local URL at the right host
+#    (Android emulator 10.0.2.2, physical device your LAN IP, iOS simulator localhost)
 
 # 3. Start dev server
 npm run dev
 
-# 4. Run on device
+# 4. Sync in local mode, then run on device
+APP_ENV=local npx cap sync
 npm run dev:android  # for Android
 npm run dev:ios      # for iOS
 ```
+
+> Where the native app loads the web app from is the `APP_ENV` environment variable read by
+> `capacitor.config.ts` at sync time — `production` (default, bundled `dist/`), `staging`
+> (`STAGING_URL`), or `local`. Never commit a change to that file to point at your machine.
 
 **Option 2: Build & Deploy**
 
@@ -112,8 +118,8 @@ We've optimized the development workflow with localhost support:
 - **Android Physical Device**: Use your computer's IP (find with `npm run local-ip`)
 - **iOS Simulator**: Uses `http://localhost:8080`
 
-For complete setup instructions, troubleshooting, and network configuration, see:
-📖 **[CAPACITOR_LOCALHOST_SETUP.md](./CAPACITOR_LOCALHOST_SETUP.md)**
+For complete setup instructions, troubleshooting, and network configuration, see the
+**Capacitor Mobile** section of [CLAUDE.md](./CLAUDE.md).
 
 ### Available NPM Scripts
 
@@ -125,6 +131,8 @@ npm run cap:android     # Build and open Android Studio
 npm run cap:ios         # Build and open Xcode
 npm run dev:android     # Quick run on Android (no rebuild)
 npm run dev:ios         # Quick run on iOS (no rebuild)
+npm run cap:android:staging  # Build + sync with APP_ENV=staging, open Android Studio
+npm run cap:android:release  # Build + sync with APP_ENV=production, open Android Studio
 
 # Web Development
 npm run dev             # Start Vite dev server
@@ -132,7 +140,10 @@ npm run build           # Production build
 npm run build:dev       # Development build
 npm run preview         # Preview production build
 npm run lint            # Run ESLint
-npm run test            # Run Vitest tests
+npm run test            # Run Vitest tests (watch)
+npm run test:unit       # Single-run unit tests
+npm run test:coverage   # Single-run unit tests with coverage (what CI runs)
+npm run test:e2e        # Playwright E2E (needs .env.test + a dev server)
 
 # Automated test runners (timestamped reports under /test-report)
 npm run test:automated       # Unit coverage + E2E (all)

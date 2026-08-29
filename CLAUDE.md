@@ -66,6 +66,11 @@ npx playwright test e2e/budgets.spec.ts -g "creates a budget"
 # Preview production build
 npm run preview
 
+# Acceptance checks
+npm run verify:apk-ads -- <apk> [<apk>]   # per-variant AdMob app-ID/unit pairing, read from built APKs
+npm run verify:migration                  # stale-pro-mirror migration against a throwaway Postgres
+npm run migration:apply                   # narrow applier for that migration
+
 # Mobile Development (Capacitor 8)
 npm run local-ip        # Find your local IP for device testing
 npm run cap:sync        # Sync web app with native projects
@@ -505,24 +510,36 @@ Compliance docs: `docs/legal/PRE_LAUNCH_CHECKLIST.md`, `docs/legal/INCORPORATION
 
 One anchored adaptive banner via `@capacitor-community/admob`, for signed-in non-premium users on
 **Android only**. `src/lib/ads.ts` holds the pure gate (`shouldShowBanner`) and unit-ID resolution;
-`src/hooks/useAdBanner.ts` holds every side effect. iOS is deliberately excluded — it needs the ATT
-prompt, SKAdNetwork IDs and a privacy-manifest entry, none of which exist yet.
+`src/components/BannerAd.tsx` owns the banner's lifecycle; `src/hooks/useAdBanner.ts` keeps only
+what is shared with `/profile/data` — `initAdMob()`, `getNativeAppId()`, `useAdPrivacyOptions()`.
+iOS is deliberately excluded — it needs the ATT prompt, SKAdNetwork IDs and a privacy-manifest
+entry, none of which exist yet.
 
-**Bottom padding is `.pb-page-content`, never a hardcoded `pb-*`.** It resolves to
-`140px + var(--ad-banner-h, 0px) + env(safe-area-inset-bottom)`, so it tracks the nav, the FAB,
-the banner and the notch together. Dashboard shipped a hardcoded `pb-24` (96px) and had its last
-feed rows stranded underneath the nav for every free Android user. Put it on the scroll container
-(the `PullToRefresh`), which is where `ExpensesPage` and `BudgetPage` put it.
+**The bottom inset has exactly one owner: `Layout`'s `<main>`.** It carries `min-h-screen` and
+`.pb-page-content` on the same box, which resolves to
+`140px + var(--ad-banner-h, 0px) + env(safe-area-inset-bottom)` and tracks the nav, the FAB, the
+banner and the notch together. Pages and `PageShell` (when `withBottomNav`) must declare **neither**
+— no `pb-page-content`, no `pb-*`, no `min-h-screen`. Declaring it again on an inner box stacks the
+reserve (the Dashboard once measured 376px of dead scroll space three deep), and `min-h-screen`
+inside a `min-height`-less parent makes the inset extend the viewport instead of being absorbed by
+it. `src/pages/__tests__/Dashboard.test.tsx` asserts the page declares none of them.
 
-`useAdBanner()` is called once in `Layout.tsx`, and **that call site is the whole placement
+`<BannerAd />` is mounted once in `Layout.tsx`, and **that mount point is the whole placement
 policy**: Layout-group routes get a banner, `StandalonePage` routes (settings, profile, `/terms`,
-`/privacy`, `/admin`) never do. Don't add route checks inside the hook — move the page instead.
+`/privacy`, `/admin`) never do. Don't add route checks inside the component — move the page instead.
 
-The banner is a **native view layered over the WebView**; it does not resize it. `useAdBanner`
+The banner is a **native view layered over the WebView**; it does not resize it. `BannerAd`
 writes the reported height (dp, which is 1:1 with CSS px here) to `--ad-banner-h`, and
 `BottomNavigation`, the FAB in `Layout`, and `.pb-page-content` all offset by it. The variable is
 `0px` whenever no banner is showing, so web/iOS/Pro are untouched. Anything else pinned to the
-bottom of the viewport must add `var(--ad-banner-h, 0px)` too.
+bottom of the viewport must add `var(--ad-banner-h, 0px)` too — including `BottomNavigation`, whose
+`bottom` is that variable and *not* a hardcoded `bottom-0`; flush to the screen bottom is exactly
+where the native banner sits.
+
+**`SizeChanged` fires before `Loaded` on device.** Gating the height on a `loaded` flag therefore
+discards the only size event and reserves `0`. Height bookkeeping lives in the pure,
+order-independent `createBannerHeightTracker()` in `ads.ts` (reserve on load/size, release on
+`FailedToLoad`); both event orderings are covered in `src/lib/__tests__/ads.test.ts`.
 
 `getBannerUnitId(nativeAppId)` returns Google's **test** ad unit unless all three hold:
 `VITE_ADMOB_BANNER_ID` is set, `import.meta.env.PROD`, **and** the native package is
@@ -533,9 +550,9 @@ appeal path worth relying on.
 **The package-name check is not redundant with `PROD`.** `npm run build && npx cap sync` emits a
 production web bundle regardless of which APK variant later wraps it, so a `.staging` build used
 to pair Google's **test AdMob app ID** (from `manifestPlaceholders`) with our **real ad unit**.
-AdMob will not serve that combination, and `useAdBanner` swallows the failure by design
+AdMob will not serve that combination, and `BannerAd` swallows the failure by design
 (`logger.error` only — a failed ad must never break the app), so ads disappeared with no visible
-error. `useAdBanner` reads the package name once via `App.getInfo()`; web or a failed call
+error. `getNativeAppId()` reads the package name once via `App.getInfo()`; web or a failed call
 resolves to `null`, which is treated as "not production" and serves test ads.
 
 Verify this against a **built APK**, not the source tree — the whole bug was that the source
@@ -575,7 +592,7 @@ Consent: the plugin's mandated order is `initialize → requestConsentInfo → s
 showBanner`, memoised in `initAdMob()` so it runs once per session. `useAdPrivacyOptions()` (same
 file) backs the `Profile → Data & Privacy → Ad privacy settings` row — **Google's UMP terms
 require that persistent entry point** for anyone who was shown a form; it is not optional UI. It
-re-derives consent state itself rather than sharing with `useAdBanner`, because `/profile/data` is
+re-derives consent state itself rather than sharing with `BannerAd`, because `/profile/data` is
 a `StandalonePage` route outside `Layout`.
 
 `PrivacyOptionsRequirementStatus` is compared as a string: the plugin's `consent/index` doesn't
@@ -626,6 +643,13 @@ inside `.then()`, with no `.catch()`, so a rejected `getSession()` left `Protect
 forever with no way out. There is now a `.catch()`, a `finally`, and a `BOOTSTRAP_TIMEOUT_MS`
 ceiling — a promise that never settles still terminates in an error screen. `retryBootstrap()`
 re-runs it. Do not reintroduce a spinner that is not bounded by something.
+
+**`supabase.auth.signOut()` returns `{ error }`; it does not throw.** A `try/catch` around it
+catches nothing, and gotrue bails out *before* `_removeSession()` when the server call fails — so
+the old code toasted success, navigated to `/auth`, and left the user signed in. `signOut()` now
+checks the returned error, retries with `scope: 'local'` so signing out never depends on the
+network, verifies the session is actually gone, and surfaces a real failure instead of navigating
+away. Covered by `src/hooks/__tests__/useAuth.signout.test.tsx`.
 
 `ErrorBoundary` is mounted at the app root **and** around each route-level `<Suspense>` (in
 `App.tsx`'s `StandalonePage` and in `Layout`). The route-level ones exist for the failed lazy
@@ -839,10 +863,15 @@ refund mid-session leaves Pro unlocked until the next foreground.
 
 **`/settings/subscription` is the one manage surface.** `SubscriptionPage` renders a status card
 (plan term, renews-on / access-until, store, trial and billing-issue notices) and delegates every
-action: `CustomerCenterTrigger` for cancel/change-plan/refund, `UpgradeModal` for upgrades,
+action: `showCustomerCenter()` for cancel/change-plan/refund, `UpgradeModal` for upgrades,
 `restorePurchases` for restores. It is reachable from `Settings → Subscription` and from
-`Profile → Personal`, which now *navigates* here rather than mounting its own
-`CustomerCenterTrigger` — two copies of the trigger is how the two surfaces diverged before.
+`Profile → Personal`, which now *navigates* here rather than mounting its own trigger — two copies
+of the trigger is how the two surfaces diverged before. The standalone `CustomerCenterTrigger`
+component is gone; the page calls the hook directly.
+
+Cancel and Restore render **only for `status.kind === 'pro'`** (and only on native). There is no
+RevenueCat API that cancels a purchase — the Customer Center is the store's own sheet, and it has
+nothing to render without an entitlement, which is why there is no non-`pro` fallback.
 
 The branching is a pure function, `deriveSubscriptionStatus()` in `src/lib/subscriptionStatus.ts`
 (same pattern as `ads.ts` / `theme.ts` / `ratingPrompt.ts`), returning
@@ -1027,7 +1056,8 @@ resolver in `settings.gradle` download it, so no specific system JDK is required
 | `src/lib/errorState.ts` | Pure error -> variant mapping (`toErrorVariant`) |
 | `src/hooks/useOnline.ts` | Live connectivity flag (no native plugin) |
 | `src/components/OfflineBanner.tsx` | Mid-session offline bar, rendered from `Layout` |
-| `src/hooks/useAdBanner.ts` | AdMob init, UMP consent, banner lifecycle, `--ad-banner-h` |
+| `src/components/BannerAd.tsx` | Native AdMob banner lifecycle + `--ad-banner-h` (mounted in `Layout`) |
+| `src/hooks/useAdBanner.ts` | AdMob init, UMP consent, native app id (`useAdPrivacyOptions`) |
 | `src/hooks/useRecurringExpenses.ts` | Recurring expense CRUD + `process_recurring_expenses()` RPC |
 | `src/pages/more/RecurringExpensesPage.tsx` | Recurring expense manager (`/more/recurring`) |
 | `src/hooks/useAppRating.ts` | Rating prompt cadence + persistence |

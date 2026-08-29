@@ -506,38 +506,38 @@ export function Dashboard() {
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   style={{ willChange: 'transform, opacity' }}
                 >
-                  {/* Opaque gradient, not glass: glass-card-accent is a 10% tint over the page
+                  {/* Opaque theme colour, not glass: glass-card-accent is a 10% tint over the page
                       background, so the white text on it was unreadable in light mode. */}
                   <div
                     onClick={() => setShowUpgradeModal(true)}
-                    className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-purple-500/20 cursor-pointer group transition-all active:scale-95"
+                    className="relative overflow-hidden rounded-2xl p-4 bg-primary shadow-lg shadow-primary/20 cursor-pointer group transition-all active:scale-95"
                   >
                     <div
-                      className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-colors"
+                      className="absolute top-0 right-0 w-24 h-24 bg-primary-foreground/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-primary-foreground/20 transition-colors"
                       style={{ willChange: 'filter', transform: 'translateZ(0)' }}
                     />
 
                     <div className="relative z-10 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3.5">
                         <div
-                          className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner ring-1 ring-white/30"
+                          className="w-10 h-10 rounded-xl bg-primary-foreground/20 backdrop-blur-md flex items-center justify-center shadow-inner ring-1 ring-primary-foreground/30"
                           style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
                         >
-                          <Crown className="w-5 h-5 text-white" weight="fill" />
+                          <Crown className="w-5 h-5 text-primary-foreground" weight="fill" />
                         </div>
                           <div>
                           <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="text-base font-bold text-white tracking-tight">{t('dashboard.upgradeToPro')}</h3>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white font-bold uppercase tracking-wide">
+                            <h3 className="text-base font-bold text-primary-foreground tracking-tight">{t('dashboard.upgradeToPro')}</h3>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-primary-foreground/20 text-primary-foreground font-bold uppercase tracking-wide">
                               {t('common.new')}
                             </span>
                           </div>
-                          <p className="text-xs text-white/80 font-medium">{t('dashboard.unlockInsights')}</p>
+                          <p className="text-xs text-primary-foreground/80 font-medium">{t('dashboard.unlockInsights')}</p>
                         </div>
                       </div>
 
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-white text-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <div className="w-8 h-8 rounded-full bg-primary-foreground text-primary flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                           <Sparkle className="w-4 h-4" weight="fill" />
                         </div>
                       </div>

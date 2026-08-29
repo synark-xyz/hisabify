@@ -219,17 +219,25 @@ The goal of this initiative is to transition Hisabify from a free utility to a s
 ### 💎 Pro Tier (The "Pro" Plan - $4.99/mo)
 *Advanced tools for serious financial management.*
 - **Unlimited Budgets**: Remove the cap on budget categories.
-- **Unlimited Savings Goals**: Create as many savings goals as you focus on.
+- **Unlimited Savings Goals**: Create as many savings goals as you focus on (gated in `SavingsTabContent`).
 - **Infinite History**: Access to all-time data and the **Budget vs Spending History Chart** (Existing: `BudgetHistoryChart`).
 - **Savings History**: Full per-goal contribution history, running chart, and missed-period timeline.
 - **Automation**: Use of the **"Copy to Next Month"** feature (Existing: `copyBudgetToNextPeriod`).
 - **Savings Automation**: Auto-contribute scheduled savings goals.
 - **Multi-Currency**: Access to the **Currency Selector** and live conversions (Existing: `useCurrency`).
-- **Data Export**: Generate PDF/CSV reports (Planned).
+- **Data Export**: Generate PDF/CSV reports (Implemented — gated in `ReportsPage`).
 - **Advanced Insights**: Period-over-period comparisons in the **Financial Summary** (Existing: `FinancialSummary`).
 
 ## 4. Technical Requirements
-- **Entitlement Logic**: A `useSubscription` hook to check `is_premium` status from Supabase.
+- **Billing**: RevenueCat, native-only (entitlement `hisabify-pro`). There is no Stripe integration
+  and no web purchase path. `users.subscription_type` is a mirror written on every entitlement
+  transition, never the source of truth.
+- **Entitlement Logic**: A `useSubscription` hook — an active RevenueCat entitlement **or** a
+  time-boxed referral grant (`users.referral_granted_until`).
+- **Manage surface**: `/settings/subscription` — status card plus Customer Center, upgrade and
+  restore actions.
+- **Free-tier monetisation**: an anchored AdMob banner on Android for signed-in non-premium users;
+  Pro removes it.
 - **UI Gating**: A `PremiumGuard` component to wrap premium features with a blur/lock UI.
 - **Upsell Trigger**: Integration of an "Upgrade to Pro" modal.
 

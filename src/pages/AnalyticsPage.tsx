@@ -144,7 +144,9 @@ export function AnalyticsPage() {
               {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-6">
                 {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* items-start: without it the grid stretches both cards to the tallest row
+                    height, so the breakdown card looked identical collapsed vs expanded. */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                   <motion.div variants={itemVariants}>
                     {loading ? (
                       <Skeleton className="h-80 rounded-2xl" />

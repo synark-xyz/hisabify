@@ -12,7 +12,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSubscription } from '@/hooks/useSubscription';
 import { ENTITLEMENT_ID } from '@/hooks/useRevenueCat';
 import { LEGAL_CONTACT_EMAIL } from '@/lib/legalContent';
-import { openManageSubscriptions } from '@/lib/appStore';
 import { deriveSubscriptionStatus, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 
 const STORE_LABELS: Record<string, string> = {
@@ -57,16 +56,11 @@ export function SubscriptionPage() {
   };
 
   /**
-   * Cancelling is always the store's decision — no RevenueCat API cancels a purchase. For an
-   * entitled user the Customer Center is the native in-app sheet that walks them through it
-   * (and offers plan change / refund on the way); without an entitlement that sheet has
-   * nothing to render, so fall back to the store's own subscription page.
+   * Cancelling is always the store's decision — no RevenueCat API cancels a purchase. The
+   * Customer Center is the native in-app sheet that walks an entitled user through it (and
+   * offers plan change / refund on the way). Only rendered for `pro`, hence no fallback.
    */
   const handleCancel = async () => {
-    if (status.kind !== 'pro') {
-      await openManageSubscriptions();
-      return;
-    }
     setCancelling(true);
     try {
       await showCustomerCenter();
@@ -95,9 +89,9 @@ export function SubscriptionPage() {
           <StatusCard status={status} />
 
           <div className="space-y-2">
-            {/* Shown whenever there could be a store subscription — including `free`, since a
-                missed entitlement is precisely when someone comes here looking for cancel. */}
-            {Capacitor.isNativePlatform() && status.kind !== 'referral' && (
+            {/* Only meaningful for an actual paying subscriber; free/referral users have
+                nothing to cancel, so the button is hidden for them. */}
+            {Capacitor.isNativePlatform() && status.kind === 'pro' && (
               <Button
                 variant="ghost"
                 className="w-full gap-2 text-destructive hover:text-destructive"
@@ -122,9 +116,9 @@ export function SubscriptionPage() {
                   {t('profilePersonal.contactSupport')}
                 </a>
               </Button>
-            ) : (
+            ) : status.kind === 'pro' ? (
               restoreButton
-            )}
+            ) : null}
           </div>
 
           <p className="text-xs text-muted-foreground text-center px-4">

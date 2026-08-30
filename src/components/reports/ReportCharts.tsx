@@ -19,6 +19,8 @@ import {
 } from "recharts";
 import { ReportData } from "@/hooks/useReportData";
 import { useCurrency } from "@/hooks/useCurrency";
+import { ChartEmptyState } from "@/components/charts/ChartEmptyState";
+import { ChartPie, TrendUp, Target, ChartLineUp } from "@phosphor-icons/react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
@@ -26,6 +28,10 @@ import { localizeNumber } from "@/lib/i18nNumber";
 
 interface ReportChartsProps {
   reportData: ReportData;
+  /** Opens the add-transaction flow from an empty chart. */
+  onAddTransaction?: (type: 'expense' | 'income') => void;
+  /** Navigates to budget creation from the empty budget chart. */
+  onCreateBudget?: () => void;
 }
 
 type ActiveShapeProps = PieSectorDataItem & {
@@ -64,7 +70,7 @@ const renderActiveShape = (props: ActiveShapeProps) => {
   );
 };
 
-export function ReportCharts({ reportData }: ReportChartsProps) {
+export function ReportCharts({ reportData, onAddTransaction, onCreateBudget }: ReportChartsProps) {
   const { t } = useTranslation();
   const { formatAmount, currencySymbol } = useCurrency();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -148,9 +154,13 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               </div>
             </div>
           ) : (
-              <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
-               {t('reports.charts.noExpenseData')}
-             </div>
+              <ChartEmptyState
+                icon={<ChartPie className="w-8 h-8 text-muted-foreground/50" weight="duotone" />}
+                title={t('reports.charts.noExpenseData')}
+                description={t('reports.charts.noExpenseDataDesc')}
+                actionLabel={t('expenses.addExpense')}
+                onAction={onAddTransaction ? () => onAddTransaction('expense') : undefined}
+              />
           )}
         </CardContent>
       </Card>
@@ -218,9 +228,13 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               </div>
             </div>
           ) : (
-            <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
-              {t('reports.charts.noIncomeData')}
-            </div>
+            <ChartEmptyState
+              icon={<TrendUp className="w-8 h-8 text-muted-foreground/50" weight="duotone" />}
+              title={t('reports.charts.noIncomeData')}
+              description={t('reports.charts.noIncomeDataDesc')}
+              actionLabel={t('expenses.addIncome')}
+              onAction={onAddTransaction ? () => onAddTransaction('income') : undefined}
+            />
           )}
         </CardContent>
       </Card>
@@ -255,9 +269,13 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
-              {t('reports.charts.noBudgetData')}
-            </div>
+            <ChartEmptyState
+              icon={<Target className="w-8 h-8 text-muted-foreground/50" weight="duotone" />}
+              title={t('reports.charts.noBudgetData')}
+              description={t('reports.charts.noBudgetDataDesc')}
+              actionLabel={t('analytics.createBudget')}
+              onAction={onCreateBudget}
+            />
           )}
         </CardContent>
       </Card>
@@ -307,9 +325,13 @@ export function ReportCharts({ reportData }: ReportChartsProps) {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="min-h-[200px] flex items-center justify-center text-muted-foreground">
-              {t('reports.charts.noData')}
-            </div>
+            <ChartEmptyState
+              icon={<ChartLineUp className="w-8 h-8 text-muted-foreground/50" weight="duotone" />}
+              title={t('reports.charts.noData')}
+              description={t('reports.charts.noDataDesc')}
+              actionLabel={t('expenses.addExpense')}
+              onAction={onAddTransaction ? () => onAddTransaction('expense') : undefined}
+            />
           )}
         </CardContent>
       </Card>

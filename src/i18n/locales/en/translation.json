@@ -431,7 +431,8 @@
     "historyLimitTitle": "History limit reached",
     "historyLimitDesc": "Free plan supports the last 30 days. Upgrade for full history.",
     "calendarSelected": "selected",
-    "calendarSwipeHint": "Swipe for more"
+    "calendarSwipeHint": "Swipe for more",
+    "addIncome": "Add Income"
   },
   "budget": {
     "title": "Budget",
@@ -937,7 +938,11 @@
       "spent": "Spent",
       "expenses": "Expenses",
       "income": "Income",
-      "date": "Date"
+      "date": "Date",
+      "noExpenseDataDesc": "Add an expense in this period to see the category breakdown.",
+      "noIncomeDataDesc": "Add income in this period to see where your money comes from.",
+      "noBudgetDataDesc": "Create a budget to compare what you planned against what you spent.",
+      "noDataDesc": "Add transactions in this period to see your daily trend."
     }
   },
   "analytics": {

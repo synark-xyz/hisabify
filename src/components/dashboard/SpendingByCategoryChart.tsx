@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { ChartBar } from '@phosphor-icons/react';
-import { Button } from '@/components/ui/button';
+import { ChartEmptyState } from '@/components/charts/ChartEmptyState';
 import { useCurrency } from '@/hooks/useCurrency';
 import { CategorySpending } from '@/types';
 import type { Props as TooltipProps, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
@@ -74,20 +74,13 @@ export function SpendingByCategoryChart({ data, onAddExpense }: SpendingByCatego
     >
       <h3 className="text-lg font-bold text-foreground mb-4 truncate">{t('dashboard.spendingByCategory')}</h3>
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center text-center py-10">
-          <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center mb-3">
-            <ChartBar className="w-8 h-8 text-muted-foreground/50" weight="duotone" />
-          </div>
-          <p className="text-foreground font-semibold">{t('analytics.noSpendingData')}</p>
-          <p className="text-muted-foreground text-sm mt-1 max-w-xs">
-            {t('analytics.noSpendingDataDesc')}
-          </p>
-          {onAddExpense && (
-            <Button variant="outline" className="mt-4" onClick={onAddExpense}>
-              {t('expenses.addExpense')}
-            </Button>
-          )}
-        </div>
+        <ChartEmptyState
+          icon={<ChartBar className="w-8 h-8 text-muted-foreground/50" weight="duotone" />}
+          title={t('analytics.noSpendingData')}
+          description={t('analytics.noSpendingDataDesc')}
+          actionLabel={t('expenses.addExpense')}
+          onAction={onAddExpense}
+        />
       ) : (
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">

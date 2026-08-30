@@ -677,7 +677,7 @@ export function Dashboard() {
                 {/* Premium Guard Overlay */}
                 {!isPremium && !subscriptionLoading && (
                   <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-4 border border-50">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center mb-4 border border-primary/20">
                       <Crown className="w-8 h-8 text-accent fill-accent" weight="duotone" />
                     </div>
                     <h3 className="text-xl font-black mb-2 text-foreground">{t('dashboard.unlockFullInsights')}</h3>
@@ -688,7 +688,7 @@ export function Dashboard() {
                       onClick={() => setShowUpgradeModal(true)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black shadow-lg shadow-purple-500/25 flex items-center gap-2"
+                      className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/25 flex items-center gap-2"
                     >
                       {t('dashboard.upgradeToPro')}
                     </motion.button>

@@ -90,11 +90,11 @@ export function BudgetPage() {
                       onClick={() => setShowUpgradeModal(true)}
                       className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 p-4 cursor-pointer transition-colors hover:bg-primary/5"
                     >
-                      <div className="absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.16),transparent_70%)]" />
+                      <div className="absolute inset-y-0 right-0 w-32 bg-[radial-gradient(circle_at_center,hsl(var(--accent)/0.16),transparent_70%)]" />
                       <div className="relative flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg shadow-primary/20">
-                            <Crown className="h-5 w-5 text-white" />
+                            <Crown className="h-5 w-5 text-primary-foreground" />
                           </div>
                           <div>
                             <div className="mb-1 flex items-center gap-2">

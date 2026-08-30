@@ -196,19 +196,19 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                 </p>
               </div>
 
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/10 shadow-xl backdrop-blur-md">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-primary-foreground/10 bg-primary/15 shadow-xl backdrop-blur-md">
                 <Crown className="h-8 w-8 text-accent" />
               </div>
             </div>
 
             <div className="mb-5 grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
-                <Wallet className="mx-auto h-4 w-4 text-emerald-500" />
+                <Wallet className="mx-auto h-4 w-4 text-primary" />
                 <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('dialogs.upgrade.unlimited')}</p>
                 <p className="mt-1 text-sm font-black text-foreground">{t('dialogs.upgrade.goals')}</p>
               </div>
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
-                <Clock className="mx-auto h-4 w-4 text-sky-500" />
+                <Clock className="mx-auto h-4 w-4 text-accent" />
                 <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('dialogs.upgrade.full')}</p>
                 <p className="mt-1 text-sm font-black text-foreground">{t('dialogs.upgrade.history')}</p>
               </div>
@@ -232,7 +232,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               <div className="space-y-3">
                 {content.benefits.map((benefit) => (
                   <div key={benefit} className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+                    <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary">
                       <Check className="h-3 w-3" />
                     </div>
                     <span className="text-sm font-medium text-foreground">{benefit}</span>
@@ -251,13 +251,13 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                 </div>
                 <p className="text-[10px] text-muted-foreground">7-day free trial</p>
               </div>
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 relative">
+              <div className="rounded-2xl border border-accent/20 bg-accent/5 p-4 relative">
                 <div className="absolute -top-2 -right-1">
-                  <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider shadow-sm">
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-black text-accent-foreground uppercase tracking-wider shadow-sm">
                     Save 33%
                   </span>
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-400 mb-2">{t('dialogs.upgrade.annual')}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-accent mb-2">{t('dialogs.upgrade.annual')}</p>
                 <div className="flex items-baseline gap-0.5 mb-1">
                   <span className="text-2xl font-black text-foreground">{yearlyPrice}</span>
                   <span className="text-xs text-muted-foreground">/yr</span>
@@ -293,7 +293,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               <Button
                 asChild
                 variant="outline"
-                className="h-10 w-full rounded-2xl font-bold text-sm border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/50"
+                className="h-10 w-full rounded-2xl font-bold text-sm border-accent/30 text-accent hover:bg-accent/5 hover:border-accent/50"
               >
                 <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
                   <Smartphone className="mr-2 h-4 w-4" />

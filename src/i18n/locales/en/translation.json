@@ -1046,7 +1046,9 @@
     "overview": "Overview",
     "insights": "Insights",
     "advanced": "Advanced",
-    "subtitle": "View spending patterns and financial insights"
+    "subtitle": "View spending patterns and financial insights",
+    "noSpendingData": "No Spending Yet",
+    "noSpendingDataDesc": "Add an expense to see how your spending breaks down by category."
   },
   "debt": {
     "debtTracker": "Debt Tracker",

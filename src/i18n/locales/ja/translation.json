@@ -1011,7 +1011,9 @@
     "overview": "概要",
     "insights": "インサイト",
     "advanced": "詳細",
-    "subtitle": "支出パターンと財務インサイトを表示"
+    "subtitle": "支出パターンと財務インサイトを表示",
+    "noSpendingData": "まだ支出がありません",
+    "noSpendingDataDesc": "支出を追加すると、カテゴリー別の内訳が表示されます。"
   },
   "debt": {
     "debtTracker": "債務トラッカー",

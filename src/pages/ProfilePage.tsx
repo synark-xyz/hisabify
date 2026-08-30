@@ -80,7 +80,7 @@ export function ProfilePage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
               onClick={() => setShowUpgradeModal(true)}
-              className="bg-card border border-border/40 rounded-2xl p-5 text-foreground shadow-xl shadow-purple-500/10 cursor-pointer relative overflow-hidden group glass-card"
+              className="bg-card border border-border/40 rounded-2xl p-5 text-foreground shadow-xl shadow-primary/10 cursor-pointer relative overflow-hidden group glass-card"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-white/20 transition-colors" />
               <div className="relative z-10 flex items-center justify-between">

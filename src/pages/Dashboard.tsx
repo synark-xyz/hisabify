@@ -716,9 +716,6 @@ export function Dashboard() {
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />
                   {t('dashboard.activityHistory')}
-                  <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                    {t('common.new').toUpperCase()}
-                  </span>
                 </h2>
                 <motion.button
                   onClick={() => navigate('/activity')}
@@ -729,7 +726,7 @@ export function Dashboard() {
                   <ArrowRight className="w-4 h-4" weight="duotone" />
                 </motion.button>
               </div>
-              <div className="bg-card rounded-2xl p-3 space-y-2 shadow-sm">
+              <div className="bg-card rounded-2xl p-3 space-y-2 shadow-sm overflow-visible overscroll-none">
                 {recentActivity.length > 0 ? (
                   recentActivity.map((item, idx) => {
                     if (item.kind === 'transaction') {

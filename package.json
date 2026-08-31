@@ -20,6 +20,7 @@
     "test:e2e:ui": "playwright test --ui",
     "verify:apk-ads": "node scripts/verify-apk-ads.mjs",
     "verify:migration": "node scripts/verify-mirror-migration.mjs",
+    "verify:avatar-policies": "node scripts/verify-avatar-storage-policies.mjs",
     "migration:apply": "node scripts/apply-mirror-migration.mjs",
     "migration:apply:test": "node scripts/test-apply-mirror-migration.mjs",
     "test:all": "npm run test:unit && npm run test:e2e",

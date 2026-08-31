@@ -1,7 +1,7 @@
 /**
- * Runs `20260831000000_fix_avatar_storage_policies.sql` verbatim against a real Postgres
- * (PGlite), on a schema shaped like Supabase Storage, and asserts the RLS policies actually
- * permit and deny the right rows.
+ * Runs the two storage migrations (20260831000000, 20260831000001) verbatim against a real
+ * Postgres (PGlite), on a schema shaped like Supabase Storage, and asserts the RLS policies
+ * actually permit and deny the right rows.
  *
  * This exists because the migration was otherwise unexercised: reading a policy predicate is
  * not the same as watching Postgres enforce it. The production bug was precisely an absent
@@ -12,7 +12,7 @@
  * is a substitute for production and is recorded as such — it validates the policy logic and
  * the migration's idempotency, not that production has been fixed.
  *
- * Usage: node scripts/verify-avatar-storage-policies.mjs
+ * Usage: npm run verify:storage-policies
  */
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
@@ -152,6 +152,84 @@ const others = await db.query(
      AND policyname = 'Users can upload own feedback attachments'`,
 );
 check('unrelated bucket policies are left intact', others.rows.length, 1);
+
+// ---------------------------------------------------------------------------------------
+// 20260831000001: the other two buckets the app writes to but production is missing.
+// ---------------------------------------------------------------------------------------
+const BUCKETS_SQL = readFileSync(
+  join(repoRoot, 'supabase/migrations/20260831000001_restore_missing_storage_buckets.sql'),
+  'utf8',
+);
+
+async function tryInsertBucket(bucket, uid, path, role = 'authenticated') {
+  try {
+    await db.exec('BEGIN');
+    await db.exec(`SET LOCAL ROLE ${role}`);
+    await db.query(`SELECT set_config('request.jwt.claim.sub', $1, true)`, [uid]);
+    await db.query(`INSERT INTO storage.objects (bucket_id, name) VALUES ($1, $2)`, [bucket, path]);
+    await db.exec('COMMIT');
+    return 'allowed';
+  } catch (err) {
+    await db.exec('ROLLBACK');
+    return /row-level security/i.test(err.message) ? 'denied' : `error: ${err.message}`;
+  }
+}
+
+// Both buckets are absent, exactly as production reports NoSuchBucket.
+const before = await db.query(
+  `SELECT id FROM storage.buckets WHERE id IN ('feedback-attachments','support-attachments')`,
+);
+check('the two buckets are missing beforehand', before.rows.length, 0);
+
+await db.exec(BUCKETS_SQL);
+
+const created = await db.query(
+  `SELECT id, public FROM storage.buckets WHERE id IN ('feedback-attachments','support-attachments') ORDER BY id`,
+);
+check('both buckets are created', created.rows.length, 2);
+// useAppFeedback stores paths and expects signed URLs; a public bucket would leak them.
+check('feedback bucket stays private', created.rows.find((r) => r.id === 'feedback-attachments').public, false);
+// SupportPage calls getPublicUrl(); a private bucket would make every emailed link 400.
+check('support bucket is public', created.rows.find((r) => r.id === 'support-attachments').public, true);
+
+check(
+  'feedback: own folder allowed',
+  await tryInsertBucket('feedback-attachments', ME, `${ME}/1.png`),
+  'allowed',
+);
+check(
+  "feedback: another user's folder denied",
+  await tryInsertBucket('feedback-attachments', ME, `${OTHER}/1.png`),
+  'denied',
+);
+check(
+  'support: signed-in user own folder allowed',
+  await tryInsertBucket('support-attachments', ME, `${ME}/1-shot.png`),
+  'allowed',
+);
+// SupportPage accepts submissions from signed-out users, filed under `anonymous/`.
+check(
+  'support: anonymous folder allowed (signed-out submissions)',
+  await tryInsertBucket('support-attachments', null, 'anonymous/1-shot.png', 'anon'),
+  'allowed',
+);
+check(
+  "support: another user's folder denied",
+  await tryInsertBucket('support-attachments', ME, `${OTHER}/1-shot.png`),
+  'denied',
+);
+
+// `receipts` is intentionally not recreated: receipt images are inline data URLs.
+const receipts = await db.query(`SELECT id FROM storage.buckets WHERE id = 'receipts'`);
+check('receipts bucket deliberately not recreated', receipts.rows.length, 0);
+
+await db.exec(BUCKETS_SQL);
+const rerun = await db.query(
+  `SELECT id FROM storage.buckets WHERE id IN ('feedback-attachments','support-attachments')`,
+);
+check('bucket migration is idempotent', rerun.rows.length, 2);
+// The avatar policies must survive the second migration running after them.
+check('avatar upload still works after both migrations', await tryInsert(ME, `${ME}/5.png`), 'allowed');
 
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`);

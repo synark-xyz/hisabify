@@ -20,7 +20,6 @@
     "test:e2e:ui": "playwright test --ui",
     "verify:apk-ads": "node scripts/verify-apk-ads.mjs",
     "verify:migration": "node scripts/verify-mirror-migration.mjs",
-    "verify:avatar-policies": "node scripts/verify-avatar-storage-policies.mjs",
     "migration:apply": "node scripts/apply-mirror-migration.mjs",
     "migration:apply:test": "node scripts/test-apply-mirror-migration.mjs",
     "test:all": "npm run test:unit && npm run test:e2e",
@@ -43,7 +42,8 @@
     "cap:dev:android": "npm run dev:managed & npx cap run android",
     "cap:dev:ios": "npm run dev:managed & npx cap run ios",
     "cap:dev:android:unmanaged": "npm run dev & npx cap run android",
-    "cap:dev:ios:unmanaged": "npm run dev & npx cap run ios"
+    "cap:dev:ios:unmanaged": "npm run dev & npx cap run ios",
+    "verify:storage-policies": "node scripts/verify-storage-policies.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",

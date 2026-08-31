@@ -55,10 +55,25 @@ await db.exec(`
     owner uuid
   );
 
-  -- Supabase's real implementation: split the object path on '/'.
-  CREATE FUNCTION storage.foldername(name text) RETURNS text[] AS $$
-    SELECT string_to_array(name, '/');
-  $$ LANGUAGE sql IMMUTABLE;
+  -- storage.foldername, copied verbatim from Supabase's own tenant migration
+  -- (supabase/storage, migrations/tenant/0060-optimize-existing-functions-again.sql).
+  -- Note it returns every segment EXCEPT the last: for 'uid/1.png' that is {uid}, and for a
+  -- bare '1.png' it is {} so [1] is NULL. Approximating this with a plain string_to_array
+  -- (which keeps the filename) happens to agree on the allow case and disagrees on the
+  -- shape of the deny case, which is exactly the kind of divergence that makes a harness
+  -- lie, so the real definition is used.
+  CREATE FUNCTION storage.foldername(name text)
+      RETURNS text[]
+      LANGUAGE plpgsql
+      IMMUTABLE
+  AS $function$
+  DECLARE
+      _parts text[];
+  BEGIN
+      SELECT string_to_array(name, '/') INTO _parts;
+      RETURN _parts[1 : array_length(_parts,1) - 1];
+  END
+  $function$;
 
   -- auth.uid() reads the request's JWT claim; a GUC is the standard local stand-in.
   CREATE FUNCTION auth.uid() RETURNS uuid AS $$
@@ -76,6 +91,21 @@ await db.exec(`
 
 // Reproduce the production symptom first: RLS on, no policies -> every insert refused.
 await db.exec(`INSERT INTO storage.buckets (id, name, public) VALUES ('avatars','avatars',true);`);
+
+// Guard the harness itself. Every policy predicate is `(storage.foldername(name))[1]`, so if
+// this stub diverges from Supabase's the whole run is meaningless. These are the documented
+// semantics of the upstream function.
+const fn = await db.query(`
+  SELECT (storage.foldername('uid/1.png'))[1]        AS simple,
+         (storage.foldername('uid/sub/1.png'))[1]    AS nested,
+         (storage.foldername('1.png'))[1]            AS bare,
+         array_length(storage.foldername('1.png'),1) AS bare_len
+`);
+check('foldername: uid/1.png -> uid', fn.rows[0].simple, 'uid');
+check('foldername: uid/sub/1.png -> uid', fn.rows[0].nested, 'uid');
+check('foldername: bare filename has no folder', fn.rows[0].bare, null);
+check('foldername: bare filename yields empty array', fn.rows[0].bare_len, null);
+
 async function tryInsert(uid, path, role = 'authenticated') {
   try {
     await db.exec('BEGIN');

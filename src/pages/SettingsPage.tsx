@@ -47,7 +47,7 @@ export function SettingsPage() {
     };
 
     const generalItems = [
-        { id: 'subscription', icon: Crown, label: t('settingsPage.subscription'), onSelect: () => navigate('/settings/subscription'), color: 'bg-amber-500/10 text-amber-500' },
+        { id: 'subscription', icon: Crown, label: t('settingsPage.subscription'), onSelect: () => navigate('/settings/subscription'), color: 'bg-accent/10 text-accent' },
         { id: 'preferences', icon: Settings, label: t('settings.preferences'), onSelect: () => navigate('/settings/preferences'), color: 'bg-accent/10 text-accent' },
         { id: 'notifications', icon: Bell, label: t('notifications.notifications'), onSelect: () => navigate('/settings/notifications'), color: 'bg-primary/10 text-primary' },
         // The Privacy Policy tells users to find data export and deletion under

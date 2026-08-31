@@ -64,7 +64,7 @@ export function PremiumGuard({ children, featureName = "Premium Feature", classN
                         whileTap={{ scale: 0.95 }}
                     >
                         <Button
-                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:opacity-90 transition-opacity font-bold rounded-full shadow-xl shadow-purple-500/20 border-glow"
+                            className="bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity font-bold rounded-full shadow-xl shadow-primary/20 border-glow"
                             onClick={() => setShowUpgrade(true)}
                         >
                             <Sparkles className="w-4 h-4 mr-2 icon-glow" />

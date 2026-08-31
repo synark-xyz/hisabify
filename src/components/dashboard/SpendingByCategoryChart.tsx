@@ -1,12 +1,16 @@
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { useTranslation } from 'react-i18next';
+import { ChartBar } from '@phosphor-icons/react';
+import { ChartEmptyState } from '@/components/charts/ChartEmptyState';
 import { useCurrency } from '@/hooks/useCurrency';
 import { CategorySpending } from '@/types';
 import type { Props as TooltipProps, ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
 interface SpendingByCategoryChartProps {
   data: CategorySpending[];
+  /** Renders the empty-state CTA. Omit to show the empty state without an action. */
+  onAddExpense?: () => void;
 }
 
 // Get theme-aware colors from CSS variables
@@ -31,11 +35,12 @@ type ChartCategoryDatum = CategorySpending & {
   color: string;
 };
 
-export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) {
+export function SpendingByCategoryChart({ data, onAddExpense }: SpendingByCategoryChartProps) {
   const { t } = useTranslation();
   const { formatAmount } = useCurrency();
 
   const chartData = data
+    .filter(item => Number(item.amount) > 0)
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 8)
     .map((item, index) => ({
@@ -43,6 +48,9 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
       category: t(`categories.${item.name}`, item.name),
       color: item.color || COLORS[index % COLORS.length],
     }));
+
+  // Recharts draws an empty axis frame with no data, so render a real empty state instead.
+  const isEmpty = chartData.length === 0;
 
   const CustomTooltip = ({ active, payload }: TooltipProps<ValueType, NameType>) => {
     if (active && payload && payload.length) {
@@ -65,6 +73,15 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
       animate={{ opacity: 1, y: 0 }}
     >
       <h3 className="text-lg font-bold text-foreground mb-4 truncate">{t('dashboard.spendingByCategory')}</h3>
+      {isEmpty ? (
+        <ChartEmptyState
+          icon={<ChartBar className="w-8 h-8 text-muted-foreground/50" weight="duotone" />}
+          title={t('analytics.noSpendingData')}
+          description={t('analytics.noSpendingDataDesc')}
+          actionLabel={t('expenses.addExpense')}
+          onAction={onAddExpense}
+        />
+      ) : (
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -100,6 +117,7 @@ export function SpendingByCategoryChart({ data }: SpendingByCategoryChartProps) 
           </BarChart>
         </ResponsiveContainer>
       </div>
+      )}
     </motion.div>
   );
 }

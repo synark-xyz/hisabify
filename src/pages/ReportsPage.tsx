@@ -11,8 +11,10 @@ import {
   ReportExportActions,
   ReportSavingsSection,
 } from "@/components/reports";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { AddTransactionModal } from "@/components/AddTransactionModal";
 import { useReportData } from "@/hooks/useReportData";
+import { useQueryClient } from "@tanstack/react-query";
 import { useReportTemplates, ReportFilters } from "@/hooks/useReportTemplates";
 import { useSubscription } from "@/hooks/useSubscription";
 import { enforceHistoryWindowForFilters } from "@/lib/historyLimits";
@@ -25,6 +27,10 @@ export default function ReportsPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  // Empty-state CTA: create the data the report charts need without leaving Reports
+  const [addTransactionType, setAddTransactionType] = useState<'expense' | 'income' | null>(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const hasShownClampToastRef = useRef(false);
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: format(startOfMonth(new Date()), "yyyy-MM-dd"),
@@ -67,7 +73,12 @@ export default function ReportsPage() {
   };
 
   const handleRefresh = async () => {
+    // Filters are structurally hashed by react-query, so re-setting them is not enough
+    // to refetch; invalidate the report queries explicitly.
     setFilters({ ...filters });
+    await queryClient.invalidateQueries({
+      predicate: (query) => String(query.queryKey[0]).startsWith('report-'),
+    });
   };
 
   const handleFiltersChange = (nextFilters: ReportFilters) => {
@@ -113,7 +124,11 @@ export default function ReportsPage() {
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t('reports.expenseAnalysis')}</span>
                     <Link to="/transactions" className="text-xs text-primary hover:underline font-medium">{t('reports.viewTransactions')}</Link>
                   </div>
-                  <ReportCharts reportData={reportData} />
+                  <ReportCharts
+                    reportData={reportData}
+                    onAddTransaction={setAddTransactionType}
+                    onCreateBudget={() => navigate('/budget')}
+                  />
 
                   <div className="flex items-center justify-between pl-3 border-l-2 border-primary/60">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t('reports.savingsGoals')}</span>
@@ -154,6 +169,16 @@ export default function ReportsPage() {
         open={showUpgradeModal}
         onOpenChange={setShowUpgradeModal}
         source="reports_export"
+      />
+
+      <AddTransactionModal
+        open={addTransactionType !== null}
+        onOpenChange={(open) => !open && setAddTransactionType(null)}
+        onSuccess={() => {
+          setAddTransactionType(null);
+          void handleRefresh();
+        }}
+        initialType={addTransactionType ?? 'expense'}
       />
     </div>
   );

@@ -303,8 +303,8 @@ export function PersonalPage() {
                         className="w-full flex items-center justify-between py-3 text-left"
                     >
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                <Crown className="w-4 h-4 text-amber-500" />
+                            <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                                <Crown className="w-4 h-4 text-accent" />
                             </div>
                             <div>
                                 <p className="text-sm font-semibold text-foreground">{t('profilePersonal.manageSubscription')}</p>

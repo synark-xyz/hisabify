@@ -138,7 +138,7 @@ function StatusCard({ status }: { status: SubscriptionStatus }) {
   if (status.kind === 'pro') {
     const term = t(`subscriptionPage.term.${status.term}`);
     return (
-      <Card icon={<Crown className="w-5 h-5 text-amber-500" />} tone="bg-amber-500/10">
+      <Card icon={<Crown className="w-5 h-5 text-accent" />} tone="bg-accent/10">
         <p className="text-lg font-bold text-foreground">
           {status.isTrial ? t('subscriptionPage.freeTrial') : t('subscriptionPage.proPlan')}
           <span className="text-muted-foreground font-semibold"> · {term}</span>

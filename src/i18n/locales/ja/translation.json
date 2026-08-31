@@ -323,7 +323,8 @@
     "historyLimitTitle": "履歴の上限に達しました",
     "historyLimitDesc": "無料プランは過去30日間に対応しています。全履歴にはアップグレードしてください。",
     "calendarSelected": "選択済み",
-    "calendarSwipeHint": "スワイプして表示"
+    "calendarSwipeHint": "スワイプして表示",
+    "addIncome": "収入を追加"
   },
   "budget": {
     "title": "予算",
@@ -902,7 +903,11 @@
       "spent": "支出",
       "expenses": "支出",
       "income": "収入",
-      "date": "日付"
+      "date": "日付",
+      "noExpenseDataDesc": "この期間に支出を追加すると、カテゴリー別の内訳が表示されます。",
+      "noIncomeDataDesc": "この期間に収入を追加すると、収入源が表示されます。",
+      "noBudgetDataDesc": "予算を作成すると、計画と実績を比較できます。",
+      "noDataDesc": "この期間に取引を追加すると、日々の推移が表示されます。"
     }
   },
   "analytics": {
@@ -1011,7 +1016,9 @@
     "overview": "概要",
     "insights": "インサイト",
     "advanced": "詳細",
-    "subtitle": "支出パターンと財務インサイトを表示"
+    "subtitle": "支出パターンと財務インサイトを表示",
+    "noSpendingData": "まだ支出がありません",
+    "noSpendingDataDesc": "支出を追加すると、カテゴリー別の内訳が表示されます。"
   },
   "debt": {
     "debtTracker": "債務トラッカー",

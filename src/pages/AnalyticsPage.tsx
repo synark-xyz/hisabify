@@ -27,6 +27,7 @@ import {
   DayOfWeekChart,
 } from '@/components/analytics';
 import { MonthlyWrapCard } from '@/components/MonthlyWrapCard';
+import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { exportToCSV } from '@/lib/exportUtils';
 import { subMonths, startOfMonth, endOfMonth, getMonth, getYear } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +38,7 @@ import { useTranslation } from 'react-i18next';
 
 export function AnalyticsPage() {
   const [showWrapModal, setShowWrapModal] = useState(false);
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState({
     from: startOfMonth(subMonths(new Date(), 11)),
@@ -187,7 +189,10 @@ export function AnalyticsPage() {
                       </Button>
                     </motion.div>
                   )}
-                  <SpendingByCategoryChart data={categoryData} />
+                  <SpendingByCategoryChart
+                    data={categoryData}
+                    onAddExpense={() => setShowAddTransaction(true)}
+                  />
                 </div>
 
                 {/* Top Expenses Table */}
@@ -286,6 +291,17 @@ export function AnalyticsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Empty-state CTA: let users create the data the charts need without leaving Insights */}
+      <AddTransactionModal
+        open={showAddTransaction}
+        onOpenChange={setShowAddTransaction}
+        onSuccess={() => {
+          setShowAddTransaction(false);
+          void refetch();
+        }}
+        initialType="expense"
+      />
     </>
   );
 }

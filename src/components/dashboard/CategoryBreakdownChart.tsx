@@ -95,6 +95,10 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
   const { formatAmount } = useCurrency();
   const { t } = useTranslation();
 
+  // The pie renders nothing when every slice is 0, so the fixed-height box used to
+  // leave a tall empty hole. Treat that as "no chart" and let the card collapse.
+  const hasChartData = data.length > 0 && data.some(item => Number(item.amount) > 0);
+
   const chartData = data.map((item, index) => ({
     ...item,
     category: item.name,
@@ -120,12 +124,12 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
     // layout prop lets framer-motion smoothly animate card height when legend mounts/unmounts
     <motion.div
       layout
-      className="w-full bg-card/50 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-border/50 shadow-xl card-3d transition-colors overflow-hidden"
+      className="w-full flex flex-col bg-card/50 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-border/50 shadow-xl card-3d transition-colors overflow-hidden"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: clickAnimation ? 0.98 : 1 }}
       transition={{ duration: 0.4, layout: { type: 'spring', stiffness: 300, damping: 30 } }}
     >
-      <div className="flex items-center justify-between mb-4 gap-2">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="text-lg font-bold text-foreground truncate">{t('analytics.categoryBreakdown', title)}</h3>
         <IconButton onClick={() => setIsExpanded(p => !p)} aria-label={isExpanded ? 'Collapse' : 'Expand'}>
           {isExpanded
@@ -135,8 +139,11 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
         </IconButton>
       </div>
 
-      {/* h-64 matches sibling cards; active shape peak = center(128) + outerRadius(105)+15 = 248 < 256 → no clipping */}
-      <div className="h-64 relative">
+      {/* Only reserve the 256px donut box when there is something to draw; the card is a
+          flex column so its height is otherwise purely content-driven.
+          Active shape peak = center(128) + outerRadius(105)+15 = 248 < 256 → no clipping */}
+      {hasChartData ? (
+      <div className="h-64 relative mt-4 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -171,12 +178,20 @@ export function CategoryBreakdownChart({ data, title = "Category Breakdown", onC
           </PieChart>
         </ResponsiveContainer>
       </div>
+      ) : (
+        <p className="mt-4 py-6 text-center text-sm font-medium text-muted-foreground">
+          {t('analytics.noCategoryData')}
+        </p>
+      )}
 
       {/* Legend fades in/out; layout on parent animates card height */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            className="grid grid-cols-2 gap-3 mt-6"
+            className={cn(
+              'grid gap-3 mt-4',
+              chartData.length > 1 ? 'grid-cols-2' : 'grid-cols-1'
+            )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

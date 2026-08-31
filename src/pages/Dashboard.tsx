@@ -677,7 +677,7 @@ export function Dashboard() {
                 {/* Premium Guard Overlay */}
                 {!isPremium && !subscriptionLoading && (
                   <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center mb-4 border border-50">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center mb-4 border border-primary/20">
                       <Crown className="w-8 h-8 text-accent fill-accent" weight="duotone" />
                     </div>
                     <h3 className="text-xl font-black mb-2 text-foreground">{t('dashboard.unlockFullInsights')}</h3>
@@ -688,7 +688,7 @@ export function Dashboard() {
                       onClick={() => setShowUpgradeModal(true)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black shadow-lg shadow-purple-500/25 flex items-center gap-2"
+                      className="px-8 py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-2xl font-black shadow-lg shadow-primary/25 flex items-center gap-2"
                     >
                       {t('dashboard.upgradeToPro')}
                     </motion.button>
@@ -716,9 +716,6 @@ export function Dashboard() {
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-black tracking-tight">
                   <ClockCounterClockwise className="w-5 h-5 text-primary" weight="duotone" />
                   {t('dashboard.activityHistory')}
-                  <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                    {t('common.new').toUpperCase()}
-                  </span>
                 </h2>
                 <motion.button
                   onClick={() => navigate('/activity')}
@@ -729,7 +726,7 @@ export function Dashboard() {
                   <ArrowRight className="w-4 h-4" weight="duotone" />
                 </motion.button>
               </div>
-              <div className="bg-card rounded-2xl p-3 space-y-2 shadow-sm">
+              <div className="bg-card rounded-2xl p-3 space-y-2 shadow-sm overflow-visible overscroll-none">
                 {recentActivity.length > 0 ? (
                   recentActivity.map((item, idx) => {
                     if (item.kind === 'transaction') {

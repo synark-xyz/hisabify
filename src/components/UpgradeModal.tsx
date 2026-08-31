@@ -140,7 +140,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
     if (!open) return null;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -180,12 +180,12 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[440px] border-0 bg-background/90 p-0 backdrop-blur-xl">
         <div className="relative">
-          <div className="absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_top,_rgba(139,92,246,0.35),_transparent_58%),linear-gradient(135deg,rgba(99,102,241,0.24),rgba(168,85,247,0.18),rgba(236,72,153,0.12))]" />
+          <div className="absolute inset-x-0 top-0 h-44 bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.35),_transparent_58%)]" />
 
           <div className="relative px-6 pb-8 pt-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-purple-400">
+                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-primary">
                   {content.eyebrow}
                 </p>
                 <h2 className="mt-2 text-2xl font-black tracking-tight text-foreground">
@@ -196,24 +196,24 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                 </p>
               </div>
 
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/10 shadow-xl backdrop-blur-md">
-                <Crown className="h-8 w-8 text-yellow-400" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-primary-foreground/10 bg-primary/15 shadow-xl backdrop-blur-md">
+                <Crown className="h-8 w-8 text-accent" />
               </div>
             </div>
 
             <div className="mb-5 grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
-                <Wallet className="mx-auto h-4 w-4 text-emerald-500" />
+                <Wallet className="mx-auto h-4 w-4 text-primary" />
                 <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('dialogs.upgrade.unlimited')}</p>
                 <p className="mt-1 text-sm font-black text-foreground">{t('dialogs.upgrade.goals')}</p>
               </div>
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
-                <Clock className="mx-auto h-4 w-4 text-sky-500" />
+                <Clock className="mx-auto h-4 w-4 text-accent" />
                 <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('dialogs.upgrade.full')}</p>
                 <p className="mt-1 text-sm font-black text-foreground">{t('dialogs.upgrade.history')}</p>
               </div>
               <div className="rounded-2xl border border-border/50 bg-card/60 p-3 text-center">
-                <Target className="mx-auto h-4 w-4 text-purple-500" />
+                <Target className="mx-auto h-4 w-4 text-primary" />
                 <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t('dialogs.upgrade.smarter')}</p>
                 <p className="mt-1 text-sm font-black text-foreground">{t('dialogs.upgrade.planning')}</p>
               </div>
@@ -224,7 +224,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-muted-foreground">
                   What You Unlock
                 </p>
-                <span className="rounded-full bg-purple-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
                   Pro
                 </span>
               </div>
@@ -232,7 +232,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               <div className="space-y-3">
                 {content.benefits.map((benefit) => (
                   <div key={benefit} className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+                    <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary">
                       <Check className="h-3 w-3" />
                     </div>
                     <span className="text-sm font-medium text-foreground">{benefit}</span>
@@ -243,21 +243,21 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
 
             {/* Pricing cards */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-purple-400 mb-2">{t('dialogs.upgrade.monthly')}</p>
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary mb-2">{t('dialogs.upgrade.monthly')}</p>
                 <div className="flex items-baseline gap-0.5 mb-1">
                   <span className="text-2xl font-black text-foreground">{monthlyPrice}</span>
                   <span className="text-xs text-muted-foreground">/mo</span>
                 </div>
                 <p className="text-[10px] text-muted-foreground">7-day free trial</p>
               </div>
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 relative">
+              <div className="rounded-2xl border border-accent/20 bg-accent/5 p-4 relative">
                 <div className="absolute -top-2 -right-1">
-                  <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider shadow-sm">
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-black text-accent-foreground uppercase tracking-wider shadow-sm">
                     Save 33%
                   </span>
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-400 mb-2">{t('dialogs.upgrade.annual')}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-accent mb-2">{t('dialogs.upgrade.annual')}</p>
                 <div className="flex items-baseline gap-0.5 mb-1">
                   <span className="text-2xl font-black text-foreground">{yearlyPrice}</span>
                   <span className="text-xs text-muted-foreground">/yr</span>
@@ -267,7 +267,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
             </div>
 
             <div className="flex items-center gap-2 mt-3">
-              <Sparkles className="h-4 w-4 text-purple-400 flex-shrink-0" />
+              <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
               <p className="text-xs text-muted-foreground">
                 Try free for 7 days — cancel anytime before you're charged.
               </p>
@@ -281,7 +281,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               <Button
                 asChild
                 className={cn(
-                  'h-12 w-full rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 text-base font-black shadow-lg shadow-purple-500/20 transition-opacity hover:opacity-95'
+                  'h-12 w-full rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground text-base font-black shadow-lg shadow-primary/20 transition-opacity hover:opacity-95'
                 )}
               >
                 <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
@@ -293,7 +293,7 @@ export function UpgradeModal({ open, onOpenChange, source }: UpgradeModalProps) 
               <Button
                 asChild
                 variant="outline"
-                className="h-10 w-full rounded-2xl font-bold text-sm border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/5 hover:border-emerald-500/50"
+                className="h-10 w-full rounded-2xl font-bold text-sm border-accent/30 text-accent hover:bg-accent/5 hover:border-accent/50"
               >
                 <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">
                   <Smartphone className="mr-2 h-4 w-4" />

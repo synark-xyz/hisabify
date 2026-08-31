@@ -30,7 +30,10 @@
     "hisabify": "Hisabify",
     "comingSoon": "近日公開",
     "and": "と",
-    "loading": "読み込み中…"
+    "loading": "読み込み中…",
+    "invalidImageFile": "画像ファイルを選択してください。",
+    "imageTooLarge": "画像は5MB未満である必要があります。",
+    "sessionExpired": "セッションの有効期限が切れました。再度サインインしてください。"
   },
   "nav": {
     "dashboard": "ダッシュボード",

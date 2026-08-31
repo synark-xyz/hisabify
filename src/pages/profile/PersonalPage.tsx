@@ -13,6 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 
+/** Storage rejects oversized objects server-side; fail fast with a readable message instead. */
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+
 export function PersonalPage() {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -89,15 +92,34 @@ export function PersonalPage() {
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        e.target.value = '';
         if (!file || !user) return;
 
-        const fileExt = file.name.split('.').pop();
-        const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+        if (!file.type.startsWith('image/')) {
+            toast({ title: t('common.uploadFailed'), description: t('common.invalidImageFile'), variant: 'destructive' });
+            return;
+        }
+        if (file.size > MAX_AVATAR_BYTES) {
+            toast({ title: t('common.uploadFailed'), description: t('common.imageTooLarge'), variant: 'destructive' });
+            return;
+        }
+
+        // Storage RLS scopes writes to `<uid>/`, and it evaluates auth.uid() from the token on
+        // the request. A stale/expired session uploads as anon and comes back as an opaque
+        // "row-level security policy" violation, so make sure the token is fresh first.
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            toast({ title: t('common.uploadFailed'), description: t('common.sessionExpired'), variant: 'destructive' });
+            return;
+        }
+
+        const fileExt = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const filePath = `${user.id}/${Date.now()}.${fileExt || 'png'}`;
 
         setLoading(true);
         const { error: uploadError } = await supabase.storage
             .from('avatars')
-            .upload(filePath, file);
+            .upload(filePath, file, { contentType: file.type, upsert: true });
 
         if (uploadError) {
             toast({ title: t('common.uploadFailed'), description: uploadError.message, variant: 'destructive' });

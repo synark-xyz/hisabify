@@ -67,6 +67,11 @@ async function wipeStorageFolder(
   userId: string,
 ): Promise<string | null> {
   const { data: files, error: listError } = await supabaseAdmin.storage.from(bucket).list(userId);
+  // A bucket that does not exist holds nothing to wipe. Production has drifted from the
+  // migrations (see 20260831000001), and treating "Bucket not found" as an error made every
+  // deletion request fail the wipe and revert to pending — i.e. no account could ever be
+  // deleted. Any other list failure is still a real failure.
+  if (listError && /bucket not found/i.test(listError.message)) return null;
   if (listError) return `${bucket} list: ${listError.message}`;
   if (!files || files.length === 0) return null;
 

@@ -16,6 +16,18 @@ import { supabase } from '@/integrations/supabase/client';
 const SUPPORT_EMAIL = 'synarklabs@gmail.com';
 const MAX_ATTACHMENTS = 3;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+// Mirrors allowed_mime_types on the support-attachments bucket
+// (supabase/migrations/20260831000001_restore_missing_storage_buckets.sql). The bucket is the
+// real enforcement point — this only keeps the picker from offering files the upload rejects.
+const ACCEPTED_ATTACHMENT_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'image/heic',
+  'application/pdf',
+  'text/plain',
+];
 
 function formatFileSize(size: number) {
   if (size < 1024) return `${size} B`;
@@ -301,6 +313,7 @@ export function SupportPage() {
                 type="file"
                 className="hidden"
                 multiple
+                accept={ACCEPTED_ATTACHMENT_TYPES.join(',')}
                 onChange={handleAttachmentSelect}
               />
               <p className="text-xs text-muted-foreground">

@@ -48,10 +48,25 @@ CREATE POLICY "Users can view own feedback attachments"
 -- writes cannot be restricted to authenticated users without breaking that path. Writes are
 -- therefore open, but confined to this bucket, and reads require knowing the full generated
 -- path. Do not put anything sensitive here.
+--
+-- Because the INSERT policy admits unauthenticated callers, the bucket's own size and mime
+-- limits are the ONLY enforcement: SupportPage's 10 MB cap is client-side and anyone holding
+-- the publishable key can POST directly. Without these columns this is an open, anonymous
+-- file host on the project domain. Keep them in sync with MAX_FILE_SIZE_BYTES in
+-- src/pages/SupportPage.tsx.
 -- --------------------------------------------------------------------------------------
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('support-attachments', 'support-attachments', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'support-attachments',
+  'support-attachments',
+  true,
+  10485760, -- 10 MB, matches MAX_FILE_SIZE_BYTES
+  ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/heic', 'application/pdf', 'text/plain']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 DROP POLICY IF EXISTS "Support attachments are publicly readable" ON storage.objects;
 CREATE POLICY "Support attachments are publicly readable"

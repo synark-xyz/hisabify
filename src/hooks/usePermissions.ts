@@ -3,7 +3,7 @@ import { Capacitor, type PermissionState as CapacitorPermissionState } from '@ca
 import { Camera, type CameraPermissionState } from '@capacitor/camera';
 import { Geolocation } from '@capacitor/geolocation';
 
-export type PermissionType = 'camera' | 'microphone' | 'photos' | 'location';
+export type PermissionType = 'camera' | 'microphone' | 'location';
 
 export type PermissionStatus = CapacitorPermissionState | 'limited' | 'unknown';
 
@@ -78,67 +78,6 @@ export function usePermissions() {
         status: 'denied',
         canRequest: false,
         message: 'Failed to request camera permission'
-      };
-    } finally {
-      setChecking(false);
-    }
-  }, [isNative]);
-
-  /**
-   * Check photos permission status
-   */
-  const checkPhotosPermission = useCallback(async (): Promise<PermissionResult> => {
-    if (!isNative || !Camera) {
-      return { status: 'granted', canRequest: true };
-    }
-
-    try {
-      const result = await Camera.checkPermissions();
-      const status = result.photos as CameraPermissionState;
-
-      return {
-        status,
-        canRequest: status !== 'denied',
-        message: status === 'denied'
-          ? 'Photo library access denied. Enable in Settings > Hisabify > Photos'
-          : undefined
-      };
-    } catch (error) {
-      console.error('Error checking photos permission:', error);
-      return {
-        status: 'unknown',
-        canRequest: false,
-        message: 'Unable to check photos permission'
-      };
-    }
-  }, [isNative]);
-
-  /**
-   * Request photos permission
-   */
-  const requestPhotosPermission = useCallback(async (): Promise<PermissionResult> => {
-    if (!isNative || !Camera) {
-      return { status: 'granted', canRequest: true };
-    }
-
-    setChecking(true);
-    try {
-      const result = await Camera.requestPermissions({ permissions: ['photos'] });
-      const status = result.photos as CameraPermissionState;
-
-      return {
-        status,
-        canRequest: status !== 'denied',
-        message: status === 'denied'
-          ? 'Photo library access denied. Please enable in device settings.'
-          : undefined
-      };
-    } catch (error) {
-      console.error('Error requesting photos permission:', error);
-      return {
-        status: 'denied',
-        canRequest: false,
-        message: 'Failed to request photos permission'
       };
     } finally {
       setChecking(false);
@@ -320,10 +259,6 @@ export function usePermissions() {
         checkFn = checkCameraPermission;
         requestFn = requestCameraPermission;
         break;
-      case 'photos':
-        checkFn = checkPhotosPermission;
-        requestFn = requestPhotosPermission;
-        break;
       case 'microphone':
         checkFn = checkMicrophonePermission;
         requestFn = requestMicrophonePermission;
@@ -355,8 +290,6 @@ export function usePermissions() {
   }, [
     checkCameraPermission,
     requestCameraPermission,
-    checkPhotosPermission,
-    requestPhotosPermission,
     checkMicrophonePermission,
     requestMicrophonePermission,
     checkLocationPermission,
@@ -368,8 +301,6 @@ export function usePermissions() {
     checking,
     checkCameraPermission,
     requestCameraPermission,
-    checkPhotosPermission,
-    requestPhotosPermission,
     checkMicrophonePermission,
     requestMicrophonePermission,
     checkLocationPermission,

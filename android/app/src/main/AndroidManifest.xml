@@ -3,10 +3,12 @@
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Camera & Photo Library -->
+    <!-- Camera. Photo/file selection deliberately declares NO broad media-read permission:
+         every image entry point is a <input type="file">, which the WebView hands to a system
+         picker that returns a per-URI read grant. Re-adding one violates Google Play's photo
+         and video permissions policy (it rejected version code 9 for exactly that). See the
+         receipt-scanner section of CLAUDE.md before touching this block. -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
     <!-- Microphone & Audio Recording -->

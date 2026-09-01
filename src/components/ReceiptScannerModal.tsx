@@ -72,18 +72,10 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
     };
 
     const handleChooseFromGallery = async () => {
-        if (isNative) {
-            const hasPermission = await ensurePermission('photos');
-            if (!hasPermission) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Photos Permission Required',
-                    description: 'Please enable Photos access in device settings.'
-                });
-                return;
-            }
-        }
-
+        // No permission gate: this file input IS the system photo picker. The WebView hands it
+        // to a system picker that returns a per-URI read grant, so READ_MEDIA_IMAGES is neither
+        // declared nor needed — and requesting it is what Google Play's photo and video
+        // permissions policy flags. Do not add one back here.
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';

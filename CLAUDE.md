@@ -404,10 +404,25 @@ if (!hasPermission) {
   call behind the `parse-transaction` edge function, which already holds a server-side key.
 - **Store the compressed image, not the raw file.** `receipt_url` briefly held raw base64 data URLs
   (one production row is 2.5 MB) that `select *` refetched on every transaction list load.
+- **Never declare or request a media permission for picking an image.** Google Play rejected
+  version code 9 under its [photo and video permissions
+  policy](https://support.google.com/googleplay/android-developer/answer/14115180): apps
+  targeting API 33+ may only request `READ_MEDIA_IMAGES` / `READ_MEDIA_VIDEO` when a system
+  picker cannot do the job. Ours can — every image entry point (receipt gallery and camera,
+  avatar, feedback and support attachments) is a plain `<input type="file">`, which the WebView
+  hands to a system picker returning a per-URI read grant. `Camera.getPhoto()` is never called;
+  `@capacitor/camera` survives only for the CAMERA permission check. The manifest declaration
+  and `ensurePermission('photos')` both existed while nothing used them, which is exactly how
+  the rejection happened. There is no `'photos'` permission type any more — do not add one, and
+  do not reach for a picker plugin: the WebView chooser already *is* the system picker, so a
+  native dependency buys a nicer sheet for zero compliance benefit.
 - **Mobile Permissions:**
-  - Android: `CAMERA`, `READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`
+  - Android: `CAMERA` only. `CAMERA` stays declared because the receipt camera button uses
+    `capture="environment"`, and Android throws `SecurityException` on `ACTION_IMAGE_CAPTURE`
+    when an app declares CAMERA without holding it — so the declaration and its runtime request
+    are paired and must move together.
   - iOS: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`
-  - Runtime permission flow: `ensurePermission('camera')` and `ensurePermission('photos')`
+  - Runtime permission flow: `ensurePermission('camera')` only; the gallery path has no gate.
 - **Documentation:** `docs/` is gitignored — treat `InputMethodSheet.tsx` as the source of truth
 
 ### Voice Input for Transactions

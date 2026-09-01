@@ -1799,7 +1799,7 @@ export function TransactionForm({
 
           <div className="sticky bottom-0 flex items-center gap-2 pt-4 pb-2 bg-background border-t border-border/50"
             style={{
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+              paddingBottom: 'calc(var(--safe-area-inset-bottom, 0px) + 8px)',
               marginLeft: '-1rem',
               marginRight: '-1rem',
               paddingLeft: '1rem',

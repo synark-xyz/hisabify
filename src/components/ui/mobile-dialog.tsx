@@ -166,7 +166,7 @@ export function MobileDialog({
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-y',
-              paddingBottom: `calc(var(--keyboard-height, 0px) + env(safe-area-inset-bottom, 0px) + 16px)`,
+              paddingBottom: `calc(var(--keyboard-height, 0px) + var(--safe-area-inset-bottom, 0px) + 16px)`,
             }}
           >
             {children}
@@ -179,7 +179,7 @@ export function MobileDialog({
               data-vaul-no-drag
               style={{
                 marginTop: 'auto',
-                paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + 16px)`,
+                paddingBottom: `calc(var(--safe-area-inset-bottom, 0px) + 16px)`,
               }}
             >
               {footer}

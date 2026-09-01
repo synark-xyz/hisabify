@@ -714,6 +714,32 @@ passes the page-specific `notFound.title/description` explicitly.
 Modals, sheets and forms keep their toasts. `SplashScreen`'s progress bar is fixed-duration and
 fake — it cannot hang, and is not wired to real load state.
 
+### Edge-to-edge & safe-area insets
+
+targetSdk is 37, so Android 15+ draws this app edge-to-edge with no opt-out. There is no
+`enableEdgeToEdge()` call and none is needed — `BridgeActivity` under an AppCompat theme with
+no `windowOptOutEdgeToEdgeEnforcement` is already edge-to-edge. The work is entirely in
+handling the insets.
+
+**Never write `env(safe-area-inset-*)` in a rule.** Android's WebView fills `env()` only for a
+display cutout, never for the system bars, so it silently resolves to `0` and the header draws
+under the status bar — which is exactly what Play's "Edge-to-edge may not display for all
+users" warning is about. Capacitor 8's built-in `SystemBars` plugin instead injects
+`--safe-area-inset-top/right/bottom/left` inline on `<html>` (`insetsHandling: 'css'`, its
+default, Android 15+ only, and it requires `viewport-fit=cover` in `index.html` — it reads the
+meta tag before it will do anything).
+
+The two sources are reconciled in exactly one place: the `:root` block at the top of
+`src/index.css` defines those four properties as `env(...)` for iOS and the web, and
+Capacitor's inline style outranks it on Android. **Every consumer reads
+`var(--safe-area-inset-*)`.** `index.html` used to carry its own duplicate `.safe-top` /
+`.safe-bottom` rules using `env()`; they are gone, `index.css` owns both.
+
+`useTheme` also drives `SystemBars.setStyle()` off `resolvedTheme`. Capacitor derives system-bar
+icon contrast from the *device* night mode, which is wrong whenever the in-app theme disagrees
+with it — transparent bars then put light icons on a light page. `SystemBarsStyle.LIGHT` means
+a light background (dark icons), so the style tracks `resolvedTheme` directly.
+
 ### Theme
 
 `useTheme()` exposes **two different things and they are not interchangeable**: `theme` is what the

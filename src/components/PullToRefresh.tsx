@@ -43,7 +43,7 @@ export function PullToRefresh({ onRefresh, children, className = '' }: PullToRef
             className="absolute top-0 left-0 right-0 flex items-center justify-center z-50 pointer-events-none"
             style={{
               height: `${Math.min(pullDistance, 60)}px`,
-              paddingTop: 'calc(env(safe-area-inset-top) + 4px)'
+              paddingTop: 'calc(var(--safe-area-inset-top) + 4px)'
             }}
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}

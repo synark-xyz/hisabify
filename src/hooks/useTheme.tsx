@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
+import { SystemBars, SystemBarsStyle } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import { injectM3Theme, DEFAULT_SEED } from '@/lib/materialTheme';
 import {
@@ -55,6 +56,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.remove('light', 'dark');
     root.classList.add(resolvedTheme);
     root.style.colorScheme = resolvedTheme;
+    // Edge-to-edge: the system bars are transparent from Android 15, so their icons sit on
+    // the app's own background. Capacitor derives their contrast from the *device* night
+    // mode, which is wrong whenever the in-app theme disagrees with it — light icons on a
+    // light page are invisible. Style follows resolvedTheme; a no-op on web.
+    SystemBars.setStyle({ style: resolvedTheme === 'dark' ? SystemBarsStyle.DARK : SystemBarsStyle.LIGHT })
+      .catch(() => { /* not native, or no system bars — nothing to style */ });
     try {
       localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {

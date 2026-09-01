@@ -259,7 +259,7 @@ export function ResponsiveDrawer({
             overflowX: 'hidden',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
-            paddingBottom: `calc(${bottomPadding}px + max(env(safe-area-inset-bottom, 0px), 8px) + 80px)`,
+            paddingBottom: `calc(${bottomPadding}px + max(var(--safe-area-inset-bottom, 0px), 8px) + 80px)`,
           }}
         >
           {children}

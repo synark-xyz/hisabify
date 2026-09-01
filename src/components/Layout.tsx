@@ -156,7 +156,7 @@ export function Layout() {
                         aria-label="Add transaction"
                         data-testid="fab-button"
                         className="fixed right-8 z-50 w-14 h-14 rounded-full bg-accent text-accent-foreground shadow-fab flex items-center justify-center lg:hidden"
-                        style={{ bottom: 'calc(5.5rem + var(--ad-banner-h, 0px) + env(safe-area-inset-bottom))' }}
+                        style={{ bottom: 'calc(5.5rem + var(--ad-banner-h, 0px) + var(--safe-area-inset-bottom))' }}
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}

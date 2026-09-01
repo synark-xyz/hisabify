@@ -84,7 +84,7 @@ export function Header({ title }: HeaderProps) {
   return (
     <motion.header
       className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl transition-all duration-200"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)' }}
+      style={{ paddingTop: 'calc(var(--safe-area-inset-top) + 8px)' }}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}

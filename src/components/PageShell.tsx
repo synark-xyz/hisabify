@@ -57,7 +57,7 @@ export function PageShell({
           this to supply it, and on Layout routes the Header is not rendered. */}
       <header
         className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ paddingTop: 'var(--safe-area-inset-top)' }}
       >
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3 flex-nowrap">
           <button

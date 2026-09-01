@@ -104,6 +104,7 @@ android {
         }
         release {
             minifyEnabled true
+            shrinkResources true
             debuggable false
             buildConfigField "String", "ENVIRONMENT", '"production"'
             // RevenueCat production key — injected from local.properties or CI env var

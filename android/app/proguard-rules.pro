@@ -20,5 +20,10 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-# RevenueCat — keep SDK classes for in-app purchases
--keep class com.revenuecat.purchases.** { *; }
+# RevenueCat ships its own consumer rules (-keep class com.revenuecat.** { *; }) in the AAR;
+# a duplicate here only hides that fact. Don't re-add one.
+
+# Crashlytics deobfuscation: the crashlytics gradle plugin uploads the R8 mapping, but the
+# line numbers have to survive shrinking for it to have anything to map.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

@@ -618,6 +618,31 @@ disclosure, AdMob in the third-party lists, consent as the GDPR lawful basis). I
 promised the exact opposite. Any change to what ads collect has to go back into that file, plus
 the Play Console "Contains ads" and Data safety declarations.
 
+### Play Console "App optimization"
+
+Play grades the **artifact users actually have installed**, not the source tree — so a repo with
+R8 on can still read 0% while the live release predates it. Verify against the built AAB, never
+the gradle file:
+
+```
+unzip -p android/app/build/outputs/bundle/release/app-release.aab base/dex/classes.dex \
+  | strings -a | grep -o '~~R8{[^}]*}'   # want "r8-mode":"full"
+```
+
+Release carries `minifyEnabled true` + `shrinkResources true` and R8 full mode (AGP 9 default).
+`android.r8.strictFullModeForKeepRules=false` was removed from `gradle.properties` — it is an
+opt-out of strict keep-rule matching and there is nothing in this app that needs it.
+
+`proguard-rules.pro` keeps only `SourceFile`/`LineNumberTable`; the Crashlytics gradle plugin
+uploads the mapping, but it has nothing to map if the line numbers are stripped. **Do not re-add
+a `-keep class com.revenuecat.purchases.**` rule** — the AAR already ships a broader
+`-keep class com.revenuecat.**`, and a duplicate in-app rule only hides that. Capacitor's own
+consumer rules cover the `@CapacitorPlugin` reflection.
+
+The `packagingOptions` `baselineProfiles/**` / `assets/dexopt/**` excludes affect APK java
+resources only — the AAB still carries `BUNDLE-METADATA/com.android.tools.build.profiles/`, so
+startup profiles are intact. Check before "fixing" that.
+
 ### Error states & offline
 
 **Never leave a spinner with no error branch.** A failed fetch that renders the empty state is

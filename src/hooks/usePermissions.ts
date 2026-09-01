@@ -1,9 +1,15 @@
 import { useState, useCallback } from 'react';
 import { Capacitor, type PermissionState as CapacitorPermissionState } from '@capacitor/core';
-import { Camera, type CameraPermissionState } from '@capacitor/camera';
 import { Geolocation } from '@capacitor/geolocation';
 
-export type PermissionType = 'camera' | 'microphone' | 'location';
+/* No 'camera' member on purpose. Capacitor's own BridgeWebChromeClient already requests
+   CAMERA when it sees a capture-enabled <input type="file"> (isMediaCaptureSupported() ->
+   permissionLauncher.launch), so a second gate here only duplicated it — and the
+   @capacitor/camera plugin it needed dragged in com.google.android.material, whose
+   BottomSheetDialog calls the Window.setStatusBarColor that Play flags as deprecated in
+   Android 15. That dialog is unreachable for us: it only opens from getPhoto(), which this
+   app never calls. Don't re-add a camera gate; let the bridge ask. */
+export type PermissionType = 'microphone' | 'location';
 
 export type PermissionStatus = CapacitorPermissionState | 'limited' | 'unknown';
 
@@ -20,69 +26,6 @@ export function usePermissions() {
    * Check if running on native platform
    */
   const isNative = Capacitor.isNativePlatform();
-
-  /**
-   * Check camera permission status
-   */
-  const checkCameraPermission = useCallback(async (): Promise<PermissionResult> => {
-    if (!isNative || !Camera) {
-      // On web, camera access is handled by browser
-      // Or if plugin not installed, assume web behavior
-      return { status: 'granted', canRequest: true };
-    }
-
-    try {
-      const result = await Camera.checkPermissions();
-      const status = result.camera as CameraPermissionState;
-
-      return {
-        status,
-        canRequest: status !== 'denied',
-        message: status === 'denied'
-          ? 'Camera access denied. Enable in Settings > Hisabify > Camera'
-          : undefined
-      };
-    } catch (error) {
-      console.error('Error checking camera permission:', error);
-      return {
-        status: 'unknown',
-        canRequest: false,
-        message: 'Unable to check camera permission'
-      };
-    }
-  }, [isNative]);
-
-  /**
-   * Request camera permission
-   */
-  const requestCameraPermission = useCallback(async (): Promise<PermissionResult> => {
-    if (!isNative || !Camera) {
-      return { status: 'granted', canRequest: true };
-    }
-
-    setChecking(true);
-    try {
-      const result = await Camera.requestPermissions({ permissions: ['camera'] });
-      const status = result.camera as CameraPermissionState;
-
-      return {
-        status,
-        canRequest: status !== 'denied',
-        message: status === 'denied'
-          ? 'Camera access denied. Please enable in device settings.'
-          : undefined
-      };
-    } catch (error) {
-      console.error('Error requesting camera permission:', error);
-      return {
-        status: 'denied',
-        canRequest: false,
-        message: 'Failed to request camera permission'
-      };
-    } finally {
-      setChecking(false);
-    }
-  }, [isNative]);
 
   /**
    * Check microphone permission status (Web Speech API / native)
@@ -255,10 +198,6 @@ export function usePermissions() {
     let requestFn: () => Promise<PermissionResult>;
 
     switch (type) {
-      case 'camera':
-        checkFn = checkCameraPermission;
-        requestFn = requestCameraPermission;
-        break;
       case 'microphone':
         checkFn = checkMicrophonePermission;
         requestFn = requestMicrophonePermission;
@@ -288,8 +227,6 @@ export function usePermissions() {
     const requestResult = await requestFn();
     return requestResult.status === 'granted';
   }, [
-    checkCameraPermission,
-    requestCameraPermission,
     checkMicrophonePermission,
     requestMicrophonePermission,
     checkLocationPermission,
@@ -299,8 +236,6 @@ export function usePermissions() {
   return {
     isNative,
     checking,
-    checkCameraPermission,
-    requestCameraPermission,
     checkMicrophonePermission,
     requestMicrophonePermission,
     checkLocationPermission,

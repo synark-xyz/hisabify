@@ -16,9 +16,6 @@ const callGeminiVision = vi.hoisted(() => vi.fn());
 vi.mock('@/hooks/useProfile', () => ({
   useProfile: () => ({ privacyMode: state.privacyMode }),
 }));
-vi.mock('@/hooks/usePermissions', () => ({
-  usePermissions: () => ({ ensurePermission: vi.fn().mockResolvedValue(true) }),
-}));
 vi.mock('@/hooks/useCurrency', () => ({
   useCurrency: () => ({ currency: 'USD' }),
   currencyData: {},

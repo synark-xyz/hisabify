@@ -630,8 +630,21 @@ unzip -p android/app/build/outputs/bundle/release/app-release.aab base/dex/class
 ```
 
 Release carries `minifyEnabled true` + `shrinkResources true` and R8 full mode (AGP 9 default).
-`android.r8.strictFullModeForKeepRules=false` was removed from `gradle.properties` — it is an
-opt-out of strict keep-rule matching and there is nothing in this app that needs it.
+
+**`android.r8.strictFullModeForKeepRules=false` must stay in `gradle.properties`**, and it is
+not a lever for this score — Play reads the `"r8-mode":"full"` dex marker, which the flag does
+not affect. Removing it lets AGP 9's strict keep-rule matching drop Room's conditional consumer
+rule, so R8 strips `androidx.work.impl.WorkDatabase_Impl.<init>()` — the no-arg constructor
+`Room.getGeneratedImplementation()` reflects on. The app then dies before any of our Java runs:
+
+```
+Unable to get provider androidx.startup.InitializationProvider
+  Caused by: Failed to create an instance of androidx.work.impl.WorkDatabase
+```
+
+This was tried and it crashed on launch. `mapping/release/usage.txt` is where to confirm it —
+an entry under a `*_Impl:` class listing `public void <init>()` means R8 removed the very thing
+Room is about to look for.
 
 `proguard-rules.pro` keeps only `SourceFile`/`LineNumberTable`; the Crashlytics gradle plugin
 uploads the mapping, but it has nothing to map if the line numbers are stripped. **Do not re-add
@@ -713,6 +726,34 @@ passes the page-specific `notFound.title/description` explicitly.
 
 Modals, sheets and forms keep their toasts. `SplashScreen`'s progress bar is fixed-duration and
 fake — it cannot hang, and is not wired to real load state.
+
+### No camera permission gate, and no @capacitor/camera
+
+**Capacitor's own `BridgeWebChromeClient` requests CAMERA.** When `onShowFileChooser` sees a
+capture-enabled `<input type="file">`, `isMediaCaptureSupported()` checks the permission and,
+when it is missing, launches the request itself — falling back to the plain file picker if the
+user refuses. So the receipt camera button needs no gate of its own, and there is no `'camera'`
+member in `PermissionType`. Don't add one back.
+
+The gate that used to be there existed only to call `Camera.checkPermissions()`, and that one
+call is why `@capacitor/camera` was installed. That plugin pulls
+`com.google.android.material`, whose `BottomSheetDialog.onCreate` calls
+`Window.setStatusBarColor` — the API Play reports as *"Your app uses deprecated APIs or
+parameters for edge-to-edge"* under Android 15. Material reached the app for one dialog that
+can only open from `Camera.getPhoto()`, which this app never calls (see the receipt-scanner
+section). Removing the plugin removed the dependency, the dialog and the deprecated call
+together; the release AAB now contains no `com.google.android.material` classes at all.
+
+The `CAMERA` manifest declaration **stays** — the bridge still needs to hold it before
+`ACTION_IMAGE_CAPTURE`, which is the same reason it was declared in the first place. Only the
+JS-side duplicate went.
+
+Deprecated `setStatusBarColor` call sites do remain in the dex, in
+`androidx.activity.EdgeToEdgeApi23/26/29` and `androidx.core.splashscreen`. Leave them: those
+are SDK-gated implementations that Android 15 never selects (it picks `EdgeToEdgeApi30`, which
+doesn't call it), which is why Play named only the Material one. Pinning a newer
+`androidx.activity` does **not** help — 1.9.0 already ships `EdgeToEdgeApi30`; that pin was
+tried and reverted.
 
 ### Edge-to-edge & safe-area insets
 

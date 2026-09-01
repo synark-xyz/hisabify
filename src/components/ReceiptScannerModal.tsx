@@ -4,10 +4,8 @@ import { Camera, Sparkles, Image, Check, Loader2, AlertTriangle } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { BaseModalSheet, SheetBackdrop, SheetContainer, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/base-modal-sheet';
 import { useProfile } from '@/hooks/useProfile';
-import { usePermissions } from '@/hooks/usePermissions';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { Capacitor } from '@capacitor/core';
 import { useToast } from '@/hooks/use-toast';
 import { compressForGemini } from '@/lib/imageProcessor';
 import { callGeminiVision, GEMINI_KEY_MISSING } from '@/lib/geminiVision';
@@ -35,7 +33,6 @@ interface ReceiptScannerModalProps {
 
 export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: ReceiptScannerModalProps) {
     const { privacyMode } = useProfile();
-    const { ensurePermission } = usePermissions();
     const { currency: userCurrency } = useCurrency();
     const { logEvent } = useAnalytics();
     const { toast } = useToast();
@@ -54,20 +51,13 @@ export function ReceiptScannerModal({ open, onOpenChange, onScanComplete }: Rece
         }
     }, [open]);
 
-    const isNative = Capacitor.isNativePlatform();
-
-    const handleTakePhoto = async () => {
-        if (isNative) {
-            const hasPermission = await ensurePermission('camera');
-            if (!hasPermission) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Camera Permission Required',
-                    description: 'Please enable Camera access in device settings.'
-                });
-                return;
-            }
-        }
+    const handleTakePhoto = () => {
+        // No permission gate. This input carries capture="environment", and Capacitor's
+        // BridgeWebChromeClient requests CAMERA itself before launching the capture intent
+        // (falling back to the file picker when it is refused). Gating here too meant
+        // depending on @capacitor/camera, which is what pulled in com.google.android.material
+        // — and its BottomSheetDialog is the deprecated Window.setStatusBarColor call Play
+        // reports under Android 15. See usePermissions.ts.
         fileInputRef.current?.click();
     };
 

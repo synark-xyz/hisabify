@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ForkKnife,
   ShoppingBag,
@@ -22,7 +22,6 @@ import { Transaction, Category } from '@/types';
 import { format } from 'date-fns';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
 import { getTransactionCategoryName, getTransactionCategoryColor } from '@/lib/transactionUtils';
-import { useTheme } from '@/hooks/useTheme';
 import { cn, getLocalizedCategoryName } from '@/lib/utils';
 import { localizeNumber } from '@/lib/i18nNumber';
 
@@ -39,6 +38,11 @@ interface TransactionItemProps {
 }
 
 type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+
+/** Press-and-hold duration that reveals the row actions. */
+const LONG_PRESS_MS = 500;
+/** Finger travel that cancels a pending long press — anything more is a scroll. */
+const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
 
 const iconMap: Record<string, React.ComponentType<{ className?: string, weight?: IconWeight }>> = {
   'utensils': ForkKnife,
@@ -59,7 +63,6 @@ const iconMap: Record<string, React.ComponentType<{ className?: string, weight?:
 
 export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAddReminder, onViewDetails, revealedId, onReveal, categoriesMap }: TransactionItemProps) {
   const { currency, formatAmount } = useCurrency();
-  const { variant } = useTheme();
 
   // Use external control if provided, otherwise use internal state
   const isRevealed = revealedId !== undefined ? revealedId === transaction.id : false;
@@ -147,45 +150,86 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
   // Show original amount if user transacted in a different currency than their current base
   const showOriginal = originalCurrency !== currency;
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = -80;
-    const closeThreshold = 40;
+  const setRevealed = useCallback((revealed: boolean) => {
+    if (onReveal) onReveal(revealed ? transaction.id : null);
+    else setInternalRevealed(revealed);
+  }, [onReveal, transaction.id]);
 
-    if (info.offset.x < threshold) {
-      // Swipe left to reveal - ensure only this item is revealed
-      if (onReveal) {
-        onReveal(transaction.id);
-      } else {
-        setInternalRevealed(true);
-      }
-    } else if (info.offset.x > closeThreshold || info.offset.x > 20) {
-      // Swipe right or small movement to close
-      if (onReveal) {
-        onReveal(null);
-      } else {
-        setInternalRevealed(false);
-      }
-    } else {
-      // Snap back to current state
-      // Do nothing - animation will handle it
+  // Long press reveals the row actions. Only rows that actually have actions arm it.
+  const hasActions = !!onEdit || !!onDelete;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null);
+  const didLongPress = useRef(false);
+
+  const cancelPress = useCallback(() => {
+    if (pressTimer.current !== null) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    pressOrigin.current = null;
+  }, []);
+
+  useEffect(() => cancelPress, [cancelPress]);
+
+  // A revealed row is dismissed by a scroll or by a press anywhere outside it.
+  // Pressing another row also long-presses it, and `revealedId` keeps one row at a time.
+  useEffect(() => {
+    if (!actualRevealed) return;
+    const dismiss = (e: Event) => {
+      if (e.target instanceof Node && containerRef.current?.contains(e.target)) return;
+      setRevealed(false);
+    };
+    window.addEventListener('scroll', dismiss, { capture: true, passive: true });
+    window.addEventListener('pointerdown', dismiss, true);
+    return () => {
+      window.removeEventListener('scroll', dismiss, true);
+      window.removeEventListener('pointerdown', dismiss, true);
+    };
+  }, [actualRevealed, setRevealed]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (!hasActions || e.button !== 0) return;
+    didLongPress.current = false;
+    pressOrigin.current = { x: e.clientX, y: e.clientY };
+    pressTimer.current = setTimeout(() => {
+      pressTimer.current = null;
+      didLongPress.current = true;
+      setRevealed(true);
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const origin = pressOrigin.current;
+    if (!origin || pressTimer.current === null) return;
+    if (Math.hypot(e.clientX - origin.x, e.clientY - origin.y) > LONG_PRESS_MOVE_TOLERANCE_PX) {
+      cancelPress();
     }
   };
 
+  const handleClick = () => {
+    // The click that follows a long press must not also open the details page.
+    if (didLongPress.current) {
+      didLongPress.current = false;
+      return;
+    }
+    if (actualRevealed) setRevealed(false);
+    else onViewDetails?.(transaction);
+  };
+
   const handleEdit = () => {
-    if (onReveal) onReveal(null);
-    else setInternalRevealed(false);
+    setRevealed(false);
     onEdit?.(transaction);
   };
 
   const handleDelete = () => {
-    if (onReveal) onReveal(null);
-    else setInternalRevealed(false);
+    setRevealed(false);
     onDelete?.(transaction);
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      {/* Action buttons revealed on swipe */}
+    <div ref={containerRef} className="relative overflow-hidden rounded-2xl">
+      {/* Action buttons revealed on long press */}
       <AnimatePresence>
         {actualRevealed && (
           <motion.div
@@ -201,6 +245,8 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
             className="absolute right-0 top-0 bottom-0 flex items-center gap-2 pr-2 z-0"
           >
             <motion.button
+              type="button"
+              aria-label="Edit transaction"
               onClick={handleEdit}
               className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20"
               initial={{ scale: 0.8, opacity: 0 }}
@@ -213,6 +259,8 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
               <PencilSimple className="w-5 h-5 text-primary" weight="bold" />
             </motion.button>
             <motion.button
+              type="button"
+              aria-label="Delete transaction"
               onClick={handleDelete}
               className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center border border-destructive/20"
               initial={{ scale: 0.8, opacity: 0 }}
@@ -230,7 +278,7 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
 
       {/* Main transaction card - draggable */}
       <motion.div
-        className="flex items-center gap-4 p-4 bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 shadow-card hover:shadow-card-hover transition-all relative z-10 cursor-grab active:cursor-grabbing card-3d"
+        className="flex items-center gap-4 p-4 bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 shadow-card hover:shadow-card-hover transition-all relative z-10 cursor-pointer touch-pan-y select-none card-3d"
         initial={{ opacity: 0, y: 20 }}
         animate={{
           opacity: 1,
@@ -248,19 +296,14 @@ export function TransactionItem({ transaction, index = 0, onEdit, onDelete, onAd
             mass: 0.8
           }
         }}
-        drag="x"
-        dragConstraints={{ left: -120, right: 0 }}
-        dragElastic={0.15}
-        dragMomentum={false}
-        onDragEnd={handleDragEnd}
-        onClick={() => {
-          if (actualRevealed) {
-            if (onReveal) onReveal(null);
-            else setInternalRevealed(false);
-          } else {
-            onViewDetails?.(transaction);
-          }
-        }}
+        style={{ WebkitTouchCallout: 'none' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={cancelPress}
+        onPointerCancel={cancelPress}
+        onPointerLeave={cancelPress}
+        onContextMenu={(e) => e.preventDefault()}
+        onClick={handleClick}
       >
         <motion.div
           className="w-12 h-12 rounded-xl flex items-center justify-center shadow-inner"

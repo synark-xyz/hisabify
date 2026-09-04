@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Crown, Share2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { DataErrorState } from '@/components/ErrorState';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useAdvancedAnalytics } from '@/hooks/useAdvancedAnalytics';
@@ -27,6 +27,7 @@ import {
   DayOfWeekChart,
 } from '@/components/analytics';
 import { MonthlyWrapCard } from '@/components/MonthlyWrapCard';
+import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { exportToCSV } from '@/lib/exportUtils';
 import { subMonths, startOfMonth, endOfMonth, getMonth, getYear } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +38,7 @@ import { useTranslation } from 'react-i18next';
 
 export function AnalyticsPage() {
   const [showWrapModal, setShowWrapModal] = useState(false);
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [dateRange, setDateRange] = useState({
     from: startOfMonth(subMonths(new Date(), 11)),
@@ -58,6 +60,7 @@ export function AnalyticsPage() {
     monthlyTrendData,
     budgetVsActualData,
     loading,
+    error,
     refetch,
   } = useDashboardData(dateRange);
   const hasTransactionData = transactions.length > 0;
@@ -105,6 +108,12 @@ export function AnalyticsPage() {
             initial="hidden"
             animate="visible"
           >
+            {/* A failed fetch used to fall through to empty charts, which reads as "you have
+                no data" rather than "we couldn't load it". */}
+            {error && !loading ? (
+              <DataErrorState error={error} onRetry={refetch} />
+            ) : (
+            <>
             {/* Action Bar */}
             <motion.div variants={itemVariants} className="flex items-center justify-end mb-6">
               <DateRangeSelector
@@ -137,7 +146,9 @@ export function AnalyticsPage() {
               {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-6">
                 {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* items-start: without it the grid stretches both cards to the tallest row
+                    height, so the breakdown card looked identical collapsed vs expanded. */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                   <motion.div variants={itemVariants}>
                     {loading ? (
                       <Skeleton className="h-80 rounded-2xl" />
@@ -178,7 +189,10 @@ export function AnalyticsPage() {
                       </Button>
                     </motion.div>
                   )}
-                  <SpendingByCategoryChart data={categoryData} />
+                  <SpendingByCategoryChart
+                    data={categoryData}
+                    onAddExpense={() => setShowAddTransaction(true)}
+                  />
                 </div>
 
                 {/* Top Expenses Table */}
@@ -229,6 +243,8 @@ export function AnalyticsPage() {
                 </PremiumGuard>
               </TabsContent>
             </Tabs>
+            </>
+            )}
           </motion.main>
         </div>
       </PullToRefresh>
@@ -275,6 +291,17 @@ export function AnalyticsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Empty-state CTA: let users create the data the charts need without leaving Insights */}
+      <AddTransactionModal
+        open={showAddTransaction}
+        onOpenChange={setShowAddTransaction}
+        onSuccess={() => {
+          setShowAddTransaction(false);
+          void refetch();
+        }}
+        initialType="expense"
+      />
     </>
   );
 }

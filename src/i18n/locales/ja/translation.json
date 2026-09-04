@@ -323,7 +323,8 @@
     "historyLimitTitle": "履歴の上限に達しました",
     "historyLimitDesc": "無料プランは過去30日間に対応しています。全履歴にはアップグレードしてください。",
     "calendarSelected": "選択済み",
-    "calendarSwipeHint": "スワイプして表示"
+    "calendarSwipeHint": "スワイプして表示",
+    "addIncome": "収入を追加"
   },
   "budget": {
     "title": "予算",
@@ -613,6 +614,7 @@
     "preferences": "環境設定",
     "notifications": "通知",
     "signedOut": "ログアウトしました",
+    "signOutFailed": "サインアウトに失敗しました",
     "title": "設定",
     "about": "について",
     "currency": "通貨",
@@ -769,6 +771,20 @@
     "unlockInsights": "無制限の予算と分析を解放"
   },
   "errors": {
+    "notFoundTitle": "見つかりません",
+    "notFoundDescription": "お探しのものが見つかりませんでした。削除された可能性があります。",
+    "offlineTitle": "インターネット接続がありません",
+    "offlineDescription": "オフラインです。接続を確認してもう一度お試しください。",
+    "offlineBanner": "オフラインです。一部の情報は更新されません。",
+    "serverTitle": "サーバーに接続できません",
+    "serverDescription": "現在Hisabifyに接続できません。こちら側の問題です。しばらくしてからお試しください。",
+    "genericTitle": "問題が発生しました",
+    "genericDescription": "予期しないエラーが発生しました。もう一度お試しになるか、ホームに戻ってください。",
+    "loadFailedTitle": "読み込めませんでした",
+    "loadFailedDescription": "データを読み込めませんでした。接続を確認してもう一度お試しください。",
+    "retry": "再試行",
+    "retrying": "再試行中…",
+    "goHome": "ホームに戻る",
     "generic": "問題が発生しました",
     "networkError": "ネットワークエラー。接続を確認してください。",
     "unauthorized": "続行するにはログインしてください",
@@ -887,7 +903,11 @@
       "spent": "支出",
       "expenses": "支出",
       "income": "収入",
-      "date": "日付"
+      "date": "日付",
+      "noExpenseDataDesc": "この期間に支出を追加すると、カテゴリー別の内訳が表示されます。",
+      "noIncomeDataDesc": "この期間に収入を追加すると、収入源が表示されます。",
+      "noBudgetDataDesc": "予算を作成すると、計画と実績を比較できます。",
+      "noDataDesc": "この期間に取引を追加すると、日々の推移が表示されます。"
     }
   },
   "analytics": {
@@ -996,7 +1016,9 @@
     "overview": "概要",
     "insights": "インサイト",
     "advanced": "詳細",
-    "subtitle": "支出パターンと財務インサイトを表示"
+    "subtitle": "支出パターンと財務インサイトを表示",
+    "noSpendingData": "まだ支出がありません",
+    "noSpendingDataDesc": "支出を追加すると、カテゴリー別の内訳が表示されます。"
   },
   "debt": {
     "debtTracker": "債務トラッカー",
@@ -1226,7 +1248,8 @@
     "support": "サポート",
     "legal": "法的情報",
     "version": "Hisabify {{version}}",
-    "dataPrivacy": "データとプライバシー"
+    "dataPrivacy": "データとプライバシー",
+    "subscription": "サブスクリプション"
   },
   "profilePersonal": {
     "details": "詳細",
@@ -1284,6 +1307,8 @@
     "privacy": "プライバシー",
     "usageAnalytics": "利用状況の分析",
     "usageAnalyticsDesc": "匿名化されたアプリの利用状況を共有します。財務データは一切含まれません。",
+    "adPrivacy": "広告のプライバシー設定",
+    "adPrivacyDesc": "広告のパーソナライズに関する選択を変更できます。",
     "analyticsOn": "利用状況の分析を有効にしました",
     "analyticsOff": "利用状況の分析を無効にしました",
     "exportComplete": "エクスポート完了",
@@ -1635,5 +1660,30 @@
     "sent": "フィードバックを送信しました",
     "sentDescription": "ありがとうございます。すべてのメッセージに目を通しています。",
     "submitFailed": "フィードバックを送信できませんでした。もう一度お試しください。"
+  },
+  "subscriptionPage": {
+    "proPlan": "Hisabify Pro",
+    "freeTrial": "無料トライアル",
+    "freePlan": "無料プラン",
+    "freePlanHint": "アップグレードすると、無制限の予算・貯蓄目標・レポート書き出し・広告なしの利用が可能になります。",
+    "proViaReferral": "紹介特典による Pro",
+    "referralHint": "紹介特典はこの日付で終了します。以降も Pro を利用するには登録してください。",
+    "statusUnavailable": "ここではサブスクリプションの状態を確認できません",
+    "manageInApp": "サブスクリプションの購入と管理は Hisabify モバイルアプリで行います。",
+    "renewsOn": "{{date}} に更新されます",
+    "accessUntil": "{{date}} まで利用できます",
+    "lifetimeAccess": "買い切り — 更新は不要です",
+    "purchasedVia": "{{store}} で購入",
+    "wontRenewNotice": "このサブスクリプションは解約済みで、更新されません。上記の日付までは Pro をご利用いただけます。",
+    "billingIssueNotice": "お支払いに問題があります。Pro を失わないよう、お支払い方法を更新してください。",
+    "restorePurchases": "購入を復元",
+    "billingTermsHint": "サブスクリプションは解約するまで自動更新されます。詳しい請求条件は利用規約をご覧ください。",
+    "term": {
+      "monthly": "月額",
+      "yearly": "年額",
+      "lifetime": "買い切り",
+      "unknown": "サブスクリプション"
+    },
+    "cancelSubscription": "サブスクリプションを解約"
   }
 }

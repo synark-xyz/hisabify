@@ -431,7 +431,8 @@
     "historyLimitTitle": "History limit reached",
     "historyLimitDesc": "Free plan supports the last 30 days. Upgrade for full history.",
     "calendarSelected": "selected",
-    "calendarSwipeHint": "Swipe for more"
+    "calendarSwipeHint": "Swipe for more",
+    "addIncome": "Add Income"
   },
   "budget": {
     "title": "Budget",
@@ -686,7 +687,8 @@
     "about": "About",
     "logout": "Logout",
     "deleteAccount": "Delete Account",
-    "signedOut": "Signed out successfully"
+    "signedOut": "Signed out successfully",
+    "signOutFailed": "Sign out failed"
   },
   "reminders": {
     "title": "Manage Reminders",
@@ -804,6 +806,20 @@
     "unlockInsights": "Unlock unlimited budgets & insights"
   },
   "errors": {
+    "notFoundTitle": "Not found",
+    "notFoundDescription": "We couldn't find what you were looking for. It may have been deleted.",
+    "offlineTitle": "No internet connection",
+    "offlineDescription": "You're offline. Check your connection and try again.",
+    "offlineBanner": "You're offline. Some things won't update.",
+    "serverTitle": "Server unavailable",
+    "serverDescription": "We can't reach Hisabify right now. This is on our end — please try again shortly.",
+    "genericTitle": "Something went wrong",
+    "genericDescription": "An unexpected error occurred. Try again, or head back home.",
+    "loadFailedTitle": "Couldn't load this",
+    "loadFailedDescription": "We couldn't load your data. Check your connection and try again.",
+    "retry": "Try again",
+    "retrying": "Retrying…",
+    "goHome": "Go Home",
     "generic": "Something went wrong",
     "networkError": "Network error. Please check your connection.",
     "unauthorized": "Please login to continue",
@@ -922,7 +938,11 @@
       "spent": "Spent",
       "expenses": "Expenses",
       "income": "Income",
-      "date": "Date"
+      "date": "Date",
+      "noExpenseDataDesc": "Add an expense in this period to see the category breakdown.",
+      "noIncomeDataDesc": "Add income in this period to see where your money comes from.",
+      "noBudgetDataDesc": "Create a budget to compare what you planned against what you spent.",
+      "noDataDesc": "Add transactions in this period to see your daily trend."
     }
   },
   "analytics": {
@@ -1031,7 +1051,9 @@
     "overview": "Overview",
     "insights": "Insights",
     "advanced": "Advanced",
-    "subtitle": "View spending patterns and financial insights"
+    "subtitle": "View spending patterns and financial insights",
+    "noSpendingData": "No Spending Yet",
+    "noSpendingDataDesc": "Add an expense to see how your spending breaks down by category."
   },
   "debt": {
     "debtTracker": "Debt Tracker",
@@ -1246,7 +1268,8 @@
     "support": "Support",
     "legal": "Legal",
     "version": "Hisabify {{version}}",
-    "dataPrivacy": "Data & Privacy"
+    "dataPrivacy": "Data & Privacy",
+    "subscription": "Subscription"
   },
   "profilePersonal": {
     "details": "Details",
@@ -1304,6 +1327,8 @@
     "privacy": "Privacy",
     "usageAnalytics": "Usage analytics",
     "usageAnalyticsDesc": "Share anonymised app usage. Never your financial data.",
+    "adPrivacy": "Ad privacy settings",
+    "adPrivacyDesc": "Change your choices about how ads are personalised.",
     "analyticsOn": "Usage analytics enabled",
     "analyticsOff": "Usage analytics disabled",
     "exportComplete": "Export complete",
@@ -1643,5 +1668,30 @@
     "sent": "Feedback sent",
     "sentDescription": "Thank you — we read every message.",
     "submitFailed": "Couldn't send your feedback. Please try again."
+  },
+  "subscriptionPage": {
+    "proPlan": "Hisabify Pro",
+    "freeTrial": "Free trial",
+    "freePlan": "Free plan",
+    "freePlanHint": "Upgrade to unlock unlimited budgets, savings goals, report exports and an ad-free app.",
+    "proViaReferral": "Pro via referral",
+    "referralHint": "Your referral reward ends on this date. Subscribe to keep Pro afterwards.",
+    "statusUnavailable": "Subscription status unavailable here",
+    "manageInApp": "Subscriptions are purchased and managed in the Hisabify mobile app.",
+    "renewsOn": "Renews on {{date}}",
+    "accessUntil": "Access until {{date}}",
+    "lifetimeAccess": "Lifetime access — no renewal needed",
+    "purchasedVia": "Purchased via {{store}}",
+    "wontRenewNotice": "This subscription is cancelled and will not renew. You keep Pro until the date above.",
+    "billingIssueNotice": "There is a billing problem with this subscription. Update your payment method to avoid losing Pro.",
+    "restorePurchases": "Restore purchases",
+    "billingTermsHint": "Subscriptions renew automatically until cancelled. See Terms & Conditions for full billing terms.",
+    "term": {
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "lifetime": "Lifetime",
+      "unknown": "Subscription"
+    },
+    "cancelSubscription": "Cancel subscription"
   }
 }

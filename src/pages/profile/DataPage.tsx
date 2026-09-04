@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { PageShell } from '@/components/PageShell';
 import { motion } from 'framer-motion';
-import { Download, Trash2, UserX, AlertTriangle, FileJson, BarChart3, FileText, ChevronRight, Clock } from 'lucide-react';
+import { Download, Trash2, UserX, AlertTriangle, FileJson, BarChart3, FileText, ChevronRight, Clock, Megaphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDataManagement } from '@/hooks/useDataManagement';
 import { useDeletionRequest, DeletionScope, DeletionReason } from '@/hooks/useDeletionRequest';
+import { useAdPrivacyOptions } from '@/hooks/useAdBanner';
 import { DeletionRequestSheet } from '@/components/DeletionRequestSheet';
 import { formatDeletionRequestedDate, formatDeletionDeadline } from '@/lib/deletionRequestBanner';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ export function DataPage() {
     const { user } = useAuth();
     const { exportData } = useDataManagement();
     const { pendingRequest, submitting, submitRequest, cancelRequest } = useDeletionRequest();
+    const adPrivacy = useAdPrivacyOptions();
     const { toast } = useToast();
 
     const [analyticsEnabled, setAnalyticsEnabled] = useState(
@@ -174,6 +176,27 @@ export function DataPage() {
                             aria-label={t('profileData.usageAnalytics')}
                         />
                     </div>
+
+                    {/* Google's UMP terms require a persistent entry point back to the consent
+                        form for anyone who was shown one. Only rendered when the SDK says so. */}
+                    {adPrivacy.required && (
+                        <motion.div
+                            onClick={() => { adPrivacy.showForm().catch(() => {}); }}
+                            className="flex items-center gap-4 px-4 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors border-t border-border/50"
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Megaphone className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-foreground text-sm">{t('profileData.adPrivacy')}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    {t('profileData.adPrivacyDesc')}
+                                </p>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-muted-foreground/50 flex-shrink-0" />
+                        </motion.div>
+                    )}
 
                     <div className="border-t border-border/50">
                         {legalLinks.map((link) => (

@@ -13,6 +13,7 @@ import { MobileDialog } from '@/components/ui/mobile-dialog';
 import { useKeyboardHandler } from '@/hooks/useKeyboardHandler';
 import { cn } from '@/lib/utils';
 import { format, isPast } from 'date-fns';
+import { DataErrorState } from '@/components/ErrorState';
 import { useDebts } from '@/hooks/useDebts';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useCurrency, currencyData } from '@/hooks/useCurrency';
@@ -285,7 +286,7 @@ export function DebtPage() {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const { logActivity } = useAnalytics();
-  const { debts, loading, totalIOwe, totalTheyOwe, createDebt, settleDebt, deleteDebt } = useDebts({
+  const { debts, loading, error, refetch, totalIOwe, totalTheyOwe, createDebt, settleDebt, deleteDebt } = useDebts({
     onActivityLog: logActivity,
   });
   const [showAdd, setShowAdd] = useState(false);
@@ -360,6 +361,8 @@ export function DebtPage() {
               <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
             ))}
           </div>
+        ) : error ? (
+          <DataErrorState error={error} onRetry={refetch} />
         ) : filteredDebts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 16 }}

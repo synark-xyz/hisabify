@@ -14,6 +14,7 @@ export function useSubscription() {
     restorePurchases,
     isEntitled,
     revenueCatReady,
+    customerInfo,
     presentCustomerCenter,
     refreshCustomerInfo,
     presentPaywall: rcPresentPaywall,
@@ -57,6 +58,10 @@ export function useSubscription() {
 
   return {
     isPremium,
+    // Raw RevenueCat state, for the Manage Subscription screen to render renewal date /
+    // will-renew / store. Everything else should keep using `isPremium`.
+    customerInfo,
+    referralGrantedUntil: profile.referral_granted_until ?? null,
     // Stay "loading" until RevenueCat has resolved, or every PremiumGuard flashes its
     // locked overlay before the entitlement arrives. Every init path sets revenueCatReady
     // (including failure), so this resolves for a signed-in user even with no API key.

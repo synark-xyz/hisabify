@@ -41,10 +41,9 @@ export async function fetchNotifications(userId: string): Promise<AppNotificatio
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching notifications:', error);
-    return [];
-  }
+  // Returning [] on failure made a dead connection look like "All caught up". The sole
+  // caller (useNotifications) turns this into a retryable error state instead.
+  if (error) throw error;
 
   return (data ?? []).map(mapRow);
 }

@@ -15,6 +15,7 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import { ProfileProvider } from "@/hooks/useProfile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { DataErrorState } from "@/components/ErrorState";
 import { Layout } from "@/components/Layout";
 import { PageFallback, PageTransition } from "@/components/PageTransition";
 import { Dashboard } from "@/pages/Dashboard";
@@ -45,6 +46,7 @@ const BudgetPage = lazy(() => import("@/pages/BudgetPage").then(m => ({ default:
 const SettingsPage = lazy(() => import("@/pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
 const PreferencesPage = lazy(() => import("@/pages/settings/PreferencesPage").then(m => ({ default: m.PreferencesPage })));
 const NotificationSettingsPage = lazy(() => import("@/pages/settings/NotificationSettingsPage").then(m => ({ default: m.NotificationSettingsPage })));
+const SubscriptionPage = lazy(() => import("@/pages/settings/SubscriptionPage").then(m => ({ default: m.SubscriptionPage })));
 const SupportPage = lazy(() => import("@/pages/SupportPage").then(m => ({ default: m.SupportPage })));
 const FaqPage = lazy(() => import("@/pages/FaqPage").then(m => ({ default: m.FaqPage })));
 const PersonalPage = lazy(() => import("@/pages/profile/PersonalPage").then(m => ({ default: m.PersonalPage })));
@@ -72,11 +74,18 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, error, retryBootstrap } = useAuth();
   const location = useLocation();
 
+  // The session bootstrap failed or timed out (offline cold start, unreachable backend).
+  // Showing this instead of a spinner is the whole point: `loading` used to stay true
+  // forever here, because getSession() had no .catch().
+  if (error) {
+    return <DataErrorState fullScreen error={error} onRetry={retryBootstrap} />;
+  }
+
   if (loading) {
-    /* Loading is handled by splash screen or internal loaders closer to implementation */
+    /* Bounded by BOOTSTRAP_TIMEOUT_MS in useAuth — this spinner cannot outlive the request. */
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
@@ -107,9 +116,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function StandalonePage({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
-      <Suspense fallback={<PageFallback />}>
-        <PageTransition>{children}</PageTransition>
-      </Suspense>
+      <ErrorBoundary fullScreen={false} showGoHome={false}>
+        <Suspense fallback={<PageFallback />}>
+          <PageTransition>{children}</PageTransition>
+        </Suspense>
+      </ErrorBoundary>
     </ProtectedRoute>
   );
 }
@@ -233,6 +244,7 @@ function AppRoutes() {
       <Route element={<StandalonePage><PersonalPage /></StandalonePage>} path="/profile/personal" />
       <Route element={<StandalonePage><DataPage /></StandalonePage>} path="/profile/data" />
       <Route element={<StandalonePage><ReferralsPage /></StandalonePage>} path="/profile/invite" />
+      <Route element={<StandalonePage><SubscriptionPage /></StandalonePage>} path="/settings/subscription" />
       <Route element={<StandalonePage><PreferencesPage /></StandalonePage>} path="/settings/preferences" />
       <Route element={<StandalonePage><NotificationSettingsPage /></StandalonePage>} path="/settings/notifications" />
       <Route element={<StandalonePage><NotificationsPage /></StandalonePage>} path="/notifications" />
@@ -285,13 +297,15 @@ const App = () => (
             <AuthProvider>
               <ProfileProvider>
                 <CurrencyProvider>
-                  <Suspense fallback={
-                    <div className="min-h-screen bg-background flex items-center justify-center">
-                      <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  }>
-                    <FABProvider><RootLogic /></FABProvider>
-                  </Suspense>
+                  <ErrorBoundary>
+                    <Suspense fallback={
+                      <div className="min-h-screen bg-background flex items-center justify-center">
+                        <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    }>
+                      <FABProvider><RootLogic /></FABProvider>
+                    </Suspense>
+                  </ErrorBoundary>
                 </CurrencyProvider>
               </ProfileProvider>
             </AuthProvider>

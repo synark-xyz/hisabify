@@ -7,7 +7,7 @@
  * a document owns that, so a page showing two documents prints it once.
  */
 
-export const LEGAL_LAST_UPDATED = 'July 2026';
+export const LEGAL_LAST_UPDATED = 'August 2026';
 export const LEGAL_CONTACT_EMAIL = 'synarklabs@gmail.com';
 
 // ─── Shared section component ─────────────────────────────────────────────────
@@ -53,11 +53,11 @@ export function TermsContent() {
           occur under your account.
         </p>
         <p>
-          If you suspect unauthorized access, notify us immediately at{' '}
+          If you suspect unauthorized access, notify me immediately at{' '}
           <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} className="underline">
             {LEGAL_CONTACT_EMAIL}
           </a>
-          . We will investigate within 24 hours and notify you before taking enforcement action.
+          . I will investigate and notify you before taking any action.
         </p>
       </LegalSection>
 
@@ -72,8 +72,8 @@ export function TermsContent() {
           <li>Spam, scrape, or abuse the App</li>
         </ul>
         <p>
-          <strong>Enforcement:</strong> Violations result in a 7-day warning. If you do not cure
-          the violation within 7 days, we may suspend or terminate your account. You may appeal
+          <strong>Enforcement:</strong> Violations result in a warning. If you do not cure
+          the violation within 7 days, I may suspend or terminate your account. You may appeal
           suspensions by emailing {LEGAL_CONTACT_EMAIL}.
         </p>
       </LegalSection>
@@ -94,34 +94,33 @@ export function TermsContent() {
 
       <LegalSection title="6. Limitation of Liability">
         <p>
-          To the fullest extent permitted by law, Synark Labs and its officers, directors,
-          employees, and agents shall not be liable for:
+          To the fullest extent permitted by law, I shall not be liable for:
         </p>
         <ul className="list-disc pl-4 space-y-1">
           <li>Indirect, incidental, consequential, special, or punitive damages</li>
           <li>Loss of data, interruptions in service, or app bugs</li>
           <li>Financial losses resulting from use of the App or data loss</li>
-          <li>Third-party data breaches or unauthorized access beyond our control</li>
+          <li>Third-party data breaches or unauthorized access beyond my control</li>
         </ul>
         <p>
-          <strong>Liability Cap:</strong> Our total liability to you shall not exceed the amount
+          <strong>Liability Cap:</strong> My total liability to you shall not exceed the amount
           you paid for Hisabify in the past 12 months, or $0 if you use the free tier.
         </p>
         <p>
           <strong>Exception:</strong> This limitation does not apply to data breaches caused by
-          our gross negligence or willful misconduct.
+          gross negligence or willful misconduct.
         </p>
       </LegalSection>
 
       <LegalSection title="7. Data & Security">
         <p>
           Your financial data is encrypted in transit using TLS 1.3 and at rest using AES-256
-          encryption. We use Supabase as our backend provider, which enforces row-level security
+          encryption. I use Supabase as the backend provider, which enforces row-level security
           (RLS) so only you can access your data.
         </p>
         <p>
-          We do not sell your personal data to third parties. However, Supabase and other
-          third-party services may process your data per their own privacy policies. See our
+          I do not sell your personal data to third parties. However, Supabase and other
+          third-party services may process your data per their own privacy policies. See the
           Privacy Policy for details.
         </p>
       </LegalSection>
@@ -139,22 +138,30 @@ export function TermsContent() {
             <strong>Google OAuth</strong> — optional sign-in method (google.com/privacy)
           </li>
           <li>
-            <strong>Sentry</strong> — optional crash reporting (sentry.io/privacy)
+            <strong>Google Gemini Vision</strong> — receipt image OCR (google.com/privacy)
           </li>
           <li>
-            <strong>Google Gemini Vision</strong> — receipt image OCR (google.com/privacy)
+            <strong>Google AdMob</strong> — advertising in the free Android app
+            (google.com/privacy)
+          </li>
+          <li>
+            <strong>RevenueCat</strong> — subscription management (revenuecat.com/privacy)
+          </li>
+          <li>
+            <strong>Firebase Analytics & Crashlytics</strong> — optional analytics and crash
+            reporting on Android (google.com/privacy)
           </li>
         </ul>
         <p>
-          We are not responsible for these third parties' data practices, breaches, or policy
+          I am not responsible for these third parties' data practices, breaches, or policy
           violations. Contact them directly for privacy concerns about their services.
         </p>
       </LegalSection>
 
       <LegalSection title="9. Termination">
         <p>
-          We reserve the right to suspend or terminate your account at our discretion if you
-          violate these Terms of Service. Before termination, we will:
+          I reserve the right to suspend or terminate your account if you
+          violate these Terms of Service. Before termination, I will:
         </p>
         <ol className="list-decimal pl-4 space-y-1">
           <li>Send you a warning via email identifying the violation</li>
@@ -163,7 +170,7 @@ export function TermsContent() {
         </ol>
         <p>
           <strong>Your Right:</strong> You may request account deletion at any time from Profile
-          → Data &amp; Privacy. Requests are reviewed manually; upon approval, all personal data
+          → Data & Privacy. Requests are reviewed manually; upon approval, all personal data
           is permanently removed within 30 days of your original request, with backup copies
           purged within 90 days.
         </p>
@@ -171,7 +178,7 @@ export function TermsContent() {
 
       <LegalSection title="10. Subscription & Billing">
         <p>
-          Subscription terms are governed by our separate Subscription & Billing Terms. This
+          Subscription terms are governed by the Subscription & Billing Terms below. This
           includes trial periods, refunds, chargebacks, premium credits, and cancellation
           policies. By purchasing a subscription, you agree to those terms.
         </p>
@@ -179,13 +186,13 @@ export function TermsContent() {
 
       <LegalSection title="11. Changes to Terms">
         <p>
-          We may update these Terms of Service at any time. Material changes will be notified
+          I may update these Terms of Service at any time. Material changes will be notified
           via in-app notification or email. Continued use of the App after notification
           constitutes acceptance of the revised Terms.
         </p>
         <p>
           If you disagree with updated Terms, you may request data deletion within 30 days of
-          the change notification. See our Privacy Policy for the data deletion request
+          the change notification. See the Privacy Policy for the data deletion request
           procedure.
         </p>
       </LegalSection>
@@ -202,7 +209,7 @@ export function TermsContent() {
           qualifies.
         </p>
         <p>
-          Questions about these Terms? Contact us at{' '}
+          Questions about these Terms? Contact me at{' '}
           <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} className="underline">
             {LEGAL_CONTACT_EMAIL}
           </a>
@@ -220,23 +227,21 @@ export function PrivacyContent() {
     <div className="space-y-5">
       <LegalSection title="1. Introduction">
         <p>
-          Welcome to Hisabify. We are committed to protecting your privacy and ensuring your
-          financial data remains secure and confidential. This Privacy Policy explains how we
-          collect, use, and protect your information in compliance with GDPR, APPI, and other
-          applicable data protection laws.
+          Welcome to Hisabify. I am committed to protecting your privacy and ensuring your
+          financial data remains secure and confidential. This Privacy Policy explains how I
+          collect, use, and protect your information in compliance with applicable data protection
+          laws.
         </p>
       </LegalSection>
 
-      <LegalSection title="2. Data Controller & Jurisdiction">
+      <LegalSection title="2. Data Controller & Contact">
         <p>
-          <strong>Company:</strong> Synark Labs Pte. Ltd. (Singapore)
+          <strong>Developer:</strong> Synark Labs (sole developer)
           <br />
           <strong>Email:</strong>{' '}
           <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} className="underline">
             {LEGAL_CONTACT_EMAIL}
           </a>
-          <br />
-          <strong>Privacy Officer:</strong> To be appointed after incorporation
         </p>
         <p>
           <strong>Applicable Laws:</strong> This Privacy Policy complies with:
@@ -251,7 +256,7 @@ export function PrivacyContent() {
           <li>Bangladesh data protection regulations for Bangladesh users</li>
         </ul>
         <p>
-          We comply with the strictest applicable law in your jurisdiction. If you are in the
+          I comply with the strictest applicable law in your jurisdiction. If you are in the
           EU, GDPR is your baseline protection.
         </p>
       </LegalSection>
@@ -292,6 +297,10 @@ export function PrivacyContent() {
           <li>Approximate location (geolocation for currency detection only)</li>
           <li>Feature usage (page views, button clicks, time spent)</li>
           <li>Crash reports and error logs (anonymised, no financial data)</li>
+          <li>
+            Advertising identifier (Android Advertising ID) — free Android app only, for the ads
+            described in section 6
+          </li>
         </ul>
 
         <p className="pt-2">
@@ -312,11 +321,11 @@ export function PrivacyContent() {
         <ul className="list-disc pl-4 space-y-1">
           <li>Support emails and messages</li>
           <li>In-app feedback, ratings, and bug reports</li>
-          <li>Crash reports via Sentry (anonymised)</li>
+          <li>Crash reports via Firebase Crashlytics (anonymised, Android only)</li>
         </ul>
 
         <p className="pt-2">
-          <strong>Data We Do NOT Collect:</strong> We do not ask for SSN, full credit card
+          <strong>Data We Do NOT Collect:</strong> I do not ask for SSN, full credit card
           numbers, or bank account details. You enter transactions, not payment methods, in the
           app.
         </p>
@@ -324,7 +333,7 @@ export function PrivacyContent() {
 
       <LegalSection title="4. Legal Basis for Data Collection">
         <p>
-          We collect your data only when we have a valid legal reason (per GDPR Article 6):
+          I collect your data only when I have a valid legal reason (per GDPR Article 6):
         </p>
         <p>
           <strong>Consent:</strong> Financial data (transactions, budgets, goals) — you
@@ -341,12 +350,18 @@ export function PrivacyContent() {
           issues.
         </p>
         <p>
+          <strong>Consent (Advertising):</strong> Personalised ads in the free Android app are
+          served only where you have consented via Google's consent form. Withdraw or change that
+          consent at any time under Profile → Data & Privacy → Ad privacy settings. Withdrawing
+          it does not remove ads — it makes them non-personalised.
+        </p>
+        <p>
           <strong>Legal Obligation:</strong> Compliance with law enforcement requests. Tax and
           accounting records.
         </p>
         <p>
           <strong>Special Processing (Financial Data):</strong> Financial data is "special
-          category" data under GDPR. We process it ONLY because you consent by entering it. We do
+          category" data under GDPR. I process it ONLY because you consent by entering it. I do
           NOT profile you or use automated decision-making on financial data.
         </p>
       </LegalSection>
@@ -373,9 +388,16 @@ export function PrivacyContent() {
           Maintain records for tax/accounting.
         </p>
         <p>
-          <strong>Data We Do NOT Use:</strong> We do NOT sell your data, use it for marketing or
-          targeted advertising, profile you for financial decisions, or train AI models on your
-          data (unless you explicitly opt-in).
+          <strong>Advertising (Free Android App):</strong> The free version of the Android app
+          shows banner ads served by Google AdMob. Your advertising identifier and device data are
+          shared with Google for this purpose — see "Data Sharing" below. I never share your
+          transactions, balances, budgets, or any other financial data with advertisers, and I do
+          not use your financial data to target ads. Subscribing to Pro removes ads entirely.
+        </p>
+        <p>
+          <strong>Data We Do NOT Use:</strong> I do NOT sell your data, profile you for financial
+          decisions, or train AI models on your data (unless you explicitly opt-in). I do not use
+          your financial data for marketing or advertising.
         </p>
       </LegalSection>
 
@@ -386,14 +408,14 @@ export function PrivacyContent() {
           your data. Governed by Supabase Privacy Policy. SOC 2 Type II compliant.
         </p>
         <p>
-          <strong>Google OAuth:</strong> If you sign in with Google, we receive email, name, and
-          profile picture. We do NOT share your transactions or financial data back to Google.
+          <strong>Google OAuth:</strong> If you sign in with Google, I receive email, name, and
+          profile picture. I do NOT share your transactions or financial data back to Google.
           Governed by Google Privacy Policy.
         </p>
         <p>
-          <strong>Sentry (Crash Reporting, Optional):</strong> Crash logs and error reports
-          (anonymised — no financial data included). Opt-out in Settings. Governed by Sentry
-          Privacy Policy. SOC 2 Type II compliant.
+          <strong>Firebase Crashlytics (Crash Reporting, Android Only):</strong> Crash logs and
+          error reports (anonymised — no financial data included). Governed by Google Privacy
+          Policy.
         </p>
         <p>
           <strong>Google Gemini Vision (Receipt OCR):</strong> Receipt images processed
@@ -401,29 +423,39 @@ export function PrivacyContent() {
           Supabase. Images deleted after processing. Governed by Google Cloud Privacy Policy.
         </p>
         <p>
-          <strong>Payment Processor (Stripe or similar):</strong> Billing address, subscription
-          status, payment method last 4 digits. We never store full credit card numbers. Governed
-          by payment processor privacy policy.
+          <strong>Payment Processor (via RevenueCat):</strong> Billing address, subscription
+          status, payment method last 4 digits. I never store full credit card numbers. Governed
+          by RevenueCat and payment processor privacy policies.
+        </p>
+        <p>
+          <strong>Google AdMob (Advertising, Free Android App Only):</strong> Your advertising
+          identifier (Android Advertising ID), IP address, and coarse device data are shared with
+          Google to serve and measure banner ads. No transactions, balances, budgets, or other
+          financial data are shared. In the EEA, UK and Switzerland you are asked for consent
+          before any personalised ads are served, via Google's consent form; you can change that
+          choice at any time under Profile → Data & Privacy → Ad privacy settings. Governed by
+          the Google Privacy Policy. Pro subscribers see no ads and no ad requests are made.
         </p>
         <p>
           <strong>Law Enforcement:</strong> Disclosed only if required by law (court order,
-          warrant). We notify you unless legally prohibited. Exceptions: emergencies, child
+          warrant). I notify you unless legally prohibited. Exceptions: emergencies, child
           safety, national security.
         </p>
         <p>
-          <strong>Business Transfer:</strong> If Synark Labs is acquired or merges, data may be
-          transferred. We notify you and honor your privacy rights.
+          <strong>Business Transfer:</strong> If the business is acquired or merges, data may be
+          transferred. I will notify you and honor your privacy rights.
         </p>
         <p>
-          <strong>We Do NOT Sell Data To:</strong> Data brokers, marketing firms, advertisers, or
-          other third parties outside the above list.
+          <strong>I Do NOT Sell Data To:</strong> Data brokers, marketing firms, or any third
+          party outside the list above. Google AdMob receives only the advertising data described
+          above, and only from the free Android app.
         </p>
       </LegalSection>
 
       <LegalSection title="7. International Data Transfers">
         <p>
-          Your data is processed in: Supabase servers (US, EU, or Asia-Pacific), Sentry (US), and
-          Google (US).
+          Your data is processed in: Supabase servers (US, EU, or Asia-Pacific), Firebase (US),
+          and Google (US).
         </p>
         <p>
           <strong>For EU Users (GDPR):</strong> US transfers use Standard Contractual Clauses
@@ -435,14 +467,14 @@ export function PrivacyContent() {
           Recipient countries assessed for adequate protection.
         </p>
         <p>
-          <strong>For Bangladesh Users:</strong> Data transferred to US/EU servers. We will
+          <strong>For Bangladesh Users:</strong> Data transferred to US/EU servers. I will
           migrate to local storage once Bangladesh Data Protection Act is enacted.
         </p>
       </LegalSection>
 
       <LegalSection title="8. Your Privacy Rights (GDPR & APPI)">
         <p>
-          <strong>Right to Access:</strong> Request a copy of all data we hold about you. Email{' '}
+          <strong>Right to Access:</strong> Request a copy of all data I hold about you. Email{' '}
           <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} className="underline">
             {LEGAL_CONTACT_EMAIL}
           </a>{' '}
@@ -450,11 +482,11 @@ export function PrivacyContent() {
         </p>
         <p>
           <strong>Right to Rectification:</strong> Correct inaccurate data (wrong email, name).
-          Edit in app or email us. Response: 30 days.
+          Edit in app or email me. Response: 30 days.
         </p>
         <p>
           <strong>Right to Erasure ("Right to be Forgotten"):</strong> Request deletion of your
-          data or account from Profile → Data &amp; Privacy, or email us with "Erasure Request".
+          data or account from Profile → Data & Privacy, or email me with "Erasure Request".
           Requests are reviewed manually rather than actioned instantly; your account remains
           fully usable, and the request cancellable, until then. Response: 30 days. Data
           deleted: within 30 days of your request. Backup copies: purged within 90 days.
@@ -462,7 +494,7 @@ export function PrivacyContent() {
         </p>
         <p>
           <strong>Right to Data Portability:</strong> Export your data in a portable format. Go
-          to Profile → Data &amp; Privacy → Export Data. Formats: CSV, JSON. Cost: Free. Response:
+          to Profile → Data & Privacy → Export Data. Formats: CSV, JSON. Cost: Free. Response:
           Immediate (automated export).
         </p>
         <p>
@@ -471,10 +503,10 @@ export function PrivacyContent() {
         </p>
         <p>
           <strong>Right to Restrict Processing:</strong> Request limitation on data use. Email
-          with specific restrictions. We will honor reasonable restrictions.
+          me with specific restrictions. I will honor reasonable restrictions.
         </p>
         <p>
-          <strong>Right to Lodge a Complaint:</strong> If we violate GDPR or APPI, complain to
+          <strong>Right to Lodge a Complaint:</strong> If I violate GDPR or APPI, complain to
           your data protection authority. EU: National data protection authority. Japan: Personal
           Information Protection Commission. Bangladesh: Bangladesh Privacy Commissioner (pending).
         </p>
@@ -509,7 +541,7 @@ export function PrivacyContent() {
         </p>
         <p>
           <strong>Access Control:</strong> Only you can access your data (Row-Level Security).
-          Our employees cannot access your financial data without explicit authorization. Access
+          I cannot access your financial data without explicit authorization. Access
           logs are audited.
         </p>
         <p>
@@ -518,15 +550,15 @@ export function PrivacyContent() {
         </p>
         <p>
           <strong>Vulnerability Management:</strong> Regular security audits. Automated security
-          scanning. OWASP security guidelines. Bug bounty program.
+          scanning. OWASP security guidelines.
         </p>
         <p>
-          <strong>Third-Party Certifications:</strong> Supabase: SOC 2 Type II compliant. Sentry:
-          SOC 2 Type II compliant. Google: Certified under multiple standards.
+          <strong>Third-Party Certifications:</strong> Supabase: SOC 2 Type II compliant. Google
+          Cloud (Firebase/Gemini): Certified under multiple standards.
         </p>
         <p>
-          <strong>Limitation:</strong> NO security is 100% secure. We are not liable for breaches
-          beyond our control (see Terms of Service § 6).
+          <strong>Limitation:</strong> NO security is 100% secure. I am not liable for breaches
+          beyond my control (see Terms of Service § 6).
         </p>
       </LegalSection>
 
@@ -536,24 +568,28 @@ export function PrivacyContent() {
           CSRF tokens (prevent cross-site attacks). Preference cookies (remember theme).
         </p>
         <p>
-          <strong>Optional Analytics Cookies (Consent-Based):</strong> Google Analytics (page
-          views, feature usage, anonymised). Sentry (crash data, anonymised). Opt-out: Settings →
-          Privacy & Analytics.
+          <strong>Optional Analytics Cookies (Consent-Based):</strong> Firebase Analytics (page
+          views, feature usage, anonymised). Opt-out: Settings → Privacy & Analytics.
         </p>
         <p>
-          <strong>No Advertising Cookies:</strong> We do NOT use cookies for targeted
-          advertising or sell data to advertisers.
+          <strong>Advertising Identifiers (Free Android App):</strong> The website uses no
+          advertising cookies. The free Android app shows banner ads via Google AdMob, which uses
+          your device's Android Advertising ID to serve and measure them. In the EEA, UK and
+          Switzerland, Google's consent form asks whether you accept personalised ads before any
+          ad is requested; you can reopen it any time under Profile → Data & Privacy → Ad
+          privacy settings. You can also reset or delete the identifier in your Android system
+          settings, and Pro subscribers see no ads at all.
         </p>
         <p>
-          <strong>Do Not Track (DNT):</strong> If your browser has DNT enabled, we respect it
+          <strong>Do Not Track (DNT):</strong> If your browser has DNT enabled, I respect it
           and will not place optional analytics cookies.
         </p>
       </LegalSection>
 
       <LegalSection title="12. Children's Privacy (GDPR & COPPA Compliance)">
         <p>
-          Hisabify is not intended for users under 18 (or the local age of digital consent). We
-          do not knowingly collect data from children. If we discover a child's account, we
+          Hisabify is not intended for users under 18 (or the local age of digital consent). I
+          do not knowingly collect data from children. If I discover a child's account, I
           delete it immediately.
         </p>
         <p>
@@ -563,7 +599,7 @@ export function PrivacyContent() {
           <strong>US:</strong> COPPA compliance required.
         </p>
         <p>
-          If you believe a child has an account, contact us immediately:{' '}
+          If you believe a child has an account, contact me immediately:{' '}
           <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} className="underline">
             {LEGAL_CONTACT_EMAIL}
           </a>
@@ -573,7 +609,7 @@ export function PrivacyContent() {
 
       <LegalSection title="13. Changes to This Privacy Policy">
         <p>
-          We may update this Privacy Policy anytime. Material changes will be notified via
+          I may update this Privacy Policy anytime. Material changes will be notified via
           in-app notification or email. Continued use of the App constitutes acceptance.
         </p>
         <p>
@@ -590,14 +626,6 @@ export function PrivacyContent() {
           </a>
           . Subject: "Privacy Request - [Type]" (e.g., "Privacy Request - Data Access"). Response
           time: 30 business days (GDPR/APPI requirement).
-        </p>
-        <p>
-          <strong>Data Protection Officer:</strong> To be appointed after Singapore incorporation
-          and listed here.
-        </p>
-        <p>
-          <strong>EU Representative:</strong> To be appointed if significant EU user base
-          develops.
         </p>
       </LegalSection>
     </div>

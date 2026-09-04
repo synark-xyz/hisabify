@@ -175,8 +175,14 @@ export function AddTransactionModal({
                 merchant: effectiveFormState.merchant || prefillData.merchant as string || undefined,
                 amount: effectiveFormState.amount ? Number(effectiveFormState.amount) : (prefillData.amount as number | undefined),
                 category: effectiveFormState.categoryId || prefillData.category as string || undefined,
-                date: effectiveFormState.date instanceof Date ? effectiveFormState.date : new Date(effectiveFormState.date),
+                // A scanned receipt date must win over the form's default of `new Date()`,
+                // otherwise every scan silently files the transaction under today.
+                date: (prefillData.date as Date | undefined)
+                  ?? (effectiveFormState.date instanceof Date ? effectiveFormState.date : new Date(effectiveFormState.date)),
                 currency: prefillData.currency as string || effectiveFormState.currency || undefined,
+                // TransactionForm writes this straight to transactions.receipt_url. Dropping it
+                // here is what made scanned receipts save with no image attached.
+                receiptUrl: (prefillData.receiptUrl as string | null | undefined) ?? undefined,
               }}
               initialBudgetId={initialBudgetId}
               onVoiceRequest={() => setShowVoice(true)}

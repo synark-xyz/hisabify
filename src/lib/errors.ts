@@ -113,6 +113,42 @@ export const createRateLimitError = (): AppError =>
     isRetryable: true,
   });
 
+export const createServerError = (message?: string, originalError?: unknown): AppError =>
+  new AppError({
+    code: 'SERVER_ERROR',
+    message: message || 'The server is having trouble. Please try again shortly.',
+    originalError,
+    isRetryable: true,
+  });
+
+/**
+ * Read an HTTP status off the many error shapes this app sees.
+ *
+ * Supabase/PostgREST rejects with a plain object, not an `Error`, so an `instanceof Error`
+ * check alone classifies every backend failure as UNKNOWN_ERROR.
+ */
+function readStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const e = error as Record<string, unknown>;
+  for (const key of ['status', 'statusCode', 'httpStatus']) {
+    const value = e[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && /^\d{3}$/.test(value)) return Number(value);
+  }
+  // PostgrestError.code is a Postgres SQLSTATE ('23505'), not an HTTP status. Ignore it.
+  return undefined;
+}
+
+function readMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return 'An unexpected error occurred.';
+}
+
 /**
  * Convert unknown errors to AppError
  */
@@ -121,37 +157,61 @@ export function toAppError(error: unknown): AppError {
     return error;
   }
 
-  if (error instanceof Error) {
-    // Check for common error patterns
-    const message = error.message.toLowerCase();
-
-    if (message.includes('network') || message.includes('fetch')) {
-      return createNetworkError(error.message, error);
-    }
-
-    if (message.includes('unauthorized') || message.includes('auth')) {
-      return createAuthError(error.message, error);
-    }
-
-    if (message.includes('not found') || message.includes('404')) {
-      return createNotFoundError('Resource');
-    }
-
-    if (message.includes('rate limit') || message.includes('429')) {
-      return createRateLimitError();
-    }
-
+  if (error === null || error === undefined) {
     return new AppError({
       code: 'UNKNOWN_ERROR',
-      message: error.message,
-      originalError: error,
+      message: 'An unexpected error occurred.',
       isRetryable: false,
     });
   }
 
+  const message = readMessage(error);
+  const haystack = message.toLowerCase();
+  const status = readStatus(error);
+
+  // Transport failure: the request never reached a server, so there is no status to read.
+  // `fetch` rejects with a TypeError whose text differs per engine — "Failed to fetch"
+  // (Chromium), "Load failed" (WebKit), "NetworkError when attempting to fetch resource"
+  // (Gecko) — which is why this matches several spellings rather than one.
+  if (
+    status === undefined &&
+    (haystack.includes('failed to fetch') ||
+      haystack.includes('load failed') ||
+      haystack.includes('networkerror') ||
+      haystack.includes('network') ||
+      haystack.includes('timeout') ||
+      haystack.includes('timed out') ||
+      haystack.includes('offline'))
+  ) {
+    return createNetworkError(message, error);
+  }
+
+  if (status !== undefined) {
+    if (status >= 500) return createServerError(message, error);
+    if (status === 429) return createRateLimitError();
+    if (status === 404) return createNotFoundError('Resource');
+    if (status === 401 || status === 403) return createAuthError(message, error);
+  }
+
+  if (haystack.includes('rate limit') || haystack.includes('429')) {
+    return createRateLimitError();
+  }
+
+  if (haystack.includes('not found') || haystack.includes('404')) {
+    return createNotFoundError('Resource');
+  }
+
+  if (haystack.includes('unauthorized') || haystack.includes('jwt') || haystack.includes('auth')) {
+    return createAuthError(message, error);
+  }
+
+  if (haystack.includes('internal server error') || /\b5\d{2}\b/.test(haystack)) {
+    return createServerError(message, error);
+  }
+
   return new AppError({
     code: 'UNKNOWN_ERROR',
-    message: 'An unexpected error occurred.',
+    message,
     originalError: error,
     isRetryable: false,
   });

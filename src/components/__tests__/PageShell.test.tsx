@@ -51,6 +51,19 @@ describe('PageShell', () => {
     expect(withNav.firstChild).not.toHaveClass('pb-safe');
   });
 
+  // Regression: on Layout-group routes the Layout `<main>` already applies
+  // `min-h-screen` + the bottom inset. PageShell repeating `min-h-screen` stacked a
+  // second full viewport onto the scroll height, so those pages scrolled well past the
+  // end of their content before stopping.
+  it('leaves min-h-screen to Layout when a bottom nav is present', () => {
+    const { container, unmount } = render(<PageShell title="a">x</PageShell>);
+    expect(container.firstChild).toHaveClass('min-h-screen');
+    unmount();
+
+    const { container: withNav } = render(<PageShell title="a" withBottomNav>x</PageShell>);
+    expect(withNav.firstChild).not.toHaveClass('min-h-screen');
+  });
+
   it('renders the actions slot', () => {
     render(
       <PageShell title="a" actions={<button>Edit</button>}>

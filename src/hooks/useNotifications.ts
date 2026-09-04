@@ -9,6 +9,7 @@ import {
   clearOldNotifications as clearOld,
   AppNotification,
 } from '@/lib/notificationManager';
+import { logger } from '@/lib/logger';
 
 /**
  * Reactive hook for notifications stored in the database.
@@ -19,12 +20,20 @@ export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
 
   const refresh = useCallback(async () => {
     if (!user) return;
-    const data = await fetchNotifications(user.id);
-    setNotifications(data);
-    setLoading(false);
+    try {
+      const data = await fetchNotifications(user.id);
+      setNotifications(data);
+      setError(null);
+    } catch (err) {
+      logger.error(err, { component: 'useNotifications', action: 'refresh' });
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   // Initial fetch + cleanup old notifications
@@ -34,11 +43,18 @@ export function useNotifications() {
     let cancelled = false;
 
     (async () => {
-      await clearOld(user.id);
-      const data = await fetchNotifications(user.id);
-      if (!cancelled) {
+      try {
+        await clearOld(user.id);
+        const data = await fetchNotifications(user.id);
+        if (cancelled) return;
         setNotifications(data);
-        setLoading(false);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        logger.error(err, { component: 'useNotifications', action: 'initialFetch' });
+        setError(err);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
 
@@ -102,6 +118,7 @@ export function useNotifications() {
   return {
     notifications,
     loading,
+    error,
     unreadCount,
     refresh,
     markAsRead,

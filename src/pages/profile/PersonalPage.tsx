@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Shield, ChevronRight, Camera, Edit } from 'lucide-react';
+import { Save, Shield, ChevronRight, Camera, Edit, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageShell } from '@/components/PageShell';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { CustomerCenterTrigger } from '@/components/CustomerCenterTrigger';
 
 export function PersonalPage() {
     const navigate = useNavigate();
@@ -295,10 +294,25 @@ export function PersonalPage() {
                     )}
                 </div>
 
-                {/* Subscription management */}
+                {/* One manage surface only — /settings/subscription owns the status and the
+                    Customer Center. Duplicating the trigger here let the two diverge. */}
                 <div className="mt-6 rounded-2xl border border-border/50 bg-card p-4">
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{t('profilePersonal.subscription')}</p>
-                    <CustomerCenterTrigger variant="row" />
+                    <button
+                        onClick={() => navigate('/settings/subscription')}
+                        className="w-full flex items-center justify-between py-3 text-left"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                                <Crown className="w-4 h-4 text-accent" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">{t('profilePersonal.manageSubscription')}</p>
+                                <p className="text-xs text-muted-foreground">{t('profilePersonal.cancelChangePlanHelp')}</p>
+                            </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </button>
                 </div>
 
         </PageShell>

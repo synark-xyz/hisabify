@@ -1,5 +1,31 @@
 # UPDATE.md
 
+## Recent Changes (August 29, 2026) — v1.0.0 release prep
+
+Full detail lives in `CHANGELOG.md` under `[Unreleased]`. Headlines:
+
+- **Sign out could leave the user signed in.** `supabase.auth.signOut()` returns `{ error }` rather
+  than throwing, so the `try/catch` caught nothing; gotrue also skips `_removeSession()` when the
+  server call fails. The app toasted success and navigated to `/auth` with a live session. Now the
+  returned error is checked, `scope: 'local'` is the fallback, and the session is verified gone.
+- **Unified error/offline UI.** `ErrorState` / `DataErrorState`, the pure `toErrorVariant()`
+  classifier, `useOnline()` + `OfflineBanner`, per-route `ErrorBoundary`, and a bounded `useAuth`
+  bootstrap. A failed fetch no longer renders as an empty state.
+- **`/settings/subscription`.** One manage surface, driven by the pure `deriveSubscriptionStatus()`;
+  `CustomerCenterTrigger` removed. Cancel and Restore render only for an actual paying subscriber.
+- **Subscription mirror syncs downgrades.** `users.subscription_type` is written on every
+  entitlement transition (value `'base'`, not `'free'`), cached per user so free accounts do not
+  issue a redundant write on every cold start. Migration `20260828000000` repairs stranded rows.
+- **AdMob correctness.** Banner lifecycle moved into `BannerAd`; `useAdBanner` keeps only the shared
+  init/consent helpers. Staging builds can no longer pair Google's test app ID with the real ad
+  unit — verified against built APKs by `npm run verify:apk-ads`.
+- **Layout/scroll fixes.** The bottom inset now has exactly one owner (`Layout`'s `<main>`), which
+  removed 236px of dead scroll space on the Dashboard; the bottom nav's lost anchor and the banner
+  covering it are both fixed and pinned by tests.
+- **Route-level page transitions removed** — they fought the scroll restore and the Suspense swap.
+
+---
+
 ## Recent Changes (March 16, 2026)
 
 ### 4. **Android Google OAuth Fix**

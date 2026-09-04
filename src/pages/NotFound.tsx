@@ -1,25 +1,32 @@
-import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+
+import { ErrorState } from "@/components/ErrorState";
+import { logger } from "@/lib/logger";
 
 const NotFound = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    logger.warn("404: user attempted to access a non-existent route", {
+      component: "NotFound",
+      pathname: location.pathname,
+    });
   }, [location.pathname]);
 
+  // `navigate` rather than an <a href="/">: a full page reload here throws away the whole
+  // React tree and re-runs the splash for a user who never left the app.
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">{t('notFound.errorTitle')}</h1>
-        <p className="mb-4 text-xl text-muted-foreground">{t('notFound.oopsPageNotFound')}</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          {t('notFound.returnHome')}
-        </a>
-      </div>
-    </div>
+    <ErrorState
+      fullScreen
+      variant="notFound"
+      title={t("notFound.title")}
+      description={t("notFound.description")}
+      onGoHome={() => navigate("/", { replace: true })}
+    />
   );
 };
 

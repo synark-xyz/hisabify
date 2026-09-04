@@ -8,10 +8,12 @@ import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { RatingSheet } from '@/components/RatingSheet';
 import { PageFallback } from '@/components/PageTransition';
-import { usePageVariants } from '@/lib/pageMotion';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { useAppRating } from '@/hooks/useAppRating';
 import { Header } from '@/components/Header';
 import { HisabifyLogo } from "@/components/HisabifyLogo";
+import { BannerAd } from '@/components/BannerAd';
 import { cn } from '@/lib/utils';
 import { useFABContext } from "@/contexts/FABContext";
 import { NAV_TABS, TAB_TITLES, isTabRoute, isTabActive } from '@/lib/navTabs';
@@ -28,7 +30,6 @@ export function Layout() {
     const { t } = useTranslation();
     // Periodic "how are we doing?" prompt — fires at most once a day until the user rates.
     const rating = useAppRating();
-    const pageVariants = usePageVariants();
 
     const navItems = NAV_TABS;
 
@@ -119,26 +120,32 @@ export function Layout() {
             <div className="flex-1 min-w-0 lg:ml-64">
                 {showLandingHeader && <Header title={TAB_TITLES[location.pathname]} />}
 
-                <main className="relative z-10 pb-page-content lg:pb-10">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={location.pathname}
-                            variants={pageVariants}
-                            initial="initial"
-                            animate="animate"
-                            exit="exit"
-                        >
-                            {/* Suspense sits inside the layout so a lazily-loaded page swaps
-                                under a header and bottom nav that never unmount. */}
-                            <Suspense fallback={<PageFallback />}>
-                                <Outlet />
-                            </Suspense>
-                        </motion.div>
-                    </AnimatePresence>
+                {/* Anchored at the top on purpose: anything pinned to the bottom of the
+                    viewport has to offset by var(--ad-banner-h), and this sidesteps that. */}
+                <OfflineBanner />
+
+                {/* This element is the single owner of the bottom inset that clears the
+                    bottom nav, the FAB and the ad banner. `min-h-screen` sits on the same
+                    box as the padding so (with border-box) the inset is absorbed into the
+                    viewport height instead of adding a screenful of dead scroll. Pages must
+                    NOT add their own `pb-page-content`/`pb-24`/`min-h-screen`. */}
+                <main className="relative z-10 min-h-screen pb-page-content lg:pb-10">
+                    {/* No route-level transition: fading the whole tree in/out fought with
+                        scroll restore and the Suspense swap, which showed up as a glitch.
+                        Suspense sits inside the layout so a lazily-loaded page swaps under
+                        a header and bottom nav that never unmount. */}
+                    {/* Keyed on the path so navigating away from a crashed page clears the
+                        error instead of pinning it over every subsequent route. */}
+                    <ErrorBoundary key={location.pathname} fullScreen={false} showGoHome={false}>
+                        <Suspense fallback={<PageFallback />}>
+                            <Outlet />
+                        </Suspense>
+                    </ErrorBoundary>
                 </main>
             </div>
 
             {/* Mobile bottom nav */}
+            <BannerAd />
             <BottomNavigation />
 
             {/* Mobile FAB */}
@@ -149,7 +156,7 @@ export function Layout() {
                         aria-label="Add transaction"
                         data-testid="fab-button"
                         className="fixed right-8 z-50 w-14 h-14 rounded-full bg-accent text-accent-foreground shadow-fab flex items-center justify-center lg:hidden"
-                        style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
+                        style={{ bottom: 'calc(5.5rem + var(--ad-banner-h, 0px) + env(safe-area-inset-bottom))' }}
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}

@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PageShell } from '@/components/PageShell';
+import { TransactionItem } from '@/components/TransactionItem';
+import { EditTransactionModal } from '@/components/EditTransactionModal';
+import { DeleteTransactionDialog } from '@/components/DeleteTransactionDialog';
 import { isToday, isYesterday } from 'date-fns';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import i18n from '@/i18n';
-import type { ActivityLog } from '@/types';
 import {
   ArrowUpRight,
   ArrowDownLeft,
@@ -20,7 +21,10 @@ import {
   Bell,
   Archive,
 } from 'lucide-react';
+import type { ActivityLog, Transaction } from '@/types';
 import { useActivityHistory } from '@/hooks/useActivityHistory';
+import { DataErrorState } from '@/components/ErrorState';
+import { formatActivityDescription, type ActivityFeedEntry } from '@/lib/activityFeed';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '@/lib/formatDate';
@@ -63,16 +67,7 @@ function ActivityItem({ activity, t }: { activity: ActivityLog; t: TFunction }) 
   const iconConfig = activityIcons[activity.activity_type] || { icon: Clock, bg: 'bg-gray-500/10', fg: 'text-gray-500' };
   const Icon = iconConfig.icon;
 
-  const description = (() => {
-    const parts = activity.description.split('|');
-    if (parts.length < 2) return activity.description;
-    const key = parts[0];
-    const params: Record<string, string> = {};
-    if (parts[1]) params.name = parts[1];
-    if (parts[2]) params.currency = parts[2];
-    if (parts[3]) params.amount = parts[3];
-    return t(`activity.${key}`, params);
-  })();
+  const description = formatActivityDescription(activity.description, t);
 
   return (
     <div className="flex gap-3 p-3 hover:bg-muted/50 rounded-xl transition-colors">
@@ -87,7 +82,7 @@ function ActivityItem({ activity, t }: { activity: ActivityLog; t: TFunction }) 
           </span>
           {activity.amount && (
             <span className="text-xs font-semibold text-foreground bg-muted px-1.5 py-0.5 rounded">
-              {activity.currency} {activity.amount.toFixed(2)}
+              {activity.currency} {localizeNumber(activity.amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           )}
         </div>
@@ -96,7 +91,18 @@ function ActivityItem({ activity, t }: { activity: ActivityLog; t: TFunction }) 
   );
 }
 
-function ActivityGroup({ dateStr, activities, t }: { dateStr: string; activities: ActivityLog[]; t: TFunction }) {
+interface FeedGroupProps {
+  dateStr: string;
+  entries: ActivityFeedEntry[];
+  t: TFunction;
+  onEdit: (transaction: Transaction) => void;
+  onDelete: (transaction: Transaction) => void;
+  onViewDetails: (transaction: Transaction) => void;
+  revealedId: string | null;
+  onReveal: (id: string | null) => void;
+}
+
+function FeedGroup({ dateStr, entries, t, onEdit, onDelete, onViewDetails, revealedId, onReveal }: FeedGroupProps) {
   return (
     <div className="space-y-2">
       <div className="sticky top-0 bg-background py-2 z-10">
@@ -104,34 +110,50 @@ function ActivityGroup({ dateStr, activities, t }: { dateStr: string; activities
           {formatDateHeader(dateStr, t)}
         </h3>
       </div>
-      <div className="space-y-1">
-        {activities.map((activity) => (
-          <ActivityItem key={activity.id} activity={activity} t={t} />
-        ))}
+      <div className="space-y-2">
+        {entries.map((entry) =>
+          entry.kind === 'transaction' ? (
+            <TransactionItem
+              key={entry.tx.id}
+              transaction={entry.tx}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onViewDetails={onViewDetails}
+              revealedId={revealedId}
+              onReveal={onReveal}
+            />
+          ) : (
+            <ActivityItem key={entry.activity.id} activity={entry.activity} t={t} />
+          ),
+        )}
       </div>
     </div>
   );
 }
 
 export function ActivityHistoryPage() {
-  const { activities, loading } = useActivityHistory();
+  const { feed, loading, error, refetch } = useActivityHistory();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  const [revealedTransactionId, setRevealedTransactionId] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
-  const groupedByDate = activities.reduce((acc, activity) => {
-    const date = new Date(activity.created_at).toDateString();
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(activity);
-    return acc;
-  }, {} as Record<string, typeof activities>);
-
-  const sortedDates = Object.keys(groupedByDate).sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime()
-  );
+  const sortedDates = useMemo(() => {
+    const groups = new Map<string, ActivityFeedEntry[]>();
+    for (const entry of feed) {
+      const date = new Date(entry.at).toDateString();
+      const bucket = groups.get(date);
+      if (bucket) bucket.push(entry);
+      else groups.set(date, [entry]);
+    }
+    // feed is already newest-first, so insertion order is the display order.
+    return Array.from(groups.entries());
+  }, [feed]);
 
   return (
     <PageShell title="activity.activityHistory" backTo="/more" withBottomNav className="px-0 py-0">
@@ -139,7 +161,7 @@ export function ActivityHistoryPage() {
         <div className="flex items-center justify-between">
           <span className="text-lg font-semibold">{t('activity.title')}</span>
           <span className="text-sm text-muted-foreground">
-            {localizeNumber(activities.length)} {t('activity.activitiesRecorded')}
+            {localizeNumber(feed.length)} {t('activity.activitiesRecorded')}
           </span>
         </div>
 
@@ -147,7 +169,9 @@ export function ActivityHistoryPage() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin w-8 h-8 border-2 border-accent border-t-transparent rounded-full" />
           </div>
-        ) : activities.length === 0 ? (
+        ) : error ? (
+          <DataErrorState error={error} onRetry={refetch} />
+        ) : feed.length === 0 ? (
           <div className="text-center py-12">
             <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground font-medium">{t('activity.noActivityYet')}</p>
@@ -157,17 +181,36 @@ export function ActivityHistoryPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {sortedDates.map((date) => (
-              <ActivityGroup
+            {sortedDates.map(([date, entries]) => (
+              <FeedGroup
                 key={date}
                 dateStr={date}
-                activities={groupedByDate[date]}
+                entries={entries}
                 t={t}
+                onEdit={setEditingTransaction}
+                onDelete={setDeletingTransaction}
+                onViewDetails={(transaction) => navigate(`/transactions/${transaction.id}`)}
+                revealedId={revealedTransactionId}
+                onReveal={setRevealedTransactionId}
               />
             ))}
           </div>
         )}
       </div>
+
+      <EditTransactionModal
+        open={!!editingTransaction}
+        onOpenChange={(open) => !open && setEditingTransaction(null)}
+        transaction={editingTransaction}
+        onSuccess={() => { void refetch(); }}
+      />
+
+      <DeleteTransactionDialog
+        open={!!deletingTransaction}
+        onOpenChange={(open) => !open && setDeletingTransaction(null)}
+        transaction={deletingTransaction}
+        onSuccess={() => { void refetch(); }}
+      />
     </PageShell>
   );
 }
